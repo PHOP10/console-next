@@ -184,7 +184,7 @@ export default function DrugTypeTable() {
             name="drugTypeId"
             rules={[{ required: true, message: "กรุณากรอกรหัสประเภทยา" }]}
           >
-            <Input type="number" placeholder="เช่น 1" />
+            <Input placeholder="เช่น 1" />
           </Form.Item>
 
           <Form.Item

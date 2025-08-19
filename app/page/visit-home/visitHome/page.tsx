@@ -5,7 +5,8 @@ import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { visitHomeServices } from "../services/visitHome.service";
 import VisitHomeForm from "../components/visitHomeForm";
-import { VisitHomeType } from "../../common";
+import { MasterPatientType, VisitHomeType } from "../../common";
+import MasterPatientTable from "../components/masterPatientTable";
 
 export default function VisitHomePage() {
   const intraAuth = useAxiosAuth();
@@ -13,11 +14,17 @@ export default function VisitHomePage() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<VisitHomeType[]>([]);
+  const [dataMasterPatient, setDataMasterPatient] = useState<
+    MasterPatientType[]
+  >([]);
 
   const fetchData = useCallback(async () => {
     try {
       const res = await intraAuthService.getVisitHomeQuery();
+      const dataMasterPatients = await intraAuthService.getMasterPatientQuery();
+
       setData(res.data);
+      setDataMasterPatient(dataMasterPatients);
     } catch (err) {
       message.error("ไม่สามารถดึงข้อมูลการเยี่ยมบ้านได้");
     } finally {
@@ -36,6 +43,19 @@ export default function VisitHomePage() {
       children: (
         <Card>
           <VisitHomeForm />
+        </Card>
+      ),
+    },
+    {
+      key: "2",
+      label: `ประเภทผู้ป่วย`,
+      children: (
+        <Card>
+          <MasterPatientTable
+            dataMasterPatient={dataMasterPatient}
+            setDataMasterPatient={setDataMasterPatient}
+            setLoading={setLoading}
+          />
         </Card>
       ),
     },

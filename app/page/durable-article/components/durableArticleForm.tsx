@@ -27,6 +27,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
   const intraAuthService = infectiousWasteServices(intraAuth);
 
   const onFinish = async (values: any) => {
+    console.log(values);
     try {
       const payload = {
         ...values,
@@ -54,9 +55,9 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
           usageLifespanYears: 1,
           unitPrice: 0,
           monthlyDepreciation: 0,
-          yearlyDepreciation: 0,
-          accumulatedDepreciation: 0,
-          netValue: 0,
+          // yearlyDepreciation: 0,
+          // accumulatedDepreciation: 0,
+          // netValue: 0,
         }}
       >
         <Form.Item
@@ -120,7 +121,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
           <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
         </Form.Item>
 
-        <Form.Item
+        {/* <Form.Item
           label="ค่าเสื่อมราคาปีงบประมาณ"
           name="yearlyDepreciation"
           rules={[
@@ -128,9 +129,9 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
           ]}
         >
           <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
-        </Form.Item>
+        </Form.Item> */}
 
-        <Form.Item
+        {/* <Form.Item
           label="ค่าเสื่อมราคาสะสม"
           name="accumulatedDepreciation"
           rules={[{ required: true, message: "กรุณากรอกค่าเสื่อมราคาสะสม" }]}
@@ -144,7 +145,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
           rules={[{ required: true, message: "กรุณากรอกมูลค่าสุทธิ" }]}
         >
           <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
-        </Form.Item>
+        </Form.Item> */}
 
         <Form.Item label="หมายเหตุ" name="note">
           <Input.TextArea rows={2} />

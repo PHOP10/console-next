@@ -124,27 +124,27 @@ export default function DurableArticleTable({ setLoading, loading }: Props) {
       render: (value) =>
         value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
     },
-    {
-      title: "ค่าเสื่อมราคาปีงบประมาณ",
-      dataIndex: "yearlyDepreciation",
-      key: "yearlyDepreciation",
-      render: (value) =>
-        value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-    },
-    {
-      title: "ค่าเสื่อมราคาสะสม",
-      dataIndex: "accumulatedDepreciation",
-      key: "accumulatedDepreciation",
-      render: (value) =>
-        value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-    },
-    {
-      title: "มูลค่าสุทธิ",
-      dataIndex: "netValue",
-      key: "netValue",
-      render: (value) =>
-        value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-    },
+    // {
+    //   title: "ค่าเสื่อมราคาปีงบประมาณ",
+    //   dataIndex: "yearlyDepreciation",
+    //   key: "yearlyDepreciation",
+    //   render: (value) =>
+    //     value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    // },
+    // {
+    //   title: "ค่าเสื่อมราคาสะสม",
+    //   dataIndex: "accumulatedDepreciation",
+    //   key: "accumulatedDepreciation",
+    //   render: (value) =>
+    //     value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    // },
+    // {
+    //   title: "มูลค่าสุทธิ",
+    //   dataIndex: "netValue",
+    //   key: "netValue",
+    //   render: (value) =>
+    //     value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    // },
     {
       title: "หมายเหตุ",
       dataIndex: "note",
@@ -251,7 +251,7 @@ export default function DurableArticleTable({ setLoading, loading }: Props) {
           >
             <InputNumber style={{ width: "100%" }} min={0} />
           </Form.Item>
-          <Form.Item
+          {/* <Form.Item
             name="yearlyDepreciation"
             label="ค่าเสื่อมราคาปีงบประมาณ"
             rules={[{ required: true }]}
@@ -271,7 +271,7 @@ export default function DurableArticleTable({ setLoading, loading }: Props) {
             rules={[{ required: true }]}
           >
             <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
+          </Form.Item> */}
           <Form.Item name="note" label="หมายเหตุ">
             <Input.TextArea />
           </Form.Item>

@@ -3,22 +3,20 @@
 import React, { useEffect, useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-import { maCarService } from "../services/maCar.service";
-import MaCarTable from "../components/maCarTable";
-import MaCarCalendar from "../components/maCarCalendar";
+import { officialTravelRequestService } from "../services/officialTravelRequest.service";
+import OfficialTravelRequestTable from "../components/officialTravelRequestTable";
+import OfficialTravelRequestCalendar from "../components/officialTravelRequestCalendar";
 
-export default function MaCarPage() {
+export default function page() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = maCarService(intraAuth);
-
+  const intraAuthService = officialTravelRequestService(intraAuth);
   const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<any[]>([]); // เก็บข้อมูล MaCar
+  const [data, setData] = useState<any[]>([]);
 
-  // ฟังก์ชันดึงข้อมูล
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await intraAuthService.getMaCarQuery();
+      const res = await intraAuthService.getOfficialTravelRequestQuery();
       setData(res);
     } catch (err) {
       console.error(err);
@@ -35,19 +33,27 @@ export default function MaCarPage() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลการจองรถ",
+      label: "ข้อมูลขอเดินทางไปราชการ",
       children: (
         <Card>
-          <MaCarTable data={data} loading={loading} fetchData={fetchData} />
+          <OfficialTravelRequestTable
+            data={data}
+            loading={loading}
+            fetchData={fetchData}
+          />
         </Card>
       ),
     },
     {
       key: "2",
-      label: "ข้อมูลปฏิทินรายการรถ",
+      label: "ข้อมูลปฏิทินขอเดินทางไปราชการ",
       children: (
         <Card>
-          <MaCarCalendar data={data} loading={loading} fetchData={fetchData} />
+          <OfficialTravelRequestCalendar
+            data={data}
+            loading={loading}
+            fetchData={fetchData}
+          />
         </Card>
       ),
     },

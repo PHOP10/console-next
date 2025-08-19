@@ -6,6 +6,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveType } from "../../common";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveTable from "../components/dataLeaveTable";
+import DataLeaveCalendar from "../components/dataLeaveCalendar";
 
 export default function DataLeavePage() {
   const intraAuth = useAxiosAuth();
@@ -39,6 +40,19 @@ export default function DataLeavePage() {
             data={data}
             loading={loading}
             setLoading={setLoading}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: "2",
+      label: "ข้อมูลปฏิทินการลา",
+      children: (
+        <Card>
+          <DataLeaveCalendar
+            data={data}
+            loading={loading}
+            fetchData={fetchData}
           />
         </Card>
       ),

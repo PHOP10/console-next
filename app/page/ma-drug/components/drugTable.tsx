@@ -8,36 +8,18 @@ import { MaDrug } from "../services/maDrug.service";
 import { DrugType } from "../../common";
 // import type { DrugType } from "../types/maDrugTypes"; // type ของ Drug
 
-export default function DrugTable() {
-  const intraAuth = useAxiosAuth();
-  const intraAuthService = MaDrug(intraAuth);
+interface DrugTableProps {
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  loading: boolean;
+  data: DrugType[];
+}
 
-  const [data, setData] = useState<DrugType[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const result = await intraAuthService.getDrugQuery();
-      setData(Array.isArray(result) ? result : result?.data || []);
-    } catch (error) {
-      console.error("โหลดข้อมูลยาไม่สำเร็จ:", error);
-      message.error("ไม่สามารถดึงข้อมูลยาได้");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, []);
-
+export default function DrugTable({
+  setLoading,
+  loading,
+  data,
+}: DrugTableProps) {
   const columns: ColumnsType<DrugType> = [
-    {
-      title: "รหัสยา (DrugId)",
-      dataIndex: "DrugId",
-      key: "DrugId",
-    },
     {
       title: "Working Code",
       dataIndex: "workingCode",

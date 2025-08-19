@@ -1,13 +1,12 @@
 import { AxiosInstance } from "axios";
 
-export const visitHomeServices = (axiosInstance: AxiosInstance) => {
-  const baseUrlApiVisitHome = "/visitHome";
-  const baseUrlApiMasterPatient = "/masterPatient";
-
+export const maCarService = (axiosInstance: AxiosInstance) => {
+  const baseUrlApiMaCar = "/maCar";
+  const baseUrlApiMasterCar = "/masterCar";
   return {
-    getVisitHomeQuery: async () => {
+    getMaCarQuery: async () => {
       return await axiosInstance
-        .get(`${baseUrlApiVisitHome}`)
+        .get(`${baseUrlApiMaCar}`)
         .then((res) => {
           return res.data;
         })
@@ -17,9 +16,9 @@ export const visitHomeServices = (axiosInstance: AxiosInstance) => {
         });
     },
 
-    createVisitHomeWaste: async (body: any) => {
+    createMaCar: async (body: any) => {
       return await axiosInstance
-        .post(`${baseUrlApiVisitHome}`, body)
+        .post(`${baseUrlApiMaCar}`, body)
         .then((res) => {
           return res.data;
         })
@@ -29,9 +28,9 @@ export const visitHomeServices = (axiosInstance: AxiosInstance) => {
         });
     },
 
-    updateVisitHome: async (body: any) => {
+    updateMaCar: async (body: any) => {
       return await axiosInstance
-        .patch(`${baseUrlApiVisitHome}/${body.id}`, body)
+        .patch(`${baseUrlApiMaCar}/${body.id}`, body)
         .then((res) => {
           return res.data;
         })
@@ -41,20 +40,9 @@ export const visitHomeServices = (axiosInstance: AxiosInstance) => {
         });
     },
 
-    deleteVisitHome: async (id: any) => {
+    deleteMaCar: async (id: any) => {
       return await axiosInstance
-        .delete(`${baseUrlApiVisitHome}/${id}`)
-        .then((res) => {
-          return res.data;
-        })
-        .catch((err) => {
-          console.log(err);
-          return [];
-        });
-    },
-    getMasterPatientQuery: async () => {
-      return await axiosInstance
-        .get(`${baseUrlApiMasterPatient}`)
+        .delete(`${baseUrlApiMaCar}/${id}`)
         .then((res) => {
           return res.data;
         })
@@ -64,9 +52,9 @@ export const visitHomeServices = (axiosInstance: AxiosInstance) => {
         });
     },
 
-    createMasterPatient: async (body: any) => {
+    getMasterCarQuery: async () => {
       return await axiosInstance
-        .post(`${baseUrlApiMasterPatient}`, body)
+        .get(`${baseUrlApiMasterCar}`)
         .then((res) => {
           return res.data;
         })
@@ -76,9 +64,9 @@ export const visitHomeServices = (axiosInstance: AxiosInstance) => {
         });
     },
 
-    updateMasterPatient: async (body: any) => {
+    createMasterCar: async (body: any) => {
       return await axiosInstance
-        .patch(`${baseUrlApiMasterPatient}/${body.id}`, body)
+        .post(`${baseUrlApiMasterCar}`, body)
         .then((res) => {
           return res.data;
         })
@@ -88,9 +76,21 @@ export const visitHomeServices = (axiosInstance: AxiosInstance) => {
         });
     },
 
-    deleteMasterPatient: async (id: any) => {
+    updateMasterCar: async (body: any) => {
       return await axiosInstance
-        .delete(`${baseUrlApiMasterPatient}/${id}`)
+        .patch(`${baseUrlApiMasterCar}/${body.id}`, body)
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
+
+    deleteMasterCar: async (id: any) => {
+      return await axiosInstance
+        .delete(`${baseUrlApiMasterCar}/${id}`)
         .then((res) => {
           return res.data;
         })

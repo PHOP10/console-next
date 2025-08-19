@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   Form,
@@ -17,6 +17,7 @@ import { maMedicalEquipmentServices } from "../services/medicalEquipment.service
 import dayjs from "dayjs";
 
 const { TextArea } = Input;
+const { Option } = Select;
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -25,22 +26,53 @@ type Props = {
 export default function CreateMedicalEquipmentForm({ setLoading }: Props) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
-  const service = maMedicalEquipmentServices(intraAuth);
+
+  const maService = maMedicalEquipmentServices(intraAuth);
+
+  const [medicalEquipmentList, setMedicalEquipmentList] = useState<
+    { id: number; name: string; quantity: number }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchMedicalEquipment = async () => {
+      try {
+        const res = await maService.getMedicalEquipmentQuery();
+        setMedicalEquipmentList(res);
+      } catch (error) {
+        console.error(error);
+        message.error("โหลดรายการเครื่องมือไม่สำเร็จ");
+      }
+    };
+    fetchMedicalEquipment();
+  }, []);
 
   const onFinish = async (values: any) => {
     try {
+      // สร้าง payload ตามรูปแบบ backend ต้องการ
       const payload = {
-        ...values,
         sentDate: values.sentDate.toISOString(),
         receivedDate: values.receivedDate
           ? values.receivedDate.toISOString()
           : null,
+        note: values.note,
+        // แปลง equipmentInfo ให้เป็น items [{ medicalEquipmentId, quantity }]
+        items: values.equipmentInfo.map((item: any) => ({
+          medicalEquipmentId: item.medicalEquipmentId,
+          quantity: item.quantity,
+        })),
       };
 
-      await service.createMaMedicalEquipment(payload);
-      setLoading(true);
-      message.success("บันทึกข้อมูลสำเร็จ");
-      form.resetFields();
+      // เรียก service ตามรูปแบบที่คุณให้มา
+      const res = await maService.createMaMedicalEquipment(payload);
+
+      // ถ้า backend ส่งกลับ data สำเร็จ
+      if (res) {
+        setLoading(true);
+        message.success("บันทึกข้อมูลสำเร็จ");
+        form.resetFields();
+      } else {
+        message.error("ไม่สามารถบันทึกข้อมูลได้");
+      }
     } catch (error) {
       console.error("เกิดข้อผิดพลาด:", error);
       message.error("ไม่สามารถบันทึกข้อมูลได้");
@@ -53,14 +85,12 @@ export default function CreateMedicalEquipmentForm({ setLoading }: Props) {
         form={form}
         layout="vertical"
         onFinish={onFinish}
-        initialValues={{
-          status: "WaitingApproval", // ตั้งสถานะเริ่มต้น
-        }}
+        initialValues={{ status: "Pending" }}
       >
         <Form.List name="equipmentInfo">
           {(fields, { add, remove }) => (
             <>
-              <label>ข้อมูลเครื่องมือ</label>
+              <label>เลือกเครื่องมือ</label>
               {fields.map(({ key, name, ...restField }) => (
                 <Space
                   key={key}
@@ -69,18 +99,71 @@ export default function CreateMedicalEquipmentForm({ setLoading }: Props) {
                 >
                   <Form.Item
                     {...restField}
-                    name={name}
+                    name={[name, "medicalEquipmentId"]}
                     rules={[
-                      { required: true, message: "กรอกข้อมูลเครื่องมือ" },
+                      { required: true, message: "กรุณาเลือกเครื่องมือ" },
                     ]}
                   >
-                    <Input placeholder="ชื่อเครื่องมือ เช่น กรรไกร" />
+                    <Select
+                      placeholder="เลือกเครื่องมือ"
+                      style={{ width: 200 }}
+                      showSearch
+                      optionFilterProp="children"
+                      onChange={() => {
+                        // รีเซ็ตจำนวนเมื่อเปลี่ยนเครื่องมือ
+                        form.setFields([
+                          {
+                            name: ["equipmentInfo", name, "quantity"],
+                            value: undefined,
+                          },
+                        ]);
+                      }}
+                    >
+                      {medicalEquipmentList.map((eq) => (
+                        <Option key={eq.id} value={eq.id}>
+                          {eq.name} (คงเหลือ {eq.quantity})
+                        </Option>
+                      ))}
+                    </Select>
                   </Form.Item>
+
+                  <Form.Item
+                    {...restField}
+                    name={[name, "quantity"]}
+                    rules={[
+                      { required: true, message: "กรุณากรอกจำนวน" },
+                      ({ getFieldValue }) => ({
+                        validator(_, value) {
+                          const equipmentId = getFieldValue([
+                            "equipmentInfo",
+                            name,
+                            "medicalEquipmentId",
+                          ]);
+                          if (!equipmentId) return Promise.resolve();
+                          const selected = medicalEquipmentList.find(
+                            (eq) => eq.id === equipmentId
+                          );
+                          if (value > (selected?.quantity || 0)) {
+                            return Promise.reject(
+                              new Error(
+                                `จำนวนเกินคงเหลือ (${selected?.quantity})`
+                              )
+                            );
+                          }
+                          return Promise.resolve();
+                        },
+                      }),
+                    ]}
+                  >
+                    <InputNumber min={1} placeholder="จำนวน" />
+                  </Form.Item>
+
                   <Button danger onClick={() => remove(name)}>
                     ลบ
                   </Button>
                 </Space>
               ))}
+
               <Form.Item>
                 <Button type="dashed" onClick={() => add()} block>
                   + เพิ่มรายการเครื่องมือ
@@ -89,14 +172,6 @@ export default function CreateMedicalEquipmentForm({ setLoading }: Props) {
             </>
           )}
         </Form.List>
-
-        <Form.Item
-          label="จำนวน"
-          name="quantity"
-          rules={[{ required: true, message: "กรุณากรอกจำนวน" }]}
-        >
-          <InputNumber min={1} />
-        </Form.Item>
 
         <Form.Item
           label="วันที่ส่ง"

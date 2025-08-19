@@ -62,34 +62,30 @@ export const MenuSider = [
         label: `ข้อมูลขอไปราชการ`,
       },
       {
-        key: `officialTravelRequestBooking`,
+        key: `officialTravelRequestBook`,
         label: `ขอไปราชการ`,
       },
       {
-        key: `managementOfficialTravelRequest`,
+        key: `manageOfficialTravelRequest`,
         label: `จัดการการขอไปราชการ`,
       },
     ],
   },
   {
-    key: "macar",
+    key: "ma-car",
     label: `ระบบจองรถ`,
-    // rule: "mac-s",
     children: [
       {
         key: `maCar`,
         label: `ข้อมูลการจองรถ`,
-        // rule: "mac-c-s",
       },
       {
-        key: `maCarBooking`,
+        key: `maCarBook`,
         label: `จองรถ`,
-        // rule: "mac-b-s",
       },
       {
-        key: `managementCar`,
+        key: `manageMaCar`,
         label: `จัดการการจองรถ`,
-        // rule: "mac-m-s",
       },
     ],
   },
@@ -102,11 +98,11 @@ export const MenuSider = [
         label: `ข้อมูลการลา`,
       },
       {
-        key: `leaveBooking`,
+        key: `dataLeaveBook`,
         label: `ยื่นใบลา`,
       },
       {
-        key: `managementDataLeave`,
+        key: `manageDataLeave`,
         label: `จัดการการลา`,
       },
     ],

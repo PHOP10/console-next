@@ -1,16 +1,42 @@
 "use client";
 
-import React from "react";
-import { Form, Input, DatePicker, Button, Row, Col, message } from "antd";
+import React, { useEffect, useState } from "react";
+import {
+  Form,
+  Input,
+  DatePicker,
+  Button,
+  Row,
+  Col,
+  message,
+  Select,
+} from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { visitHomeServices } from "../services/visitHome.service";
 import dayjs from "dayjs";
+import { MasterPatientType } from "../../common";
+
+const { Option } = Select;
 
 export default function VisitHomeForm() {
   const [form] = Form.useForm();
-
+  const [masterPatients, setMasterPatients] = useState<MasterPatientType[]>([]);
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
+
+  const fetchMasterPatients = async () => {
+    try {
+      const res = await intraAuthService.getMasterPatientQuery();
+      setMasterPatients(res);
+    } catch (err) {
+      console.error(err);
+      message.error("ไม่สามารถดึงข้อมูลประเภทผู้ป่วยได้");
+    }
+  };
+
+  useEffect(() => {
+    fetchMasterPatients();
+  }, []);
 
   const handleFinish = async (values: any) => {
     try {
@@ -26,6 +52,7 @@ export default function VisitHomeForm() {
         symptoms: values.symptoms || null,
         medication: values.medication || null,
         notes: values.notes || null,
+        patientTypeId: values.patientTypeId || null, // เพิ่ม patientTypeId
       };
 
       await intraAuthService.createVisitHomeWaste(payload);
@@ -91,6 +118,21 @@ export default function VisitHomeForm() {
         <Col span={12}>
           <Form.Item name="medication" label="การใช้ยา">
             <Input.TextArea rows={2} />
+          </Form.Item>
+        </Col>
+        <Col span={12}>
+          <Form.Item
+            name="patientTypeId"
+            label="ประเภทผู้ป่วย"
+            rules={[{ required: true, message: "กรุณาเลือกประเภทผู้ป่วย" }]}
+          >
+            <Select placeholder="เลือกประเภทผู้ป่วย">
+              {masterPatients.map((item) => (
+                <Option key={item.id} value={item.id}>
+                  {item.typeName}
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
         </Col>
         <Col span={24}>

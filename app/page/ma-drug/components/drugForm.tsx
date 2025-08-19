@@ -1,43 +1,73 @@
 "use client";
 
-import React from "react";
-import { Form, Input, InputNumber, Button, message, Card } from "antd";
+import React, { useEffect, useState } from "react";
+import { Form, Input, InputNumber, Button, message, Card, Select } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import TypedInputNumber from "antd/es/input-number";
+import { DrugType, MasterDrugType } from "../../common";
 
-export default function DrugForm() {
+interface DrugFormProps {
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  loading: boolean;
+  setData: React.Dispatch<React.SetStateAction<DrugType[]>>; // ✅ เพิ่ม type
+}
+
+export default function DrugForm({
+  setLoading,
+  loading,
+  setData,
+}: DrugFormProps) {
   const [form] = Form.useForm();
+  const [masterDrugOptions, setMasterDrugOptions] = useState<
+    { label: string; value: number }[]
+  >([]);
+
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
 
+  // โหลด MasterDrug มาทำเป็น dropdown
+  useEffect(() => {
+    const fetchMasterDrug = async () => {
+      try {
+        const res: MasterDrugType[] =
+          await intraAuthService.getMasterDrugQuery(); // ✅ ต้อง return array
+        setMasterDrugOptions(
+          res.map((item) => ({
+            label: item.drugType,
+            value: item.id,
+          }))
+        );
+      } catch (error) {
+        console.error(error);
+        message.error("ไม่สามารถโหลดประเภทยาได้");
+      }
+    };
+
+    fetchMasterDrug();
+  }, []);
+
   const onFinish = async (values: any) => {
     try {
-      await intraAuthService.createDrug(values);
+      setLoading(true);
+      const newDrug: DrugType = await intraAuthService.createDrug(values); // ✅ รับ response กลับมา
+      setData((prev) => [...prev, newDrug]); // ✅ เพิ่มข้อมูลใหม่ในตาราง
       message.success("เพิ่มข้อมูลยาสำเร็จ");
       form.resetFields();
     } catch (error) {
       console.error(error);
       message.error("เพิ่มข้อมูลยาไม่สำเร็จ");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <Card title="เพิ่มข้อมูลยา">
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        // style={{ maxWidth: 600 }}
-      >
-        <Form.Item
-          label="รหัสยา (DrugId)"
-          name="DrugId"
-          rules={[{ required: true, message: "กรุณากรอกรหัสยา" }]}
-        >
-          <TypedInputNumber style={{ width: "100%" }} />
-        </Form.Item>
-
+    <Card
+      title="เพิ่มข้อมูลยา"
+      bordered={false}
+      style={{ maxWidth: 600, margin: "0 auto" }}
+    >
+      <Form form={form} layout="vertical" onFinish={onFinish}>
         <Form.Item
           label="Working Code"
           name="workingCode"
@@ -55,11 +85,15 @@ export default function DrugForm() {
         </Form.Item>
 
         <Form.Item
-          label="รหัสประเภทยา (drugTypeId)"
+          label="ประเภทยา"
           name="drugTypeId"
-          rules={[{ required: true, message: "กรุณากรอกรหัสประเภทยา" }]}
+          rules={[{ required: true, message: "กรุณาเลือกประเภทยา" }]}
         >
-          <InputNumber style={{ width: "100%" }} />
+          <Select
+            placeholder="เลือกประเภทยา"
+            options={masterDrugOptions}
+            loading={masterDrugOptions.length === 0}
+          />
         </Form.Item>
 
         <Form.Item
@@ -91,7 +125,7 @@ export default function DrugForm() {
         </Form.Item>
 
         <Form.Item>
-          <Button type="primary" htmlType="submit">
+          <Button type="primary" htmlType="submit" loading={loading}>
             บันทึกข้อมูลยา
           </Button>
         </Form.Item>

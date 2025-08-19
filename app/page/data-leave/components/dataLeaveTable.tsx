@@ -21,32 +21,48 @@ export default function DataLeaveTable({ data, loading }: DataLeaveTableProps) {
     },
     {
       title: "วันที่เริ่มลา",
-      dataIndex: "leaveDateStart",
-      key: "leaveDateStart",
+      dataIndex: "dateStart",
+      key: "dateStart",
       render: (value) => dayjs(value).format("DD/MM/YYYY"),
     },
     {
       title: "วันที่สิ้นสุด",
-      dataIndex: "leaveDateEnd",
-      key: "leaveDateEnd",
+      dataIndex: "dateEnd",
+      key: "dateEnd",
       render: (value) => dayjs(value).format("DD/MM/YYYY"),
     },
     {
-      title: "สถานะอนุมัติ",
-      dataIndex: "approveStatus",
-      key: "approveStatus",
+      title: "สถานะ",
+      dataIndex: "status",
+      key: "status",
       render: (status) => {
         let color = "default";
-        if (status === "approved") color = "green";
-        else if (status === "pending") color = "orange";
-        else if (status === "rejected") color = "red";
-        return <Tag color={color}>{status.toUpperCase()}</Tag>;
+        let text = "";
+
+        switch (status) {
+          case "pending":
+            color = "blue";
+            text = "รอดำเนินการ";
+            break;
+          case "approve":
+            color = "green";
+            text = "อนุมัติ";
+            break;
+          case "cancel":
+            color = "red";
+            text = "ยกเลิก";
+            break;
+          default:
+            text = status;
+        }
+
+        return <Tag color={color}>{text}</Tag>;
       },
     },
     {
-      title: "อนุมัติโดย",
-      dataIndex: "approvedBy",
-      key: "approvedBy",
+      title: "ผู้อนุมัติ",
+      dataIndex: "approvedById",
+      key: "approvedById",
       render: (value) => value || "-",
     },
     {

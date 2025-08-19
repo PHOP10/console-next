@@ -26,7 +26,6 @@ export default function VisitHomePage() {
   }, [intraAuthService]);
 
   useEffect(() => {
-    console.log(data);
     if (loading) fetchData();
   }, [loading, fetchData]);
 

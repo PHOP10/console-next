@@ -103,6 +103,12 @@ export default function VisitHomeTable({
     { title: "อาการ", dataIndex: "symptoms", key: "symptoms" },
     { title: "การใช้ยา", dataIndex: "medication", key: "medication" },
     {
+      title: "ประเภทผู้ป่วย",
+      dataIndex: "patientType",
+      key: "patientType",
+      render: (value: any) => value?.typeName || "-",
+    },
+    {
       title: "นัดครั้งถัดไป",
       dataIndex: "nextAppointment",
       key: "nextAppointment",
@@ -135,7 +141,11 @@ export default function VisitHomeTable({
               ลบ
             </Button>
           </Popconfirm>
-          <Button size="small" onClick={() => openEditModal(record)}>
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => openEditModal(record)}
+          >
             แก้ไข
           </Button>
         </Space>

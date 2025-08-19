@@ -12,6 +12,7 @@ import {
   Button,
   Popconfirm,
   message,
+  Space,
 } from "antd";
 import { useEffect, useState, useCallback } from "react";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -41,6 +42,8 @@ export default function Page() {
       setLoading(false);
     }
   }, [intraAuthService]);
+
+  const editRecord = (record: InfectiousWasteType) => {};
 
   useEffect(() => {
     if (loading) {
@@ -76,26 +79,32 @@ export default function Page() {
       title: "การจัดการ",
       key: "action",
       render: (_, record) => (
-        <Popconfirm
-          title="ยืนยันการลบ"
-          description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-          onConfirm={async () => {
-            try {
-              await intraAuthService.deleteInfectiousWaste(record.id);
-              message.success("ลบข้อมูลสำเร็จ");
-              setLoading(true);
-            } catch (error) {
-              console.error("Error deleting waste:", error);
-              message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-            }
-          }}
-          okText="ใช่"
-          cancelText="ยกเลิก"
-        >
-          <Button danger size="small">
-            ลบ
+        <Space>
+          <Popconfirm
+            title="ยืนยันการลบ"
+            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+            onConfirm={async () => {
+              try {
+                await intraAuthService.deleteInfectiousWaste(record.id);
+                message.success("ลบข้อมูลสำเร็จ");
+                setLoading(true);
+              } catch (error) {
+                console.error("Error deleting waste:", error);
+                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+              }
+            }}
+            okText="ใช่"
+            cancelText="ยกเลิก"
+          >
+            <Button danger size="small">
+              ลบ
+            </Button>
+          </Popconfirm>
+
+          <Button size="small" onClick={() => editRecord(record)}>
+            แก้ไข
           </Button>
-        </Popconfirm>
+        </Space>
       ),
     },
   ];

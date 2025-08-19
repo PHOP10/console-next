@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-import { DataLeaveType } from "../../common";
+import { DataLeaveType, MasterLeaveType } from "../../common";
 import { DataLeaveService } from "../services/dataLeave.service";
 import LeaveBookingForm from "../components/leaveBookingForm";
 
@@ -13,19 +13,29 @@ export default function DataLeavePage() {
 
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<DataLeaveType[]>([]);
+  const [masterLeaves, setMasterLeaves] = useState<MasterLeaveType[]>([]);
 
-  //   const fetchData = useCallback(async () => {
-  //     try {
-  //       const res = await intraAuthService.getDataLeaveQuery();
-  //       setData(res);
-  //     } catch (err) {
-  //       message.error("ไม่สามารถดึงข้อมูลการลาได้");
-  //     }
-  //   }, [intraAuthService]);
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        setLoading(true);
 
-  //   useEffect(() => {
-  //     fetchData();
-  //   }, [fetchData]);
+        const [dataRes, masterRes] = await Promise.all([
+          intraAuthService.getDataLeaveQuery(),
+          intraAuthService.getMasterLeaveQuery(),
+        ]);
+
+        setData(dataRes);
+        setMasterLeaves(masterRes);
+      } catch (err) {
+        message.error("ไม่สามารถดึงข้อมูลได้");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, []);
 
   const items: TabsProps["items"] = [
     {
@@ -37,6 +47,7 @@ export default function DataLeavePage() {
             loading={loading}
             setLoading={setLoading}
             createDataLeave={intraAuthService.createDataLeave}
+            masterLeaves={masterLeaves}
           />
         </Card>
       ),

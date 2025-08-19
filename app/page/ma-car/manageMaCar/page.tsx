@@ -4,21 +4,25 @@ import React, { useEffect, useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
-import MaCarTable from "../components/maCarTable";
-import MaCarCalendar from "../components/maCarCalendar";
+import ManageMaCarTable from "../components/manageMaCarTable";
+import ManageCarTable from "../components/manageCarTable";
+import { MaCarType, MasterCarType } from "../../common";
 
-export default function MaCarPage() {
+export default function manageMaCarPage() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
 
   const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<any[]>([]); // เก็บข้อมูล MaCar
+  const [data, setData] = useState<MaCarType[]>([]); // เก็บข้อมูล MaCar
+  const [dataCar, setDataCar] = useState<MasterCarType[]>([]); // เก็บข้อมูล MaCar
 
   // ฟังก์ชันดึงข้อมูล
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await intraAuthService.getMaCarQuery();
+      const dataCar = await intraAuthService.getMasterCarQuery();
+      setDataCar(dataCar);
       setData(res);
     } catch (err) {
       console.error(err);
@@ -35,19 +39,27 @@ export default function MaCarPage() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลการจองรถ",
+      label: "จัดการรายการจองรถ",
       children: (
         <Card>
-          <MaCarTable data={data} loading={loading} fetchData={fetchData} />
+          <ManageMaCarTable
+            data={data}
+            loading={loading}
+            fetchData={fetchData}
+          />
         </Card>
       ),
     },
     {
       key: "2",
-      label: "ข้อมูลปฏิทินรายการรถ",
+      label: "จัดการรรถ",
       children: (
         <Card>
-          <MaCarCalendar data={data} loading={loading} fetchData={fetchData} />
+          <ManageCarTable
+            dataCar={dataCar}
+            loading={loading}
+            setLoading={setLoading}
+          />
         </Card>
       ),
     },
