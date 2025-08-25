@@ -113,13 +113,15 @@ export default function CreateMedicalEquipmentForm({
                               item.maMedicalEquipment?.status === "pending"
                           )
                           .reduce(
-                            (sum: number, item: any) => sum + item.quantity,
+                            (sum: number, item: any) =>
+                              sum + item.items?.quantity,
                             0
                           );
-
+                        console.log(data);
+                        console.log(reservedQuantity);
                         const remainingQuantity =
                           eq.quantity - reservedQuantity;
-                        console.log(remainingQuantity);
+                        // console.log(remainingQuantity);
                         const selectedIds = (
                           form.getFieldValue("equipmentInfo") ?? []
                         )
