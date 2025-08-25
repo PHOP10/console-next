@@ -53,7 +53,7 @@ export default function Page() {
 
   const columns: ColumnsType<InfectiousWasteType> = [
     {
-      title: "ประเภทขยะssssssssssssss",
+      title: "ประเภทขยะ",
       dataIndex: "wasteType",
       key: "wasteType",
     },
