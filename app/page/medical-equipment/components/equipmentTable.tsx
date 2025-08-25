@@ -19,51 +19,43 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MedicalEquipmentType } from "../../common/index";
+import { useSession } from "next-auth/react";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
+  dataEQ: MedicalEquipmentType[];
+  fetchData: () => void;
 };
 
-export default function EquipmentTable({ setLoading, loading }: Props) {
+export default function EquipmentTable({
+  setLoading,
+  loading,
+  dataEQ,
+  fetchData,
+}: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maMedicalEquipmentServices(intraAuth);
   const intraAuthServiceRef = useRef(intraAuthService);
+  const { data: session } = useSession();
   intraAuthServiceRef.current = intraAuthService;
-  const [data, setData] = useState<MedicalEquipmentType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [editingItem, setEditingItem] = useState<MedicalEquipmentType | null>(
     null
   );
 
-  // ดึงข้อมูล
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result =
-        await intraAuthServiceRef.current.getMedicalEquipmentQuery();
-      setData(result || []);
-    } catch (error) {
-      console.error("โหลดข้อมูลล้มเหลว:", error);
-      message.error("ไม่สามารถดึงข้อมูลได้");
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading]); // เหลือแค่ setLoading
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  // เพิ่มข้อมูล
   const handleCreate = async (values: any) => {
+    const payload = {
+      ...values,
+      createdBy: session?.user?.fullName,
+      createdById: session?.user?.userId,
+      acquiredDate: values.acquiredDate.toISOString(),
+    };
+    // console.log(payload);
+
     try {
-      await intraAuthService.createMedicalEquipment({
-        ...values,
-        acquiredDate: values.acquiredDate.toISOString(),
-      });
+      await intraAuthService.createMedicalEquipment(payload);
       message.success("เพิ่มข้อมูลสำเร็จ");
       setIsModalOpen(false);
       form.resetFields();
@@ -111,14 +103,14 @@ export default function EquipmentTable({ setLoading, loading }: Props) {
   // คอลัมน์ของตาราง
   const columns: ColumnsType<MedicalEquipmentType> = [
     {
-      title: "รหัสเครื่องมือ",
-      dataIndex: "code",
-      key: "code",
+      title: "ลำดับ",
+      key: "index",
+      render: (_text, _record, index) => index + 1,
     },
     {
       title: "ชื่อเครื่องมือ",
-      dataIndex: "name",
-      key: "name",
+      dataIndex: "equipmentName",
+      key: "equipmentName",
     },
     {
       title: "จำนวนเครื่องมือ",
@@ -130,6 +122,11 @@ export default function EquipmentTable({ setLoading, loading }: Props) {
       dataIndex: "acquiredDate",
       key: "acquiredDate",
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
+    },
+    {
+      title: "ผู้เพิ่มข้อมมมูล",
+      dataIndex: "createdBy",
+      key: "createdBy",
     },
     {
       title: "รายละเอียดเพิ่มเติม",
@@ -179,58 +176,11 @@ export default function EquipmentTable({ setLoading, loading }: Props) {
 
       <Table
         columns={columns}
-        dataSource={data}
+        dataSource={dataEQ}
         rowKey="id"
         loading={loading}
         bordered
       />
-
-      <Modal
-        title="เพิ่มเครื่องมือแพทย์"
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onOk={() => form.submit()}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-      >
-        <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item
-            label="รหัสเครื่องมือ"
-            name="code"
-            rules={[{ required: true, message: "กรุณากรอกรหัสเครื่องมือ" }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="ชื่อเครื่องมือ"
-            name="name"
-            rules={[{ required: true, message: "กรุณากรอกชื่อเครื่องมือ" }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="จำนวนเครื่องมือ"
-            name="quantity"
-            rules={[{ required: true, message: "กรุณากรอกจำนวนเครื่องมือ" }]}
-          >
-            <InputNumber style={{ width: "100%" }} min={1} />
-          </Form.Item>
-
-          <Form.Item
-            label="วันที่ได้รับ"
-            name="acquiredDate"
-            rules={[{ required: true, message: "กรุณาเลือกวันที่ได้รับ" }]}
-          >
-            <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item label="รายละเอียดเพิ่มเติม" name="description">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-        </Form>
-      </Modal>
 
       <Modal
         title={editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}
@@ -244,18 +194,14 @@ export default function EquipmentTable({ setLoading, loading }: Props) {
         okText="บันทึก"
         cancelText="ยกเลิก"
       >
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Form.Item
-            label="รหัสเครื่องมือ"
-            name="code"
-            rules={[{ required: true, message: "กรุณากรอกรหัสเครื่องมือ" }]}
-          >
-            <Input />
-          </Form.Item>
-
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={editingItem ? handleSubmit : handleCreate}
+        >
           <Form.Item
             label="ชื่อเครื่องมือ"
-            name="name"
+            name="equipmentName" // ใช้ name เดียวกัน
             rules={[{ required: true, message: "กรุณากรอกชื่อเครื่องมือ" }]}
           >
             <Input />

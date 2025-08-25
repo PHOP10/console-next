@@ -14,12 +14,15 @@ import {
   message,
   Popconfirm,
   Select,
+  Popover,
+  Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MaMedicalEquipmentType } from "../../common/index";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 
 export default function MaMedicalEquipmentTable() {
   const intraAuth = useAxiosAuth();
@@ -31,6 +34,11 @@ export default function MaMedicalEquipmentTable() {
   );
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [form] = Form.useForm();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [selectedRecord, setSelectedRecord] =
+    useState<MaMedicalEquipmentType | null>(null);
+  const [formCancel] = Form.useForm();
 
   const fetchData = useCallback(async () => {
     try {
@@ -63,18 +71,15 @@ export default function MaMedicalEquipmentTable() {
     if (!editingItem) return;
 
     try {
-      // แปลงวันที่เป็น ISO string เพื่อใช้เปรียบเทียบ
       const sentDate = values.sentDate?.toISOString();
       const receivedDate = values.receivedDate
         ? values.receivedDate.toISOString()
         : null;
-
-      // สร้าง payload โดยเปรียบเทียบเฉพาะ field ที่เปลี่ยนจากของเดิม
       const updatedFields: any = {};
 
-      if (values.quantity !== editingItem.quantity) {
-        updatedFields.quantity = values.quantity;
-      }
+      // if (values.quantity !== editingItem.quantity) {
+      //   updatedFields.quantity = values.quantity;
+      // }
 
       if (sentDate !== new Date(editingItem.sentDate).toISOString()) {
         updatedFields.sentDate = sentDate;
@@ -92,33 +97,25 @@ export default function MaMedicalEquipmentTable() {
       if (values.note !== editingItem.note) {
         updatedFields.note = values.note;
       }
-
-      // เช็ค array เทียบแบบง่าย (ถ้า length ไม่เท่ากัน หรือมีค่าไม่ตรงกัน)
-      const originalEquipmentInfo = editingItem.equipmentInfo || [];
+      // const originalEquipmentInfo = editingItem.equipmentInfo || [];
       const newEquipmentInfo = values.equipmentInfo || [];
 
-      const equipmentChanged =
-        originalEquipmentInfo.length !== newEquipmentInfo.length ||
-        originalEquipmentInfo.some(
-          (v: any, i: any) => v !== newEquipmentInfo[i]
-        );
+      // const equipmentChanged =
+      //   originalEquipmentInfo.length !== newEquipmentInfo.length ||
+      //   originalEquipmentInfo.some(
+      //     (v: any, i: any) => v !== newEquipmentInfo[i]
+      //   );
 
-      if (equipmentChanged) {
-        updatedFields.equipmentInfo = {
-          set: newEquipmentInfo,
-        };
-      }
-
-      // ถ้าไม่มีอะไรเปลี่ยน
+      // if (equipmentChanged) {
+      //   updatedFields.equipmentInfo = {
+      //     set: newEquipmentInfo,
+      //   };
+      // }
       if (Object.keys(updatedFields).length === 0) {
         message.info("ไม่มีการเปลี่ยนแปลงข้อมูล");
         return;
       }
-
-      // เพิ่ม ID สำหรับการ PATCH
       updatedFields.id = editingItem.id;
-
-      // เรียก API
       await intraAuthService.updateMaMedicalEquipment(updatedFields);
 
       message.success("บันทึกการแก้ไขเรียบร้อย");
@@ -131,6 +128,26 @@ export default function MaMedicalEquipmentTable() {
     }
   };
 
+  const handleCancel = async (values: any) => {
+    if (!selectedRecord) return;
+    try {
+      await intraAuthService.updateMaMedicalEquipment({
+        id: selectedRecord.id,
+        status: "cancel",
+        cancelReason: values.cancelReason,
+      });
+
+      message.success("ยกเลิกรายการแล้ว");
+      setIsModalOpen(false);
+      setCancelReason("");
+      setSelectedRecord(null);
+      setLoading(true);
+    } catch (error) {
+      console.error("เกิดข้อผิดพลาด:", error);
+      message.error("ไม่สามารถยกเลิกรายการได้");
+    }
+  };
+
   const columns: ColumnsType<MaMedicalEquipmentType> = [
     {
       title: "ID",
@@ -140,26 +157,40 @@ export default function MaMedicalEquipmentTable() {
     },
     {
       title: "ข้อมูลเครื่องมือ",
-      dataIndex: "equipmentInfo",
-      key: "equipmentInfo",
-      render: (equipmentInfo: string[]) => (
-        <ul style={{ paddingLeft: 20 }}>
-          {equipmentInfo.map((item, index) => (
-            <li key={index}>{item}</li>
+      dataIndex: "items",
+      key: "items",
+      width: 200,
+      render: (items: any[]) => (
+        <ul style={{ paddingLeft: 20, margin: 0 }}>
+          {items?.map((item, index) => (
+            <li key={index}>{item.medicalEquipment?.equipmentName}</li>
           ))}
         </ul>
       ),
     },
     {
       title: "จำนวน",
-      dataIndex: "quantity",
-      key: "quantity",
+      dataIndex: "items",
+      key: "items",
+      width: 160,
+      render: (items: any[]) => (
+        <ul style={{ paddingLeft: 20, margin: 0 }}>
+          {items?.map((item, index) => (
+            <li key={index}>{item.quantity}</li>
+          ))}
+        </ul>
+      ),
     },
     {
       title: "วันที่ส่ง",
       dataIndex: "sentDate",
       key: "sentDate",
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
+    },
+    {
+      title: "ผู้ส่ง",
+      dataIndex: "createdBy",
+      key: "createdBy",
     },
     {
       title: "วันที่รับกลับ",
@@ -172,7 +203,33 @@ export default function MaMedicalEquipmentTable() {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
-      render: (status: string) => <Tag color="blue">{status}</Tag>,
+      render: (status) => {
+        let color = "default";
+        let text = "";
+
+        switch (status) {
+          case "pending":
+            color = "blue";
+            text = "รอดำเนินการ";
+            break;
+          case "approve":
+            color = "green";
+            text = "อนุมัติ";
+            break;
+          case "cancel":
+            color = "red";
+            text = "ยกเลิก";
+            break;
+          case "return":
+            color = "grey";
+            text = "รับคืนแล้ว";
+            break;
+          default:
+            text = status;
+        }
+
+        return <Tag color={color}>{text}</Tag>;
+      },
     },
     {
       title: "หมายเหตุเพิ่มเติม",
@@ -206,57 +263,64 @@ export default function MaMedicalEquipmentTable() {
             </Button>
           </Popconfirm>
 
-          <Button size="small" onClick={() => handleEdit(record)}>
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => handleEdit(record)}
+            disabled={record.status !== "pending"}
+          >
             แก้ไข
           </Button>
-
-          <Popconfirm
-            title="ยืนยันการอนุมัติ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการอนุมัติรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.updateMaMedicalEquipment({
-                  ...record,
-                  status: "Approve", // อัปเดตเฉพาะสถานะ
-                });
-                message.success("อนุมัติรายการแล้ว");
-                setLoading(true);
-              } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการอนุมัติ:", error);
-                message.error("ไม่สามารถอนุมัติได้");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
+          <Popover
+            trigger="click"
+            title={
+              <Space>
+                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
+                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
+              </Space>
+            }
+            content={
+              <Space style={{ display: "flex", marginTop: 13 }}>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={async () => {
+                    try {
+                      await intraAuthService.updateMaMedicalEquipment({
+                        id: record.id,
+                        status: "approve",
+                      });
+                      message.success("อนุมัติรายการแล้ว");
+                      setLoading(true);
+                    } catch (error) {
+                      console.error("เกิดข้อผิดพลาดในการอนุมัติ:", error);
+                      message.error("ไม่สามารถอนุมัติได้");
+                    }
+                  }}
+                >
+                  อนุมัติ
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  onClick={() => {
+                    setSelectedRecord(record);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+              </Space>
+            }
           >
-            <Button type="primary" size="small">
+            <Button
+              type="primary"
+              size="small"
+              disabled={record.status !== "pending"}
+            >
               อนุมัติ
             </Button>
-          </Popconfirm>
-
-          <Popconfirm
-            title="ยืนยันการยกเลิก"
-            description="คุณแน่ใจหรือไม่ว่าต้องการยกเลิกรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.updateMaMedicalEquipment({
-                  ...record,
-                  status: "Cancel", // อัปเดตเฉพาะสถานะ
-                });
-                message.success("ยกเลิกรายการแล้ว");
-                setLoading(true);
-              } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการยกเลิก:", error);
-                message.error("ไม่สามารถยกเลิกรายการได้");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Button danger size="small">
-              ยกเลิก
-            </Button>
-          </Popconfirm>
+          </Popover>
         </Space>
       ),
     },
@@ -291,9 +355,7 @@ export default function MaMedicalEquipmentTable() {
               mode="tags"
               style={{ width: "100%" }}
               placeholder="พิมพ์แล้ว Enter เพื่อเพิ่ม"
-            >
-              {/* ให้ผู้ใช้พิมพ์ได้เอง */}
-            </Select>
+            ></Select>
           </Form.Item>
 
           <Form.Item
@@ -343,6 +405,32 @@ export default function MaMedicalEquipmentTable() {
 
           <Form.Item label="วันที่อัปเดตล่าสุด" name="updatedAt">
             <Input disabled />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="กรอกเหตุผลการยกเลิกรายการนี้"
+        open={isModalOpen}
+        onOk={() => form.submit()}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setSelectedRecord(null);
+          formCancel.resetFields();
+        }}
+        okText="ยืนยัน"
+        cancelText="ยกเลิก"
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={(values) => handleCancel(values)}
+        >
+          <Form.Item
+            name="cancelReason"
+            rules={[{ required: true, message: "กรุณาระบุเหตุผลการยกเลิก" }]}
+          >
+            <Input.TextArea rows={3} placeholder="ระบุเหตุผลการยกเลิก" />
           </Form.Item>
         </Form>
       </Modal>

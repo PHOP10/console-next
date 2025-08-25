@@ -41,6 +41,17 @@ export const maMedicalEquipmentServices = (axiosInstance: AxiosInstance) => {
         });
     },
 
+    updateMedicalEquipmentEdit: async (body: any) => {
+      const { id, ...data } = body;
+      return await axiosInstance
+        .patch(`${baseUrlmaMedicalEquipment}/Edit/${id}`, data)
+        .then((res) => res.data)
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
+
     deleteMaMedicalEquipment: async (id: any) => {
       return await axiosInstance
         .delete(`${baseUrlmaMedicalEquipment}/${id}`)

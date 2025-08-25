@@ -1,10 +1,16 @@
 export interface UserType {
   id: number;
+  userId: string;
   username: string;
+  nickName: string;
   password: string;
-  name: string;
-  age: number;
+  firstName: string;
+  lastName: string;
   email: string;
+  refreshToken?: string | null;
+  role?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OfficialTravelRequestType {
@@ -16,9 +22,10 @@ export interface OfficialTravelRequestType {
   startDate: string;
   endDate: string;
   status: string;
+  cancelReason?: string;
   carId?: number;
   MasterCar?: MasterCarType | null;
-  createdById?: number;
+  createdById?: string;
   approvedById?: string;
   approvedByName?: string;
   approvedDate?: string;
@@ -37,6 +44,7 @@ export interface MaCarType {
   passengers: number;
   budget?: number;
   status: string;
+  cancelReason?: string;
   carId: number; // FK
   masterCar?: MasterCarType;
   createdAt: string;
@@ -109,6 +117,7 @@ export interface MaDrugType {
   dispenserName: string;
   requestDate: string; // ISO Date String
   note?: string;
+  cancelReason?: string;
   status: string;
   createdAt: string;
   updatedAt: string;
@@ -152,6 +161,7 @@ export interface MaDrugItemType {
   maDrugId: number;
   drugId: number;
   quantity: number;
+  cancelReason?: string;
 
   // ความสัมพันธ์
   maDrug?: MaDrugType;
@@ -189,26 +199,39 @@ export interface SupportingResourceType {
 
 export interface MedicalEquipmentType {
   id: number;
-  code: string;
-  name: string;
+  equipmentName: string;
   quantity: number;
-  acquiredDate: string;
+  acquiredDate?: string;
+  createdBy?: string;
+  createdById?: string;
   description?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  items?: MaMedicalEquipmentItemType[];
 }
 
 export interface MaMedicalEquipmentType {
-  equipmentInfo: any;
   id: number;
-  quantity: number;
   sentDate: string;
   receivedDate?: string;
   status: string;
   note?: string;
-  equipmentId: number;
-  createdAt: string;
-  updatedAt: string;
+  cancelReason?: string;
+  nameReason?: string;
+  createdBy?: string;
+  createdById?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  items?: MaMedicalEquipmentItemType[];
+  equipmentInfo: string;
+}
+
+export interface MaMedicalEquipmentItemType {
+  id: number;
+  quantity: number;
+  maMedicalEquipmentId: number;
+  medicalEquipmentId: number;
+  medicalEquipment?: MedicalEquipmentType;
 }
 
 export interface InfectiousWasteType {

@@ -13,6 +13,7 @@ declare module "next-auth" {
       email: string;
       fullName: string;
       module: string[];
+      role: string;
     };
   }
 }

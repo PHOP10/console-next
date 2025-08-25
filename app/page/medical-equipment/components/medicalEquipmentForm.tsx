@@ -15,57 +15,46 @@ import {
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import dayjs from "dayjs";
+import { MaMedicalEquipmentType, MedicalEquipmentType } from "../../common";
+import { useSession } from "next-auth/react";
 
 const { TextArea } = Input;
 const { Option } = Select;
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  dataEQ: MedicalEquipmentType[];
+  data: MaMedicalEquipmentType[];
 };
 
-export default function CreateMedicalEquipmentForm({ setLoading }: Props) {
+export default function CreateMedicalEquipmentForm({
+  setLoading,
+  dataEQ,
+  data,
+}: Props) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
+  const { data: session } = useSession();
 
   const maService = maMedicalEquipmentServices(intraAuth);
 
-  const [medicalEquipmentList, setMedicalEquipmentList] = useState<
-    { id: number; name: string; quantity: number }[]
-  >([]);
-
-  useEffect(() => {
-    const fetchMedicalEquipment = async () => {
-      try {
-        const res = await maService.getMedicalEquipmentQuery();
-        setMedicalEquipmentList(res);
-      } catch (error) {
-        console.error(error);
-        message.error("โหลดรายการเครื่องมือไม่สำเร็จ");
-      }
-    };
-    fetchMedicalEquipment();
-  }, []);
-
   const onFinish = async (values: any) => {
     try {
-      // สร้าง payload ตามรูปแบบ backend ต้องการ
       const payload = {
         sentDate: values.sentDate.toISOString(),
         receivedDate: values.receivedDate
           ? values.receivedDate.toISOString()
           : null,
         note: values.note,
-        // แปลง equipmentInfo ให้เป็น items [{ medicalEquipmentId, quantity }]
+        createdBy: session?.user?.fullName,
+        createdById: session?.user?.userId,
         items: values.equipmentInfo.map((item: any) => ({
           medicalEquipmentId: item.medicalEquipmentId,
           quantity: item.quantity,
         })),
       };
 
-      // เรียก service ตามรูปแบบที่คุณให้มา
       const res = await maService.createMaMedicalEquipment(payload);
-
-      // ถ้า backend ส่งกลับ data สำเร็จ
       if (res) {
         setLoading(true);
         message.success("บันทึกข้อมูลสำเร็จ");
@@ -78,6 +67,10 @@ export default function CreateMedicalEquipmentForm({ setLoading }: Props) {
       message.error("ไม่สามารถบันทึกข้อมูลได้");
     }
   };
+
+  useEffect(() => {
+    form.resetFields();
+  }, [form]);
 
   return (
     <Card title="ส่งเครื่องมือแพทย์" style={{ marginTop: 20 }}>
@@ -109,21 +102,50 @@ export default function CreateMedicalEquipmentForm({ setLoading }: Props) {
                       style={{ width: 200 }}
                       showSearch
                       optionFilterProp="children"
-                      onChange={() => {
-                        // รีเซ็ตจำนวนเมื่อเปลี่ยนเครื่องมือ
-                        form.setFields([
-                          {
-                            name: ["equipmentInfo", name, "quantity"],
-                            value: undefined,
-                          },
-                        ]);
-                      }}
                     >
-                      {medicalEquipmentList.map((eq) => (
-                        <Option key={eq.id} value={eq.id}>
-                          {eq.name} (คงเหลือ {eq.quantity})
-                        </Option>
-                      ))}
+                      {dataEQ.map((eq) => {
+                        const reservedQuantity = data
+                          .flatMap((ma) => ma.items || [])
+                          .filter(
+                            (item: any) =>
+                              item.medicalEquipmentId.item
+                                ?.medicalEquipmentId === eq.id &&
+                              item.maMedicalEquipment?.status === "pending"
+                          )
+                          .reduce(
+                            (sum: number, item: any) => sum + item.quantity,
+                            0
+                          );
+
+                        const remainingQuantity =
+                          eq.quantity - reservedQuantity;
+                        console.log(remainingQuantity);
+                        const selectedIds = (
+                          form.getFieldValue("equipmentInfo") ?? []
+                        )
+                          .filter((i: any) => i)
+                          .map((i: any) => i.medicalEquipmentId)
+                          .filter((id: any) => id !== undefined);
+
+                        const isSelected =
+                          selectedIds.includes(eq.id) &&
+                          eq.id !==
+                            form.getFieldValue([
+                              "equipmentInfo",
+                              name,
+                              "medicalEquipmentId",
+                            ]);
+
+                        return (
+                          <Option
+                            key={eq.id}
+                            value={eq.id}
+                            disabled={isSelected || remainingQuantity <= 0} // ปิดถ้าเลือกซ้ำ หรือหมด
+                          >
+                            {eq.equipmentName} (คงเหลือ {remainingQuantity})
+                          </Option>
+                        );
+                      })}
                     </Select>
                   </Form.Item>
 
@@ -140,7 +162,7 @@ export default function CreateMedicalEquipmentForm({ setLoading }: Props) {
                             "medicalEquipmentId",
                           ]);
                           if (!equipmentId) return Promise.resolve();
-                          const selected = medicalEquipmentList.find(
+                          const selected = dataEQ.find(
                             (eq) => eq.id === equipmentId
                           );
                           if (value > (selected?.quantity || 0)) {
