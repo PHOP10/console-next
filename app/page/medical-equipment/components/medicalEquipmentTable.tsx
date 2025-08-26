@@ -24,6 +24,7 @@ import {
   MedicalEquipmentType,
 } from "../../common/index";
 import { useSession } from "next-auth/react";
+import MedicalEquipmentTableDetails from "./medicalEquipmentTableDetails";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -52,6 +53,8 @@ export default function MedicalEquipmentTable({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formReturn] = Form.useForm();
   const [recordReturn, setRecordReturn] = useState<any>(null);
+  const [openDetails, setOpenDetails] = useState(false);
+  const [recordDetails, setRecordDetails] = useState<any>(null);
 
   const handleEdit = (item: MaMedicalEquipmentType) => {
     setEditingItem(item);
@@ -100,23 +103,21 @@ export default function MedicalEquipmentTable({
   const handleOpenModalReturn = (record: any) => {
     setRecordReturn(record);
 
-    if (recordReturn) {
-      formReturn.setFieldsValue({
-        id: recordReturn.id,
-        sentDate: record.sentDate ? dayjs(record.sentDate) : null,
-        status:
-          recordReturn.status === "pending"
-            ? "รอดำเนินการ"
-            : recordReturn.status === "approve"
-            ? "อนุมัติ"
-            : recordReturn.status === "cancel"
-            ? "ยกเลิก"
-            : recordReturn.status === "return"
-            ? "รับคืนแล้ว"
-            : "",
-        note: recordReturn.note,
-      });
-    }
+    formReturn.setFieldsValue({
+      id: record.id,
+      sentDate: record.sentDate ? dayjs(record.sentDate) : null,
+      status:
+        record.status === "pending"
+          ? "รอดำเนินการ"
+          : record.status === "approve"
+          ? "อนุมัติ"
+          : record.status === "cancel"
+          ? "ยกเลิก"
+          : record.status === "return"
+          ? "รับคืนแล้ว"
+          : "",
+      note: record.note,
+    });
 
     setIsModalOpen(true);
   };
@@ -140,6 +141,11 @@ export default function MedicalEquipmentTable({
       console.error("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์:", error);
       message.error("ไม่สามารถรับคืนอุปกรณ์ได้");
     }
+  };
+
+  const handleOpenModalDetails = (record: any) => {
+    setRecordDetails(record);
+    setOpenDetails(true);
   };
 
   const columns: ColumnsType<MaMedicalEquipmentType> = [
@@ -185,18 +191,14 @@ export default function MedicalEquipmentTable({
       dataIndex: "createdBy",
       key: "createdBy",
     },
-    {
-      title: "วันที่รับคืน",
-      dataIndex: "receivedDate",
-      key: "receivedDate",
-      render: (date: string | null) =>
-        date ? dayjs(date).format("DD/MM/YYYY") : "-",
-    },
-    {
-      title: "ผู้รับคืน",
-      dataIndex: "nameReason",
-      key: "nameReason",
-    },
+    // {
+    //   title: "วันที่รับคืน",
+    //   dataIndex: "receivedDate",
+    //   key: "receivedDate",
+    //   render: (date: string | null) =>
+    //     date ? dayjs(date).format("DD/MM/YYYY") : "-",
+    // },
+
     {
       title: "สถานะ",
       dataIndex: "status",
@@ -244,6 +246,7 @@ export default function MedicalEquipmentTable({
             type="primary"
             size="small"
             onClick={() => handleEdit(record)}
+            disabled={record.status !== "pending"}
           >
             แก้ไข
           </Button>
@@ -254,6 +257,13 @@ export default function MedicalEquipmentTable({
             disabled={record.status !== "approve"}
           >
             รับคืน
+          </Button>
+          <Button
+            type="default"
+            size="small"
+            onClick={() => handleOpenModalDetails(record)}
+          >
+            รายละเอียด
           </Button>
         </Space>
       ),
@@ -271,11 +281,6 @@ export default function MedicalEquipmentTable({
       dataIndex: "quantity",
       key: "quantity",
     },
-    // {
-    //   title: "วันที่ส่ง",
-    //   dataIndex: "sentDate",
-    //   key: "sentDate",
-    // },
   ];
 
   return (
@@ -323,31 +328,48 @@ export default function MedicalEquipmentTable({
                         placeholder="เลือกเครื่องมือ"
                         style={{ width: 200 }}
                         showSearch
+                        optionFilterProp="children"
                       >
                         {dataEQ.map((eq) => {
-                          const selectedIds = (
-                            form.getFieldValue("equipmentInfo") || []
-                          )
-                            .filter((i: any) => i) // กรองค่า undefined
-                            .map((i: any) => i.medicalEquipmentId);
+                          const reservedQuantity = dataEQ
+                            .flatMap((ma) => ma.items || [])
+                            .filter(
+                              (item: any) =>
+                                item.medicalEquipmentId === eq.id &&
+                                item.maMedicalEquipment?.status === "pending"
+                            )
+                            .reduce(
+                              (sum: number, item: any) => sum + item.quantity,
+                              0
+                            );
 
-                          const currentId = form.getFieldValue([
-                            "equipmentInfo",
-                            name,
-                            "medicalEquipmentId",
-                          ]);
+                          const remainingQuantity = eq.quantity;
+
+                          // 3️⃣ ป้องกันเลือกซ้ำในฟอร์ม
+                          const selectedIds = (
+                            form.getFieldValue("equipmentInfo") ?? []
+                          )
+                            .filter((i: any) => i)
+                            .map((i: any) => i.medicalEquipmentId)
+                            .filter((id: any) => id !== undefined);
 
                           const isSelected =
-                            selectedIds.includes(eq.id) && eq.id !== currentId;
+                            selectedIds.includes(eq.id) &&
+                            eq.id !==
+                              form.getFieldValue([
+                                "equipmentInfo",
+                                name,
+                                "medicalEquipmentId",
+                              ]);
 
                           return (
-                            <Select.Option
+                            <Option
                               key={eq.id}
                               value={eq.id}
-                              disabled={isSelected}
+                              disabled={isSelected || remainingQuantity <= 0} // ปิดถ้าเลือกซ้ำ หรือหมด
                             >
-                              {eq.equipmentName} (คงเหลือ {eq.quantity})
-                            </Select.Option>
+                              {eq.equipmentName} (คงเหลือ {remainingQuantity})
+                            </Option>
                           );
                         })}
                       </Select>
@@ -451,6 +473,11 @@ export default function MedicalEquipmentTable({
           </Form.Item>
         </Form>
       </Modal>
+      <MedicalEquipmentTableDetails
+        record={recordDetails}
+        open={openDetails}
+        onClose={() => setOpenDetails(false)}
+      />
     </>
   );
 }

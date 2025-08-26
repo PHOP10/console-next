@@ -158,7 +158,12 @@ export default function EquipmentTable({
               ลบ
             </Button>
           </Popconfirm>
-          <Button type="link" onClick={() => handleEdit(record)}>
+
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => handleEdit(record)}
+          >
             แก้ไข
           </Button>
         </Space>

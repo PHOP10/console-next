@@ -222,8 +222,10 @@ export interface MaMedicalEquipmentType {
   createdById?: string;
   createdAt?: string;
   updatedAt?: string;
+  approveById?: string;
+  approveBy?: string;
+  approveAt?: string;
   items?: MaMedicalEquipmentItemType[];
-  equipmentInfo: string;
 }
 
 export interface MaMedicalEquipmentItemType {

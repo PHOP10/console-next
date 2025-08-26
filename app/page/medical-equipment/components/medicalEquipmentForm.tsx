@@ -104,24 +104,32 @@ export default function CreateMedicalEquipmentForm({
                       optionFilterProp="children"
                     >
                       {dataEQ.map((eq) => {
-                        const reservedQuantity = data
+                        // const dataEQe =
+                        //   eq.items?.map((item: any) => item.quantity) || [];
+                        // console.log(dataEQe);
+
+                        const reservedQuantity = dataEQ
                           .flatMap((ma) => ma.items || [])
                           .filter(
                             (item: any) =>
-                              item.medicalEquipmentId.item
-                                ?.medicalEquipmentId === eq.id &&
-                              item.maMedicalEquipment?.status === "pending"
+                              item.medicalEquipmentId === eq.id &&
+                              item.medicalEquipmentId === eq.id &&
+                              ["pending", "approve"].includes(
+                                item.maMedicalEquipment?.status
+                              )
                           )
                           .reduce(
-                            (sum: number, item: any) =>
-                              sum + item.items?.quantity,
+                            (sum: number, item: any) => sum + item.quantity,
                             0
                           );
-                        console.log(data);
-                        console.log(reservedQuantity);
+
                         const remainingQuantity =
                           eq.quantity - reservedQuantity;
+                        // console.log(dataEQ);
+                        // console.log(reservedQuantity);
                         // console.log(remainingQuantity);
+
+                        // 3️⃣ ป้องกันเลือกซ้ำในฟอร์ม
                         const selectedIds = (
                           form.getFieldValue("equipmentInfo") ?? []
                         )
@@ -138,6 +146,7 @@ export default function CreateMedicalEquipmentForm({
                               "medicalEquipmentId",
                             ]);
 
+                        // 4️⃣ แสดงใน Select Option
                         return (
                           <Option
                             key={eq.id}
@@ -202,7 +211,14 @@ export default function CreateMedicalEquipmentForm({
           name="sentDate"
           rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
         >
-          <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+          <DatePicker
+            format="DD/MM/YYYY"
+            style={{ width: "100%" }}
+            disabledDate={(current) => {
+              // ห้ามเลือกวันย้อนหลัง
+              return current && current < dayjs().startOf("day");
+            }}
+          />
         </Form.Item>
 
         <Form.Item label="หมายเหตุ" name="note">

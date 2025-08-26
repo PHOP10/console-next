@@ -23,6 +23,8 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MaMedicalEquipmentType } from "../../common/index";
 import { ExclamationCircleOutlined } from "@ant-design/icons";
+import { useSession } from "next-auth/react";
+import MedicalEquipmentTableDetails from "./medicalEquipmentTableDetails";
 
 export default function MaMedicalEquipmentTable() {
   const intraAuth = useAxiosAuth();
@@ -39,6 +41,9 @@ export default function MaMedicalEquipmentTable() {
   const [selectedRecord, setSelectedRecord] =
     useState<MaMedicalEquipmentType | null>(null);
   const [formCancel] = Form.useForm();
+  const { data: session } = useSession();
+  const [openDetails, setOpenDetails] = useState(false);
+  const [recordDetails, setRecordDetails] = useState<any>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -135,6 +140,7 @@ export default function MaMedicalEquipmentTable() {
         id: selectedRecord.id,
         status: "cancel",
         cancelReason: values.cancelReason,
+        nameReason: session?.user?.fullName,
       });
 
       message.success("ยกเลิกรายการแล้ว");
@@ -146,6 +152,11 @@ export default function MaMedicalEquipmentTable() {
       console.error("เกิดข้อผิดพลาด:", error);
       message.error("ไม่สามารถยกเลิกรายการได้");
     }
+  };
+
+  const handleOpenModalDetails = (record: any) => {
+    setRecordDetails(record);
+    setOpenDetails(true);
   };
 
   const columns: ColumnsType<MaMedicalEquipmentType> = [
@@ -191,13 +202,6 @@ export default function MaMedicalEquipmentTable() {
       title: "ผู้ส่ง",
       dataIndex: "createdBy",
       key: "createdBy",
-    },
-    {
-      title: "วันที่รับกลับ",
-      dataIndex: "receivedDate",
-      key: "receivedDate",
-      render: (date: string | null) =>
-        date ? dayjs(date).format("DD/MM/YYYY") : "-",
     },
     {
       title: "สถานะ",
@@ -289,6 +293,8 @@ export default function MaMedicalEquipmentTable() {
                       await intraAuthService.updateMaMedicalEquipment({
                         id: record.id,
                         status: "approve",
+                        approveById: session?.user?.userId,
+                        approveBy: session?.user?.fullName,
                       });
                       message.success("อนุมัติรายการแล้ว");
                       setLoading(true);
@@ -321,6 +327,13 @@ export default function MaMedicalEquipmentTable() {
               อนุมัติ
             </Button>
           </Popover>
+          <Button
+            type="default"
+            size="small"
+            onClick={() => handleOpenModalDetails(record)}
+          >
+            รายละเอียด
+          </Button>
         </Space>
       ),
     },
@@ -434,6 +447,11 @@ export default function MaMedicalEquipmentTable() {
           </Form.Item>
         </Form>
       </Modal>
+      <MedicalEquipmentTableDetails
+        record={recordDetails}
+        open={openDetails}
+        onClose={() => setOpenDetails(false)}
+      />
     </>
   );
 }
