@@ -90,33 +90,39 @@ export default function SupportingResourceTable({
 
   const columns: ColumnsType<SupportingResourceType> = [
     {
-      title: "รหัสวัสดุ",
-      dataIndex: "code",
-      key: "code",
+      title: "ลำดับ",
+      dataIndex: "id",
+      key: "id",
     },
     {
-      title: "ชื่อวัสดุ",
-      dataIndex: "name",
-      key: "name",
-    },
-    {
-      title: "สถานะ",
-      dataIndex: "status",
-      key: "status",
-    },
-    {
-      title: "วันที่ได้รับ",
+      title: "วัน เดือน ปี",
       dataIndex: "acquiredDate",
       key: "acquiredDate",
       render: (value) => dayjs(value).format("DD/MM/YYYY"),
     },
+    {
+      title: "เลขที่หรือรหัส",
+      dataIndex: "code",
+      key: "code",
+    },
+    {
+      title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
+      dataIndex: "name",
+      key: "name",
+      // width: 250,
+    },
+    // {
+    //   title: "สถานะ",
+    //   dataIndex: "status",
+    //   key: "status",
+    // },
     {
       title: "วิธีที่ได้มา",
       dataIndex: "acquisitionType",
       key: "acquisitionType",
     },
     {
-      title: "รายละเอียดเพิ่มเติม",
+      title: "หมายเหตุ",
       dataIndex: "description",
       key: "description",
     },

@@ -11,6 +11,8 @@ import {
   Space,
   message,
   Card,
+  Row,
+  Col,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
@@ -125,9 +127,6 @@ export default function CreateMedicalEquipmentForm({
 
                         const remainingQuantity =
                           eq.quantity - reservedQuantity;
-                        // console.log(dataEQ);
-                        // console.log(reservedQuantity);
-                        // console.log(remainingQuantity);
 
                         // 3️⃣ ป้องกันเลือกซ้ำในฟอร์ม
                         const selectedIds = (
@@ -197,8 +196,40 @@ export default function CreateMedicalEquipmentForm({
                 </Space>
               ))}
 
-              <Form.Item>
+              {/* <Form.Item>
                 <Button type="dashed" onClick={() => add()} block>
+                  + เพิ่มรายการเครื่องมือ
+                </Button>
+              </Form.Item> */}
+              <Form.Item>
+                <Button
+                  type="dashed"
+                  block
+                  onClick={() => {
+                    const values = form.getFieldValue("equipmentInfo") || [];
+                    const lastItem = values[values.length - 1];
+
+                    if (values.length === 0) {
+                      // ✅ ยังไม่มีเลย → เพิ่มอันแรกได้เลย
+                      add();
+                      return;
+                    }
+
+                    // ✅ ถ้ามีแล้ว → ต้องเช็กว่าอันล่าสุดกรอกครบ
+                    if (
+                      !lastItem ||
+                      !lastItem.medicalEquipmentId ||
+                      !lastItem.quantity
+                    ) {
+                      message.warning(
+                        "กรุณากรอกข้อมูลเครื่องมือและจำนวนให้ครบก่อน"
+                      );
+                      return;
+                    }
+
+                    add();
+                  }}
+                >
                   + เพิ่มรายการเครื่องมือ
                 </Button>
               </Form.Item>
@@ -206,26 +237,29 @@ export default function CreateMedicalEquipmentForm({
           )}
         </Form.List>
 
-        <Form.Item
-          label="วันที่ส่ง"
-          name="sentDate"
-          rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
-        >
-          <DatePicker
-            format="DD/MM/YYYY"
-            style={{ width: "100%" }}
-            disabledDate={(current) => {
-              // ห้ามเลือกวันย้อนหลัง
-              return current && current < dayjs().startOf("day");
-            }}
-          />
-        </Form.Item>
-
-        <Form.Item label="หมายเหตุ" name="note">
-          <TextArea rows={3} />
-        </Form.Item>
-
-        <Form.Item>
+        <Row gutter={18}>
+          <Col span={12}>
+            <Form.Item
+              label="วันที่ส่ง"
+              name="sentDate"
+              rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
+            >
+              <DatePicker
+                format="DD/MM/YYYY"
+                style={{ width: "100%" }}
+                disabledDate={(current) =>
+                  current && current < dayjs().startOf("day")
+                }
+              />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item label="หมายเหตุ" name="note">
+              <TextArea rows={3} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" />
+            </Form.Item>
+          </Col>
+        </Row>
+        <Form.Item style={{ textAlign: "center" }}>
           <Button type="primary" htmlType="submit">
             บันทึกข้อมูล
           </Button>
