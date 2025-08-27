@@ -22,45 +22,49 @@ import { SupportingResourceType } from "../../common";
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
+  data: SupportingResourceType[];
+  fetchData: () => void;
 };
 
 export default function SupportingResourceTable({
   setLoading,
   loading,
+  fetchData,
+  data,
 }: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
 
-  const [data, setData] = useState<SupportingResourceType[]>([]);
+  // const [data, setData] = useState<SupportingResourceType[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<SupportingResourceType | null>(
     null
   );
   const [form] = Form.useForm();
 
-  const fetchData = useCallback(async () => {
-    try {
-      const result = await intraAuthService.getSupportingResourceQuery();
-      if (Array.isArray(result)) {
-        setData(result);
-      } else if (Array.isArray(result?.data)) {
-        setData(result.data);
-      } else {
-        setData([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch supporting resources:", error);
-      message.error("ไม่สามารถดึงข้อมูลวัสดุสนับสนุนได้");
-    } finally {
-      setLoading(false);
-    }
-  }, [intraAuthService, setLoading]);
+  // const fetchData = useCallback(async () => {
+  //   try {
+  //     const result = await intraAuthService.getSupportingResourceQuery();
+  //     if (Array.isArray(result)) {
+  //       setData(result);
+  //     } else if (Array.isArray(result?.data)) {
+  //       setData(result.data);
+  //     } else {
+  //       setData([]);
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to fetch supporting resources:", error);
+  //     message.error("ไม่สามารถดึงข้อมูลวัสดุสนับสนุนได้");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }, [intraAuthService, setLoading]);
 
-  useEffect(() => {
-    if (loading) {
-      fetchData();
-    }
-  }, [loading, fetchData]);
+  // useEffect(() => {
+  //   if (loading) {
+  //     fetchData();
+  //   }
+  // }, [loading, fetchData]);
 
   const handleEdit = (record: SupportingResourceType) => {
     setEditRecord(record);
@@ -82,6 +86,7 @@ export default function SupportingResourceTable({
       message.success("แก้ไขข้อมูลสำเร็จ");
       setEditModalOpen(false);
       setLoading(true);
+      fetchData();
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการแก้ไข:", error);
       message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
@@ -117,7 +122,7 @@ export default function SupportingResourceTable({
     //   key: "status",
     // },
     {
-      title: "วิธีที่ได้มา",
+      title: "วิธีที่การได้มา",
       dataIndex: "acquisitionType",
       key: "acquisitionType",
     },
@@ -131,7 +136,11 @@ export default function SupportingResourceTable({
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button size="small" onClick={() => handleEdit(record)}>
+          <Button
+            type="primary"
+            size="small"
+            onClick={() => handleEdit(record)}
+          >
             แก้ไข
           </Button>
           <Popconfirm

@@ -6,14 +6,17 @@ import {
   DatePicker,
   Form,
   Input,
-  Select,
   message,
   Space,
   Card,
+  Row,
+  Col,
 } from "antd";
-import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -24,6 +27,8 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
+  const { data: session } = useSession();
+  const pathname = usePathname();
 
   const onFinish = async (values: any) => {
     try {
@@ -32,6 +37,8 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
         acquiredDate: values.acquiredDate
           ? values.acquiredDate.toISOString()
           : null,
+        createdBy: session?.user.fullName,
+        createdById: session?.user.userId,
       };
       await intraAuthService.createSupportingResource(payload);
       setLoading(true);
@@ -44,9 +51,35 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
     }
   };
 
+  useEffect(() => {
+    return () => {
+      form.resetFields();
+    };
+  }, []);
+
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.toUpperCase();
+
+    // อนุญาตเฉพาะตัวเลข, / และ -
+    value = value.replace(/[^0-9/-]/g, "");
+
+    // ถ้ามี "/" → แยกส่วน main และ suffix
+    const parts = value.split("/");
+    let main = parts[0].replace(/-/g, ""); // เอาเฉพาะเลขก่อน
+
+    // ใส่ "-" ทุก ๆ 4 ตัวอักษร (เช่น 4140-0010-0012)
+    main = main.match(/.{1,4}/g)?.join("-") || main;
+
+    // ถ้ามี suffix ต่อท้ายด้วย "/"
+    value = parts[1] ? `${main}/${parts[1]}` : main;
+
+    form.setFieldsValue({ code: value });
+  };
+
   return (
     <Card title="ข้อมูลวัสดุสนับสนุน">
       <Form
+        preserve={false}
         form={form}
         layout="vertical"
         onFinish={onFinish}
@@ -54,69 +87,52 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
           status: "พร้อมใช้งาน",
         }}
       >
-        <Form.Item
-          label="รหัสวัสดุ"
-          name="code"
-          rules={[{ required: true, message: "กรุณากรอกรหัสวัสดุ" }]}
-        >
-          <Input placeholder="เช่น SR-001" />
-        </Form.Item>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              name="code"
+              label="รหัส"
+              rules={[{ required: true, message: "กรุณากรอกรหัส" }]}
+            >
+              <Input placeholder="เช่น xxxx-xxx-xxxx" />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              label="วันที่ได้รับ"
+              name="acquiredDate"
+              rules={[{ required: true, message: "กรุณาเลือกวันที่ได้รับ" }]}
+            >
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+          </Col>
+        </Row>
 
         <Form.Item
-          label="ชื่อวัสดุ"
+          label="ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
           name="name"
           rules={[{ required: true, message: "กรุณากรอกชื่อวัสดุ" }]}
         >
-          <Input placeholder="เช่น หน้ากากอนามัย" />
-        </Form.Item>
-
-        <Form.Item
-          label="สถานะ"
-          name="status"
-          rules={[{ required: true, message: "กรุณาเลือกสถานะ" }]}
-        >
-          <Select>
-            <Select.Option value="พร้อมใช้งาน">พร้อมใช้งาน</Select.Option>
-            <Select.Option value="ชำรุด">ชำรุด</Select.Option>
-            <Select.Option value="ใช้แล้วหมด">ใช้แล้วหมด</Select.Option>
-          </Select>
-        </Form.Item>
-
-        <Form.Item
-          label="วันที่ได้รับ"
-          name="acquiredDate"
-          rules={[{ required: true, message: "กรุณาเลือกวันที่ได้รับ" }]}
-        >
-          <DatePicker format="DD/MM/YYYY" />
-        </Form.Item>
-
-        <Form.Item
-          label="วิธีที่ได้มา"
-          name="acquisitionType"
-          rules={[{ required: true, message: "กรุณาเลือกวิธีที่ได้มา" }]}
-        >
-          <Select>
-            <Select.Option value="บริจาค">บริจาค</Select.Option>
-            <Select.Option value="โครงการสนับสนุน">
-              โครงการสนับสนุน
-            </Select.Option>
-            <Select.Option value="จัดสรรจากส่วนกลาง">
-              จัดสรรจากส่วนกลาง
-            </Select.Option>
-          </Select>
-        </Form.Item>
-
-        <Form.Item label="รายละเอียดเพิ่มเติม" name="description">
           <Input.TextArea rows={2} />
         </Form.Item>
 
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit">
-              บันทึก
-            </Button>
-            <Button onClick={() => form.resetFields()}>ล้างฟอร์ม</Button>
-          </Space>
+        <Form.Item
+          label="วิธีการได้มา"
+          name="acquisitionType"
+          rules={[{ required: true, message: "กรุณากรอกวิธีการได้มา" }]}
+        >
+          <Input.TextArea rows={2} />
+        </Form.Item>
+
+        <Form.Item label="หมายเหตุ" name="description">
+          <Input.TextArea rows={2} />
+        </Form.Item>
+
+        <Form.Item style={{ textAlign: "center" }}>
+          <Button type="primary" htmlType="submit" loading={loading}>
+            บันทึก
+          </Button>
         </Form.Item>
       </Form>
     </Card>
