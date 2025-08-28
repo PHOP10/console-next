@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+/* .login-logo {
+  background-image: url("/images/logo.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: "cover";
+}
+
+.logo-page {
+  background-image: url("https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2938&q=80");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: "cover";
+} */
