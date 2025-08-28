@@ -194,6 +194,7 @@ export interface SupportingResourceType {
   acquisitionType: string;
   description?: string;
   createdAt: string;
+  createdBy: string;
   updatedAt: string;
 }
 

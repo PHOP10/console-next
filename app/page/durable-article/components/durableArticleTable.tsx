@@ -12,50 +12,37 @@ import {
   Input,
   InputNumber,
   DatePicker,
+  Card,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
+import DurableArticleDetail from "./durableArticleDetail";
+import DurableArticleExport from "./durableArticleExportId";
+import DurableArticleExportWord from "./durableArticleExportWordId";
+import { exportDurableArticles } from "./exportDurableArticles";
+// import DurableArticleExportPdf from "./durableArticleExportPdfID";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
+  data: DurableArticleType[];
 };
 
-export default function DurableArticleTable({ setLoading, loading }: Props) {
+export default function DurableArticleTable({
+  setLoading,
+  loading,
+  data,
+}: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
-
-  const [data, setData] = useState<DurableArticleType[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<DurableArticleType | null>(null);
   const [form] = Form.useForm();
-
-  const fetchData = useCallback(async () => {
-    try {
-      const result = await intraAuthService.getDurableArticleQuery();
-      if (Array.isArray(result)) {
-        setData(result);
-      } else if (Array.isArray(result?.data)) {
-        setData(result.data);
-      } else {
-        setData([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-      message.error("ไม่สามารถดึงข้อมูลครุภัณฑ์ได้");
-    } finally {
-      setLoading(false);
-    }
-  }, [intraAuthService, setLoading]);
-
-  useEffect(() => {
-    if (loading) {
-      fetchData();
-    }
-  }, [loading, fetchData]);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
   const handleEdit = (record: DurableArticleType) => {
     setEditRecord(record);
@@ -83,20 +70,30 @@ export default function DurableArticleTable({ setLoading, loading }: Props) {
     }
   };
 
+  const handleShowDetail = (record: any) => {
+    setSelectedRecord(record);
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedRecord(null);
+  };
+
   const columns: ColumnsType<DurableArticleType> = [
     {
-      title: "รหัสครุภัณฑ์",
+      title: "เลขที่หรือรหัส",
       dataIndex: "code",
       key: "code",
     },
     {
-      title: "วันที่ได้มา",
+      title: "วัน เดือน ปี",
       dataIndex: "acquiredDate",
       key: "acquiredDate",
       render: (value) => dayjs(value).format("DD/MM/YYYY"),
     },
     {
-      title: "รายละเอียด",
+      title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
       dataIndex: "description",
       key: "description",
     },
@@ -108,40 +105,19 @@ export default function DurableArticleTable({ setLoading, loading }: Props) {
         value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
     },
     {
-      title: "วิธีที่ได้มา",
+      title: "วิธีการได้มา",
       dataIndex: "acquisitionType",
       key: "acquisitionType",
     },
-    {
-      title: "อายุการใช้งาน (ปี)",
-      dataIndex: "usageLifespanYears",
-      key: "usageLifespanYears",
-    },
-    {
-      title: "ค่าเสื่อมราคาต่อเดือน",
-      dataIndex: "monthlyDepreciation",
-      key: "monthlyDepreciation",
-      render: (value) =>
-        value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-    },
     // {
-    //   title: "ค่าเสื่อมราคาปีงบประมาณ",
-    //   dataIndex: "yearlyDepreciation",
-    //   key: "yearlyDepreciation",
-    //   render: (value) =>
-    //     value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    //   title: "อายุการใช้งาน (ปี)",
+    //   dataIndex: "usageLifespanYears",
+    //   key: "usageLifespanYears",
     // },
     // {
-    //   title: "ค่าเสื่อมราคาสะสม",
-    //   dataIndex: "accumulatedDepreciation",
-    //   key: "accumulatedDepreciation",
-    //   render: (value) =>
-    //     value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-    // },
-    // {
-    //   title: "มูลค่าสุทธิ",
-    //   dataIndex: "netValue",
-    //   key: "netValue",
+    //   title: "ค่าเสื่อมราคาต่อเดือน",
+    //   dataIndex: "monthlyDepreciation",
+    //   key: "monthlyDepreciation",
     //   render: (value) =>
     //     value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
     // },
@@ -175,9 +151,23 @@ export default function DurableArticleTable({ setLoading, loading }: Props) {
               ลบ
             </Button>
           </Popconfirm>
-          <Button size="small" onClick={() => handleEdit(record)}>
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => handleEdit(record)}
+          >
             แก้ไข
           </Button>
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => handleShowDetail(record)}
+          >
+            รายละเอียด
+          </Button>
+          <DurableArticleExport record={record} />
+          <DurableArticleExportWord record={record} /> {/* Word */}
+          {/* <DurableArticleExportPdf record={record} /> PDF */}
         </Space>
       ),
     },
@@ -185,73 +175,79 @@ export default function DurableArticleTable({ setLoading, loading }: Props) {
 
   return (
     <>
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={data}
-        loading={loading}
-        bordered
-      />
+      <Card>
+        <Space style={{ marginBottom: 16 }}>
+          <Button type="primary" onClick={() => exportDurableArticles(data)}>
+            Export Excel
+          </Button>
+        </Space>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={data}
+          loading={loading}
+          bordered
+        />
 
-      <Modal
-        title="แก้ไขข้อมูลครุภัณฑ์"
-        open={editModalOpen}
-        onCancel={() => setEditModalOpen(false)}
-        onOk={handleUpdate}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            name="code"
-            label="รหัสครุภัณฑ์"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="acquiredDate"
-            label="วันที่ได้มา"
-            rules={[{ required: true }]}
-          >
-            <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item
-            name="description"
-            label="รายละเอียด"
-            rules={[{ required: true }]}
-          >
-            <Input.TextArea />
-          </Form.Item>
-          <Form.Item
-            name="unitPrice"
-            label="ราคาต่อหน่วย"
-            rules={[{ required: true }]}
-          >
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
-          <Form.Item
-            name="acquisitionType"
-            label="วิธีที่ได้มา"
-            rules={[{ required: true }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            name="usageLifespanYears"
-            label="อายุการใช้งาน (ปี)"
-            rules={[{ required: true }]}
-          >
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
-          <Form.Item
-            name="monthlyDepreciation"
-            label="ค่าเสื่อมราคาต่อเดือน"
-            rules={[{ required: true }]}
-          >
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
-          {/* <Form.Item
+        <Modal
+          title="แก้ไขข้อมูลครุภัณฑ์"
+          open={editModalOpen}
+          onCancel={() => setEditModalOpen(false)}
+          onOk={handleUpdate}
+          okText="บันทึก"
+          cancelText="ยกเลิก"
+        >
+          <Form form={form} layout="vertical">
+            <Form.Item
+              name="code"
+              label="รหัสครุภัณฑ์"
+              rules={[{ required: true }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="acquiredDate"
+              label="วันที่ได้มา"
+              rules={[{ required: true }]}
+            >
+              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            </Form.Item>
+            <Form.Item
+              name="description"
+              label="รายละเอียด"
+              rules={[{ required: true }]}
+            >
+              <Input.TextArea />
+            </Form.Item>
+            <Form.Item
+              name="unitPrice"
+              label="ราคาต่อหน่วย"
+              rules={[{ required: true }]}
+            >
+              <InputNumber style={{ width: "100%" }} min={0} />
+            </Form.Item>
+            <Form.Item
+              name="acquisitionType"
+              label="วิธีที่ได้มา"
+              rules={[{ required: true }]}
+            >
+              <Input />
+            </Form.Item>
+            <Form.Item
+              name="usageLifespanYears"
+              label="อายุการใช้งาน (ปี)"
+              rules={[{ required: true }]}
+            >
+              <InputNumber style={{ width: "100%" }} min={0} />
+            </Form.Item>
+            <Form.Item
+              name="monthlyDepreciation"
+              label="ค่าเสื่อมราคาต่อเดือน"
+              rules={[{ required: true }]}
+            >
+              <InputNumber style={{ width: "100%" }} min={0} />
+            </Form.Item>
+            {/* <Form.Item
             name="yearlyDepreciation"
             label="ค่าเสื่อมราคาปีงบประมาณ"
             rules={[{ required: true }]}
@@ -272,11 +268,17 @@ export default function DurableArticleTable({ setLoading, loading }: Props) {
           >
             <InputNumber style={{ width: "100%" }} min={0} />
           </Form.Item> */}
-          <Form.Item name="note" label="หมายเหตุ">
-            <Input.TextArea />
-          </Form.Item>
-        </Form>
-      </Modal>
+            <Form.Item name="note" label="หมายเหตุ">
+              <Input.TextArea />
+            </Form.Item>
+          </Form>
+        </Modal>
+        <DurableArticleDetail
+          open={detailModalOpen}
+          onClose={handleCloseDetail}
+          record={selectedRecord}
+        />
+      </Card>
     </>
   );
 }

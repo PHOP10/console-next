@@ -50,14 +50,14 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
       >
         <Form form={form} layout="vertical">
           <Form.Item
-            label="Username"
+            label="ชื่อผู้ใช้"
             name="username"
             rules={[{ required: true, message: "กรุณากรอก Username" }]}
           >
             <Input />
           </Form.Item>
           <Form.Item
-            label="Password"
+            label="รหัสผ่าน"
             name="password"
             rules={[{ required: true, message: "กรุณากรอก Password" }]}
           >
@@ -88,7 +88,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
             <Input />
           </Form.Item>
           <Form.Item
-            label="Role"
+            label="ระดับผู้ใช้"
             name="role"
             initialValue="user"
             rules={[{ required: true, message: "กรุณาเลือก Role" }]}

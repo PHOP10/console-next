@@ -90,11 +90,17 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
+              label="รหัสครุภัณฑ์"
               name="code"
-              label="รหัส"
-              rules={[{ required: true, message: "กรุณากรอกรหัส" }]}
+              rules={[
+                { required: true, message: "กรุณากรอกรหัสครุภัณฑ์" },
+                {
+                  pattern: /^[0-9/-]+$/,
+                  message: "กรุณากรอกเฉพาะตัวเลข, /, - และต้องมี 13 ตัวอักษร",
+                },
+              ]}
             >
-              <Input placeholder="เช่น xxxx-xxx-xxxx" />
+              <Input placeholder="เช่น 4140-0010-0001" maxLength={15} />
             </Form.Item>
           </Col>
 

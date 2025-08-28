@@ -14,10 +14,6 @@ export default function Page() {
   const intraAuthService = infectiousWasteServices(intraAuth);
 
   const [data, setData] = useState<SupportingResourceType[]>([]);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editRecord, setEditRecord] = useState<SupportingResourceType | null>(
-    null
-  );
 
   const fetchData = useCallback(async () => {
     try {

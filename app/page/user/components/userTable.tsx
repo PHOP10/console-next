@@ -89,6 +89,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
         <Space>
           <Button
             type="primary"
+            size="small"
             onClick={() => handleEdit(record)}
             style={{ marginRight: 8 }}
           >
@@ -100,7 +101,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
             okText="ใช่"
             cancelText="ยกเลิก"
           >
-            <Button type="primary" danger>
+            <Button type="primary" size="small" danger>
               ลบ
             </Button>
           </Popconfirm>
@@ -119,7 +120,6 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
         loading={loading}
       />
 
-      {/* Modal แก้ไขผู้ใช้ */}
       <Modal
         title="แก้ไขข้อมูลผู้ใช้"
         open={isModalOpen}
