@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Popconfirm,
@@ -22,6 +22,7 @@ import { infectiousWasteServices } from "../services/durableArticle.service";
 import { SupportingResourceType } from "../../common";
 import { exportSupportingResources } from "./exportExcel";
 import SupportingResourceDetail from "./supportingResourceDetail";
+import TextArea from "antd/es/input/TextArea";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -45,6 +46,7 @@ export default function SupportingResourceTable({
   const [form] = Form.useForm();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [searchText, setSearchText] = useState("");
 
   const handleEdit = (record: SupportingResourceType) => {
     setEditRecord(record);
@@ -78,6 +80,27 @@ export default function SupportingResourceTable({
     setDetailModalOpen(true);
   };
 
+  const filteredData = useMemo(() => {
+    if (!searchText) return data;
+
+    const searchLower = searchText.toLowerCase();
+
+    return data.filter((item) =>
+      [
+        "name",
+        "code",
+        "status",
+        "acquisitionType",
+        "description",
+        "createdBy",
+        "id",
+      ].some((key) => {
+        const value = item[key as keyof SupportingResourceType];
+        return value?.toString().toLowerCase().includes(searchLower);
+      })
+    );
+  }, [data, searchText]);
+
   const columns: ColumnsType<SupportingResourceType> = [
     {
       title: "ลำดับ",
@@ -99,10 +122,10 @@ export default function SupportingResourceTable({
       title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
       dataIndex: "name",
       key: "name",
-      width: "100%",
+      // width: "100%",
       render: (text: string) => {
         const shortText =
-          text && text.length > 20 ? text.substring(0, 25) + "..." : text;
+          text && text.length > 20 ? text.substring(0, 40) + "..." : text;
         return (
           <Tooltip title={text}>
             <span>{shortText}</span>
@@ -116,7 +139,7 @@ export default function SupportingResourceTable({
       key: "acquisitionType",
       render: (text: string) => {
         const shortText =
-          text && text.length > 20 ? text.substring(0, 25) + "..." : text;
+          text && text.length > 20 ? text.substring(0, 40) + "..." : text;
         return (
           <Tooltip title={text}>
             <span>{shortText}</span>
@@ -185,21 +208,29 @@ export default function SupportingResourceTable({
   return (
     <>
       <Card>
-        <Space style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           <Button
             type="primary"
             onClick={() => exportSupportingResources(data)}
           >
             Export Excel
           </Button>
-        </Space>
+        </div>
 
+        <div style={{ marginBottom: 16 }}>
+          <Input.Search
+            placeholder="ค้นหาวัสดุ..."
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+          />
+        </div>
         <Table
           rowKey="id"
           columns={columns}
-          dataSource={data}
+          dataSource={filteredData}
           loading={loading}
           bordered
+          scroll={{ x: 800 }}
         />
 
         <Modal
@@ -219,11 +250,14 @@ export default function SupportingResourceTable({
               <Input />
             </Form.Item>
             <Form.Item
-              label="ชื่อวัสดุ"
+              label="ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
               name="name"
               rules={[{ required: true, message: "กรุณากรอกชื่อวัสดุ" }]}
             >
-              <Input />
+              <TextArea
+                rows={3}
+                placeholder="กรอกชื่อวัสดุ เช่น Toyota REVO 2024 รุ่น X"
+              />
             </Form.Item>
             {/* <Form.Item
               label="สถานะ"

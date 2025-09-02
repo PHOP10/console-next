@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
-import { Table, Tag } from "antd";
+import React, { useState } from "react";
+import { Button, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { DataLeaveType } from "../../common";
 import dayjs from "dayjs";
+import DataLeaveDetail from "./dataLeaveDetail";
 
 interface DataLeaveTableProps {
   data: DataLeaveType[];
@@ -13,6 +14,19 @@ interface DataLeaveTableProps {
 }
 
 export default function DataLeaveTable({ data, loading }: DataLeaveTableProps) {
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+
+  const handleShowDetail = (record: any) => {
+    setSelectedRecord(record);
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedRecord(null);
+  };
+
   const columns: ColumnsType<DataLeaveType> = [
     {
       title: "เหตุผล",
@@ -71,12 +85,20 @@ export default function DataLeaveTable({ data, loading }: DataLeaveTableProps) {
       key: "details",
       render: (value) => value || "-",
     },
-    // {
-    //   title: "สร้างเมื่อ",
-    //   dataIndex: "createdAt",
-    //   key: "createdAt",
-    //   render: (value) => dayjs(value).format("DD/MM/YYYY HH:mm"),
-    // },
+
+    {
+      title: "จัดการ",
+      key: "action",
+      render: (_: any, record: any) => (
+        <Button
+          size="small"
+          type="primary"
+          onClick={() => handleShowDetail(record)}
+        >
+          รายละเอียด
+        </Button>
+      ),
+    },
     // {
     //   title: "อัปเดตล่าสุด",
     //   dataIndex: "updatedAt",
@@ -86,12 +108,19 @@ export default function DataLeaveTable({ data, loading }: DataLeaveTableProps) {
   ];
 
   return (
-    <Table
-      rowKey="id"
-      columns={columns}
-      dataSource={data}
-      loading={loading}
-      pagination={{ pageSize: 10 }}
-    />
+    <>
+      <DataLeaveDetail
+        open={detailModalOpen}
+        onClose={handleCloseDetail}
+        record={selectedRecord}
+      />
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={data}
+        loading={loading}
+        pagination={{ pageSize: 10 }}
+      />
+    </>
   );
 }

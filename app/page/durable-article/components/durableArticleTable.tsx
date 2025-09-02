@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Button,
   Popconfirm,
@@ -43,6 +43,7 @@ export default function DurableArticleTable({
   const [form] = Form.useForm();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [searchText, setSearchText] = useState("");
 
   const handleEdit = (record: DurableArticleType) => {
     setEditRecord(record);
@@ -79,6 +80,28 @@ export default function DurableArticleTable({
     setDetailModalOpen(false);
     setSelectedRecord(null);
   };
+
+  const filteredData = useMemo(() => {
+    if (!searchText) return data;
+
+    const searchLower = searchText.toLowerCase();
+
+    return data.filter((item) =>
+      [
+        "acquiredDate",
+        "code",
+        "status",
+        "acquisitionType",
+        "description",
+        "createdBy",
+        "note",
+        "id",
+      ].some((key) => {
+        const value = item[key as keyof DurableArticleType];
+        return value?.toString().toLowerCase().includes(searchLower);
+      })
+    );
+  }, [data, searchText]);
 
   const columns: ColumnsType<DurableArticleType> = [
     {
@@ -165,7 +188,7 @@ export default function DurableArticleTable({
           >
             รายละเอียด
           </Button>
-          <DurableArticleExport record={record} />
+          {/* <DurableArticleExport record={record} /> */}
           <DurableArticleExportWord record={record} /> {/* Word */}
           {/* <DurableArticleExportPdf record={record} /> PDF */}
         </Space>
@@ -176,17 +199,25 @@ export default function DurableArticleTable({
   return (
     <>
       <Card>
-        <Space style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 16 }}>
           <Button type="primary" onClick={() => exportDurableArticles(data)}>
             Export Excel
           </Button>
-        </Space>
+        </div>
+        <div style={{ marginBottom: 16 }}>
+          <Input.Search
+            placeholder="ค้นหาวัสดุ..."
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+          />
+        </div>
         <Table
           rowKey="id"
           columns={columns}
-          dataSource={data}
+          dataSource={filteredData}
           loading={loading}
           bordered
+          scroll={{ x: 800 }}
         />
 
         <Modal

@@ -100,7 +100,6 @@ export default function CreateMedicalEquipmentForm({
                     {pair.map(({ key, name, ...restField }) => (
                       <Col span={12} key={key}>
                         <Row gutter={8} align="middle">
-                          {/* Select */}
                           <Col flex="auto">
                             <Form.Item
                               {...restField}
@@ -117,7 +116,7 @@ export default function CreateMedicalEquipmentForm({
                                 placeholder="เลือกเครื่องมือ"
                                 showSearch
                                 optionFilterProp="children"
-                                style={{ width: "100%" }} // ✅ ใช้เต็มพื้นที่
+                                style={{ width: "100%" }}
                               >
                                 {dataEQ.map((eq) => {
                                   const reservedQuantity = dataEQ
@@ -262,7 +261,7 @@ export default function CreateMedicalEquipmentForm({
         </Form.List>
 
         <Row gutter={18}>
-          <Col span={12}>
+          {/* <Col span={12}>
             <Form.Item
               label="วันที่ส่ง"
               name="sentDate"
@@ -276,7 +275,37 @@ export default function CreateMedicalEquipmentForm({
                 }
               />
             </Form.Item>
+          </Col> */}
+          <Col span={12}>
+            <Form.Item
+              label="วันที่ส่ง"
+              name="sentDate"
+              rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
+            >
+              <DatePicker
+                format="DD/MM/YYYY"
+                style={{ width: "100%" }}
+                disabledDate={(current) => {
+                  if (!current) return false;
+
+                  const today = dayjs().startOf("day");
+
+                  // 1️⃣ ไม่ให้เลือกวันก่อนวันนี้
+                  if (current < today) return true;
+
+                  // 2️⃣ ตรวจสอบวันซ้ำกับวันที่จองผ่านมา
+                  const bookedDates = data
+                    .map((item: any) =>
+                      item.sentDate ? dayjs(item.sentDate).startOf("day") : null
+                    )
+                    .filter(Boolean);
+
+                  return bookedDates.some((d: any) => d.isSame(current, "day"));
+                }}
+              />
+            </Form.Item>
           </Col>
+
           <Col span={12}>
             <Form.Item label="หมายเหตุ" name="note">
               <TextArea rows={3} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" />

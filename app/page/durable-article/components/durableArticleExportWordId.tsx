@@ -34,7 +34,6 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
         "ประเภทการได้มา",
         "อายุการใช้งาน (ปี)",
         "ค่าเสื่อม/เดือน",
-        "ค่าเสื่อม/ปี",
         "ค่าเสื่อมสะสม",
         "มูลค่าสุทธิ",
         "หมายเหตุ",
@@ -50,7 +49,7 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
         record.acquisitionType,
         record.usageLifespanYears,
         record.monthlyDepreciation,
-        record.yearlyDepreciation ?? "-",
+        // record.yearlyDepreciation ?? "-",
         record.accumulatedDepreciation ?? "-",
         record.netValue ?? "-",
         record.note ?? "-",
@@ -70,7 +69,7 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
                         new TextRun({
                           text: h,
                           bold: true,
-                          font: "Angsana New", // ฟอนต์ header
+                          font: "TH Sarabun New", // ฟอนต์ header
                           size: 24, // ขนาด 12pt (docx ใช้ half-points)
                         }),
                       ],
@@ -89,7 +88,7 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
                       children: [
                         new TextRun({
                           text: String(v),
-                          font: "Angsana New", // ฟอนต์ข้อมูล
+                          font: "TH Sarabun New", // ฟอนต์ข้อมูล
                           size: 22, // ขนาด 11pt
                         }),
                       ],
@@ -109,18 +108,56 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
               page: { size: { orientation: PageOrientation.LANDSCAPE } },
             },
             children: [
+              // หัวข้อกลาง
               new Paragraph({
-                text: "รายละเอียดครุภัณฑ์",
-                heading: HeadingLevel.HEADING_1,
                 alignment: AlignmentType.CENTER,
                 spacing: { after: 200 },
                 children: [
                   new TextRun({
-                    font: "Angsana New", // ฟอนต์ Heading
-                    size: 32, // 16pt
+                    text: "ทะเบียนคุมทรัพย์สิน",
+                    font: "TH Sarabun New",
+                    size: 32,
+                    bold: true,
                   }),
                 ],
               }),
+
+              // ข้อความชิดซ้าย
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 100 },
+                children: [
+                  new TextRun({
+                    text: `แผ่นที่: 202`,
+                    font: "TH Sarabun New",
+                    size: 24,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 100 },
+                children: [
+                  new TextRun({
+                    text: `ประเภท: ครุภัณฑ์`,
+                    font: "TH Sarabun New",
+                    size: 24,
+                  }),
+                ],
+              }),
+              new Paragraph({
+                alignment: AlignmentType.LEFT,
+                spacing: { after: 200 },
+                children: [
+                  new TextRun({
+                    text: `รหัส: ${record.code}`,
+                    font: "TH Sarabun New",
+                    size: 24,
+                  }),
+                ],
+              }),
+
+              // ตาราง
               table,
             ],
           },
@@ -128,7 +165,7 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
       });
 
       const blob = await Packer.toBlob(doc);
-      saveAs(blob, `DurableArticle_${record.code}.docx`);
+      saveAs(blob, `ทะเบียนคุมทรัพย์สิน_${record.code}.docx`);
       message.success("ส่งออก Word สำเร็จ");
     } catch (error) {
       console.error(error);

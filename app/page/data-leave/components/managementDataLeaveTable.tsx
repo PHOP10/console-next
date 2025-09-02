@@ -17,6 +17,8 @@ import { DataLeaveType } from "../../common";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
+import DataLeaveDetail from "./dataLeaveDetail";
+import { useSession } from "next-auth/react";
 
 interface ManagementDataLeaveTableProps {
   data: DataLeaveType[];
@@ -39,6 +41,9 @@ export default function ManagementDataLeaveTable({
     null
   );
   const [form] = Form.useForm();
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const { data: session } = useSession();
 
   const openEditModal = (record: DataLeaveType) => {
     setCurrentRecord(record);
@@ -56,6 +61,7 @@ export default function ManagementDataLeaveTable({
 
       const updated = await intraAuthService.updateDataLeave({
         id: currentRecord.id,
+
         ...values,
       });
 
@@ -87,6 +93,9 @@ export default function ManagementDataLeaveTable({
     try {
       const updated = await intraAuthService.updateDataLeave({
         id: record.id,
+        approvedById: session?.user?.userId,
+        approvedByName: session?.user?.fullName,
+        approvedDate: new Date().toISOString(),
         status,
       });
       setDataLeave((prev) =>
@@ -99,6 +108,16 @@ export default function ManagementDataLeaveTable({
       console.error(err);
       message.error("เกิดข้อผิดพลาด");
     }
+  };
+
+  const handleShowDetail = (record: any) => {
+    setSelectedRecord(record);
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedRecord(null);
   };
 
   const columns: ColumnsType<DataLeaveType> = [
@@ -162,6 +181,7 @@ export default function ManagementDataLeaveTable({
             type="primary"
             size="small"
             onClick={() => openEditModal(record)}
+            disabled={record.status !== "pending"}
           >
             แก้ไข
           </Button>
@@ -184,10 +204,21 @@ export default function ManagementDataLeaveTable({
             onConfirm={() => handleUpdateStatus(record, "approve")}
             onCancel={() => handleUpdateStatus(record, "cancel")}
           >
-            <Button type="primary" size="small">
+            <Button
+              type="primary"
+              size="small"
+              // disabled={record.status !== "pending"}
+            >
               อนุมัติ
             </Button>
           </Popconfirm>
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => handleShowDetail(record)}
+          >
+            รายละเอียด
+          </Button>
         </Space>
       ),
     },
@@ -195,6 +226,11 @@ export default function ManagementDataLeaveTable({
 
   return (
     <>
+      <DataLeaveDetail
+        open={detailModalOpen}
+        onClose={handleCloseDetail}
+        record={selectedRecord}
+      />
       <Table
         rowKey="id"
         columns={columns}

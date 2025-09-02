@@ -118,6 +118,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
         columns={columns}
         dataSource={data}
         loading={loading}
+        scroll={{ x: 800 }}
       />
 
       <Modal

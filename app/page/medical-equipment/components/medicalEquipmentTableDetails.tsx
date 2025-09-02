@@ -42,7 +42,7 @@ export default function MedicalEquipmentTableDetails({
     >
       <Form form={formDetails} layout="vertical" initialValues={record}>
         {/* ตารางรายการอุปกรณ์ */}
-        <Form.Item label="รายการอุปกรณ์ที่ส่ง">
+        <Form.Item label="รายการอุปกรณ์ที่ส่ง :">
           <Table
             dataSource={record?.items || []}
             columns={columnsDetails}
@@ -54,7 +54,7 @@ export default function MedicalEquipmentTableDetails({
 
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item label="วันที่ส่ง">
+            <Form.Item label="วันที่ส่ง :">
               <span>
                 {record?.sentDate
                   ? dayjs(record.sentDate).format("DD/MM/YYYY")
@@ -63,7 +63,7 @@ export default function MedicalEquipmentTableDetails({
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="ผู้ส่ง">
+            <Form.Item label="ผู้ส่ง :">
               <span>{record?.createdBy}</span>
             </Form.Item>
           </Col>
@@ -71,13 +71,24 @@ export default function MedicalEquipmentTableDetails({
 
         <Row gutter={16}>
           <Col span={12}>
-            <Form.Item label="สถานะ">
-              <span>{record?.status}</span>
+            <Form.Item label="สถานะ :">
+              <span>
+                {record?.status === "pending"
+                  ? "รอดำเนินการ"
+                  : record?.status === "approve"
+                  ? "อนุมัติ"
+                  : record?.status === "cancel"
+                  ? "ยกเลิก"
+                  : record?.status === "return"
+                  ? "รับคืนแล้ว"
+                  : ""}
+              </span>
             </Form.Item>
           </Col>
+
           <Col span={12}>
             {record?.note && (
-              <Form.Item label="รายละเอียด">
+              <Form.Item label="รายละเอียด :">
                 <TextArea
                   value={record.note}
                   rows={3}
@@ -95,16 +106,16 @@ export default function MedicalEquipmentTableDetails({
               // ✅ กรณีอนุมัติ
               <>
                 <Col span={12}>
-                  <Form.Item label="ผู้อนุมัติ">
+                  <Form.Item label="ผู้อนุมัติ :">
                     <span>{record.approveBy}</span>
                   </Form.Item>
                 </Col>
 
                 <Col span={12}>
-                  <Form.Item label="วันที่อนุมัติ">
+                  <Form.Item label="วันที่อนุมัติ :">
                     <span>
-                      {record.updatedAt
-                        ? dayjs(record.updatedAt).format("DD/MM/YYYY")
+                      {record.approveAt
+                        ? dayjs(record.approveAt).format("DD/MM/YYYY")
                         : "-"}
                     </span>
                   </Form.Item>
@@ -114,43 +125,48 @@ export default function MedicalEquipmentTableDetails({
               // ✅ กรณียกเลิก
               <>
                 <Col span={12}>
-                  <Form.Item label="ผู้ยกเลิก">
+                  <Form.Item label="ผู้ยกเลิก :">
                     <span>{record.nameReason}</span>
                   </Form.Item>
                 </Col>
 
                 <Col span={12}>
-                  <Form.Item label="วันที่ยกเลิก">
+                  <Form.Item label="วันที่ยกเลิก :">
                     <span>
-                      {record.updatedAt
-                        ? dayjs(record.updatedAt).format("DD/MM/YYYY")
+                      {record.createdAt
+                        ? dayjs(record.createdAt).format("DD/MM/YYYY")
                         : "-"}
                     </span>
                   </Form.Item>
                 </Col>
               </>
             ) : (
-              // ✅ ถ้าไม่มีทั้ง approveBy และ nameReason → โชว์ว่าง
-              <>
-                <Col span={12}>
-                  <Form.Item label="การดำเนินการ">
-                    <span>-</span>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="วันที่">
-                    <span>-</span>
-                  </Form.Item>
-                </Col>
-              </>
+              <></>
             )
           ) : null}
+        </Row>
+        <Row gutter={16}>
+          {record?.returnName && (
+            <Col span={12}>
+              <Form.Item label="ผู้รับคืน :">
+                <span>{record.returnName}</span>
+              </Form.Item>
+            </Col>
+          )}
+
+          {record?.returndAt && (
+            <Col span={12}>
+              <Form.Item label="วันที่รับคืน :">
+                <span>{dayjs(record.returndAt).format("DD/MM/YYYY")}</span>
+              </Form.Item>
+            </Col>
+          )}
         </Row>
 
         <Row gutter={16}>
           <Col span={12}>
             {record?.cancelReason && (
-              <Form.Item label="เหตุผลยกเลิก">
+              <Form.Item label="เหตุผลยกเลิก :">
                 <TextArea
                   value={record.cancelReason}
                   rows={2}

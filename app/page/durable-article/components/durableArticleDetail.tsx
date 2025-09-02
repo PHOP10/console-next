@@ -25,7 +25,7 @@ const DurableArticleDetail: React.FC<DurableArticleDetailProps> = ({
     >
       {record && (
         <Form layout="vertical">
-          <Row gutter={[16, 8]}>
+          <Row gutter={18}>
             <Col span={12}>
               <Form.Item label="เลขที่หรือรหัส :">
                 <span>{record.code || "-"}</span>
@@ -41,8 +41,9 @@ const DurableArticleDetail: React.FC<DurableArticleDetailProps> = ({
                 </span>
               </Form.Item>
             </Col>
-
-            <Col span={24}>
+          </Row>
+          <Row gutter={18}>
+            <Col span={12}>
               <Form.Item label="ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ :">
                 <TextArea
                   value={record.description}
@@ -53,15 +54,8 @@ const DurableArticleDetail: React.FC<DurableArticleDetailProps> = ({
                 />
               </Form.Item>
             </Col>
-
             <Col span={12}>
-              <Form.Item label="ราคาต่อหน่วย :">
-                <span>{record.unitPrice ?? "-"}</span>
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item label="ประเภทการได้มา :">
+              <Form.Item label="วิธีการได้มา :">
                 <TextArea
                   value={record.acquisitionType}
                   rows={3}
@@ -71,15 +65,23 @@ const DurableArticleDetail: React.FC<DurableArticleDetailProps> = ({
                 />
               </Form.Item>
             </Col>
+          </Row>
+          <Row gutter={18}>
+            <Col span={12}>
+              <Form.Item label="ราคาต่อหน่วย (บาท  ) :">
+                <span>{record.unitPrice ?? "-"}</span>
+              </Form.Item>
+            </Col>
 
             <Col span={12}>
               <Form.Item label="อายุการใช้งาน (ปี) :">
                 <span>{record.usageLifespanYears ?? "-"}</span>
               </Form.Item>
             </Col>
-
+          </Row>
+          <Row gutter={18}>
             <Col span={12}>
-              <Form.Item label="ค่าเสื่อม/เดือน :">
+              <Form.Item label="ค่าเสื่อมราคาต่อเดือน (บาท) :">
                 <span>{record.monthlyDepreciation ?? "-"}</span>
               </Form.Item>
             </Col>
@@ -92,7 +94,8 @@ const DurableArticleDetail: React.FC<DurableArticleDetailProps> = ({
                 <span>{record.accumulatedDepreciation ?? "-"}</span>
               </Form.Item>
             </Col>
-
+          </Row>
+          <Row gutter={18}>
             <Col span={12}>
               <Form.Item label="มูลค่าสุทธิ :">
                 <span>{record.netValue ?? "-"}</span>
@@ -111,6 +114,7 @@ const DurableArticleDetail: React.FC<DurableArticleDetailProps> = ({
               </Form.Item>
             </Col>
           </Row>
+          {/* </Row> */}
         </Form>
       )}
     </Modal>

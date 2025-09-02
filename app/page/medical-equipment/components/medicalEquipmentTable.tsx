@@ -128,8 +128,8 @@ export default function MedicalEquipmentTable({
       await intraAuthService.updateMaMedicalEquipment({
         id: recordReturn.id,
         status: "return",
-        nameReason: session?.user?.fullName,
-        receivedDate: formReturn.getFieldValue("sentDate")?.toISOString(),
+        returnName: session?.user?.fullName,
+        returndAt: new Date().toISOString(),
         note: formReturn.getFieldValue("note"),
       });
 
@@ -259,7 +259,7 @@ export default function MedicalEquipmentTable({
             รับคืน
           </Button>
           <Button
-            type="default"
+            type="primary"
             size="small"
             onClick={() => handleOpenModalDetails(record)}
           >
@@ -292,6 +292,7 @@ export default function MedicalEquipmentTable({
         loading={loading}
         bordered
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 800 }}
       />
 
       <Modal
@@ -419,13 +420,32 @@ export default function MedicalEquipmentTable({
               </>
             )}
           </Form.List>
-
           <Form.Item
             label="วันที่ส่ง"
             name="sentDate"
             rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
           >
-            <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            <DatePicker
+              format="DD/MM/YYYY"
+              style={{ width: "100%" }}
+              disabledDate={(current) => {
+                if (!current) return false;
+
+                const today = dayjs().startOf("day");
+
+                // 1️⃣ ไม่ให้เลือกวันก่อนวันนี้
+                if (current < today) return true;
+
+                // 2️⃣ ตรวจสอบวันซ้ำกับวันที่จองผ่านมา
+                const bookedDates = data
+                  .map((item: any) =>
+                    item.sentDate ? dayjs(item.sentDate).startOf("day") : null
+                  )
+                  .filter(Boolean);
+
+                return bookedDates.some((d: any) => d.isSame(current, "day"));
+              }}
+            />
           </Form.Item>
 
           <Form.Item label="หมายเหตุ" name="note">
@@ -433,6 +453,7 @@ export default function MedicalEquipmentTable({
           </Form.Item>
         </Form>
       </Modal>
+
       <Modal
         title="รายละเอียดการรับคืนอุปกรณ์"
         open={isModalOpen}
