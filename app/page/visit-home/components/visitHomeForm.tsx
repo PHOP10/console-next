@@ -16,6 +16,8 @@ import { visitHomeServices } from "../services/visitHome.service";
 import dayjs from "dayjs";
 import { MasterPatientType } from "../../common";
 
+import "./Form.css"; /* อันใหม่ */
+
 const { Option } = Select;
 
 export default function VisitHomeForm() {
@@ -33,6 +35,7 @@ export default function VisitHomeForm() {
       message.error("ไม่สามารถดึงข้อมูลประเภทผู้ป่วยได้");
     }
   };
+  
 
   useEffect(() => {
     fetchMasterPatients();
@@ -68,6 +71,7 @@ export default function VisitHomeForm() {
   return (
     <Form layout="vertical" form={form} onFinish={handleFinish}>
       <Row gutter={16}>
+        {/* ข้อมูลผู้ป่วย */}
         <Col span={12}>
           <Form.Item name="firstName" label="ชื่อ" rules={[{ required: true }]}>
             <Input />
@@ -82,12 +86,13 @@ export default function VisitHomeForm() {
             <Input />
           </Form.Item>
         </Col>
-        <Col span={8}>
+
+        <Col span={12}>
           <Form.Item name="age" label="อายุ" rules={[{ required: true }]}>
             <Input type="number" />
           </Form.Item>
         </Col>
-        <Col span={16}>
+        <Col span={12}>
           <Form.Item
             name="address"
             label="ที่อยู่"
@@ -96,30 +101,7 @@ export default function VisitHomeForm() {
             <Input />
           </Form.Item>
         </Col>
-        <Col span={12}>
-          <Form.Item
-            name="visitDate"
-            label="วันที่เยี่ยมบ้าน"
-            rules={[{ required: true }]}
-          >
-            <DatePicker format="DD-MM-YYYY" style={{ width: "100%" }} />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="nextAppointment" label="นัดครั้งถัดไป">
-            <DatePicker format="DD-MM-YYYY" style={{ width: "100%" }} />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="symptoms" label="อาการ">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Col>
-        <Col span={12}>
-          <Form.Item name="medication" label="การใช้ยา">
-            <Input.TextArea rows={2} />
-          </Form.Item>
-        </Col>
+
         <Col span={12}>
           <Form.Item
             name="patientTypeId"
@@ -135,13 +117,57 @@ export default function VisitHomeForm() {
             </Select>
           </Form.Item>
         </Col>
-        <Col span={24}>
+
+        <Col span={12}>
+          <Form.Item
+            name="visitDate"
+            label="วันที่เยี่ยมบ้าน"
+            rules={[{ required: true }]}
+          >
+            <DatePicker
+              format="DD-MM-YYYY"
+              style={{ width: "100%" }}
+              disabledDate={(current) => {
+                // ปิดวันที่ก่อนวันนี้
+                return current && current < dayjs().startOf("day");
+              }}
+            />
+          </Form.Item>
+        </Col>
+
+        <Col span={12}>
+          <Form.Item name="nextAppointment" label="นัดครั้งถัดไป">
+            <DatePicker
+              format="DD-MM-YYYY"
+              style={{ width: "100%" }}
+              disabledDate={(current) => {
+                // ปิดวันที่ก่อนวันนี้
+                return current && current < dayjs().startOf("day");
+              }}
+            />
+          </Form.Item>
+        </Col>
+
+        <Col span={12}>
+          <Form.Item name="symptoms" label="อาการ">
+            <Input.TextArea rows={1} />
+          </Form.Item>
+        </Col>
+
+        <Col span={12}>
+          <Form.Item name="medication" label="การใช้ยา">
+            <Input.TextArea rows={1} />
+          </Form.Item>
+        </Col>
+
+        <Col span={12}>
           <Form.Item name="notes" label="หมายเหตุ">
-            <Input.TextArea rows={3} />
+            <Input.TextArea rows={1} />
           </Form.Item>
         </Col>
       </Row>
-      <Form.Item>
+
+      <Form.Item className="submit-button-item">
         <Button type="primary" htmlType="submit">
           บันทึก
         </Button>

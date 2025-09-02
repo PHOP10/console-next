@@ -300,7 +300,7 @@ export default function Login() {
       <style jsx global>{`
         .ant-card .ant-card-body {
           padding-inline: 14px !important;
-          padding-block: 3px !important;
+          padding-block: 3px !important;           
         }
       `}</style>
     </>

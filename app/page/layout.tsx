@@ -185,7 +185,7 @@ export default function MainLayout({
           className="hidden md:block"
         >
           <div className="min-h-screen h-full bg-white">
-            <div className="flex justify-center bg-white py-4">
+            <div className="flex justify-center bg-white py-2">
               <Image
                 width={0}
                 height={0}

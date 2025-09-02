@@ -1,0 +1,7 @@
+
+/* ไม่ต้องเลื่อน Scroll bar */
+.submit-button-item {
+  padding: 0px;             /* เพิ่ม padding รอบ ๆ ปุ่ม */
+  text-align: left;         /* จัดปุ่มชิดขวา ถ้าต้องการ */
+  margin-bottom: 0; 
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Button,
   message,
@@ -11,22 +11,29 @@ import {
   Form,
   Input,
   DatePicker,
+  Select,
 } from "antd";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-import { VisitHomeType } from "../../common";
+import { VisitHomeType, MasterPatientType } from "../../common";
 import { visitHomeServices } from "../services/visitHome.service";
+
+import { SearchOutlined } from "@ant-design/icons";
+
+const { Option } = Select;
 
 interface VisitHomeTableProps {
   data: VisitHomeType[];
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  masterPatients: MasterPatientType[];
 }
 
 export default function VisitHomeTable({
   data,
   loading,
   setLoading,
+  masterPatients,
 }: VisitHomeTableProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
@@ -36,6 +43,29 @@ export default function VisitHomeTable({
   );
   const [modalVisible, setModalVisible] = useState(false);
   const [form] = Form.useForm();
+
+  // search state
+  const [searchText, setSearchText] = useState("");
+  const [filterPatientType, setFilterPatientType] = useState<number | null>(
+    null
+  );
+
+  // Filtered data
+  const filteredData = data.filter((item) => {
+    const matchesSearch =
+      item.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.address?.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.symptoms?.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.medication?.toLowerCase().includes(searchText.toLowerCase()) ||
+      item.notes?.toLowerCase().includes(searchText.toLowerCase());
+
+    const matchesPatientType = filterPatientType
+      ? item.patientType?.id === filterPatientType
+      : true;
+
+    return matchesSearch && matchesPatientType;
+  });
 
   const openEditModal = (record: VisitHomeType) => {
     setEditingRecord(record);
@@ -47,6 +77,7 @@ export default function VisitHomeTable({
       nextAppointment: record.nextAppointment
         ? dayjs(record.nextAppointment)
         : null,
+      patientTypeId: record.patientType?.id || null,
     });
   };
 
@@ -70,6 +101,7 @@ export default function VisitHomeTable({
         symptoms: values.symptoms || null,
         medication: values.medication || null,
         notes: values.notes || null,
+        patientTypeId: values.patientTypeId || null,
       };
 
       const res = await intraAuthService.updateVisitHome(payload);
@@ -155,13 +187,34 @@ export default function VisitHomeTable({
 
   return (
     <>
+      {/* ช่องค้นหาข้อมูล ขวาสุด พร้อมไอคอน */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginBottom: 16,
+        }}
+      >
+        <Input
+          placeholder="ค้นหาข้อมูล..."
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+          style={{ width: 250 }}
+          allowClear
+          prefix={<SearchOutlined />}
+        />
+      </div>
+
+      {/* ตารางข้อมูล พร้อม Pagination */}
       <Table
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}
         loading={loading}
         rowKey="id"
+        pagination={{ pageSize: 5 }} // แสดง 5 รายการต่อหน้า
       />
 
+      {/* Modal แก้ไขข้อมูล */}
       <Modal
         title="แก้ไขข้อมูลการเยี่ยมบ้าน"
         visible={modalVisible}
@@ -212,6 +265,19 @@ export default function VisitHomeTable({
           </Form.Item>
           <Form.Item label="นัดครั้งถัดไป" name="nextAppointment">
             <DatePicker format="DD-MM-YYYY" style={{ width: "100%" }} />
+          </Form.Item>
+          <Form.Item
+            label="ประเภทผู้ป่วย"
+            name="patientTypeId"
+            rules={[{ required: true, message: "กรุณาเลือกประเภทผู้ป่วย" }]}
+          >
+            <Select placeholder="เลือกประเภทผู้ป่วย" style={{ width: "100%" }}>
+              {(masterPatients || []).map((item) => (
+                <Option key={item.id} value={item.id}>
+                  {item.typeName}
+                </Option>
+              ))}
+            </Select>
           </Form.Item>
           <Form.Item label="อาการ" name="symptoms">
             <Input.TextArea rows={2} />

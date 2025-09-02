@@ -297,7 +297,7 @@ export const MenuSider: IMenu[] = [
   {
     key: `dashboard`,
     icon: <FileTextOutlined />,
-    label: `Dashboard`,
+    label: `โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง`,
     roles: [group.admin],
   },
   {
@@ -408,7 +408,7 @@ export const MenuSider: IMenu[] = [
     children: [
       {
         key: "durableArticle",
-        label: "ข้อมูลครุภัณฑ์`",
+        label: "ข้อมูลครุภัณฑ์",
         roles: [group.admin, group.user],
       },
       {
