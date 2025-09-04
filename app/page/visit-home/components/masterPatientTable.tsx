@@ -58,13 +58,25 @@ export default function MasterPatientTable({
 
   return (
     <>
+      <div
+        style={{
+          textAlign: "center",
+          fontWeight: "bold",
+          fontSize: 20,
+          marginBottom: 16,
+          borderRadius: "8px",
+        }}
+      >
+        จัดการประเภทผู้ป่วย
+      </div>
+
       {contextHolder}
       <Button
         type="primary"
         style={{ marginBottom: 16 }}
         onClick={() => setModalOpen(true)}
       >
-        เพิ่มประเภทผู้ป่วย
+        + เพิ่มประเภทผู้ป่วย
       </Button>
 
       <Table
@@ -73,17 +85,24 @@ export default function MasterPatientTable({
         loading={false}
         pagination={{ pageSize: 10 }}
         columns={[
-          { title: "ID", dataIndex: "id", key: "id" },
-          { title: "ประเภทผู้ป่วย", dataIndex: "typeName", key: "typeName" },
+          { title: "ลำดับ", dataIndex: "id", key: "id", align: "center" },
+          {
+            title: "ประเภทผู้ป่วย",
+            dataIndex: "typeName",
+            key: "typeName",
+            align: "center",
+          },
           {
             title: "รายละเอียด",
             dataIndex: "description",
             key: "description",
+            align: "center",
             render: (text) => text || "-",
           },
           {
             title: "จัดการ",
             key: "action",
+            align: "center",
             render: (_: any, record: MasterPatientType) => (
               <Popconfirm
                 title="ยืนยันการลบ"

@@ -14,11 +14,15 @@ import {
   Select,
 } from "antd";
 import dayjs from "dayjs";
+
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { VisitHomeType, MasterPatientType } from "../../common";
 import { visitHomeServices } from "../services/visitHome.service";
 
 import { SearchOutlined } from "@ant-design/icons";
+
+import * as XLSX from "xlsx";
+import type { ColumnsType } from "antd/es/table";
 
 const { Option } = Select;
 
@@ -52,13 +56,16 @@ export default function VisitHomeTable({
 
   // Filtered data
   const filteredData = data.filter((item) => {
+    const search = searchText.toLowerCase();
+
     const matchesSearch =
-      item.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.address?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.symptoms?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.medication?.toLowerCase().includes(searchText.toLowerCase()) ||
-      item.notes?.toLowerCase().includes(searchText.toLowerCase());
+      item.firstName?.toLowerCase().includes(search) ||
+      item.lastName?.toLowerCase().includes(search) ||
+      item.address?.toLowerCase().includes(search) ||
+      item.symptoms?.toLowerCase().includes(search) ||
+      item.medication?.toLowerCase().includes(search) ||
+      item.notes?.toLowerCase().includes(search) ||
+      (item.age !== undefined && item.age.toString().includes(search));
 
     const matchesPatientType = filterPatientType
       ? item.patientType?.id === filterPatientType
@@ -120,69 +127,52 @@ export default function VisitHomeTable({
     }
   };
 
-  const columns = [
-    { title: "ชื่อ", dataIndex: "firstName", key: "firstName" },
-    { title: "นามสกุล", dataIndex: "lastName", key: "lastName" },
-    { title: "อายุ", dataIndex: "age", key: "age" },
-    { title: "ที่อยู่", dataIndex: "address", key: "address" },
+  const columns: ColumnsType<VisitHomeType> = [
+    {
+      title: "ชื่อ",
+      dataIndex: "firstName",
+      key: "firstName",
+      align: "center",
+    },
+    {
+      title: "นามสกุล",
+      dataIndex: "lastName",
+      key: "lastName",
+      align: "center",
+    },
+    { title: "อายุ", dataIndex: "age", key: "age", align: "center" },
+    { title: "ที่อยู่", dataIndex: "address", key: "address", align: "center" },
     {
       title: "วันที่เยี่ยมบ้าน",
       dataIndex: "visitDate",
       key: "visitDate",
+      align: "center",
       render: (value: string) =>
         value ? dayjs(value).format("DD-MM-YYYY") : "-",
     },
-    { title: "อาการ", dataIndex: "symptoms", key: "symptoms" },
-    { title: "การใช้ยา", dataIndex: "medication", key: "medication" },
+    { title: "อาการ", dataIndex: "symptoms", key: "symptoms", align: "center" },
+    {
+      title: "การใช้ยา",
+      dataIndex: "medication",
+      key: "medication",
+      align: "center",
+    },
     {
       title: "ประเภทผู้ป่วย",
       dataIndex: "patientType",
       key: "patientType",
+      align: "center",
       render: (value: any) => value?.typeName || "-",
     },
     {
       title: "นัดครั้งถัดไป",
       dataIndex: "nextAppointment",
       key: "nextAppointment",
+      align: "center",
       render: (value: string) =>
         value ? dayjs(value).format("DD-MM-YYYY") : "-",
     },
-    { title: "หมายเหตุ", dataIndex: "notes", key: "notes" },
-    {
-      title: "จัดการ",
-      key: "action",
-      render: (_: any, record: VisitHomeType) => (
-        <Space>
-          <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteVisitHome(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                setLoading(true);
-              } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการลบ:", error);
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Button danger size="small">
-              ลบ
-            </Button>
-          </Popconfirm>
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => openEditModal(record)}
-          >
-            แก้ไข
-          </Button>
-        </Space>
-      ),
-    },
+    { title: "หมายเหตุ", dataIndex: "notes", key: "notes", align: "center" },
   ];
 
   return (
@@ -190,8 +180,21 @@ export default function VisitHomeTable({
       {/* ช่องค้นหาข้อมูล ขวาสุด พร้อมไอคอน */}
       <div
         style={{
+          textAlign: "center",
+          fontWeight: "bold",
+          fontSize: 20,
+          marginBottom: 16,
+          borderRadius: "8px",
+        }}
+      >
+        ข้อมูลการเยี่ยมบ้าน
+      </div>
+
+      <div
+        style={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between", // ช่องค้นหาซ้าย ปุ่มขวา
+          alignItems: "center",
           marginBottom: 16,
         }}
       >
@@ -203,6 +206,21 @@ export default function VisitHomeTable({
           allowClear
           prefix={<SearchOutlined />}
         />
+
+        <Button
+          type="primary"
+          onClick={() => {
+            // สร้าง worksheet จากข้อมูล
+            const worksheet = XLSX.utils.json_to_sheet(filteredData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "VisitHome");
+
+            // ดาวน์โหลดไฟล์
+            XLSX.writeFile(workbook, "VisitHomeData.xlsx");
+          }}
+        >
+          Export Excel
+        </Button>
       </div>
 
       {/* ตารางข้อมูล พร้อม Pagination */}
@@ -211,7 +229,7 @@ export default function VisitHomeTable({
         dataSource={filteredData}
         loading={loading}
         rowKey="id"
-        pagination={{ pageSize: 5 }} // แสดง 5 รายการต่อหน้า
+        pagination={{ pageSize: 10 }}
       />
 
       {/* Modal แก้ไขข้อมูล */}
@@ -232,6 +250,7 @@ export default function VisitHomeTable({
             label="ชื่อ"
             name="firstName"
             rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}
+            style={{ textAlign: "center" }}
           >
             <Input />
           </Form.Item>

@@ -35,7 +35,6 @@ export default function VisitHomeForm() {
       message.error("ไม่สามารถดึงข้อมูลประเภทผู้ป่วยได้");
     }
   };
-  
 
   useEffect(() => {
     fetchMasterPatients();
@@ -70,6 +69,19 @@ export default function VisitHomeForm() {
 
   return (
     <Form layout="vertical" form={form} onFinish={handleFinish}>
+
+      <div
+        style={{
+          textAlign: "center",
+          fontWeight: "bold",
+          fontSize: 20,
+          marginBottom: 16,
+          borderRadius: "8px",
+        }}
+      >
+        ฟอร์มบันทึกการเยี่ยมบ้าน
+      </div>
+
       <Row gutter={16}>
         {/* ข้อมูลผู้ป่วย */}
         <Col span={12}>
