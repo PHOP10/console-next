@@ -56,6 +56,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
           >
             <Input />
           </Form.Item>
+
           <Form.Item
             label="รหัสผ่าน"
             name="password"
@@ -63,6 +64,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
           >
             <Input.Password />
           </Form.Item>
+
           <Form.Item
             label="ชื่อ"
             name="firstName"
@@ -70,6 +72,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
           >
             <Input />
           </Form.Item>
+
           <Form.Item
             label="นามสกุล"
             name="lastName"
@@ -77,16 +80,26 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
           >
             <Input />
           </Form.Item>
-          <Form.Item label="ชื่อเล่น" name="nickName">
-            <Input />
-          </Form.Item>
+
           <Form.Item
-            label="อีเมล"
-            name="email"
-            rules={[{ type: "email", message: "อีเมลไม่ถูกต้อง" }]}
+            label="ชื่อเล่น"
+            name="nickName"
+            rules={[{ required: true, message: "กรุณากรอกชื่อเล่น" }]}
           >
             <Input />
           </Form.Item>
+
+          <Form.Item
+            label="อีเมล"
+            name="email"
+            rules={[
+              { required: true, message: "กรุณากรอกอีเมล" }, // เพิ่ม required
+              { type: "email", message: "อีเมลไม่ถูกต้อง" },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+
           <Form.Item
             label="ระดับผู้ใช้"
             name="role"
@@ -97,6 +110,8 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
               options={[
                 { label: "ผู้ใช้", value: "user" },
                 { label: "หัวหน้า", value: "admin" },
+                { label: "ผู้ดูแลระบบคลังยา", value: "pharmacy" },
+                { label: "ผู้ดูแลระบบครุภัณฑ์", value: "asset" },
               ]}
             />
           </Form.Item>

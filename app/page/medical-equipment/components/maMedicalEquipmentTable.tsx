@@ -141,7 +141,7 @@ export default function MaMedicalEquipmentTable({
       });
       message.success("อนุมัติรายการแล้ว");
       setLoading(true);
-      setOpenPopoverId(null); // ✅ ปิด Popover แถวนี้
+      setOpenPopoverId(null);
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการอนุมัติ:", error);
       message.error("ไม่สามารถอนุมัติได้");
@@ -269,6 +269,7 @@ export default function MaMedicalEquipmentTable({
           >
             แก้ไข
           </Button>
+
           <Popover
             trigger="click"
             title={
@@ -312,6 +313,7 @@ export default function MaMedicalEquipmentTable({
               อนุมัติ
             </Button>
           </Popover>
+
           <Button
             type="primary"
             size="small"

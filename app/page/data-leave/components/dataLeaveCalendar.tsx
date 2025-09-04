@@ -21,6 +21,10 @@ interface CustomEvent extends RbcEvent {
   reason: string;
   details?: string;
   approvedByName?: string;
+  createdName?: string;
+  leaveType?: string;
+  cancelName?: string;
+  cancelReason?: string;
 }
 
 interface Props {
@@ -71,6 +75,10 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
         approvedByName: item.approvedByName || "-",
         dateStart: dayjs(item.dateStart),
         dateEnd: dayjs(item.dateEnd),
+        createdName: item.createdName || "-",
+        leaveType: item.masterLeave.leaveType || "-",
+        cancelName: item.cancelName || "-",
+        cancelReason: item.cancelReason || "-",
       });
       setModalOpen(true);
     }
@@ -90,6 +98,10 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
             reason: item.reason,
             details: item.details,
             approvedByName: item.approvedByName,
+            createdName: item.createdName,
+            leaveType: item.masterLeave.leaveType,
+            cancelName: item.cancelName,
+            cancelReason: item.cancelReason,
           })
         )}
         style={{ height: 500 }}
@@ -121,28 +133,54 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
               )}
             >
               <Collapse.Panel header="ข้อมูลการลา" key="1">
-                <Form.Item label="เหตุผล" name="reason">
+                <Form.Item label="ผู้ลา" name="createdName">
+                  <Input disabled />
+                </Form.Item>
+
+                <Form.Item label="ประเภทการลา" name="leaveType">
+                  <Input disabled />
+                </Form.Item>
+                <Form.Item label="เหตุผลการลา" name="reason">
                   <Input disabled />
                 </Form.Item>
                 <Form.Item label="รายละเอียด" name="details">
                   <Input.TextArea rows={3} disabled />
                 </Form.Item>
-                <Form.Item label="วันที่เริ่มลา" name="dateStart">
-                  <DatePicker disabled style={{ width: "100%" }} />
+                <Form.Item label="วันที่เริ่มการลา" name="dateStart">
+                  <DatePicker
+                    disabled
+                    style={{ width: "100%" }}
+                    format="DD/MM/YYYY"
+                  />
                 </Form.Item>
-                <Form.Item label="วันที่สิ้นสุด" name="dateEnd">
-                  <DatePicker disabled style={{ width: "100%" }} />
+
+                <Form.Item label="วันที่สิ้นสุดการลา" name="dateEnd">
+                  <DatePicker
+                    disabled
+                    style={{ width: "100%" }}
+                    format="DD/MM/YYYY"
+                  />
                 </Form.Item>
-                <Form.Item label="ผู้อนุมัติ" name="approvedByName">
-                  <Input disabled />
-                </Form.Item>
-              </Collapse.Panel>
-              <Collapse.Panel header="สถานะ" key="2">
+
                 <Form.Item label="สถานะ">
                   <Tag color={getStatusColor(selected.status)}>
                     {getStatusLabel(selected.status)}
                   </Tag>
                 </Form.Item>
+                {selected.approvedByName ? (
+                  <Form.Item label="ผู้อนุมัติ" name="approvedByName">
+                    <Input disabled value={selected.approvedByName} />
+                  </Form.Item>
+                ) : selected.cancelName ? (
+                  <Form.Item label="ผู้ยกเลิก" name="cancelName">
+                    <Input disabled value={selected.cancelName} />
+                  </Form.Item>
+                ) : null}
+                {selected.cancelReason ? (
+                  <Form.Item label="เหตุผลการยกเลิก" name="cancelReason">
+                    <Input disabled value={selected.cancelReason} />
+                  </Form.Item>
+                ) : null}
               </Collapse.Panel>
             </Collapse>
           </Form>

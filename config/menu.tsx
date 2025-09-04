@@ -290,6 +290,8 @@ export interface IMenu {
 export const group = {
   admin: "admin",
   user: "user",
+  asset: "asset",
+  pharmacy: "pharmacy",
 };
 
 // เมนูหลัก
@@ -303,17 +305,17 @@ export const MenuSider: IMenu[] = [
   {
     key: "official-travel-request",
     label: `ระบบขอไปราชการ`,
-    roles: [group.admin, group.user],
+    roles: [group.admin, group.user, group.pharmacy, group.asset],
     children: [
       {
         key: `officialTravelRequest`,
         label: `ข้อมูลขอไปราชการ`,
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
       {
         key: `officialTravelRequestBook`,
         label: `ขอไปราชการ`,
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
       {
         key: `manageOfficialTravelRequest`,
@@ -325,14 +327,18 @@ export const MenuSider: IMenu[] = [
   {
     key: "ma-car",
     label: `ระบบจองรถ`,
-    roles: [group.admin, group.user],
+    roles: [group.admin, group.user, group.pharmacy, group.asset],
     children: [
       {
         key: `maCar`,
         label: `ข้อมูลการจองรถ`,
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
-      { key: `maCarBook`, label: `จองรถ`, roles: [group.admin, group.user] },
+      {
+        key: `maCarBook`,
+        label: `จองรถ`,
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
+      },
       {
         key: `manageMaCar`,
         label: `จัดการการจองรถ`,
@@ -343,17 +349,17 @@ export const MenuSider: IMenu[] = [
   {
     key: "data-leave",
     label: `ระบบการลา`,
-    roles: [group.admin, group.user],
+    roles: [group.admin, group.user, group.pharmacy, group.asset],
     children: [
       {
         key: `dataLeave`,
         label: `ข้อมูลการลา`,
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
       {
         key: `dataLeaveBook`,
         label: `ยื่นใบลา`,
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
       {
         key: `manageDataLeave`,
@@ -365,80 +371,80 @@ export const MenuSider: IMenu[] = [
   {
     key: "visit-home",
     label: `ระบบเยี่ยมบ้าน`,
-    roles: [group.admin, group.user],
+    roles: [group.admin, group.user, group.pharmacy, group.asset],
     children: [
       {
         key: "visitHome",
         label: "การเยี่ยบ้าน",
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
       {
         key: "dataVisitHome",
         label: "ข้อมูลการเยี่ยบ้าน",
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
     ],
   },
   {
     key: "ma-drug",
     label: `ระบบยา`,
-    roles: [group.admin, group.user],
+    roles: [group.admin, group.pharmacy],
     children: [
       {
         key: "maDrug",
         label: "เบิกจ่ายยา",
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.pharmacy],
       },
       {
         key: "drug",
         label: "ข้อมูลยา",
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.pharmacy],
       },
       {
         key: "manageDrug",
         label: "จัดการเบิกจ่ายยา",
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.pharmacy],
       },
     ],
   },
   {
     key: "durable-article",
     label: `ระบบครุภัณฑ์`,
-    roles: [group.admin, group.user],
+    roles: [group.admin, group.asset],
     children: [
       {
         key: "durableArticle",
         label: "ข้อมูลครุภัณฑ์",
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.asset],
       },
       {
         key: "supportingResource",
         label: "วัสดุสนับสนุน",
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.asset],
       },
     ],
   },
   {
     key: "medical-equipment",
     label: `เครื่องมือแพทย์`,
-    roles: [group.admin, group.user],
+    roles: [group.admin, group.user, group.pharmacy, group.asset],
     children: [
       {
         key: "medicalEquipment",
         label: "ข้อมมูลเครื่องมือแพทย์",
-        roles: [group.admin, group.user],
+        roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
       {
         key: "maMedicalEquipment",
         label: "จัดการข้อมมูลเครื่องมือแพทย์",
-        roles: [group.admin, group.user],
+        roles: [group.admin],
       },
     ],
   },
   {
     key: "infectious-waste",
     label: `ทิ้งขยะ`,
-    roles: [group.admin, group.user],
+    roles: [group.admin, group.user, group.pharmacy, group.asset],
   },
   { key: "user", label: `ผู้ใช้`, roles: [group.admin] },
 ];

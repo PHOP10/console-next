@@ -3,22 +3,33 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-import { DataLeaveType } from "../../common";
+import { DataLeaveType, MasterLeaveType } from "../../common";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveTable from "../components/dataLeaveTable";
 import DataLeaveCalendar from "../components/dataLeaveCalendar";
+import { useSession } from "next-auth/react";
 
 export default function DataLeavePage() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
-
+  const { data: session } = useSession();
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<DataLeaveType[]>([]);
+  const [masterLeaves, setMasterLeaves] = useState<MasterLeaveType[]>([]);
+  const [leaveByUserId, setLeaveByUserId] = useState<DataLeaveType[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
       const res = await intraAuthService.getDataLeaveQuery();
+      const dataMasterLeaves = await intraAuthService.getMasterLeaveQuery();
+      const userId = session?.user?.userId;
+      const byUserId = await intraAuthService.getDataLeaveByUserId(
+        userId || ""
+      );
+      setLeaveByUserId(byUserId);
+
       setData(res);
+      setMasterLeaves(dataMasterLeaves);
     } catch (err) {
       message.error("ไม่สามารถดึงข้อมูลการลาได้");
     } finally {
@@ -33,19 +44,6 @@ export default function DataLeavePage() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: `ข้อมูลการลา`,
-      children: (
-        <Card>
-          <DataLeaveTable
-            data={data}
-            loading={loading}
-            setLoading={setLoading}
-          />
-        </Card>
-      ),
-    },
-    {
-      key: "2",
       label: "ข้อมูลปฏิทินการลา",
       children: (
         <Card>
@@ -53,6 +51,22 @@ export default function DataLeavePage() {
             data={data}
             loading={loading}
             fetchData={fetchData}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: "2",
+      label: `ข้อมูลการลาผู้ใช้`,
+      children: (
+        <Card>
+          <DataLeaveTable
+            data={data}
+            loading={loading}
+            setLoading={setLoading}
+            masterLeaves={masterLeaves}
+            fetchData={fetchData}
+            leaveByUserId={leaveByUserId}
           />
         </Card>
       ),

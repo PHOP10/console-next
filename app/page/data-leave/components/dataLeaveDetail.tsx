@@ -47,7 +47,7 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
 
           <Row gutter={18}>
             <Col span={12}>
-              <Form.Item label="วันที่เริ่มต้น :">
+              <Form.Item label="วันที่เริ่มลา :">
                 <span>
                   {record.dateStart
                     ? new Date(record.dateStart).toLocaleDateString("th-TH")
@@ -70,47 +70,19 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
           <Row gutter={18}>
             <Col span={12}>
               <Form.Item label="สถานะ :">
-                <span>{record.status ?? "-"}</span>
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item label="อนุมัติโดย :">
                 <span>
-                  {record.approvedByName
-                    ? `${record.approvedByName} (${record.approvedById})`
-                    : "-"}
-                </span>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={18}>
-            <Col span={12}>
-              <Form.Item label="วันที่อนุมัติ :">
-                <span>
-                  {record.approvedDate
-                    ? new Date(record.approvedDate).toLocaleDateString("th-TH")
-                    : "-"}
+                  {record?.status === "pending"
+                    ? "รอดำเนินการ"
+                    : record?.status === "approve"
+                    ? "อนุมัติ"
+                    : record?.status === "cancel"
+                    ? "ยกเลิก"
+                    : ""}
                 </span>
               </Form.Item>
             </Col>
 
             <Col span={12}>
-              <Form.Item label="เหตุผลการยกเลิก :">
-                <TextArea
-                  value={record.cancelReason}
-                  rows={2}
-                  readOnly
-                  bordered={false}
-                  style={{ resize: "none" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={18}>
-            <Col span={24}>
               <Form.Item label="รายละเอียดเพิ่มเติม :">
                 <TextArea
                   value={record.details}
@@ -121,6 +93,52 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
                 />
               </Form.Item>
             </Col>
+          </Row>
+
+          <Row gutter={18}>
+            {record.approvedByName && record.approvedDate ? (
+              <>
+                <Col span={12}>
+                  <Form.Item label="ผู้อนุมัติ :">
+                    <span>{`${record.approvedByName} `}</span>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="วันที่อนุมัติ :">
+                    <span>
+                      {new Date(record.approvedDate).toLocaleDateString(
+                        "th-TH"
+                      )}
+                    </span>
+                  </Form.Item>
+                </Col>
+              </>
+            ) : record.cancelName && record.cancelAt ? (
+              <>
+                <Col span={12}>
+                  <Form.Item label="ผู้ยกเลิก :">
+                    <span>{record.cancelName}</span>
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item label="วันที่ยกเลิก :">
+                    <span>
+                      {new Date(record.cancelAt).toLocaleDateString("th-TH")}
+                    </span>
+                  </Form.Item>
+                </Col>
+              </>
+            ) : null}
+          </Row>
+
+          <Row gutter={18}>
+            {record.cancelReason && record.cancelAt ? (
+              <Col span={12}>
+                <Form.Item label="เหตุผลการยกเลิก :">
+                  <span>{record.cancelReason}</span>
+                </Form.Item>
+              </Col>
+            ) : null}
           </Row>
         </Form>
       )}

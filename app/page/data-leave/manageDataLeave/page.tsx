@@ -1,41 +1,44 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveType, MasterLeaveType } from "../../common";
 import { DataLeaveService } from "../services/dataLeave.service";
 import ManagementDataLeaveTable from "../components/managementDataLeaveTable";
 import ManagementMasterLeaveTable from "../components/managementMasterLeaveTable";
+import { useSession } from "next-auth/react";
 
 export default function ManageDataLeavePage() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
-
+  const { data: session } = useSession();
   const [loading, setLoading] = useState<boolean>(true);
   const [dataLeave, setDataLeave] = useState<DataLeaveType[]>([]);
   const [masterLeave, setMasterLeave] = useState<MasterLeaveType[]>([]);
+  const [leaveByUserId, setLeaveByUserId] = useState<DataLeaveType[]>([]);
+
+  const fetchData = useCallback(async () => {
+    try {
+      const res = await intraAuthService.getDataLeaveQuery();
+      const dataMasterLeaves = await intraAuthService.getMasterLeaveQuery();
+      const userId = session?.user?.userId;
+      const byUserId = await intraAuthService.getDataLeaveByUserId(
+        userId || ""
+      );
+      setLeaveByUserId(byUserId);
+      setDataLeave(res);
+      setMasterLeave(dataMasterLeaves);
+    } catch (err) {
+      message.error("ไม่สามารถดึงข้อมูลการลาได้");
+    } finally {
+      setLoading(false);
+    }
+  }, [intraAuthService]);
 
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        setLoading(true);
-        const [dataLeaveRes, masterLeaveRes] = await Promise.all([
-          intraAuthService.getDataLeaveQuery(),
-          intraAuthService.getMasterLeaveQuery(),
-        ]);
-
-        setDataLeave(dataLeaveRes);
-        setMasterLeave(masterLeaveRes);
-      } catch (err) {
-        message.error("ไม่สามารถดึงข้อมูลได้");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAll();
-  }, []);
+    if (loading) fetchData();
+  }, [loading, fetchData]);
 
   const items: TabsProps["items"] = [
     {
@@ -44,10 +47,13 @@ export default function ManageDataLeavePage() {
       children: (
         <Card>
           <ManagementDataLeaveTable
-            data={dataLeave}
+            dataLeave={dataLeave}
             setDataLeave={setDataLeave}
             loading={loading}
             setLoading={setLoading}
+            masterLeave={masterLeave}
+            fetchData={fetchData}
+            leaveByUserId={leaveByUserId}
           />
         </Card>
       ),

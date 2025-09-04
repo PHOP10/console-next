@@ -15,6 +15,15 @@ export const DataLeaveService = (axiosInstance: AxiosInstance) => {
           return [];
         });
     },
+    getDataLeaveByUserId: async (userId: string) => {
+      return await axiosInstance
+        .get(`${baseUrlApiDataLeave}/user/${userId}`)
+        .then((res) => res.data)
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
 
     createDataLeave: async (body: any) => {
       return await axiosInstance

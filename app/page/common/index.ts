@@ -72,12 +72,19 @@ export interface DataLeaveType {
   approvedById?: string;
   approvedByName?: string;
   approvedDate?: string;
+  approvedAt?: string;
+  cancelReason?: string;
+  cancelName?: string;
+  createdName?: string;
+  createdById?: string;
+  cancelAt?: string;
   details?: string;
   typeId: number;
   masterLeave: MasterLeaveType;
   createdAt: string;
   updatedAt: string;
 }
+
 export interface MasterLeaveType {
   id: number;
   leaveType: string;

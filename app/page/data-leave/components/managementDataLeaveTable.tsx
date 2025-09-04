@@ -11,43 +11,64 @@ import {
   Modal,
   Form,
   Input,
+  Select,
+  DatePicker,
+  Popover,
+  Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { DataLeaveType } from "../../common";
+import { DataLeaveType, MasterLeaveType } from "../../common";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveDetail from "./dataLeaveDetail";
 import { useSession } from "next-auth/react";
+import isBetween from "dayjs/plugin/isBetween";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
 
-interface ManagementDataLeaveTableProps {
-  data: DataLeaveType[];
+interface Props {
+  dataLeave: DataLeaveType[];
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setDataLeave: React.Dispatch<React.SetStateAction<DataLeaveType[]>>;
+  masterLeave: MasterLeaveType[];
+  fetchData: () => Promise<void>;
+  leaveByUserId?: DataLeaveType[];
 }
 
 export default function ManagementDataLeaveTable({
-  data,
+  dataLeave,
   loading,
   setLoading,
   setDataLeave,
-}: ManagementDataLeaveTableProps) {
+  masterLeave,
+  fetchData,
+  leaveByUserId,
+}: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<DataLeaveType | null>(
     null
   );
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const { data: session } = useSession();
+  const { RangePicker } = DatePicker;
+  const { TextArea } = Input;
+  const [open, setOpen] = useState(false);
+  const [modalCancelOpen, setModalCancelOpen] = useState(false);
+  const [selectedCancelRecord, setSelectedCancelRecord] =
+    useState<DataLeaveType | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
 
   const openEditModal = (record: DataLeaveType) => {
     setCurrentRecord(record);
     form.setFieldsValue({
+      typeId: record.typeId,
+      leaveDates: [dayjs(record.dateStart), dayjs(record.dateEnd)],
       reason: record.reason,
       details: record.details,
     });
@@ -59,16 +80,18 @@ export default function ManagementDataLeaveTable({
       const values = await form.validateFields();
       if (!currentRecord) return;
 
-      const updated = await intraAuthService.updateDataLeave({
+      const { leaveDates, ...rest } = values;
+
+      const payload = {
         id: currentRecord.id,
+        ...rest,
+        dateStart: leaveDates[0].startOf("day").toISOString(),
+        dateEnd: leaveDates[1].endOf("day").toISOString(),
+      };
 
-        ...values,
-      });
+      await intraAuthService.updateDataLeave(payload);
 
-      setDataLeave((prev) =>
-        prev.map((item) => (item.id === currentRecord.id ? updated : item))
-      );
-
+      fetchData();
       message.success("แก้ไขข้อมูลเรียบร้อย");
       setIsModalOpen(false);
       form.resetFields();
@@ -89,21 +112,50 @@ export default function ManagementDataLeaveTable({
     }
   };
 
-  const handleUpdateStatus = async (record: DataLeaveType, status: string) => {
+  const handleApprove = async (record: any) => {
     try {
-      const updated = await intraAuthService.updateDataLeave({
+      await intraAuthService.updateDataLeave({
         id: record.id,
+        status: "approve",
         approvedById: session?.user?.userId,
         approvedByName: session?.user?.fullName,
         approvedDate: new Date().toISOString(),
-        status,
       });
+      message.success("อนุมัติรายการนี้แล้ว");
+      setLoading(true);
+      setOpenPopoverId(null);
+    } catch (error) {
+      console.error("เกิดข้อผิดพลาดในการอนุมัติ:", error);
+      message.error("ไม่สามารถอนุมัติได้");
+    }
+  };
+
+  const handleConfirmCancel = async (values: { cancelReason: string }) => {
+    if (!selectedCancelRecord) return;
+    const reason = values.cancelReason?.trim();
+    if (!reason) {
+      message.error("กรุณากรอกเหตุผลการยกเลิก");
+      return;
+    }
+
+    try {
+      const updated = await intraAuthService.updateDataLeave({
+        id: selectedCancelRecord.id,
+        cancelName: session?.user?.fullName,
+        cancelAt: new Date().toISOString(),
+        status: "cancel",
+        cancelReason: values.cancelReason,
+      });
+
       setDataLeave((prev) =>
-        prev.map((item) => (item.id === record.id ? updated : item))
+        prev.map((item) =>
+          item.id === selectedCancelRecord.id ? updated : item
+        )
       );
-      message.success(
-        status === "approve" ? "อนุมัติเรียบร้อย" : "ยกเลิกเรียบร้อย"
-      );
+
+      message.success("ยกเลิกเรียบร้อย");
+      setModalCancelOpen(false);
+      form.resetFields(); // รีเซ็ต Form
     } catch (err) {
       console.error(err);
       message.error("เกิดข้อผิดพลาด");
@@ -121,6 +173,8 @@ export default function ManagementDataLeaveTable({
   };
 
   const columns: ColumnsType<DataLeaveType> = [
+    { title: "Id", dataIndex: "id", key: "id" },
+
     { title: "เหตุผล", dataIndex: "reason", key: "reason" },
     {
       title: "วันที่เริ่มลา",
@@ -160,12 +214,12 @@ export default function ManagementDataLeaveTable({
         return <Tag color={color}>{text}</Tag>;
       },
     },
-    {
-      title: "ผู้อนุมัติ",
-      dataIndex: "approvedByName",
-      key: "approvedByName",
-      render: (value) => value || "-",
-    },
+    // {
+    //   title: "ผู้อนุมัติ",
+    //   dataIndex: "approvedByName",
+    //   key: "approvedByName",
+    //   render: (value) => value || "-",
+    // },
     {
       title: "รายละเอียด",
       dataIndex: "details",
@@ -197,21 +251,50 @@ export default function ManagementDataLeaveTable({
             </Button>
           </Popconfirm>
 
-          <Popconfirm
-            title="คุณต้องการอนุมัติการลาใช่หรือไม่?"
-            okText="อนุมัติ"
-            cancelText="ยกเลิก"
-            onConfirm={() => handleUpdateStatus(record, "approve")}
-            onCancel={() => handleUpdateStatus(record, "cancel")}
+          <Popover
+            trigger="click"
+            title={
+              <Space>
+                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
+                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
+              </Space>
+            }
+            content={
+              <Space style={{ display: "flex", marginTop: 13 }}>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => handleApprove(record)}
+                >
+                  อนุมัติ
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  onClick={() => {
+                    setSelectedCancelRecord(record);
+                    setModalCancelOpen(true);
+                    // setPopoverOpen(false);
+                    setOpenPopoverId(null);
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+              </Space>
+            }
+            open={openPopoverId === record.id}
+            onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
             <Button
               type="primary"
               size="small"
-              // disabled={record.status !== "pending"}
+              disabled={record.status !== "pending"}
+              onClick={() => setOpenPopoverId(record.id)}
             >
               อนุมัติ
             </Button>
-          </Popconfirm>
+          </Popover>
+
           <Button
             size="small"
             type="primary"
@@ -234,7 +317,7 @@ export default function ManagementDataLeaveTable({
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={data}
+        dataSource={dataLeave}
         loading={loading}
         pagination={{ pageSize: 10 }}
       />
@@ -249,6 +332,28 @@ export default function ManagementDataLeaveTable({
       >
         <Form form={form} layout="vertical">
           <Form.Item
+            label="ประเภทการลา"
+            name="typeId"
+            rules={[{ required: true, message: "กรุณาเลือกประเภทลา" }]}
+          >
+            <Select placeholder="เลือกประเภทลา">
+              {masterLeave.map((item) => (
+                <Select.Option key={item.id} value={item.id}>
+                  {item.leaveType}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item
+            label="ช่วงวันที่ลา"
+            name="leaveDates"
+            rules={[{ required: true, message: "กรุณาเลือกช่วงวันที่ลา" }]}
+          >
+            <RangePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+          </Form.Item>
+
+          <Form.Item
             label="เหตุผล"
             name="reason"
             rules={[{ required: true, message: "กรุณากรอกเหตุผล" }]}
@@ -258,6 +363,29 @@ export default function ManagementDataLeaveTable({
 
           <Form.Item label="รายละเอียด" name="details">
             <Input.TextArea rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="ยกเลิกการลา"
+        open={modalCancelOpen}
+        onOk={() => form.submit()}
+        onCancel={() => setModalCancelOpen(false)}
+        okText="ยืนยัน"
+        cancelText="ยกเลิก"
+      >
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={(values) => handleConfirmCancel(values)}
+        >
+          <Form.Item
+            label="เหตุผลการยกเลิก"
+            name="cancelReason"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+          >
+            <Input.TextArea placeholder="กรุณากรอกเหตุผลการยกเลิก" rows={4} />
           </Form.Item>
         </Form>
       </Modal>
