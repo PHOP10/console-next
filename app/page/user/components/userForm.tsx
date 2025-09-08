@@ -93,11 +93,51 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
             label="อีเมล"
             name="email"
             rules={[
-              { required: true, message: "กรุณากรอกอีเมล" }, // เพิ่ม required
+              { required: true, message: "กรุณากรอกอีเมล" },
               { type: "email", message: "อีเมลไม่ถูกต้อง" },
             ]}
           >
             <Input />
+          </Form.Item>
+          <Form.Item
+            label="เบอร์โทร"
+            name="phoneNumber"
+            rules={[
+              { required: true, message: "กรุณากรอกเบอร์โทร" },
+              { pattern: /^[0-9]{10}$/, message: "กรุณากรอกเบอร์โทร 10 หลัก" },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="รหัสพนักงาน"
+            name="employeeId"
+            rules={[{ required: true, message: "กรุณากรอกรหัสพนักงาน" }]}
+          >
+            <Input />
+          </Form.Item>
+
+          <Form.Item
+            label="ตำแหน่ง"
+            name="position"
+            rules={[{ required: true, message: "กรุณาเลือกตำแหน่ง" }]}
+          >
+            <Select
+              placeholder="เลือกตำแหน่ง"
+              options={[
+                {
+                  label: "ผู้อำนวยการสถานีอนามัย",
+                  value: "ผู้อำนวยการสถานีอนามัย",
+                },
+                { label: "พยาบาลวิชาชีพ", value: "พยาบาลวิชาชีพ" },
+                {
+                  label: "เจ้าหน้าที่ทันตสาธารณสุข",
+                  value: "เจ้าหน้าที่ทันตสาธารณสุข",
+                },
+                { label: "เจ้าหน้าที่พนักงาน", value: "เจ้าหน้าที่พนักงาน" },
+              ]}
+            />
           </Form.Item>
 
           <Form.Item

@@ -140,7 +140,7 @@ export default function Login() {
                   rules={[{ required: true, message: "กรุณากรอกชื่อผู้ใช้!" }]}
                 >
                   <Input
-                    placeholder="user@gmail.com"
+                    placeholder="userName"
                     onChange={(e) =>
                       setUser((prev) => ({ ...prev, username: e.target.value }))
                     }
@@ -300,7 +300,7 @@ export default function Login() {
       <style jsx global>{`
         .ant-card .ant-card-body {
           padding-inline: 14px !important;
-          padding-block: 3px !important;           
+          padding-block: 3px !important;
         }
       `}</style>
     </>

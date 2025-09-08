@@ -223,6 +223,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
         columns={columns}
         dataSource={data}
         loading={loading}
+        scroll={{ x: 800 }}
       />
 
       <Modal

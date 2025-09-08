@@ -21,6 +21,7 @@ import { InfectiousWasteType } from "../../common/index";
 import type { ColumnsType } from "antd/es/table";
 import ThrowAwayWaste from "../components/throwAwayWasteForm";
 import InfectiousWasteChart from "../components/infectiousWasteChart";
+import ThrowAwayWasteTable from "../components/throwAwayWasteTable";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
@@ -51,78 +52,71 @@ export default function Page() {
     }
   }, [loading, fetchData]);
 
-  const columns: ColumnsType<InfectiousWasteType> = [
-    {
-      title: "ประเภทขยะ",
-      dataIndex: "wasteType",
-      key: "wasteType",
-    },
-    {
-      title: "น้ำหนัก (กิโลกรัม)",
-      dataIndex: "wasteWeight",
-      key: "wasteWeight",
-    },
-    {
-      title: "วันที่ทิ้ง",
-      dataIndex: "discardedDate",
-      key: "discardedDate",
-      render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
-    },
-    // {
-    //   title: "วันที่กำจัด",
-    //   dataIndex: "disposedDate",
-    //   key: "disposedDate",
-    //   render: (date: string | null) =>
-    //     date ? new Date(date).toLocaleDateString("th-TH") : "ยังไม่กำจัด",
-    // },
-    {
-      title: "การจัดการ",
-      key: "action",
-      render: (_, record) => (
-        <Space>
-          <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteInfectiousWaste(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                setLoading(true);
-              } catch (error) {
-                console.error("Error deleting waste:", error);
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Button danger size="small">
-              ลบ
-            </Button>
-          </Popconfirm>
+  // const columns: ColumnsType<InfectiousWasteType> = [
+  //   {
+  //     title: "ประเภทขยะ",
+  //     dataIndex: "wasteType",
+  //     key: "wasteType",
+  //   },
+  //   {
+  //     title: "น้ำหนัก (กิโลกรัม)",
+  //     dataIndex: "wasteWeight",
+  //     key: "wasteWeight",
+  //   },
+  //   {
+  //     title: "วันที่ส่งกำจัด",
+  //     dataIndex: "discardedDate",
+  //     key: "discardedDate",
+  //     render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
+  //   },
+  //   {
+  //     title: "การจัดการ",
+  //     key: "action",
+  //     render: (_, record) => (
+  //       <Space>
+  //         <Popconfirm
+  //           title="ยืนยันการลบ"
+  //           description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+  //           onConfirm={async () => {
+  //             try {
+  //               await intraAuthService.deleteInfectiousWaste(record.id);
+  //               message.success("ลบข้อมูลสำเร็จ");
+  //               setLoading(true);
+  //             } catch (error) {
+  //               console.error("Error deleting waste:", error);
+  //               message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+  //             }
+  //           }}
+  //           okText="ใช่"
+  //           cancelText="ยกเลิก"
+  //         >
+  //           <Button danger size="small">
+  //             ลบ
+  //           </Button>
+  //         </Popconfirm>
 
-          <Button size="small" onClick={() => editRecord(record)}>
-            แก้ไข
-          </Button>
-        </Space>
-      ),
-    },
-  ];
+  //         <Button
+  //           size="small"
+  //           type="primary"
+  //           onClick={() => editRecord(record)}
+  //         >
+  //           แก้ไข
+  //         </Button>
+  //       </Space>
+  //     ),
+  //   },
+  // ];
 
   const items: TabsProps["items"] = [
     {
       key: "1",
       label: `ข้อมูลขยะติดเชื้อ`,
       children: (
-        <Card>
-          <Table
-            dataSource={dataInfectiousWaste}
-            columns={columns}
-            rowKey="id"
-            loading={loading}
-            pagination={{ pageSize: 10 }}
-          />
-        </Card>
+        <ThrowAwayWasteTable
+          data={dataInfectiousWaste}
+          loading={loading}
+          setLoading={setLoading}
+        />
       ),
     },
     {
@@ -145,6 +139,7 @@ export default function Page() {
             defaultActiveKey="1"
             items={items}
             onChange={(key) => setActiveTab(key)}
+            destroyInactiveTabPane
           />
         </Col>
       </Row>

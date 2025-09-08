@@ -76,7 +76,7 @@ export default function DataLeavePage() {
   return (
     <Row gutter={[16, 16]}>
       <Col span={24}>
-        <Tabs defaultActiveKey="1" items={items} />
+        <Tabs defaultActiveKey="1" items={items} destroyInactiveTabPane />
       </Col>
     </Row>
   );

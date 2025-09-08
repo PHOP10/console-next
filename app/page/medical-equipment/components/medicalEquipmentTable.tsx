@@ -13,6 +13,7 @@ import {
   message,
   Popconfirm,
   Select,
+  Tooltip,
 } from "antd";
 import React, { useEffect, useState, useCallback } from "react";
 import type { ColumnsType } from "antd/es/table";
@@ -155,30 +156,61 @@ export default function MedicalEquipmentTable({
       key: "id",
     },
     {
-      title: "ข้อมูลเครื่องมือ",
+      title: "ชื่อเครื่องมือแพทย์",
       dataIndex: "items",
       key: "items",
       width: 160,
-      render: (items: any[]) => (
-        <ul style={{ paddingLeft: 20, margin: 0 }}>
-          {items?.map((item, index) => (
-            <li key={index}>{item.medicalEquipment?.equipmentName}</li>
-          ))}
-        </ul>
-      ),
+      render: (items: any[]) => {
+        const maxToShow = 2; // แสดงสูงสุด 3 รายการ
+        const hasMore = items?.length > maxToShow;
+        const displayItems = hasMore ? items.slice(0, maxToShow) : items;
+
+        return (
+          <ul style={{ paddingLeft: 20, margin: 0 }}>
+            {displayItems?.map((item, index) => (
+              <li key={index}>{item.medicalEquipment?.equipmentName}</li>
+            ))}
+            {hasMore && (
+              <Tooltip
+                title={items
+                  .map((item) => item.medicalEquipment?.equipmentName)
+                  .join(", ")}
+              >
+                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
+              </Tooltip>
+            )}
+          </ul>
+        );
+      },
     },
     {
       title: "จำนวน",
       dataIndex: "items",
       key: "items",
-      width: 160,
-      render: (items: any[]) => (
-        <ul style={{ paddingLeft: 20, margin: 0 }}>
-          {items?.map((item, index) => (
-            <li key={index}>{item.quantity}</li>
-          ))}
-        </ul>
-      ),
+      // width: 160,
+      render: (items: any[]) => {
+        if (!items || items.length === 0) return null;
+
+        const firstThree = items.slice(0, 2);
+        const rest = items.slice(2);
+
+        return (
+          <ul style={{ paddingLeft: 20, margin: 0 }}>
+            {firstThree.map((item, index) => (
+              <li key={index}>{item.quantity}</li>
+            ))}
+
+            {rest.length > 0 && (
+              <Tooltip
+                title={items.map((item) => item.quantity).join(", ")}
+                placement="top"
+              >
+                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
+              </Tooltip>
+            )}
+          </ul>
+        );
+      },
     },
     {
       title: "วันที่ส่ง",
@@ -187,7 +219,7 @@ export default function MedicalEquipmentTable({
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
     },
     {
-      title: "ผู้ส่ง",
+      title: "ชื่อผู้ส่ง",
       dataIndex: "createdBy",
       key: "createdBy",
     },
@@ -235,21 +267,33 @@ export default function MedicalEquipmentTable({
       title: "หมายเหตุเพิ่มเติม",
       dataIndex: "note",
       key: "note",
-      render: (note: string | undefined) => note || "-",
+      render: (text: string) => {
+        const shortText =
+          text && text.length > 20 ? text.substring(0, 25) + "..." : text;
+        return (
+          <Tooltip title={text}>
+            <span>{shortText}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "จัดการ",
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => handleEdit(record)}
-            disabled={record.status !== "pending"}
-          >
-            แก้ไข
-          </Button>
+          {(session?.user?.role === "admin" ||
+            session?.user?.role === "pharmacy") && (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => handleEdit(record)}
+              disabled={record.status !== "pending"}
+            >
+              แก้ไข
+            </Button>
+          )}
+
           <Button
             type="primary"
             size="small"

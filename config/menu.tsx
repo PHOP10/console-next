@@ -296,12 +296,12 @@ export const group = {
 
 // เมนูหลัก
 export const MenuSider: IMenu[] = [
-  {
-    key: `dashboard`,
-    icon: <FileTextOutlined />,
-    label: `โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง`,
-    roles: [group.admin],
-  },
+  // {
+  //   key: `dashboard`,
+  //   icon: <FileTextOutlined />,
+  //   label: `โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง`,
+  //   // roles: [group.admin],
+  // },
   {
     key: "official-travel-request",
     label: `ระบบขอไปราชการ`,
