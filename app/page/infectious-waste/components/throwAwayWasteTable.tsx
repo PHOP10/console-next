@@ -18,6 +18,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/infectiouswaste.service";
 import { useState } from "react";
 import dayjs from "dayjs";
+import { useSession } from "next-auth/react";
 
 interface ThrowAwayWasteTableProps {
   data: InfectiousWasteType[];
@@ -32,7 +33,7 @@ export default function ThrowAwayWasteTable({
 }: ThrowAwayWasteTableProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
-
+  const { data: session } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] =
     useState<InfectiousWasteType | null>(null);
@@ -54,10 +55,11 @@ export default function ThrowAwayWasteTable({
         ...editingRecord,
         ...values,
         discardedDate: values.discardedDate.toISOString(),
+        wasteWeight: parseFloat(values.wasteWeight),
       };
 
       await intraAuthService.updateInfectiousWaste(payload);
-      message.success("อัปเดตข้อมูลสำเร็จ");
+      message.success("แก้ไขข้อมูลสำเร็จ");
       setIsModalOpen(false);
       setEditingRecord(null);
       setLoading(true);
@@ -85,38 +87,47 @@ export default function ThrowAwayWasteTable({
       render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
     },
     {
+      title: "ผู้ส่งกำจัด",
+      dataIndex: "createdName",
+      key: "createdName",
+    },
+    {
       title: "การจัดการ",
       key: "action",
       render: (_, record) => (
         <Space>
-          <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteInfectiousWaste(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                setLoading(true);
-              } catch (error) {
-                console.error("Error deleting waste:", error);
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Button danger size="small">
-              ลบ
-            </Button>
-          </Popconfirm>
+          {session?.user.role === "admin" && (
+            <>
+              <Popconfirm
+                title="ยืนยันการลบ"
+                description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+                onConfirm={async () => {
+                  try {
+                    await intraAuthService.deleteInfectiousWaste(record.id);
+                    message.success("ลบข้อมูลสำเร็จ");
+                    setLoading(true);
+                  } catch (error) {
+                    console.error("Error deleting waste:", error);
+                    message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+                  }
+                }}
+                okText="ใช่"
+                cancelText="ยกเลิก"
+              >
+                <Button danger size="small">
+                  ลบ
+                </Button>
+              </Popconfirm>
 
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => handleEdit(record)}
-          >
-            แก้ไข
-          </Button>
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => handleEdit(record)}
+              >
+                แก้ไข
+              </Button>
+            </>
+          )}
         </Space>
       ),
     },
@@ -151,11 +162,17 @@ export default function ThrowAwayWasteTable({
           </Form.Item>
 
           <Form.Item
+            label="น้ำหนักขยะติดเชื้อ (กิโลกรัม)"
             name="wasteWeight"
-            label="น้ำหนัก (กิโลกรัม)"
-            rules={[{ required: true, message: "กรุณากรอกน้ำหนัก" }]}
+            rules={[
+              { required: true, message: "กรุณาระบุน้ำหนักขยะ" },
+              {
+                pattern: /^\d+(\.\d{1,2})?$/,
+                message: "กรุณากรอกตัวเลข เช่น 1.25",
+              },
+            ]}
           >
-            <Input type="number" />
+            <Input placeholder="เช่น 1.25" />
           </Form.Item>
 
           <Form.Item

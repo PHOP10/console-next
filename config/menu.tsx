@@ -262,6 +262,15 @@ import {
   UserOutlined,
   FileOutlined,
   FileTextOutlined,
+  CarOutlined,
+  FrownOutlined,
+  FileZipOutlined,
+  HomeOutlined,
+  MedicineBoxOutlined,
+  HddOutlined,
+  TruckOutlined,
+  TeamOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons";
 
 import { MenuProps } from "antd";
@@ -269,6 +278,8 @@ import { signOut } from "next-auth/react";
 import Link from "next/link";
 import React from "react";
 import { useSession } from "next-auth/react";
+import { indexService } from "../services/index.service";
+import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 
 // Interface สำหรับเมนู
 export interface IMenuChild {
@@ -306,6 +317,7 @@ export const MenuSider: IMenu[] = [
     key: "official-travel-request",
     label: `ระบบขอไปราชการ`,
     roles: [group.admin, group.user, group.pharmacy, group.asset],
+    icon: <FileZipOutlined />,
     children: [
       {
         key: `officialTravelRequest`,
@@ -328,6 +340,7 @@ export const MenuSider: IMenu[] = [
     key: "ma-car",
     label: `ระบบจองรถ`,
     roles: [group.admin, group.user, group.pharmacy, group.asset],
+    icon: <CarOutlined />,
     children: [
       {
         key: `maCar`,
@@ -350,6 +363,7 @@ export const MenuSider: IMenu[] = [
     key: "data-leave",
     label: `ระบบการลา`,
     roles: [group.admin, group.user, group.pharmacy, group.asset],
+    icon: <FrownOutlined />,
     children: [
       {
         key: `dataLeave`,
@@ -372,6 +386,7 @@ export const MenuSider: IMenu[] = [
     key: "visit-home",
     label: `ระบบเยี่ยมบ้าน`,
     roles: [group.admin, group.user, group.pharmacy, group.asset],
+    icon: <HomeOutlined />,
     children: [
       {
         key: "visitHome",
@@ -389,6 +404,7 @@ export const MenuSider: IMenu[] = [
     key: "ma-drug",
     label: `ระบบยา`,
     roles: [group.admin, group.pharmacy],
+    icon: <MedicineBoxOutlined />,
     children: [
       {
         key: "maDrug",
@@ -411,6 +427,7 @@ export const MenuSider: IMenu[] = [
     key: "durable-article",
     label: `ระบบครุภัณฑ์`,
     roles: [group.admin, group.asset],
+    icon: <HddOutlined />,
     children: [
       {
         key: "durableArticle",
@@ -428,6 +445,7 @@ export const MenuSider: IMenu[] = [
     key: "medical-equipment",
     label: `เครื่องมือแพทย์`,
     roles: [group.admin, group.user, group.pharmacy, group.asset],
+    icon: <TruckOutlined />,
     children: [
       {
         key: "medicalEquipment",
@@ -445,8 +463,14 @@ export const MenuSider: IMenu[] = [
     key: "infectious-waste",
     label: `ทิ้งขยะ`,
     roles: [group.admin, group.user, group.pharmacy, group.asset],
+    icon: <DeleteOutlined />,
   },
-  { key: "user", label: `ผู้ใช้`, roles: [group.admin] },
+  {
+    key: "user",
+    label: `ผู้ใช้`,
+    roles: [group.admin],
+    icon: <TeamOutlined />,
+  },
 ];
 
 // ฟังก์ชันกรองเมนูตาม role จาก session
@@ -529,3 +553,10 @@ const MenuNav: MenuProps["items"] = [
 ];
 
 export default MenuNav;
+function useState<T>(arg0: {}): [any, any] {
+  throw new Error("Function not implemented.");
+}
+
+function useEffect(arg0: () => void, arg1: never[]) {
+  throw new Error("Function not implemented.");
+}

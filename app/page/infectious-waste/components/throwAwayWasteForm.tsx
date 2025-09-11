@@ -14,6 +14,7 @@ import {
 import dayjs from "dayjs";
 import { infectiousWasteServices } from "../services/infectiouswaste.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
+import { useSession } from "next-auth/react";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -22,7 +23,7 @@ type Props = {
 export default function ThrowAwayWasteForm({ setLoading }: Props) {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
-
+  const { data: session } = useSession();
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
 
@@ -34,6 +35,7 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
         wasteType: values.wasteType,
         wasteWeight: parseFloat(values.wasteWeight),
         discardedDate: values.discardedDate.toISOString(),
+        createdName: session?.user?.fullName,
       };
 
       await intraAuthService.createInfectiousWaste(payload);

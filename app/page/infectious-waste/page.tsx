@@ -21,6 +21,7 @@ import { InfectiousWasteType } from "./../common/index";
 import type { ColumnsType } from "antd/es/table";
 import ThrowAwayWaste from "./components/throwAwayWasteForm";
 import InfectiousWasteChart from "./components/infectiousWasteChart";
+import ThrowAwayWasteTable from "./components/throwAwayWasteTable";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
@@ -68,13 +69,6 @@ export default function Page() {
       key: "discardedDate",
       render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
     },
-    // {
-    //   title: "วันที่กำจัด",
-    //   dataIndex: "disposedDate",
-    //   key: "disposedDate",
-    //   render: (date: string | null) =>
-    //     date ? new Date(date).toLocaleDateString("th-TH") : "ยังไม่กำจัด",
-    // },
     {
       title: "การจัดการ",
       key: "action",
@@ -114,15 +108,11 @@ export default function Page() {
       key: "1",
       label: `ข้อมูลขยะติดเชื้อ`,
       children: (
-        <Card>
-          <Table
-            dataSource={dataInfectiousWaste}
-            columns={columns}
-            rowKey="id"
-            loading={loading}
-            pagination={{ pageSize: 10 }}
-          />
-        </Card>
+        <ThrowAwayWasteTable
+          data={dataInfectiousWaste}
+          loading={loading}
+          setLoading={setLoading}
+        />
       ),
     },
     {

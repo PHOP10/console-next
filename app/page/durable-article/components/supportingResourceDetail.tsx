@@ -102,7 +102,7 @@ export default function SupportingResourceDetail({
               <Form.Item label="วันที่แก้ไขล่าสุด :">
                 <span>
                   {record.updatedAt
-                    ? dayjs(record.updatedAt).format("DD/MM/YYYY HH:mm")
+                    ? dayjs(record.updatedAt).format("DD/MM/YYYY")
                     : "-"}
                 </span>
               </Form.Item>

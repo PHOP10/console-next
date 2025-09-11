@@ -1,11 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Table, Space, Popconfirm, Button, message, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { maCarService } from "../services/maCar.service";
 import { MaCarType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
+import MaCarDetail from "./maCarDetail";
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -20,6 +21,18 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
 }) => {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+
+  const handleShowDetail = (record: any) => {
+    setSelectedRecord(record);
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedRecord(null);
+  };
 
   const columns: ColumnsType<MaCarType> = [
     { title: "ผู้ขอใช้รถ", dataIndex: "requesterName", key: "requesterName" },
@@ -77,35 +90,34 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "จัดการ",
       key: "action",
       render: (_, record) => (
-        // <Space>
-        //   <Popconfirm
-        //     title="ยืนยันการลบ"
-        //     description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-        //     onConfirm={async () => {
-        //       try {
-        //         await intraAuthService.deleteMaCar(record.id);
-        //         message.success("ลบข้อมูลสำเร็จ");
-        //         fetchData();
-        //       } catch (error) {
-        //         console.error("เกิดข้อผิดพลาดในการลบ:", error);
-        //         message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-        //       }
-        //     }}
-        //     okText="ใช่"
-        //     cancelText="ยกเลิก"
-        //   >
-        //     <Button danger size="small">
-        //       ลบ
-        //     </Button>
-        //   </Popconfirm>
-        // </Space>
-        <></>
+        <Space>
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => handleShowDetail(record)}
+          >
+            รายละเอียด
+          </Button>
+        </Space>
       ),
     },
   ];
 
   return (
-    <Table columns={columns} dataSource={data} rowKey="id" loading={loading} />
+    <>
+      {" "}
+      <Table
+        columns={columns}
+        dataSource={data}
+        rowKey="id"
+        loading={loading}
+      />{" "}
+      <MaCarDetail
+        open={detailModalOpen}
+        onClose={handleCloseDetail}
+        record={selectedRecord}
+      />
+    </>
   );
 };
 

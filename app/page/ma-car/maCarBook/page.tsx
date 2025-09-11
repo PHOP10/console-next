@@ -1,35 +1,37 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, Col, Row, Tabs, TabsProps, message, Select } from "antd";
+import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
 import MaCarBookForm from "../components/maCarBookForm";
+import { MasterCarType } from "../../common";
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
-
   const [loading, setLoading] = useState<boolean>(false);
-  const [cars, setCars] = useState<any[]>([]);
-  const [selectedCar, setSelectedCar] = useState<any>(null);
+  const [cars, setCars] = useState<MasterCarType[]>([]);
+  const [dataUser, setDataUser] = useState<any[]>([]);
 
-  // โหลดข้อมูลรถจาก MasterCar
-  const fetchCars = async () => {
+  // โหลดข้อมูลรถและผู้ใช้
+  const fetchCarsAndUsers = async () => {
     setLoading(true);
     try {
-      const res = await intraAuthService.getMasterCarQuery();
-      setCars(res);
+      const resCars = await intraAuthService.getMasterCarQuery();
+      const resUsers = await intraAuthService.getUserQuery();
+      setCars(resCars);
+      setDataUser(resUsers);
     } catch (err) {
       console.error(err);
-      message.error("ไม่สามารถดึงข้อมูลรถได้");
+      message.error("ไม่สามารถดึงข้อมูลได้");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCars();
+    fetchCarsAndUsers();
   }, []);
 
   const items: TabsProps["items"] = [
@@ -38,29 +40,7 @@ export default function MaCarPage() {
       label: "ยื่นแบบฟอร์ม",
       children: (
         <Card>
-          <div style={{ marginBottom: 16 }}>
-            <Select
-              placeholder="เลือกชื่อรถเพื่อจอง"
-              style={{ width: "100%" }}
-              loading={loading}
-              onChange={(id) => {
-                const car = cars.find((c) => c.id === id);
-                setSelectedCar(car);
-              }}
-            >
-              {cars.map((car) => (
-                <Select.Option key={car.id} value={car.id}>
-                  {car.carName} ({car.licensePlate})
-                </Select.Option>
-              ))}
-            </Select>
-          </div>
-
-          {selectedCar ? (
-            <MaCarBookForm car={selectedCar} />
-          ) : (
-            <p style={{ color: "gray" }}>กรุณาเลือกรถก่อนทำการจอง</p>
-          )}
+          <MaCarBookForm cars={cars} dataUser={dataUser} loading={loading} />
         </Card>
       ),
     },

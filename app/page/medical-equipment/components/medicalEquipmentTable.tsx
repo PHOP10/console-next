@@ -14,6 +14,7 @@ import {
   Popconfirm,
   Select,
   Tooltip,
+  Card,
 } from "antd";
 import React, { useEffect, useState, useCallback } from "react";
 import type { ColumnsType } from "antd/es/table";
@@ -329,16 +330,17 @@ export default function MedicalEquipmentTable({
 
   return (
     <>
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={data}
-        loading={loading}
-        bordered
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
-      />
-
+      <Card>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={data}
+          loading={loading}
+          bordered
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 800 }}
+        />
+      </Card>
       <Modal
         title="แก้ไขข้อมูล"
         open={editModalVisible}
@@ -381,16 +383,18 @@ export default function MedicalEquipmentTable({
                             .filter(
                               (item: any) =>
                                 item.medicalEquipmentId === eq.id &&
-                                item.maMedicalEquipment?.status === "pending"
+                                ["pending", "approve"].includes(
+                                  item.maMedicalEquipment?.status
+                                )
                             )
                             .reduce(
                               (sum: number, item: any) => sum + item.quantity,
                               0
                             );
-
-                          const remainingQuantity = eq.quantity;
-
-                          // 3️⃣ ป้องกันเลือกซ้ำในฟอร์ม
+                   
+                          const remainingQuantity =
+                            eq.quantity - reservedQuantity;
+          
                           const selectedIds = (
                             form.getFieldValue("equipmentInfo") ?? []
                           )
@@ -411,7 +415,7 @@ export default function MedicalEquipmentTable({
                             <Option
                               key={eq.id}
                               value={eq.id}
-                              disabled={isSelected || remainingQuantity <= 0} // ปิดถ้าเลือกซ้ำ หรือหมด
+                              disabled={isSelected || remainingQuantity <= 0}
                             >
                               {eq.equipmentName} (คงเหลือ {remainingQuantity})
                             </Option>

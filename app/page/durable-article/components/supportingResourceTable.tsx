@@ -134,7 +134,7 @@ export default function SupportingResourceTable({
       },
     },
     {
-      title: "วิธีที่การได้มา",
+      title: "วิธีการได้มา",
       dataIndex: "acquisitionType",
       key: "acquisitionType",
       render: (text: string) => {
@@ -259,26 +259,15 @@ export default function SupportingResourceTable({
                 placeholder="กรอกชื่อวัสดุ เช่น Toyota REVO 2024 รุ่น X"
               />
             </Form.Item>
-            {/* <Form.Item
-              label="สถานะ"
-              name="status"
-              rules={[{ required: true, message: "กรุณาเลือกสถานะ" }]}
-            >
-              <Select>
-                <Select.Option value="พร้อมใช้งาน">พร้อมใช้งาน</Select.Option>
-                <Select.Option value="ชำรุด">ชำรุด</Select.Option>
-                <Select.Option value="ใช้แล้วหมด">ใช้แล้วหมด</Select.Option>
-              </Select>
-            </Form.Item> */}
             <Form.Item
-              label="วันที่ได้รับ"
+              label="วัน เดือน ปี "
               name="acquiredDate"
               rules={[{ required: true, message: "กรุณาเลือกวันที่ได้รับ" }]}
             >
               <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
             </Form.Item>
             <Form.Item
-              label="วิธีที่ได้มา"
+              label="วิธีการได้มา"
               name="acquisitionType"
               rules={[{ required: true, message: "กรุณาเลือกวิธีที่ได้มา" }]}
             >
@@ -292,7 +281,7 @@ export default function SupportingResourceTable({
                 </Select.Option>
               </Select>
             </Form.Item>
-            <Form.Item label="รายละเอียดเพิ่มเติม" name="description">
+            <Form.Item label="หมายเหตุ" name="description">
               <Input.TextArea rows={3} />
             </Form.Item>
           </Form>

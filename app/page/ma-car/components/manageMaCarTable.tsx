@@ -11,38 +11,53 @@ import {
   InputNumber,
   DatePicker,
   Tag,
+  Popover,
+  Typography,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { MaCarType } from "../../common";
+import { MaCarType, UserType } from "../../common";
 import { maCarService } from "../services/maCar.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import dayjs from "dayjs";
+import { useSession } from "next-auth/react";
+import { ExclamationCircleOutlined } from "@ant-design/icons";
+import MaCarDetail from "./maCarDetail";
 
 interface MaCarTableProps {
   data: MaCarType[];
   loading: boolean;
   fetchData: () => void;
+  dataUser: UserType[];
 }
 
 const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   data,
   loading,
   fetchData,
+  dataUser,
 }) => {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
-
+  const { data: session } = useSession();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<MaCarType | null>(null);
   const [form] = Form.useForm();
+  const [formCancel] = Form.useForm();
+  const [modalCancelOpen, setModalCancelOpen] = useState(false);
+  const [selectedCancelRecord, setSelectedCancelRecord] =
+    useState<MaCarType | null>(null);
+  const [cancelReason, setCancelReason] = useState("");
+  const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
   const handleEdit = (record: MaCarType) => {
     setEditingCar(record);
     form.setFieldsValue({
       requesterName: record.requesterName,
       purpose: record.purpose,
-      departureDate: record.departureDate ? dayjs(record.departureDate) : null,
-      returnDate: record.returnDate ? dayjs(record.returnDate) : null,
+      dateStart: record.dateStart ? dayjs(record.dateStart) : null,
+      dateEnd: record.dateEnd ? dayjs(record.dateEnd) : null,
       destination: record.destination,
       passengers: record.passengers,
       budget: record.budget,
@@ -59,8 +74,8 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       const body = {
         ...values,
         id: editingCar.id,
-        departureDate: values.departureDate?.toISOString(),
-        returnDate: values.returnDate?.toISOString(),
+        dateStart: values.dateStart?.toISOString(),
+        dateEnd: values.dateEnd?.toISOString(),
       };
 
       await intraAuthService.updateMaCar(body);
@@ -74,19 +89,71 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     }
   };
 
+  const handleApprove = async (record: any) => {
+    try {
+      await intraAuthService.updateMaCar({
+        id: record.id,
+        status: "approve",
+        approvedByName: session?.user?.fullName,
+        approvedAt: new Date().toISOString(),
+      });
+      message.success("อนุมัติรายการนี้แล้ว");
+      setOpenPopoverId(null);
+      fetchData();
+    } catch (error) {
+      console.error("เกิดข้อผิดพลาดในการอนุมัติ:", error);
+      message.error("ไม่สามารถอนุมัติได้");
+    }
+  };
+
+  const handleConfirmCancel = async (values: { cancelReason: string }) => {
+    if (!selectedCancelRecord) return;
+    const reason = values.cancelReason?.trim();
+    if (!reason) {
+      message.error("กรุณากรอกเหตุผลการยกเลิก");
+      return;
+    }
+    try {
+      await intraAuthService.updateMaCar({
+        id: selectedCancelRecord.id,
+        cancelName: session?.user?.fullName,
+        cancelAt: new Date().toISOString(),
+        status: "cancel",
+        cancelReason: values.cancelReason,
+      });
+      message.success("ยกเลิกรายการแล้ว");
+      setModalCancelOpen(false);
+      formCancel.resetFields(); // รีเซ็ต Form
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error("เกิดข้อผิดพลาด");
+    }
+  };
+
+  const handleShowDetail = (record: any, dataUser: any) => {
+    setSelectedRecord({ ...record, dataUser });
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedRecord(null);
+  };
+
   const columns: ColumnsType<MaCarType> = [
     { title: "ผู้ขอใช้รถ", dataIndex: "requesterName", key: "requesterName" },
     { title: "วัตถุประสงค์", dataIndex: "purpose", key: "purpose" },
     {
       title: "วันเริ่มเดินทาง",
-      dataIndex: "departureDate",
-      key: "departureDate",
+      dataIndex: "dateStart",
+      key: "dateStart",
       render: (date) => new Date(date).toLocaleDateString("th-TH"),
     },
     {
       title: "วันกลับ",
-      dataIndex: "returnDate",
-      key: "returnDate",
+      dataIndex: "dateEnd",
+      key: "dateEnd",
       render: (date) => new Date(date).toLocaleDateString("th-TH"),
     },
     { title: "ปลายทาง", dataIndex: "destination", key: "destination" },
@@ -157,7 +224,8 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               ลบ
             </Button>
           </Popconfirm>
-          <Popconfirm
+
+          {/* <Popconfirm
             title="คุณต้องการอนุมัติการจองหรือไม่?"
             okText="อนุมัติ"
             cancelText="ยกเลิก"
@@ -189,7 +257,58 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             }}
           >
             <Button type="primary">อนุมัติ</Button>
-          </Popconfirm>
+          </Popconfirm> */}
+
+          <Popover
+            trigger="click"
+            title={
+              <Space>
+                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
+                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
+              </Space>
+            }
+            content={
+              <Space style={{ display: "flex", marginTop: 13 }}>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => handleApprove(record)}
+                >
+                  อนุมัติ
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  onClick={() => {
+                    setSelectedCancelRecord(record);
+                    setModalCancelOpen(true);
+                    // setPopoverOpen(false);
+                    setOpenPopoverId(null);
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+              </Space>
+            }
+            open={openPopoverId === record.id}
+            onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
+          >
+            <Button
+              type="primary"
+              size="small"
+              disabled={record.status !== "pending"}
+              onClick={() => setOpenPopoverId(record.id)}
+            >
+              อนุมัติ
+            </Button>
+          </Popover>
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => handleShowDetail(record, dataUser)}
+          >
+            รายละเอียด
+          </Button>
         </Space>
       ),
     },
@@ -203,7 +322,11 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         rowKey="id"
         loading={loading}
       />
-
+      <MaCarDetail
+        open={detailModalOpen}
+        onClose={handleCloseDetail}
+        record={selectedRecord}
+      />
       <Modal
         title="แก้ไขการจองรถ"
         open={isModalOpen}
@@ -219,10 +342,10 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
           <Form.Item name="purpose" label="วัตถุประสงค์">
             <Input />
           </Form.Item>
-          <Form.Item name="departureDate" label="วันเริ่มเดินทาง">
+          <Form.Item name="dateStart" label="วันเริ่มเดินทาง">
             <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
           </Form.Item>
-          <Form.Item name="returnDate" label="วันกลับ">
+          <Form.Item name="dateEnd" label="วันกลับ">
             <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
           </Form.Item>
 
@@ -234,6 +357,29 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
           </Form.Item>
           <Form.Item name="budget" label="งบประมาณ">
             <InputNumber style={{ width: "100%" }} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="ยกเลิกการจองรถ"
+        open={modalCancelOpen}
+        onOk={() => formCancel.submit()}
+        onCancel={() => setModalCancelOpen(false)}
+        okText="ยืนยัน"
+        cancelText="ยกเลิก"
+      >
+        <Form
+          form={formCancel}
+          layout="vertical"
+          onFinish={(values) => handleConfirmCancel(values)}
+        >
+          <Form.Item
+            label="เหตุผลการยกเลิก"
+            name="cancelReason"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+          >
+            <Input.TextArea placeholder="กรุณากรอกเหตุผลการยกเลิก" rows={4} />
           </Form.Item>
         </Form>
       </Modal>

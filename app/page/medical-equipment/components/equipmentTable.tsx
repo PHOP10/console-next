@@ -11,6 +11,7 @@ import {
   message,
   Popconfirm,
   InputNumber,
+  Card,
 } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
@@ -178,15 +179,15 @@ export default function EquipmentTable({
           เพิ่มเครื่องมือแพทย์
         </Button>
       </Space>
-
-      <Table
-        columns={columns}
-        dataSource={dataEQ}
-        rowKey="id"
-        loading={loading}
-        bordered
-      />
-
+      <Card>
+        <Table
+          columns={columns}
+          dataSource={dataEQ}
+          rowKey="id"
+          loading={loading}
+          bordered
+        />
+      </Card>
       <Modal
         title={editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}
         open={isModalOpen}

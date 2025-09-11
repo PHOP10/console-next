@@ -36,7 +36,7 @@ export default function Page() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลเครื่องมือแพทย์",
+      label: "จัดการข้อมูลการส่งเครื่องมือแพทย์",
       children: (
         <MaMedicalEquipmentTable
           setLoading={setLoading}
