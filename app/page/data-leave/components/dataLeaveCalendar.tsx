@@ -76,7 +76,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
         dateStart: dayjs(item.dateStart),
         dateEnd: dayjs(item.dateEnd),
         createdName: item.createdName || "-",
-        leaveType: item.masterLeave.leaveType || "-",
+        leaveType: item.masterLeave?.leaveType || "-",
         cancelName: item.cancelName || "-",
         cancelReason: item.cancelReason || "-",
       });
@@ -99,7 +99,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
             details: item.details,
             approvedByName: item.approvedByName,
             createdName: item.createdName,
-            leaveType: item.masterLeave.leaveType,
+            leaveType: item.masterLeave?.leaveType,
             cancelName: item.cancelName,
             cancelReason: item.cancelReason,
           })

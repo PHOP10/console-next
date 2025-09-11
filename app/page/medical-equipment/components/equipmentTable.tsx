@@ -207,6 +207,13 @@ export default function EquipmentTable({
           </Button>
         </Space>
 
+    
+      <Space style={{ marginBottom: 16 }}>
+        <Button type="primary" onClick={() => setIsModalOpen(true)}>
+          เพิ่มเครื่องมือแพทย์
+        </Button>
+      </Space>
+      <Card>
         <Table
           columns={columns}
           dataSource={dataEQ}
@@ -217,6 +224,8 @@ export default function EquipmentTable({
         />
       </Card>
 
+        
+      </Card>
       <Modal
         title={editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}
         open={isModalOpen}

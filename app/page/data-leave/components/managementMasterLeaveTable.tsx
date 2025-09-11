@@ -161,6 +161,7 @@ export default function ManagementMasterLeaveTable({
         columns={columns}
         loading={loading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 800 }}
       />
 
       {/* ------------------ Modal Add ------------------ */}

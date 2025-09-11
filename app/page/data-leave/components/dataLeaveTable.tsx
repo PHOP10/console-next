@@ -201,6 +201,7 @@ export default function DataLeaveTable({
         dataSource={leaveByUserId}
         loading={loading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 800 }}
       />
       <Modal
         title="แก้ไขข้อมูลการลา"

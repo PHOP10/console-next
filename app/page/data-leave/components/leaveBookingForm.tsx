@@ -14,6 +14,7 @@ import {
   Table,
 } from "antd";
 import dayjs from "dayjs";
+import isBetween from "dayjs/plugin/isBetween";
 import { DataLeaveType, MasterLeaveType } from "../../common";
 import { useSession } from "next-auth/react";
 
@@ -34,7 +35,6 @@ export default function LeaveBookingForm({
 }: LeaveBookingFormProps) {
   const [form] = Form.useForm();
   const { data: session } = useSession();
-  const { RangePicker } = DatePicker;
   const { TextArea } = Input;
 
   // ฟังก์ชันคำนวณจำนวนวันลา
@@ -45,30 +45,27 @@ export default function LeaveBookingForm({
 
   // ดึงค่าที่เลือกในฟอร์ม
   const selectedTypeId = Form.useWatch("typeId", form);
-  const selectedLeaveDates = Form.useWatch("leaveDates", form);
-  console.log("leaveByUserId", leaveByUserId);
+  const selectedDateStart = Form.useWatch("dateStart", form);
+  const selectedDateEnd = Form.useWatch("dateEnd", form);
+  dayjs.extend(isBetween);
+
   // ✅ คำนวณข้อมูลตาราง
   const tableData = useMemo(() => {
     return masterLeaves.map((leave) => {
       // ลามาแล้ว
       const usedDays = leaveByUserId
-        .filter(
-          (item) => item.typeId === leave.id && item.status === "approved"
-        )
+        .filter((item) => item.typeId === leave.id && item.status === "approve")
         .reduce(
           (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd),
           0
         );
-      console.log("usedDays", usedDays);
-      // ลาครั้งนี้ (ถ้าเลือกตรงกับประเภทนี้)
+
       const currentDays =
-        selectedTypeId === leave.id && selectedLeaveDates?.length === 2
-          ? calculateDays(selectedLeaveDates[0], selectedLeaveDates[1])
+        selectedTypeId === leave.id && selectedDateStart && selectedDateEnd
+          ? calculateDays(selectedDateStart, selectedDateEnd)
           : 0;
-      console.log("currentDays", currentDays);
-      // รวมการลา
+
       const totalDays = usedDays + currentDays;
-      console.log("totalDays", totalDays);
 
       return {
         key: leave.id,
@@ -78,7 +75,13 @@ export default function LeaveBookingForm({
         totalDays,
       };
     });
-  }, [masterLeaves, leaveByUserId, selectedTypeId, selectedLeaveDates]);
+  }, [
+    masterLeaves,
+    leaveByUserId,
+    selectedTypeId,
+    selectedDateStart,
+    selectedDateEnd,
+  ]);
 
   const columns = [
     { title: "ประเภทการลา", dataIndex: "leaveType", key: "leaveType" },
@@ -90,11 +93,11 @@ export default function LeaveBookingForm({
   const onFinish = async (values: any) => {
     const payload = {
       reason: values.reason,
-      dateStart: values.leaveDates?.[0]
-        ? dayjs(values.leaveDates[0]).startOf("day").toISOString()
+      dateStart: values.dateStart
+        ? dayjs(values.dateStart).startOf("day").toISOString()
         : null,
-      dateEnd: values.leaveDates?.[1]
-        ? dayjs(values.leaveDates[1]).endOf("day").toISOString()
+      dateEnd: values.dateEnd
+        ? dayjs(values.dateEnd).endOf("day").toISOString()
         : null,
       details: values.details || null,
       typeId: values.typeId,
@@ -144,11 +147,51 @@ export default function LeaveBookingForm({
             </Form.Item>
 
             <Form.Item
-              label="ช่วงวันที่ลา"
-              name="leaveDates"
-              rules={[{ required: true, message: "กรุณาเลือกช่วงวันที่ลา" }]}
+              label="วันที่เริ่มลา"
+              name="dateStart"
+              rules={[{ required: true, message: "กรุณาเลือกวันที่เริ่มลา" }]}
             >
-              <RangePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+              <DatePicker
+                format="DD/MM/YYYY"
+                style={{ width: "100%" }}
+                disabledDate={(current) => {
+                  if (!current) return false;
+                  // ห้ามเลือกวันในอดีต
+                  if (current < dayjs().startOf("day")) return true;
+
+                  // ตรวจสอบว่าทับกับการลาที่มีอยู่แล้วหรือไม่
+                  return leaveByUserId.some((leave) => {
+                    const start = dayjs(leave.dateStart).startOf("day");
+                    const end = dayjs(leave.dateEnd).endOf("day");
+                    return dayjs(current).isBetween(start, end, "day", "[]"); // ✅ ใช้ dayjs(current)
+                  });
+                }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="วันที่สิ้นสุดการลา"
+              name="dateEnd"
+              rules={[
+                { required: true, message: "กรุณาเลือกวันที่สิ้นสุดการลา" },
+              ]}
+            >
+              <DatePicker
+                format="DD/MM/YYYY"
+                style={{ width: "100%" }}
+                disabledDate={(current) => {
+                  if (!current) return false;
+                  // ห้ามเลือกวันในอดีต
+                  if (current < dayjs().startOf("day")) return true;
+
+                  // ตรวจสอบว่าทับกับการลาที่มีอยู่แล้วหรือไม่
+                  return leaveByUserId.some((leave) => {
+                    const start = dayjs(leave.dateStart).startOf("day");
+                    const end = dayjs(leave.dateEnd).endOf("day");
+                    return dayjs(current).isBetween(start, end, "day", "[]"); // ✅ ใช้ dayjs(current)
+                  });
+                }}
+              />
             </Form.Item>
 
             <Form.Item label="หมายเหตุเพิ่มเติม" name="details">

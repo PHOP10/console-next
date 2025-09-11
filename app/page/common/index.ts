@@ -38,15 +38,21 @@ export interface MaCarType {
   id: number;
   requesterName: string;
   purpose: string;
-  departureDate: string;
-  returnDate: string;
+  dateStart: string; 
+  dateEnd: string; 
   destination: string;
   passengers: number;
+  passengerNames?: string[];
   budget?: number;
   status: string;
+  cancelName?: string;
   cancelReason?: string;
+  cancelAt?: string;
+  approvedByName?: string;
+  approvedAt?: string;
   carId: number; // FK
   masterCar?: MasterCarType;
+  createdById?: string;
   createdAt: string;
   updatedAt: string;
 }

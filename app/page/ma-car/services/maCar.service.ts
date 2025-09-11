@@ -3,6 +3,8 @@ import { AxiosInstance } from "axios";
 export const maCarService = (axiosInstance: AxiosInstance) => {
   const baseUrlApiMaCar = "/maCar";
   const baseUrlApiMasterCar = "/masterCar";
+  const baseUrlApiUser = "/user";
+
   return {
     getMaCarQuery: async () => {
       return await axiosInstance
@@ -91,6 +93,18 @@ export const maCarService = (axiosInstance: AxiosInstance) => {
     deleteMasterCar: async (id: any) => {
       return await axiosInstance
         .delete(`${baseUrlApiMasterCar}/${id}`)
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
+
+    getUserQuery: async () => {
+      return await axiosInstance
+        .get(`${baseUrlApiUser}`)
         .then((res) => {
           return res.data;
         })

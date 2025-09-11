@@ -23,10 +23,15 @@ export default function ManageDataLeavePage() {
       const res = await intraAuthService.getDataLeaveQuery();
       const dataMasterLeaves = await intraAuthService.getMasterLeaveQuery();
       const userId = session?.user?.userId;
-      const byUserId = await intraAuthService.getDataLeaveByUserId(
-        userId || ""
-      );
-      setLeaveByUserId(byUserId);
+      try {
+        const byUserId = await intraAuthService.getDataLeaveByUserId(
+          userId || ""
+        );
+        setLeaveByUserId(byUserId);
+      } catch (err: any) {
+        console.error("Axios error:", err.config.url, err.response?.status);
+      }
+      // setLeaveByUserId(byUserId);
       setDataLeave(res);
       setMasterLeave(dataMasterLeaves);
     } catch (err) {

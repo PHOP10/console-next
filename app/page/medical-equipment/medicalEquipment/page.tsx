@@ -45,7 +45,7 @@ export default function Page() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลเครื่องมือแพทย์",
+      label: "ข้อมูลการส่งเครื่องมือแพทย์",
       children: (
         <MedicalEquipmentTable
           setLoading={setLoading}
@@ -66,18 +66,22 @@ export default function Page() {
         />
       ),
     },
-    {
-      key: "3",
-      label: "ข้อมูลเครื่องมือแพทย์ทั้งหมด",
-      children: (
-        <EquipmentTable
-          setLoading={setLoading}
-          loading={loading}
-          dataEQ={dataEQ}
-          fetchData={fetchData}
-        />
-      ),
-    },
+    ...(session?.user?.role === "admin" || session?.user?.role === "pharmacy"
+      ? [
+          {
+            key: "3",
+            label: "ข้อมูลเครื่องมือแพทย์ทั้งหมด",
+            children: (
+              <EquipmentTable
+                setLoading={setLoading}
+                loading={loading}
+                dataEQ={dataEQ}
+                fetchData={fetchData}
+              />
+            ),
+          },
+        ]
+      : []),
   ];
 
   return (

@@ -106,7 +106,7 @@ export default function CreateMedicalEquipmentForm({
                   <Row gutter={16} key={rowIndex} style={{ marginBottom: 8 }}>
                     {pair.map(({ key, name, ...restField }) => (
                       <Col span={12} key={key}>
-                        <Row gutter={8} align="middle">
+                        <Row gutter={8} align="top">
                           <Col flex="auto">
                             <Form.Item
                               {...restField}
@@ -178,9 +178,7 @@ export default function CreateMedicalEquipmentForm({
                           </Col>
 
                           {/* Quantity */}
-                          <Col flex="120px">
-                            {" "}
-                            {/* ✅ กำหนด fix ไว้เฉพาะช่องจำนวน */}
+                          <Col flex="150px">
                             <Form.Item
                               {...restField}
                               name={[name, "quantity"]}
@@ -195,16 +193,42 @@ export default function CreateMedicalEquipmentForm({
                                       "medicalEquipmentId",
                                     ]);
                                     if (!equipmentId) return Promise.resolve();
+
                                     const selected = dataEQ.find(
                                       (eq) => eq.id === equipmentId
                                     );
-                                    if (value > (selected?.quantity || 0)) {
-                                      return Promise.reject(
-                                        new Error(
-                                          `จำนวนเกินคงเหลือ (${selected?.quantity})`
+
+                                    if (selected) {
+                                      // คำนวณจำนวนที่จองแล้ว
+                                      const reservedQuantity = dataEQ
+                                        .flatMap((ma) => ma.items || [])
+                                        .filter(
+                                          (item: any) =>
+                                            item.medicalEquipmentId ===
+                                              selected.id &&
+                                            ["pending", "approve"].includes(
+                                              item.maMedicalEquipment?.status
+                                            )
                                         )
-                                      );
+                                        .reduce(
+                                          (sum: number, item: any) =>
+                                            sum + item.quantity,
+                                          0
+                                        );
+
+                                      // จำนวนที่เหลือจริง ๆ
+                                      const actualRemainingQuantity =
+                                        selected.quantity - reservedQuantity;
+
+                                      if (value > actualRemainingQuantity) {
+                                        return Promise.reject(
+                                          new Error(
+                                            `จำนวนเกินคงเหลือ (${actualRemainingQuantity})`
+                                          )
+                                        );
+                                      }
                                     }
+
                                     return Promise.resolve();
                                   },
                                 }),

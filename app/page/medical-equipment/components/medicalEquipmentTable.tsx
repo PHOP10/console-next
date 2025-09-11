@@ -13,6 +13,7 @@ import {
   message,
   Popconfirm,
   Select,
+  Tooltip,
   Card,
 } from "antd";
 import React, { useEffect, useState, useCallback } from "react";
@@ -157,25 +158,33 @@ export default function MedicalEquipmentTable({
       align: "center",
     },
     {
-      title: "ข้อมูลเครื่องมือ",
+      title: "ชื่อเครื่องมือแพทย์",
       dataIndex: "items",
       key: "items",
       align: "center",
       width: 160,
-      render: (items: any[]) => (
-        <ul
-          style={{
-            textAlign: "center",
-            paddingLeft: 20,
-            margin: 0,
-            listStyle: "none",
-          }}
-        >
-          {items?.map((item, index) => (
-            <li key={index}>{item.medicalEquipment?.equipmentName}</li>
-          ))}
-        </ul>
-      ),
+      render: (items: any[]) => {
+        const maxToShow = 2; // แสดงสูงสุด 3 รายการ
+        const hasMore = items?.length > maxToShow;
+        const displayItems = hasMore ? items.slice(0, maxToShow) : items;
+
+        return (
+          <ul style={{ paddingLeft: 20, margin: 0 }}>
+            {displayItems?.map((item, index) => (
+              <li key={index}>{item.medicalEquipment?.equipmentName}</li>
+            ))}
+            {hasMore && (
+              <Tooltip
+                title={items
+                  .map((item) => item.medicalEquipment?.equipmentName)
+                  .join(", ")}
+              >
+                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
+              </Tooltip>
+            )}
+          </ul>
+        );
+      },
     },
     {
       title: "จำนวน",
@@ -183,20 +192,30 @@ export default function MedicalEquipmentTable({
       key: "items",
       align: "center",
       width: 160,
-      render: (items: any[]) => (
-        <ul
-          style={{
-            textAlign: "center",
-            paddingLeft: 20,
-            margin: 0,
-            listStyle: "none",
-          }}
-        >
-          {items?.map((item, index) => (
-            <li key={index}>{item.medicalEquipment?.equipmentName}</li>
-          ))}
-        </ul>
-      ),
+      // width: 160,
+      render: (items: any[]) => {
+        if (!items || items.length === 0) return null;
+
+        const firstThree = items.slice(0, 2);
+        const rest = items.slice(2);
+
+        return (
+          <ul style={{ paddingLeft: 20, margin: 0 }}>
+            {firstThree.map((item, index) => (
+              <li key={index}>{item.quantity}</li>
+            ))}
+
+            {rest.length > 0 && (
+              <Tooltip
+                title={items.map((item) => item.quantity).join(", ")}
+                placement="top"
+              >
+                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
+              </Tooltip>
+            )}
+          </ul>
+        );
+      },
     },
     {
       title: "วันที่ส่ง",
@@ -206,7 +225,7 @@ export default function MedicalEquipmentTable({
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
     },
     {
-      title: "ผู้ส่ง",
+      title: "ชื่อผู้ส่ง",
       dataIndex: "createdBy",
       key: "createdBy",
       align: "center",
@@ -257,7 +276,16 @@ export default function MedicalEquipmentTable({
       dataIndex: "note",
       key: "note",
       align: "center",
-      render: (note: string | undefined) => note || "-",
+     
+      render: (text: string) => {
+        const shortText =
+          text && text.length > 20 ? text.substring(0, 25) + "..." : text;
+        return (
+          <Tooltip title={text}>
+            <span>{shortText}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "จัดการ",
@@ -279,6 +307,17 @@ export default function MedicalEquipmentTable({
           >
             แก้ไข
           </Button>
+          {(session?.user?.role === "admin" ||
+            session?.user?.role === "pharmacy") && (
+            <Button
+              type="primary"
+              size="small"
+              onClick={() => handleEdit(record)}
+              disabled={record.status !== "pending"}
+            >
+              แก้ไข
+            </Button>
+          )}
 
           <Button
             size="small"
@@ -357,6 +396,18 @@ export default function MedicalEquipmentTable({
       />
 
       {/* Modal แก้ไขข้อมูล */}
+    
+      <Card>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={data}
+          loading={loading}
+          bordered
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: 800 }}
+        />
+      </Card>
       <Modal
         title="แก้ไขข้อมูล"
         open={editModalVisible}
@@ -394,9 +445,23 @@ export default function MedicalEquipmentTable({
                         optionFilterProp="children"
                       >
                         {dataEQ.map((eq) => {
-                          const remainingQuantity = eq.quantity;
-
-                          // ป้องกันเลือกซ้ำ
+                          const reservedQuantity = dataEQ
+                            .flatMap((ma) => ma.items || [])
+                            .filter(
+                              (item: any) =>
+                                item.medicalEquipmentId === eq.id &&
+                                ["pending", "approve"].includes(
+                                  item.maMedicalEquipment?.status
+                                )
+                            )
+                            .reduce(
+                              (sum: number, item: any) => sum + item.quantity,
+                              0
+                            );
+                   
+                          const remainingQuantity =
+                            eq.quantity - reservedQuantity;
+          
                           const selectedIds = (
                             form.getFieldValue("equipmentInfo") ?? []
                           )
@@ -414,13 +479,13 @@ export default function MedicalEquipmentTable({
                               ]);
 
                           return (
-                            <Select.Option
+                            <Option
                               key={eq.id}
                               value={eq.id}
                               disabled={isSelected || remainingQuantity <= 0}
                             >
                               {eq.equipmentName} (คงเหลือ {remainingQuantity})
-                            </Select.Option>
+                            </Option>
                           );
                         })}
                       </Select>
@@ -551,5 +616,6 @@ export default function MedicalEquipmentTable({
         onClose={() => setOpenDetails(false)}
       />
     </Card>
+    
   );
 }

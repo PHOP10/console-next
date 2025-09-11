@@ -2,7 +2,7 @@
 
 import { Card, DatePicker, ConfigProvider } from "antd";
 import { Column } from "@ant-design/plots";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -28,7 +28,7 @@ export default function InfectiousWasteChart({ data }: Props) {
   ]);
 
   const filteredData = data.filter((item) => {
-    if (!dateRange[0] || !dateRange[1]) return true;
+    if (!dateRange?.[0] || !dateRange?.[1]) return true;
     const discarded = dayjs(item.discardedDate);
     return (
       discarded.isSameOrAfter(dateRange[0], "day") &&
@@ -64,24 +64,25 @@ export default function InfectiousWasteChart({ data }: Props) {
     tooltip: {
       customContent: (title: string, items: any[]) => {
         const item = items?.[0];
+        // console.log("Tooltip item:", item);
         if (!item) return null;
         const { data } = item;
-        return `<div style="padding: 8px;">
-          <strong>${title}</strong><br/>
-          ${data.count} รายการ / ${data.weight} กก.
-        </div>`;
+        return `<div style="padding: 20px;">
+        <strong>${title}</strong><br/>
+        ${data.count} รายการ / ${data.weight} กก.
+      </div>`;
       },
     },
-    xAxis: {
-      label: {
-        autoHide: true,
-        autoRotate: false,
-      },
+    yAxis: {
+      title: { text: "น้ำหนักรวม (กก.)" },
     },
     meta: {
       type: { alias: "ประเภทขยะ" },
       weight: { alias: "น้ำหนักรวม (กก.)" },
     },
+    columnWidthRatio: 0.6, // กำหนดความหนาแท่ง (0-1)
+    width: 1300, // ความกว้างกราฟ
+    height: 400, // ความสูงกราฟ
   };
 
   return (
@@ -90,7 +91,10 @@ export default function InfectiousWasteChart({ data }: Props) {
         title="กราฟน้ำหนักขยะติดเชื้อรวมตามประเภท"
         extra={
           <RangePicker
-            onChange={(dates) => setDateRange(dates as [Dayjs, Dayjs])}
+            value={dateRange} // <--- ควบคุมค่า RangePicker
+            onChange={(dates) =>
+              setDateRange(dates ? (dates as [Dayjs, Dayjs]) : [null, null])
+            }
             format="DD MMMM YYYY"
             allowClear
           />

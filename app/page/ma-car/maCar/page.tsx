@@ -6,13 +6,14 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
 import MaCarTable from "../components/maCarTable";
 import MaCarCalendar from "../components/maCarCalendar";
+import { useSession } from "next-auth/react";
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
-
+  const { data: session } = useSession();
   const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<any[]>([]); // เก็บข้อมูล MaCar
+  const [data, setData] = useState<any[]>([]);
 
   // ฟังก์ชันดึงข้อมูล
   const fetchData = async () => {

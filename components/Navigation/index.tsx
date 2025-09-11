@@ -70,7 +70,8 @@ const Navigation: React.FC<Prop> = ({
           <div className="pr-8">
             <Dropdown
               menu={{ items: MenuNav }}
-              className="text-white hover:text-zinc-300">
+              className="text-white hover:text-zinc-300"
+            >
               <a onClick={(e) => e.preventDefault()}>
                 <Space>
                   <UserOutlined />
@@ -99,12 +100,13 @@ const Navigation: React.FC<Prop> = ({
         placement="left"
         onClose={() => setOpen(!open)}
         open={open}
-        width={250}>
+        width={250}
+      >
         <Menu
           mode="inline"
           defaultSelectedKeys={[currentPath]}
           style={{ borderRight: 0 }}
-          items={menuSider(session?.user)}
+          items={menuSider()}
           onClick={() => setOpen(!open)}
           className=" h-screen"
         />

@@ -15,6 +15,7 @@ export default function manageMaCarPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<MaCarType[]>([]); // เก็บข้อมูล MaCar
   const [dataCar, setDataCar] = useState<MasterCarType[]>([]); // เก็บข้อมูล MaCar
+  const [dataUser, setDataUser] = useState<any[]>([]);
 
   // ฟังก์ชันดึงข้อมูล
   const fetchData = async () => {
@@ -22,6 +23,8 @@ export default function manageMaCarPage() {
     try {
       const res = await intraAuthService.getMaCarQuery();
       const dataCar = await intraAuthService.getMasterCarQuery();
+      const resUsers = await intraAuthService.getUserQuery();
+      setDataUser(resUsers);
       setDataCar(dataCar);
       setData(res);
     } catch (err) {
@@ -46,6 +49,7 @@ export default function manageMaCarPage() {
             data={data}
             loading={loading}
             fetchData={fetchData}
+            dataUser={dataUser}
           />
         </Card>
       ),

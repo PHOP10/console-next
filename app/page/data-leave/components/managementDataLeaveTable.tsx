@@ -320,6 +320,7 @@ export default function ManagementDataLeaveTable({
         dataSource={dataLeave}
         loading={loading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 800 }}
       />
 
       <Modal

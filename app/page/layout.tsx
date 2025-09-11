@@ -136,6 +136,7 @@ import { UserProfileType } from "@/types";
 import config from "@/config";
 import { useRefreshToken } from "../lib/axios/hooks/useRefreshToken";
 import Image from "next/image";
+import Sidebar from "@/components/Sidebar/sidebar";
 
 export default function MainLayout({
   children,
@@ -208,6 +209,34 @@ export default function MainLayout({
             />
           </div>
         </Sider>
+
+        {/* <Sider
+              width={200}
+              trigger={null}
+              collapsible
+              collapsed={collapsed}
+              className="hidden md:block"
+            >
+              {/* <div className="min-h-screen h-full bg-white">
+                <div className="flex justify-center bg-white py-2">
+                  <Image
+                    width={0}
+                    height={0}
+                    sizes="100vw"
+                    style={
+                      !collapsed
+                        ? { width: "100px", height: "auto" }
+                        : { width: "50px", height: "auto" }
+                    }
+                    src="/rpst.png" // ❌ ลบ /public ออก
+                    className="h-auto"
+                    alt=""
+                  />
+                </div>
+                <Sidebar />
+              </div> 
+            </Sider> */}
+
         <Layout>
           <div className="w-full">
             <Navigation

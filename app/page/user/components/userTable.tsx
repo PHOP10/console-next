@@ -76,12 +76,28 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   };
 
   const columns: ColumnsType<UserType> = [
-    { title: "Username", dataIndex: "username", key: "username" },
+    // { title: "Username", dataIndex: "username", key: "username" },
     { title: "ชื่อ", dataIndex: "firstName", key: "firstName" },
     { title: "นามสกุล", dataIndex: "lastName", key: "lastName" },
     { title: "ชื่อเล่น", dataIndex: "nickName", key: "nickName" },
     { title: "อีเมล", dataIndex: "email", key: "email" },
-    { title: "Role", dataIndex: "role", key: "role" },
+    { title: "เบอร์โทร", dataIndex: "phoneNumber", key: "phoneNumber" },
+    { title: "ตำแหน่ง", dataIndex: "position", key: "position" },
+    {
+      title: "ความรับผิดชอบ",
+      dataIndex: "role",
+      key: "role",
+      render: (role: string) => {
+        const roleMap: Record<string, string> = {
+          admin: "หัวหน้า",
+          user: "ผู้ใช้",
+          pharmacy: "ผู้ดูแลระบบคลังยา",
+          asset: "ผู้ดูแลระบบครุภัณฑ์",
+        };
+        return roleMap[role] || role;
+      },
+    },
+
     {
       title: "จัดการ",
       key: "action",
