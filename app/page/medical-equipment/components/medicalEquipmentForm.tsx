@@ -76,7 +76,14 @@ export default function CreateMedicalEquipmentForm({
   }, [form]);
 
   return (
-    <Card title="ส่งเครื่องมือแพทย์" style={{ marginTop: 20 }}>
+    <Card
+      title={
+        <div style={{ fontSize: "20px", textAlign: "center", fontWeight: "bold" , color: "#0683e9"  }}>
+          ส่งเครื่องมือแพทย์
+        </div>
+      }
+      style={{ marginTop: 20 }}
+    >
       <Form
         preserve={false}
         form={form}
@@ -308,7 +315,7 @@ export default function CreateMedicalEquipmentForm({
 
           <Col span={12}>
             <Form.Item label="หมายเหตุ" name="note">
-              <TextArea rows={3} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" />
+              <TextArea rows={1} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" />
             </Form.Item>
           </Col>
         </Row>

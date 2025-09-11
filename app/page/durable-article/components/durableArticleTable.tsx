@@ -108,22 +108,26 @@ export default function DurableArticleTable({
       title: "เลขที่หรือรหัส",
       dataIndex: "code",
       key: "code",
+      align: "center",
     },
     {
       title: "วัน เดือน ปี",
       dataIndex: "acquiredDate",
       key: "acquiredDate",
+      align: "center",
       render: (value) => dayjs(value).format("DD/MM/YYYY"),
     },
     {
       title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
       dataIndex: "description",
       key: "description",
+      align: "center",
     },
     {
       title: "ราคาต่อหน่วย",
       dataIndex: "unitPrice",
       key: "unitPrice",
+      align: "center",
       render: (value) =>
         value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
     },
@@ -131,6 +135,7 @@ export default function DurableArticleTable({
       title: "วิธีการได้มา",
       dataIndex: "acquisitionType",
       key: "acquisitionType",
+      align: "center",
     },
     // {
     //   title: "อายุการใช้งาน (ปี)",
@@ -148,10 +153,12 @@ export default function DurableArticleTable({
       title: "หมายเหตุ",
       dataIndex: "note",
       key: "note",
+      align: "center",
     },
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           <Popconfirm
@@ -199,18 +206,35 @@ export default function DurableArticleTable({
   return (
     <>
       <Card>
-        <div style={{ marginBottom: 16 }}>
-          <Button type="primary" onClick={() => exportDurableArticles(data)}>
-            Export Excel
-          </Button>
+        <div
+          style={{
+            fontSize: "20px",
+            textAlign: "center",
+            fontWeight: "bold",
+            color: "#0683e9",
+          }}
+        >
+          ข้อมูลครุภัณฑ์
         </div>
-        <div style={{ marginBottom: 16 }}>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
           <Input.Search
             placeholder="ค้นหาวัสดุ..."
             onChange={(e) => setSearchText(e.target.value)}
             style={{ width: 300 }}
           />
+
+          <Button type="primary" onClick={() => exportDurableArticles(data)}>
+            Export Excel
+          </Button>
         </div>
+
         <Table
           rowKey="id"
           columns={columns}

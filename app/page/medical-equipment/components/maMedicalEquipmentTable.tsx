@@ -16,6 +16,7 @@ import {
   Select,
   Popover,
   Typography,
+  Card,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
@@ -155,18 +156,20 @@ export default function MaMedicalEquipmentTable({
 
   const columns: ColumnsType<MaMedicalEquipmentType> = [
     {
-      title: "ID",
+      title: "ลำดับ",
       dataIndex: "id",
       key: "id",
       width: 45,
+      align: "center",
     },
     {
       title: "ข้อมูลเครื่องมือ",
       dataIndex: "items",
       key: "items",
       width: 200,
+      align: "center",
       render: (items: any[]) => (
-        <ul style={{ paddingLeft: 20, margin: 0 }}>
+        <ul style={{ listStyle: "none", paddingLeft: 20, margin: 0 }}>
           {items?.map((item, index) => (
             <li key={index}>{item.medicalEquipment?.equipmentName}</li>
           ))}
@@ -178,8 +181,9 @@ export default function MaMedicalEquipmentTable({
       dataIndex: "items",
       key: "items",
       width: 160,
+      align: "center",
       render: (items: any[]) => (
-        <ul style={{ paddingLeft: 20, margin: 0 }}>
+        <ul style={{ listStyle: "none", paddingLeft: 20, margin: 0 }}>
           {items?.map((item, index) => (
             <li key={index}>{item.quantity}</li>
           ))}
@@ -190,24 +194,27 @@ export default function MaMedicalEquipmentTable({
       title: "วันที่ส่ง",
       dataIndex: "sentDate",
       key: "sentDate",
+      align: "center",
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
     },
     {
       title: "ผู้ส่ง",
       dataIndex: "createdBy",
       key: "createdBy",
+      align: "center",
     },
     {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) => {
         let color = "default";
         let text = "";
 
         switch (status) {
           case "pending":
-            color = "blue";
+            color = "gold";
             text = "รอดำเนินการ";
             break;
           case "approve":
@@ -233,11 +240,13 @@ export default function MaMedicalEquipmentTable({
       title: "หมายเหตุเพิ่มเติม",
       dataIndex: "note",
       key: "note",
+      align: "center",
       render: (note: string | undefined) => note || "-",
     },
     {
       title: "การจัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           <Popconfirm
@@ -262,9 +271,15 @@ export default function MaMedicalEquipmentTable({
           </Popconfirm>
 
           <Button
-            type="primary"
             size="small"
             onClick={() => handleEdit(record)}
+            style={{
+              backgroundColor:
+                record.status === "pending" ? "#faad14" : "#d9d9d9",
+              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
+              color: record.status === "pending" ? "white" : "#888",
+              cursor: record.status === "pending" ? "pointer" : "not-allowed",
+            }}
             disabled={record.status !== "pending"}
           >
             แก้ไข
@@ -284,6 +299,11 @@ export default function MaMedicalEquipmentTable({
                   type="primary"
                   size="small"
                   onClick={() => handleApprove(record)}
+                  style={{
+                    backgroundColor: "#52c41a",
+                    borderColor: "#52c41a",
+                    color: "white",
+                  }}
                 >
                   อนุมัติ
                 </Button>
@@ -305,19 +325,29 @@ export default function MaMedicalEquipmentTable({
             onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
             <Button
-              type="primary"
               size="small"
+              style={{
+                backgroundColor:
+                  record.status === "pending" ? "#52c41a" : "#d9d9d9",
+                borderColor:
+                  record.status === "pending" ? "#52c41a" : "#d9d9d9",
+                color: record.status === "pending" ? "white" : "#888",
+                cursor: record.status === "pending" ? "pointer" : "not-allowed",
+              }}
               disabled={record.status !== "pending"}
-              onClick={() => setPopoverOpen(true)}
             >
               อนุมัติ
             </Button>
           </Popover>
 
           <Button
-            type="primary"
+            type="default"
             size="small"
+            style={{
+              borderColor: "#d9d9d9",
+            }}
             onClick={() => handleOpenModalDetails(record)}
+            className="hover-blue"
           >
             รายละเอียด
           </Button>
@@ -327,7 +357,27 @@ export default function MaMedicalEquipmentTable({
   ];
 
   return (
-    <>
+    <Card
+      title={
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "20px",
+            fontWeight: "bold",
+            color: "#0683e9ff",
+          }}
+        >
+          ข้อมูลเครื่องมือแพทย์
+        </div>
+      }
+      bordered
+      style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+      }}
+    >
+      {/* ตาราง */}
       <Table
         rowKey="id"
         columns={columns}
@@ -338,6 +388,7 @@ export default function MaMedicalEquipmentTable({
         scroll={{ x: 800 }}
       />
 
+      {/* Modal แก้ไขข้อมูล */}
       <Modal
         title="แก้ไขข้อมูล"
         open={editModalVisible}
@@ -375,21 +426,9 @@ export default function MaMedicalEquipmentTable({
                         optionFilterProp="children"
                       >
                         {dataEQ.map((eq) => {
-                          const reservedQuantity = dataEQ
-                            .flatMap((ma) => ma.items || [])
-                            .filter(
-                              (item: any) =>
-                                item.medicalEquipmentId === eq.id &&
-                                item.maMedicalEquipment?.status === "pending"
-                            )
-                            .reduce(
-                              (sum: number, item: any) => sum + item.quantity,
-                              0
-                            );
-
                           const remainingQuantity = eq.quantity;
 
-                          // 3️⃣ ป้องกันเลือกซ้ำในฟอร์ม
+                          // ป้องกันเลือกซ้ำ
                           const selectedIds = (
                             form.getFieldValue("equipmentInfo") ?? []
                           )
@@ -407,13 +446,13 @@ export default function MaMedicalEquipmentTable({
                               ]);
 
                           return (
-                            <Option
+                            <Select.Option
                               key={eq.id}
                               value={eq.id}
-                              disabled={isSelected || remainingQuantity <= 0} // ปิดถ้าเลือกซ้ำ หรือหมด
+                              disabled={isSelected || remainingQuantity <= 0}
                             >
                               {eq.equipmentName} (คงเหลือ {remainingQuantity})
-                            </Option>
+                            </Select.Option>
                           );
                         })}
                       </Select>
@@ -474,13 +513,9 @@ export default function MaMedicalEquipmentTable({
               style={{ width: "100%" }}
               disabledDate={(current) => {
                 if (!current) return false;
-
                 const today = dayjs().startOf("day");
-
-                // 1️⃣ ไม่ให้เลือกวันก่อนวันนี้
                 if (current < today) return true;
 
-                // 2️⃣ ตรวจสอบวันซ้ำกับวันที่จองผ่านมา
                 const bookedDates = data
                   .map((item: any) =>
                     item.sentDate ? dayjs(item.sentDate).startOf("day") : null
@@ -498,6 +533,7 @@ export default function MaMedicalEquipmentTable({
         </Form>
       </Modal>
 
+      {/* Modal ยกเลิก */}
       <Modal
         title="กรอกเหตุผลการยกเลิกรายการนี้"
         open={isModalOpen}
@@ -523,11 +559,13 @@ export default function MaMedicalEquipmentTable({
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* รายละเอียดเพิ่มเติม */}
       <MedicalEquipmentTableDetails
         record={recordDetails}
         open={openDetails}
         onClose={() => setOpenDetails(false)}
       />
-    </>
+    </Card>
   );
 }

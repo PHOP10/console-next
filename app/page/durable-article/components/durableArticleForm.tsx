@@ -48,7 +48,21 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
   };
 
   return (
-    <Card title="ข้อมูลครุภัณฑ์">
+    <Card
+      title={
+        <div
+          style={{
+            width: "100%",
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: 20,
+            color: "#0683e9",
+          }}
+        >
+          เพิ่มครุภัณฑ์
+        </div>
+      }
+    >
       <Form
         form={form}
         layout="vertical"
@@ -145,12 +159,10 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
           <Input.TextArea rows={2} />
         </Form.Item>
 
-        <Form.Item>
-          <Space>
-            <Button type="primary" htmlType="submit">
-              บันทึก
-            </Button>
-          </Space>
+        <Form.Item style={{ textAlign: "center" }}>
+          <Button type="primary" htmlType="submit">
+            บันทึก
+          </Button>
         </Form.Item>
       </Form>
     </Card>

@@ -11,6 +11,7 @@ import {
   message,
   Popconfirm,
   InputNumber,
+  Card,
 } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
@@ -105,37 +106,44 @@ export default function EquipmentTable({
     {
       title: "ลำดับ",
       key: "index",
+      align: "center",
       render: (_text, _record, index) => index + 1,
     },
     {
       title: "ชื่อเครื่องมือ",
       dataIndex: "equipmentName",
       key: "equipmentName",
+      align: "center",
     },
     {
       title: "จำนวนเครื่องมือ",
       dataIndex: "quantity",
       key: "quantity",
+      align: "center",
     },
     {
       title: "วันที่ได้รับ",
       dataIndex: "acquiredDate",
       key: "acquiredDate",
+      align: "center",
       render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
     },
     {
-      title: "ผู้เพิ่มข้อมมมูล",
+      title: "ผู้เพิ่มข้อมมูล",
       dataIndex: "createdBy",
       key: "createdBy",
+      align: "center",
     },
     {
       title: "รายละเอียดเพิ่มเติม",
       dataIndex: "description",
       key: "description",
+      align: "center",
     },
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           <Popconfirm
@@ -160,9 +168,13 @@ export default function EquipmentTable({
           </Popconfirm>
 
           <Button
-            type="primary"
             size="small"
             onClick={() => handleEdit(record)}
+            style={{
+              backgroundColor: "#faad14", // สีเขียวเพียว ๆ
+              borderColor: "#faad14",
+              color: "white",
+            }}
           >
             แก้ไข
           </Button>
@@ -172,20 +184,38 @@ export default function EquipmentTable({
   ];
 
   return (
-    <div>
-      <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" onClick={() => setIsModalOpen(true)}>
-          เพิ่มเครื่องมือแพทย์
-        </Button>
-      </Space>
+    <>
+      <Card
+        title={
+          <div
+            style={{
+              fontSize: "20px",
+              textAlign: "center",
+              fontWeight: "bold",
+              color: "#0683e9",
+            }}
+          >
+            ข้อมูลเครื่องมือแพทย์ทั้งหมด
+          </div>
+        }
+        bordered={true}
+        style={{ width: "100%" }}
+      >
+        <Space style={{ marginBottom: 16 }}>
+          <Button type="primary" onClick={() => setIsModalOpen(true)}>
+            เพิ่มเครื่องมือแพทย์
+          </Button>
+        </Space>
 
-      <Table
-        columns={columns}
-        dataSource={dataEQ}
-        rowKey="id"
-        loading={loading}
-        bordered
-      />
+        <Table
+          columns={columns}
+          dataSource={dataEQ}
+          rowKey="id"
+          loading={loading}
+          bordered
+          pagination={{ pageSize: 10 }}
+        />
+      </Card>
 
       <Modal
         title={editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}
@@ -206,7 +236,7 @@ export default function EquipmentTable({
         >
           <Form.Item
             label="ชื่อเครื่องมือ"
-            name="equipmentName" // ใช้ name เดียวกัน
+            name="equipmentName"
             rules={[{ required: true, message: "กรุณากรอกชื่อเครื่องมือ" }]}
           >
             <Input />
@@ -233,6 +263,6 @@ export default function EquipmentTable({
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </>
   );
 }

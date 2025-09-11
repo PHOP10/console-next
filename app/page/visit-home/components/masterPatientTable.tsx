@@ -65,6 +65,7 @@ export default function MasterPatientTable({
           fontSize: 20,
           marginBottom: 16,
           borderRadius: "8px",
+          color: "#1890ff",
         }}
       >
         จัดการประเภทผู้ป่วย

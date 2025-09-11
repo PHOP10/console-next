@@ -106,22 +106,26 @@ export default function SupportingResourceTable({
       title: "ลำดับ",
       dataIndex: "id",
       key: "id",
+      align: "center",
     },
     {
       title: "วัน เดือน ปี",
       dataIndex: "acquiredDate",
       key: "acquiredDate",
+      align: "center",
       render: (value) => dayjs(value).format("DD/MM/YYYY"),
     },
     {
       title: "เลขที่หรือรหัส",
       dataIndex: "code",
       key: "code",
+      align: "center",
     },
     {
       title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
       dataIndex: "name",
       key: "name",
+      align: "center",
       // width: "100%",
       render: (text: string) => {
         const shortText =
@@ -137,6 +141,7 @@ export default function SupportingResourceTable({
       title: "วิธีที่การได้มา",
       dataIndex: "acquisitionType",
       key: "acquisitionType",
+      align: "center",
       render: (text: string) => {
         const shortText =
           text && text.length > 20 ? text.substring(0, 40) + "..." : text;
@@ -151,6 +156,7 @@ export default function SupportingResourceTable({
       title: "หมายเหตุ",
       dataIndex: "description",
       key: "description",
+      align: "center",
       render: (text: string) => {
         const shortText =
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
@@ -208,7 +214,31 @@ export default function SupportingResourceTable({
   return (
     <>
       <Card>
-        <div style={{ marginBottom: 16 }}>
+        <div
+          style={{
+            width: "100%",
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: 20,
+            color: "#0683e9",
+          }}
+        >
+          ข้อมูลวัสดุสนับสนุน
+        </div>
+
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 16,
+          }}
+        >
+          <Input.Search
+            placeholder="ค้นหาวัสดุ..."
+            onChange={(e) => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+          />
+
           <Button
             type="primary"
             onClick={() => exportSupportingResources(data)}
@@ -217,13 +247,6 @@ export default function SupportingResourceTable({
           </Button>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <Input.Search
-            placeholder="ค้นหาวัสดุ..."
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 300 }}
-          />
-        </div>
         <Table
           rowKey="id"
           columns={columns}

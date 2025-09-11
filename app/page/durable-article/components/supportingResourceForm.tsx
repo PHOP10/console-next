@@ -77,7 +77,21 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
   };
 
   return (
-    <Card title="ข้อมูลวัสดุสนับสนุน">
+    <Card
+      title={
+        <div
+          style={{
+            width: "100%",
+            textAlign: "center",
+            fontWeight: "bold",
+            fontSize: 20,
+            color: "#0683e9",
+          }}
+        >
+          เพิ่มวัสดุสนับสนุน
+        </div>
+      }
+    >
       <Form
         preserve={false}
         form={form}

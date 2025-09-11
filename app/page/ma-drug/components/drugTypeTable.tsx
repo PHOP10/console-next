@@ -10,6 +10,7 @@ import {
   Space,
   Popconfirm,
   Modal,
+  Card,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -110,9 +111,24 @@ export default function DrugTypeTable() {
   }, [mode]);
 
   const columns: ColumnsType<MasterDrugType> = [
-    { title: "ลำดับ", dataIndex: "drugTypeId", key: "drugTypeId" },
-    { title: "ชื่อประเภทยา", dataIndex: "drugType", key: "drugType" },
-    { title: "คำอธิบาย", dataIndex: "description", key: "description" },
+    {
+      title: "ลำดับ",
+      dataIndex: "drugTypeId",
+      key: "drugTypeId",
+      align: "center",
+    },
+    {
+      title: "ชื่อประเภทยา",
+      dataIndex: "drugType",
+      key: "drugType",
+      align: "center",
+    },
+    {
+      title: "คำอธิบาย",
+      dataIndex: "description",
+      key: "description",
+      align: "center",
+    },
     {
       title: "จัดการ",
       key: "action",
@@ -148,10 +164,24 @@ export default function DrugTypeTable() {
   ];
 
   return (
-    <div>
+    <Card
+      title={
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "20px",
+            fontWeight: "bold",
+            color: "#0683e9",
+          }}
+        >
+          ทำรายการประเภทยา
+        </div>
+      }
+      bordered
+    >
       {mode === "table" ? (
         <>
-          <Space style={{ marginBottom: 16 }}>
+          <div style={{ textAlign: "left", marginBottom: 16 }}>
             <Button
               type="primary"
               onClick={() => {
@@ -161,7 +191,7 @@ export default function DrugTypeTable() {
             >
               + เพิ่มประเภทยา
             </Button>
-          </Space>
+          </div>
 
           <Table
             rowKey="id"
@@ -177,7 +207,7 @@ export default function DrugTypeTable() {
           form={form}
           layout="vertical"
           onFinish={handleAdd}
-          style={{ maxWidth: 400 }}
+          style={{ maxWidth: 400, margin: "0 auto" }} // จัดกลางฟอร์ม
         >
           <Form.Item
             label="รหัสประเภทยา"
@@ -199,19 +229,21 @@ export default function DrugTypeTable() {
             <Input.TextArea rows={3} placeholder="รายละเอียดเพิ่มเติม" />
           </Form.Item>
 
-          <Space>
-            <Button type="primary" htmlType="submit">
-              บันทึก
-            </Button>
-            <Button
-              onClick={() => {
-                form.resetFields();
-                setMode("table");
-              }}
-            >
-              ยกเลิก
-            </Button>
-          </Space>
+          <Form.Item style={{ textAlign: "center" }}>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                บันทึก
+              </Button>
+              <Button
+                onClick={() => {
+                  form.resetFields();
+                  setMode("table");
+                }}
+              >
+                ยกเลิก
+              </Button>
+            </Space>
+          </Form.Item>
         </Form>
       )}
 
@@ -253,14 +285,16 @@ export default function DrugTypeTable() {
             <Input.TextArea rows={3} />
           </Form.Item>
 
-          <Space>
-            <Button type="primary" htmlType="submit">
-              บันทึก
-            </Button>
-            <Button onClick={handleCancelEditModal}>ยกเลิก</Button>
-          </Space>
+          <Form.Item style={{ textAlign: "center" }}>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                บันทึก
+              </Button>
+              <Button onClick={handleCancelEditModal}>ยกเลิก</Button>
+            </Space>
+          </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </Card>
   );
 }

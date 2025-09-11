@@ -185,6 +185,7 @@ export default function VisitHomeTable({
           fontSize: 20,
           marginBottom: 16,
           borderRadius: "8px",
+          color: "#1890ff",
         }}
       >
         ข้อมูลการเยี่ยมบ้าน

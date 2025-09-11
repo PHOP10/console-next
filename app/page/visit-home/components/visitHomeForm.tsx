@@ -77,6 +77,7 @@ export default function VisitHomeForm() {
           fontSize: 20,
           marginBottom: 16,
           borderRadius: "8px",
+          color: "#1890ff",
         }}
       >
         ฟอร์มบันทึกการเยี่ยมบ้าน
@@ -179,7 +180,7 @@ export default function VisitHomeForm() {
         </Col>
       </Row>
 
-      <Form.Item className="submit-button-item">
+      <Form.Item className="submit-button-item" style={{ textAlign: "center" }}>
         <Button type="primary" htmlType="submit">
           บันทึก
         </Button>

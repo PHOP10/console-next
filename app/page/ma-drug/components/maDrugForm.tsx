@@ -62,7 +62,11 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
   };
 
   return (
-    <Card title="ทำรายการเบิกจ่ายยา">
+    <Card title={
+        <div style={{ fontSize: "20px", textAlign: "center", fontWeight: "bold" , color: "#0683e9"  }}>
+          ทำรายการเบิกจ่ายยา
+        </div>
+      }>
       <Form
         form={form}
         layout="vertical"
@@ -174,7 +178,7 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
           )}
         </Form.List>
 
-        <Form.Item>
+        <Form.Item style={{ textAlign: "center" }}>
           <Button type="primary" htmlType="submit" loading={loading}>
             บันทึกข้อมูล
           </Button>

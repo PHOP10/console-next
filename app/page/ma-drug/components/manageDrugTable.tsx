@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Table, Button, Popconfirm, message, Space, Tag } from "antd";
+import { Table, Button, Popconfirm, message, Space, Tag, Card } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
@@ -63,36 +63,43 @@ export default function ManageDrugTable() {
       title: "เลขที่เบิก",
       dataIndex: "requestNumber",
       key: "requestNumber",
+      align: "center",
     },
     {
       title: "หน่วยงานที่เบิก",
       dataIndex: "requestUnit",
       key: "requestUnit",
+      align: "center",
     },
     {
       title: "ผู้ขอเบิก",
       dataIndex: "requesterName",
       key: "requesterName",
+      align: "center",
     },
     {
       title: "ผู้จัดยา",
       dataIndex: "dispenserName",
       key: "dispenserName",
+      align: "center",
     },
     {
       title: "วันที่ขอเบิก",
       dataIndex: "requestDate",
       key: "requestDate",
+      align: "center",
       render: (value) => new Date(value).toLocaleDateString("th-TH"),
     },
     {
       title: "จำนวนที่เบิก",
       dataIndex: "quantityUsed",
       key: "quantityUsed",
+      align: "center",
     },
     {
       title: "สถานะ",
       key: "status",
+      align: "center",
       render: (_, record) =>
         record?.status ? (
           <Tag color="green">อนุมัติแล้ว</Tag>
@@ -103,6 +110,7 @@ export default function ManageDrugTable() {
     {
       title: "การจัดการ",
       key: "actions",
+      align: "center",
       render: (_, record) => (
         <Space>
           <Button type="link" onClick={() => handleEdit(record)}>
@@ -136,13 +144,30 @@ export default function ManageDrugTable() {
   ];
 
   return (
-    <Table
-      rowKey="id"
-      columns={columns}
-      dataSource={data}
-      loading={loading}
+    <Card
+      title={
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "20px",
+            fontWeight: "bold",
+            color: "#0683e9",
+          }}
+        >
+          ทำรายการประเภทยา
+        </div>
+      }
       bordered
-      pagination={{ pageSize: 10 }}
-    />
+      style={{ backgroundColor: "white" }} // กำหนดพื้นหลังเป็นสีขาว
+    >
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={data}
+        loading={loading}
+        bordered
+        pagination={{ pageSize: 10 }}
+      />
+    </Card>
   );
 }

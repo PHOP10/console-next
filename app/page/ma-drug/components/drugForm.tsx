@@ -63,7 +63,11 @@ export default function DrugForm({
 
   return (
     <Card
-      title="เพิ่มข้อมูลยา"
+      title={
+        <div style={{ fontSize: "20px", textAlign: "center", fontWeight: "bold" , color: "#0683e9"  }}>
+          เพิ่มข้อมูลยา
+        </div>
+      }
       bordered={false}
       style={{ maxWidth: 600, margin: "0 auto" }}
     >
@@ -124,7 +128,7 @@ export default function DrugForm({
           <Input.TextArea rows={3} />
         </Form.Item>
 
-        <Form.Item>
+        <Form.Item style={{ textAlign: "center" }}>
           <Button type="primary" htmlType="submit" loading={loading}>
             บันทึกข้อมูลยา
           </Button>
