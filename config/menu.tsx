@@ -298,7 +298,7 @@ export const group = {
 export const MenuSider: IMenu[] = [
   {
     key: `dashboard`,
-    icon: <FileTextOutlined />,
+    /* icon: <FileTextOutlined />, */
     label: `โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง`,
     roles: [group.admin],
   },
