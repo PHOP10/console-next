@@ -432,18 +432,6 @@ export default function MaMedicalEquipmentTable({
       />
 
       {/* Modal แก้ไขข้อมูล */}
-    
-      <Card>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={data}
-          loading={loading}
-          bordered
-          pagination={{ pageSize: 10 }}
-          scroll={{ x: 800 }}
-        />
-      </Card>
       <Modal
         title="แก้ไขข้อมูล"
         open={editModalVisible}
