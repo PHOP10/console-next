@@ -171,7 +171,7 @@ export default function EquipmentTable({
             size="small"
             onClick={() => handleEdit(record)}
             style={{
-              backgroundColor: "#faad14", // สีเขียวเพียว ๆ
+              backgroundColor: "#faad14",
               borderColor: "#faad14",
               color: "white",
             }}
@@ -206,25 +206,16 @@ export default function EquipmentTable({
             เพิ่มเครื่องมือแพทย์
           </Button>
         </Space>
-
-    
-      <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" onClick={() => setIsModalOpen(true)}>
-          เพิ่มเครื่องมือแพทย์
-        </Button>
-      </Space>
-      <Card>
-        <Table
-          columns={columns}
-          dataSource={dataEQ}
-          rowKey="id"
-          loading={loading}
-          bordered
-          pagination={{ pageSize: 10 }}
-        />
-      </Card>
-
-        
+        <Card>
+          <Table
+            columns={columns}
+            dataSource={dataEQ}
+            rowKey="id"
+            loading={loading}
+            bordered
+            pagination={{ pageSize: 10 }}
+          />
+        </Card>
       </Card>
       <Modal
         title={editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}

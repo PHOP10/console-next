@@ -230,14 +230,6 @@ export default function MedicalEquipmentTable({
       key: "createdBy",
       align: "center",
     },
-    // {
-    //   title: "วันที่รับคืน",
-    //   dataIndex: "receivedDate",
-    //   key: "receivedDate",
-    //   render: (date: string | null) =>
-    //     date ? dayjs(date).format("DD/MM/YYYY") : "-",
-    // },
-
     {
       title: "สถานะ",
       dataIndex: "status",
@@ -276,7 +268,7 @@ export default function MedicalEquipmentTable({
       dataIndex: "note",
       key: "note",
       align: "center",
-     
+
       render: (text: string) => {
         const shortText =
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
@@ -293,32 +285,25 @@ export default function MedicalEquipmentTable({
       align: "center",
       render: (_, record) => (
         <Space>
-          <Button
-            size="small"
-            onClick={() => handleEdit(record)}
-            style={{
-              backgroundColor:
-                record.status === "pending" ? "#faad14" : "#d9d9d9",
-              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
-              color: record.status === "pending" ? "white" : "#888",
-              cursor: record.status === "pending" ? "pointer" : "not-allowed",
-            }}
-            disabled={record.status !== "pending"}
-          >
-            แก้ไข
-          </Button>
+          {" "}
           {(session?.user?.role === "admin" ||
             session?.user?.role === "pharmacy") && (
             <Button
-              type="primary"
               size="small"
               onClick={() => handleEdit(record)}
+              style={{
+                backgroundColor:
+                  record.status === "pending" ? "#faad14" : "#d9d9d9",
+                borderColor:
+                  record.status === "pending" ? "#faad14" : "#d9d9d9",
+                color: record.status === "pending" ? "white" : "#888",
+                cursor: record.status === "pending" ? "pointer" : "not-allowed",
+              }}
               disabled={record.status !== "pending"}
             >
               แก้ไข
             </Button>
           )}
-
           <Button
             size="small"
             onClick={() => handleOpenModalReturn(record)}
@@ -333,7 +318,6 @@ export default function MedicalEquipmentTable({
           >
             รับคืน
           </Button>
-
           <Button
             type="default"
             size="small"
@@ -446,10 +430,10 @@ export default function MedicalEquipmentTable({
                               (sum: number, item: any) => sum + item.quantity,
                               0
                             );
-                   
+
                           const remainingQuantity =
                             eq.quantity - reservedQuantity;
-          
+
                           const selectedIds = (
                             form.getFieldValue("equipmentInfo") ?? []
                           )
@@ -597,13 +581,11 @@ export default function MedicalEquipmentTable({
         </Form>
       </Modal>
 
-
       <MedicalEquipmentTableDetails
         record={recordDetails}
         open={openDetails}
         onClose={() => setOpenDetails(false)}
       />
     </Card>
-    
   );
 }
