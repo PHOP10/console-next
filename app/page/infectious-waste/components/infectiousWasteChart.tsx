@@ -58,21 +58,10 @@ export default function InfectiousWasteChart({ data }: Props) {
     label: {
       position: "top",
       style: {
-        fill: "#000",
+        fill: "#0000",
       },
     },
-    tooltip: {
-      customContent: (title: string, items: any[]) => {
-        const item = items?.[0];
-        // console.log("Tooltip item:", item);
-        if (!item) return null;
-        const { data } = item;
-        return `<div style="padding: 20px;">
-        <strong>${title}</strong><br/>
-        ${data.count} รายการ / ${data.weight} กก.
-      </div>`;
-      },
-    },
+
     yAxis: {
       title: { text: "น้ำหนักรวม (กก.)" },
     },
@@ -80,9 +69,9 @@ export default function InfectiousWasteChart({ data }: Props) {
       type: { alias: "ประเภทขยะ" },
       weight: { alias: "น้ำหนักรวม (กก.)" },
     },
-    columnWidthRatio: 0.6, // กำหนดความหนาแท่ง (0-1)
-    width: 1300, // ความกว้างกราฟ
-    height: 400, // ความสูงกราฟ
+    columnWidthRatio: 0.4, // ปรับให้แท่นแคบลงหน่อย (เพราะมีแค่ 2)
+    autoFit: true, // ✅ ปรับอัตโนมัติให้พอดีกับ container
+    height: 400,
   };
 
   return (
@@ -115,14 +104,14 @@ export default function InfectiousWasteChart({ data }: Props) {
           {...config}
           label={{
             style: {
-              fill: "#595959", // สีตัวหนังสือ label ในกราฟ
+              fill: "#595959",
               fontSize: 14,
             },
           }}
           xAxis={{
             label: {
               style: {
-                fill: "#262626", // สีแกน X
+                fill: "#262626",
                 fontSize: 12,
               },
             },
@@ -130,7 +119,7 @@ export default function InfectiousWasteChart({ data }: Props) {
           yAxis={{
             label: {
               style: {
-                fill: "#262626", // สีแกน Y
+                fill: "#262626",
                 fontSize: 12,
               },
             },
