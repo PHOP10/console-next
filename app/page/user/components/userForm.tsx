@@ -32,6 +32,18 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
 
   return (
     <>
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "20px",
+          fontWeight: "bold",
+          color: "#0683e9",
+          marginBottom: "12px",
+        }}
+      >
+        จัดการข้อมูลผู้ใช้
+      </div>
+
       <Button
         type="primary"
         onClick={() => setIsModalOpen(true)}

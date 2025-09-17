@@ -88,19 +88,54 @@ export default function InfectiousWasteChart({ data }: Props) {
   return (
     <ConfigProvider locale={thTH}>
       <Card
-        title="กราฟน้ำหนักขยะติดเชื้อรวมตามประเภท"
+        title={
+          <span
+            style={{ color: "#0683e9", fontSize: "20px", fontWeight: "bold" }}
+          >
+            กราฟน้ำหนักขยะติดเชื้อรวมตามประเภท
+          </span>
+        }
         extra={
           <RangePicker
-            value={dateRange} // <--- ควบคุมค่า RangePicker
+            value={dateRange}
             onChange={(dates) =>
               setDateRange(dates ? (dates as [Dayjs, Dayjs]) : [null, null])
             }
             format="DD MMMM YYYY"
             allowClear
+            style={{
+              fontSize: "14px",
+              padding: "6px 10px",
+              borderRadius: "6px",
+            }}
           />
         }
       >
-        <Column {...config} />
+        <Column
+          {...config}
+          label={{
+            style: {
+              fill: "#595959", // สีตัวหนังสือ label ในกราฟ
+              fontSize: 14,
+            },
+          }}
+          xAxis={{
+            label: {
+              style: {
+                fill: "#262626", // สีแกน X
+                fontSize: 12,
+              },
+            },
+          }}
+          yAxis={{
+            label: {
+              style: {
+                fill: "#262626", // สีแกน Y
+                fontSize: 12,
+              },
+            },
+          }}
+        />
       </Card>
     </ConfigProvider>
   );

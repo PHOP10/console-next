@@ -74,11 +74,13 @@ export default function ThrowAwayWasteTable({
       title: "ประเภทขยะ",
       dataIndex: "wasteType",
       key: "wasteType",
+      align: "center",
     },
     {
       title: "น้ำหนัก (กิโลกรัม)",
       dataIndex: "wasteWeight",
       key: "wasteWeight",
+      align: "center",
     },
     {
       title: "วันที่ส่งกำจัด",
@@ -88,15 +90,19 @@ export default function ThrowAwayWasteTable({
         if (!date) return "-";
         return dayjs(date).format("D MMMM BBBB");
       },
+      align: "center",
+      // render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
     },
     {
       title: "ผู้ส่งกำจัด",
       dataIndex: "createdName",
       key: "createdName",
+      align: "center",
     },
     {
       title: "การจัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           {session?.user.role === "admin" && (
@@ -137,7 +143,20 @@ export default function ThrowAwayWasteTable({
   ];
 
   return (
-    <Card>
+    <Card
+      title={
+        <div
+          style={{
+            textAlign: "center",
+            fontSize: "20px",
+            fontWeight: "bold",
+            color: "#0683e9",
+          }}
+        >
+          ข้อมูลขยะติดเชื้อ
+        </div>
+      }
+    >
       <Table
         dataSource={data}
         columns={columns}

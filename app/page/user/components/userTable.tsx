@@ -77,16 +77,17 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
 
   const columns: ColumnsType<UserType> = [
     // { title: "Username", dataIndex: "username", key: "username" },
-    { title: "ชื่อ", dataIndex: "firstName", key: "firstName" },
-    { title: "นามสกุล", dataIndex: "lastName", key: "lastName" },
-    { title: "ชื่อเล่น", dataIndex: "nickName", key: "nickName" },
-    { title: "อีเมล", dataIndex: "email", key: "email" },
-    { title: "เบอร์โทร", dataIndex: "phoneNumber", key: "phoneNumber" },
-    { title: "ตำแหน่ง", dataIndex: "position", key: "position" },
+    { title: "ชื่อ", dataIndex: "firstName", key: "firstName", align: "center" },
+    { title: "นามสกุล", dataIndex: "lastName", key: "lastName", align: "center" },
+    { title: "ชื่อเล่น", dataIndex: "nickName", key: "nickName", align: "center" },
+    { title: "อีเมล", dataIndex: "email", key: "email", align: "center" },
+    { title: "เบอร์โทร", dataIndex: "phoneNumber", key: "phoneNumber", align: "center" },
+    { title: "ตำแหน่ง", dataIndex: "position", key: "position", align: "center" },
     {
       title: "ความรับผิดชอบ",
       dataIndex: "role",
       key: "role",
+      align: "center",
       render: (role: string) => {
         const roleMap: Record<string, string> = {
           admin: "หัวหน้า",
@@ -101,23 +102,38 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           <Button
-            type="primary"
             size="small"
             onClick={() => handleEdit(record)}
-            style={{ marginRight: 8 }}
+            style={{
+              marginRight: 8,
+              backgroundColor: "#faad14", // สีเหลือง
+              color: "#ffffff", // ตัวอักษรสีขาว
+              border: "none", // เอากรอบออก
+              fontWeight: "bold",
+            }}
           >
             แก้ไข
           </Button>
+
           <Popconfirm
             title="คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?"
             onConfirm={() => handleDelete(record.id)}
             okText="ใช่"
             cancelText="ยกเลิก"
           >
-            <Button type="primary" size="small" danger>
+            <Button
+              type="default"
+              size="small"
+              style={{
+                color: "#ff4d4f", // ตัวอักษรสีแดง
+                borderColor: "#ff4d4f", // กรอบสีแดง
+                backgroundColor: "#ffffff", // พื้นหลังขาว
+              }}
+            >
               ลบ
             </Button>
           </Popconfirm>
