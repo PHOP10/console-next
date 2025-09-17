@@ -11,6 +11,7 @@ export type TUserDto = {
 };
 
 export type UserProfileType = {
+  id: number;
   userId: string;
   username: string;
   fullName: string;
@@ -18,4 +19,5 @@ export type UserProfileType = {
   groupRoles?: string[];
   accessToken: string;
   refreshToken: string;
+  role ?: string;
 };

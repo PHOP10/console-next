@@ -84,7 +84,10 @@ export default function ThrowAwayWasteTable({
       title: "วันที่ส่งกำจัด",
       dataIndex: "discardedDate",
       key: "discardedDate",
-      render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
+      render: (date: string) => {
+        if (!date) return "-";
+        return dayjs(date).format("D MMMM BBBB");
+      },
     },
     {
       title: "ผู้ส่งกำจัด",

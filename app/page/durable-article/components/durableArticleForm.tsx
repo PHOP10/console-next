@@ -29,7 +29,6 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
   const intraAuthService = infectiousWasteServices(intraAuth);
 
   const onFinish = async (values: any) => {
-    console.log(values);
     try {
       const payload = {
         ...values,

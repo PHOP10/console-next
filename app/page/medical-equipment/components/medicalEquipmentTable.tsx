@@ -27,9 +27,11 @@ import {
 } from "../../common/index";
 import { useSession } from "next-auth/react";
 import MedicalEquipmentTableDetails from "./medicalEquipmentTableDetails";
+import ExportMedicalEquipmentWord from "./medicalEquipmentWord";
 
 const { Option } = Select;
 const { TextArea } = Input;
+dayjs.locale("th");
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -158,7 +160,7 @@ export default function MedicalEquipmentTable({
       align: "center",
     },
     {
-      title: "ชื่อเครื่องมือแพทย์",
+      title: "รายการ/ชื่อเครื่องมือ",
       dataIndex: "items",
       key: "items",
       align: "center",
@@ -222,8 +224,12 @@ export default function MedicalEquipmentTable({
       dataIndex: "sentDate",
       key: "sentDate",
       align: "center",
-      render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
+      render: (date: string) => {
+        if (!date) return "-";
+        return dayjs(date).format("D MMMM BBBB");
+      },
     },
+
     {
       title: "ชื่อผู้ส่ง",
       dataIndex: "createdBy",
@@ -319,7 +325,7 @@ export default function MedicalEquipmentTable({
             รับคืน
           </Button>
           <Button
-            type="default"
+            type="primary"
             size="small"
             style={{
               borderColor: "#d9d9d9",
@@ -329,6 +335,7 @@ export default function MedicalEquipmentTable({
           >
             รายละเอียด
           </Button>
+          <ExportMedicalEquipmentWord record={record} />
         </Space>
       ),
     },
