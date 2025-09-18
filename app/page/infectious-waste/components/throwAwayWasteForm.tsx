@@ -11,10 +11,15 @@ import {
   Card,
   Select,
 } from "antd";
-import dayjs from "dayjs";
 import { infectiousWasteServices } from "../services/infectiouswaste.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { useSession } from "next-auth/react";
+import dayjs from "dayjs";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+import "dayjs/locale/th";
+import th_TH from "antd/es/date-picker/locale/th_TH";
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -108,7 +113,10 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
           name="discardedDate"
           rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}
         >
-          <DatePicker format="YYYY-MM-DD" />
+          <DatePicker
+            locale={th_TH}
+            format="D MMMM BBBB" // BBBB = ปีพุทธศักราช
+          />
         </Form.Item>
 
         <Form.Item style={{ textAlign: "center" }}>

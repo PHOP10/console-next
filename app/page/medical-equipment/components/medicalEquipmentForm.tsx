@@ -17,9 +17,14 @@ import {
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
-import dayjs from "dayjs";
 import { MaMedicalEquipmentType, MedicalEquipmentType } from "../../common";
 import { useSession } from "next-auth/react";
+import dayjs from "dayjs";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+import "dayjs/locale/th";
+import th_TH from "antd/es/date-picker/locale/th_TH";
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -51,6 +56,7 @@ export default function CreateMedicalEquipmentForm({
         note: values.note,
         createdBy: session?.user?.fullName,
         createdById: session?.user?.userId,
+        createdAt: new Date(),
         items: values.equipmentInfo.map((item: any) => ({
           medicalEquipmentId: item.medicalEquipmentId,
           quantity: item.quantity,
@@ -78,7 +84,14 @@ export default function CreateMedicalEquipmentForm({
   return (
     <Card
       title={
-        <div style={{ fontSize: "20px", textAlign: "center", fontWeight: "bold" , color: "#0683e9"  }}>
+        <div
+          style={{
+            fontSize: "20px",
+            textAlign: "center",
+            fontWeight: "bold",
+            color: "#0683e9",
+          }}
+        >
           ส่งเครื่องมือแพทย์
         </div>
       }
@@ -314,7 +327,8 @@ export default function CreateMedicalEquipmentForm({
               rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
             >
               <DatePicker
-                format="DD/MM/YYYY"
+                locale={th_TH}
+                format="D MMMM BBBB"
                 style={{ width: "100%" }}
                 disabledDate={(current) => {
                   if (!current) return false;

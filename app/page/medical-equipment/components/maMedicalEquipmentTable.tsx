@@ -164,7 +164,7 @@ export default function MaMedicalEquipmentTable({
       align: "center",
     },
     {
-      title: "ชื่อเครื่องมือแพทย์",
+      title: "รายการ/ชื่อเครื่องมือ",
       dataIndex: "items",
       key: "items",
       width: 200,
@@ -198,7 +198,7 @@ export default function MaMedicalEquipmentTable({
       key: "items",
       width: 160,
       align: "center",
-  
+
       // width: 160,
       render: (items: any[]) => {
         if (!items || items.length === 0) return null;
@@ -229,7 +229,10 @@ export default function MaMedicalEquipmentTable({
       dataIndex: "sentDate",
       key: "sentDate",
       align: "center",
-      render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
+      render: (date: string) => {
+        if (!date) return "-";
+        return dayjs(date).format("D MMMM BBBB");
+      },
     },
     {
       title: "ชื่อผู้ส่ง",
@@ -275,7 +278,7 @@ export default function MaMedicalEquipmentTable({
       dataIndex: "note",
       key: "note",
       align: "center",
-   
+
       render: (text: string) => {
         const shortText =
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
@@ -384,7 +387,7 @@ export default function MaMedicalEquipmentTable({
           </Popover>
 
           <Button
-            type="default"
+            type="primary"
             size="small"
             style={{
               borderColor: "#d9d9d9",

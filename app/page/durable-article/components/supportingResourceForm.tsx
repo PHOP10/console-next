@@ -11,6 +11,7 @@ import {
   Card,
   Row,
   Col,
+  Select,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
@@ -57,25 +58,6 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
     };
   }, []);
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.toUpperCase();
-
-    // อนุญาตเฉพาะตัวเลข, / และ -
-    value = value.replace(/[^0-9/-]/g, "");
-
-    // ถ้ามี "/" → แยกส่วน main และ suffix
-    const parts = value.split("/");
-    let main = parts[0].replace(/-/g, ""); // เอาเฉพาะเลขก่อน
-
-    // ใส่ "-" ทุก ๆ 4 ตัวอักษร (เช่น 4140-0010-0012)
-    main = main.match(/.{1,4}/g)?.join("-") || main;
-
-    // ถ้ามี suffix ต่อท้ายด้วย "/"
-    value = parts[1] ? `${main}/${parts[1]}` : main;
-
-    form.setFieldsValue({ code: value });
-  };
-
   return (
     <Card
       title={
@@ -104,17 +86,26 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="รหัสครุภัณฑ์"
+              label="เลขที่หรือรหัส"
               name="code"
               rules={[
                 { required: true, message: "กรุณากรอกรหัสครุภัณฑ์" },
                 {
-                  pattern: /^[0-9/-]+$/,
-                  message: "กรุณากรอกเฉพาะตัวเลข, /, - และต้องมี 13 ตัวอักษร",
+                  pattern: /^[0-9/-]{13,17}$/,
+                  message: "กรุณากรอกเฉพาะ 0-9, /, -",
                 },
               ]}
             >
-              <Input placeholder="เช่น 4140-0010-0001" maxLength={15} />
+              <Input
+                placeholder="เช่น xxxx-xxx-xxxx"
+                maxLength={17}
+                onKeyPress={(e) => {
+                  const allowed = /[0-9/-]/;
+                  if (!allowed.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+              />
             </Form.Item>
           </Col>
 
@@ -134,19 +125,82 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
           name="name"
           rules={[{ required: true, message: "กรุณากรอกชื่อวัสดุ" }]}
         >
-          <Input.TextArea rows={2} />
+          <Input.TextArea
+            rows={2}
+            placeholder="กรอกยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
+          />
         </Form.Item>
 
         <Form.Item
           label="วิธีการได้มา"
           name="acquisitionType"
-          rules={[{ required: true, message: "กรุณากรอกวิธีการได้มา" }]}
+          rules={[{ required: true, message: "กรุณาเลือกวิธีการได้มา" }]}
         >
-          <Input.TextArea rows={2} />
+          <Select placeholder="เลือกวิธีการได้มา">
+            <Select.Option value="งบประมาณ">งบประมาณ</Select.Option>
+            <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
+            <Select.Option value="เงินงบประมาณ ตกลงราคา">
+              เงินงบประมาณ ตกลงราคา
+            </Select.Option>
+            <Select.Option value="บริจาค">บริจาค</Select.Option>
+          </Select>
         </Form.Item>
 
+        {/* ✅ ฟิลด์ใหม่ */}
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="ประเภท"
+              name="category"
+              rules={[{ required: true, message: "กรุณากรอกประเภท" }]}
+            >
+              <Input placeholder="กรอกประเภท" />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              label="ที่เอกสาร"
+              name="documentId"
+              rules={[{ required: true, message: "กรุณากรอกที่เอกสาร" }]}
+            >
+              <Input placeholder="กรอกที่เอกสาร" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="ลักษณะ/คุณสมบัติ"
+              name="attributes"
+              rules={[{ required: true, message: "กรุณากรอกคุณสมบัติ" }]}
+            >
+              <Input.TextArea rows={2} placeholder="กรอกลักษณะ/คุณสมบัติ " />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              label="ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+              name="responsibleAgency"
+              rules={[
+                {
+                  required: true,
+                  message: "กรุณากรอก ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค",
+                },
+              ]}
+            >
+              <Input.TextArea
+                rows={2}
+                placeholder="กรอกชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
         <Form.Item label="หมายเหตุ" name="description">
-          <Input.TextArea rows={2} />
+          <Input.TextArea rows={2} placeholder="กรอกหมายเหตุ" />
         </Form.Item>
 
         <Form.Item style={{ textAlign: "center" }}>

@@ -69,30 +69,20 @@ export default function InfectiousWasteChart({ data }: Props) {
     color: (datum: { type: string }) => colorMap[datum.type] || "#aaa", 
     label: {
       position: "top",
-      style: {               /* ตัวเลขบนกราฟ */
-        fontSize: 18,
-        fontWeight: 700,
-        fill: "#1a1a1a",
+      style: {
+        fill: "#0000",
       },
     },
-    tooltip: {
-      customContent: (title: string, items: any[]) => {
-        const item = items?.[0];
-        if (!item) return null;
-        const { data } = item;
-        return `<div style="padding: 10px;">
-          <strong>${title}</strong><br/>
-          ${data.count} รายการ / ${data.weight} กก.
-        </div>`;
-      },
+
+    yAxis: {
+      title: { text: "น้ำหนักรวม (กก.)" },
     },
-    yAxis: { title: { text: "น้ำหนักรวม (กก.)" } },
     meta: {
       type: { alias: "ประเภทขยะ" },
       weight: { alias: "น้ำหนักรวม (กก.)" },
     },
-    columnWidthRatio: 0.6,
-    width: 1300,
+    columnWidthRatio: 0.4, // ปรับให้แท่นแคบลงหน่อย (เพราะมีแค่ 2)
+    autoFit: true, // ✅ ปรับอัตโนมัติให้พอดีกับ container
     height: 400,
   };
 
@@ -121,7 +111,31 @@ export default function InfectiousWasteChart({ data }: Props) {
           />
         }
       >
-        <Column {...config} />
+        <Column
+          {...config}
+          label={{
+            style: {
+              fill: "#595959",
+              fontSize: 14,
+            },
+          }}
+          xAxis={{
+            label: {
+              style: {
+                fill: "#262626",
+                fontSize: 12,
+              },
+            },
+          }}
+          yAxis={{
+            label: {
+              style: {
+                fill: "#262626",
+                fontSize: 12,
+              },
+            },
+          }}
+        />
       </Card>
     </ConfigProvider>
   );

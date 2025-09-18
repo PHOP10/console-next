@@ -15,12 +15,15 @@ import {
 } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
-import dayjs from "dayjs";
+// import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MedicalEquipmentType } from "../../common/index";
 import { useSession } from "next-auth/react";
+import dayjs from "dayjs";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+import "dayjs/locale/th";
+import th_TH from "antd/es/date-picker/locale/th_TH";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -126,7 +129,10 @@ export default function EquipmentTable({
       dataIndex: "acquiredDate",
       key: "acquiredDate",
       align: "center",
-      render: (date: string) => dayjs(date).format("DD/MM/YYYY"),
+      render: (date: string) => {
+        if (!date) return "-";
+        return dayjs(date).format("D MMMM BBBB");
+      },
     },
     {
       title: "ผู้เพิ่มข้อมมูล",
@@ -255,7 +261,11 @@ export default function EquipmentTable({
             name="acquiredDate"
             rules={[{ required: true, message: "กรุณาเลือกวันที่ได้รับ" }]}
           >
-            <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+            <DatePicker
+              locale={th_TH}
+              format="D MMMM BBBB"
+              style={{ width: "100%" }}
+            />
           </Form.Item>
 
           <Form.Item label="รายละเอียดเพิ่มเติม" name="description">

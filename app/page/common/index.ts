@@ -11,6 +11,7 @@ export interface UserType {
   role?: string;
   createdAt?: string;
   updatedAt?: string;
+  fullName?: string;
 }
 
 export interface OfficialTravelRequestType {
@@ -38,8 +39,8 @@ export interface MaCarType {
   id: number;
   requesterName: string;
   purpose: string;
-  dateStart: string; 
-  dateEnd: string; 
+  dateStart: string;
+  dateEnd: string;
   destination: string;
   passengers: number;
   passengerNames?: string[];

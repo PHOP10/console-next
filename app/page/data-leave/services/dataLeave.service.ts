@@ -3,7 +3,20 @@ import { AxiosInstance } from "axios";
 export const DataLeaveService = (axiosInstance: AxiosInstance) => {
   const baseUrlApiDataLeave = "/dataLeave";
   const baseUrlApiMasterLeave = "/masterLeave";
+  const baseUrlApiUser = "/user";
+
   return {
+    getUserQuery: async () => {
+      return await axiosInstance
+        .get(`${baseUrlApiUser}`)
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
     getDataLeaveQuery: async () => {
       return await axiosInstance
         .get(`${baseUrlApiDataLeave}`)

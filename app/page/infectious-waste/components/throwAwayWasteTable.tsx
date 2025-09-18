@@ -86,8 +86,11 @@ export default function ThrowAwayWasteTable({
       title: "วันที่ส่งกำจัด",
       dataIndex: "discardedDate",
       key: "discardedDate",
+      render: (date: string) => {
+        if (!date) return "-";
+        return dayjs(date).format("D MMMM BBBB");
+      },
       align: "center",
-      render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
     },
     {
       title: "ผู้ส่งกำจัด",
@@ -165,6 +168,7 @@ export default function ThrowAwayWasteTable({
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 800 }}
       />
 
       {/* Modal สำหรับแก้ไข */}
