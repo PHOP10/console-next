@@ -50,7 +50,7 @@ const ExportMedicalEquipmentWord: React.FC<ExportMedicalEquipmentWordProps> = ({
     doc.render(data);
 
     const blob = doc.getZip().generate({ type: "blob" });
-    saveAs(blob, `MedicalEquipment_${record.id}.docx`);
+    saveAs(blob, `รายการส่งเครื่องมือ_${record.id}.docx`);
   };
 
   return (

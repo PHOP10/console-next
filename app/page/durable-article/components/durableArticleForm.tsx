@@ -75,17 +75,26 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
-              label="รหัสครุภัณฑ์"
+              label="เลขที่หรือรหัส"
               name="code"
               rules={[
                 { required: true, message: "กรุณากรอกรหัสครุภัณฑ์" },
                 {
-                  pattern: /^[0-9/-]+$/,
-                  message: "กรุณากรอกเฉพาะตัวเลข, /, - และต้องมี 13 ตัวอักษร",
+                  pattern: /^[0-9/-]{13,17}$/,
+                  message: "กรุณากรอกเฉพาะ 0-9, /, -",
                 },
               ]}
             >
-              <Input placeholder="เช่น xxxx-xxx-xxxx" maxLength={15} />
+              <Input
+                placeholder="เช่น xxxx-xxx-xxxx"
+                maxLength={17}
+                onKeyPress={(e) => {
+                  const allowed = /[0-9/-]/;
+                  if (!allowed.test(e.key)) {
+                    e.preventDefault();
+                  }
+                }}
+              />
             </Form.Item>
           </Col>
 
@@ -108,6 +117,59 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
           <Input.TextArea rows={2} />
         </Form.Item>
 
+        {/* ✅ ฟิลด์ใหม่ */}
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="ประเภท"
+              name="category"
+              rules={[{ required: true, message: "กรุณากรอกประเภท" }]}
+            >
+              <Input placeholder="กรอกประเภท" />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              label="ที่เอกสาร"
+              name="documentId"
+              rules={[{ required: true, message: "กรุณากรอกที่เอกสาร" }]}
+            >
+              <Input placeholder="กรอกที่เอกสาร" />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="ลักษณะ/คุณสมบัติ"
+              name="attributes"
+              rules={[{ required: true, message: "กรุณากรอกคุณสมบัติ" }]}
+            >
+              <Input.TextArea rows={2} placeholder="กรอกลักษณะ/คุณสมบัติ " />
+            </Form.Item>
+          </Col>
+
+          <Col span={12}>
+            <Form.Item
+              label="ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+              name="responsibleAgency"
+              rules={[
+                {
+                  required: true,
+                  message: "กรุณากรอก ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค",
+                },
+              ]}
+            >
+              <Input.TextArea
+                rows={2}
+                placeholder="กรอกชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+              />
+            </Form.Item>
+          </Col>
+        </Row>
+
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
@@ -121,11 +183,18 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
 
           <Col span={12}>
             <Form.Item
-              label="วิธีที่ได้มา"
+              label="วิธีการได้มา"
               name="acquisitionType"
-              rules={[{ required: true, message: "กรุณาเลือกวิธีที่ได้มา" }]}
+              rules={[{ required: true, message: "กรุณาเลือกวิธีการได้มา" }]}
             >
-              <Input.TextArea rows={2} />
+              <Select placeholder="เลือกวิธีการได้มา">
+                <Select.Option value="งบประมาณ">งบประมาณ</Select.Option>
+                <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
+                <Select.Option value="เงินงบประมาณ ตกลงราคา">
+                  เงินงบประมาณ ตกลงราคา
+                </Select.Option>
+                <Select.Option value="บริจาค">บริจาค</Select.Option>
+              </Select>
             </Form.Item>
           </Col>
         </Row>
