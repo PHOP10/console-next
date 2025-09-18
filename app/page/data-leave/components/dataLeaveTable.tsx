@@ -19,6 +19,7 @@ import dayjs from "dayjs";
 import DataLeaveDetail from "./dataLeaveDetail";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
+import DataLeaveWord from "./dataLeaveWord";
 
 interface DataLeaveTableProps {
   data: DataLeaveType[];
@@ -177,6 +178,13 @@ export default function DataLeaveTable({
           >
             รายละเอียด
           </Button>
+          <DataLeaveWord
+            record={record}
+            masterLeaves={masterLeaves}
+            backupUserName={
+              record.backupUser?.firstName + " " + record.backupUser?.lastName
+            }
+          />
         </Space>
       ),
     },

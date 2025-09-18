@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-import { DataLeaveType, MasterLeaveType } from "../../common";
+import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import { DataLeaveService } from "../services/dataLeave.service";
 import LeaveBookingForm from "../components/leaveBookingForm";
 import { useSession } from "next-auth/react";
@@ -16,6 +16,7 @@ export default function DataLeavePage() {
   const [data, setData] = useState<DataLeaveType[]>([]);
   const [masterLeaves, setMasterLeaves] = useState<MasterLeaveType[]>([]);
   const [leaveByUserId, setLeaveByUserId] = useState<DataLeaveType[]>([]);
+  const [user, setUser] = useState<UserType[]>([]);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -30,8 +31,9 @@ export default function DataLeavePage() {
         const byUserId = await intraAuthService.getDataLeaveByUserId(
           userId || ""
         );
+        const user = await intraAuthService.getUserQuery();
+        setUser(user);
         setLeaveByUserId(byUserId);
-
         setData(dataRes);
         setMasterLeaves(masterRes);
       } catch (err) {
@@ -56,6 +58,7 @@ export default function DataLeavePage() {
             createDataLeave={intraAuthService.createDataLeave}
             masterLeaves={masterLeaves}
             leaveByUserId={leaveByUserId}
+            user={user}
           />
         </Card>
       ),
