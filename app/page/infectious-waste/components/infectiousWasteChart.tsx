@@ -2,7 +2,7 @@
 
 import { Card, DatePicker, ConfigProvider } from "antd";
 import { Column } from "@ant-design/plots";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
@@ -10,6 +10,8 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import thTH from "antd/locale/th_TH";
 import type { Dayjs } from "dayjs";
 import { InfectiousWasteType } from "../../common";
+
+import "./graph.css"; // ไฟล์ CSS สำหรับปรับแต่งกราฟ
 
 dayjs.locale("th");
 dayjs.extend(isSameOrAfter);
@@ -27,6 +29,7 @@ export default function InfectiousWasteChart({ data }: Props) {
     null,
   ]);
 
+  // กรองข้อมูลตามช่วงวันที่
   const filteredData = data.filter((item) => {
     if (!dateRange?.[0] || !dateRange?.[1]) return true;
     const discarded = dayjs(item.discardedDate);
@@ -36,6 +39,7 @@ export default function InfectiousWasteChart({ data }: Props) {
     );
   });
 
+  // สรุปน้ำหนักและจำนวนของแต่ละประเภท
   const summaryMap: Record<string, { weight: number; count: number }> = {};
   filteredData.forEach((item) => {
     if (!summaryMap[item.wasteType]) {
@@ -51,47 +55,53 @@ export default function InfectiousWasteChart({ data }: Props) {
     count: value.count,
   }));
 
+  // กำหนดสีแต่ละประเภท
+  const colorMap: Record<string, string> = {
+    "ขยะติดเชื้อทั่วไป": "#1890ff", // น้ำเงิน
+    "ขยะติดเชื้อมีคม": "#ff4d4f",  // แดง
+  };
+
   const config = {
     data: chartData,
     xField: "type",
     yField: "weight",
+    seriesField: "type",/* แยกแต่ละประเภทเป็นสีแยก */
+    color: (datum: { type: string }) => colorMap[datum.type] || "#aaa", 
     label: {
       position: "top",
-      style: {
-        fill: "#000",
+      style: {               /* ตัวเลขบนกราฟ */
+        fontSize: 18,
+        fontWeight: 700,
+        fill: "#1a1a1a",
       },
     },
     tooltip: {
       customContent: (title: string, items: any[]) => {
         const item = items?.[0];
-        // console.log("Tooltip item:", item);
         if (!item) return null;
         const { data } = item;
-        return `<div style="padding: 20px;">
-        <strong>${title}</strong><br/>
-        ${data.count} รายการ / ${data.weight} กก.
-      </div>`;
+        return `<div style="padding: 10px;">
+          <strong>${title}</strong><br/>
+          ${data.count} รายการ / ${data.weight} กก.
+        </div>`;
       },
     },
-    yAxis: {
-      title: { text: "น้ำหนักรวม (กก.)" },
-    },
+    yAxis: { title: { text: "น้ำหนักรวม (กก.)" } },
     meta: {
       type: { alias: "ประเภทขยะ" },
       weight: { alias: "น้ำหนักรวม (กก.)" },
     },
-    columnWidthRatio: 0.6, // กำหนดความหนาแท่ง (0-1)
-    width: 1300, // ความกว้างกราฟ
-    height: 400, // ความสูงกราฟ
+    columnWidthRatio: 0.6,
+    width: 1300,
+    height: 400,
   };
 
   return (
     <ConfigProvider locale={thTH}>
       <Card
+        className="infectious-card"
         title={
-          <span
-            style={{ color: "#0683e9", fontSize: "20px", fontWeight: "bold" }}
-          >
+          <span style={{ color: "#0683e9", fontSize: "20px", fontWeight: "bold" }}>
             กราฟน้ำหนักขยะติดเชื้อรวมตามประเภท
           </span>
         }
@@ -111,31 +121,7 @@ export default function InfectiousWasteChart({ data }: Props) {
           />
         }
       >
-        <Column
-          {...config}
-          label={{
-            style: {
-              fill: "#595959", // สีตัวหนังสือ label ในกราฟ
-              fontSize: 14,
-            },
-          }}
-          xAxis={{
-            label: {
-              style: {
-                fill: "#262626", // สีแกน X
-                fontSize: 12,
-              },
-            },
-          }}
-          yAxis={{
-            label: {
-              style: {
-                fill: "#262626", // สีแกน Y
-                fontSize: 12,
-              },
-            },
-          }}
-        />
+        <Column {...config} />
       </Card>
     </ConfigProvider>
   );

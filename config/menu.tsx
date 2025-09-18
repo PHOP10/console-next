@@ -307,37 +307,31 @@ export const group = {
 
 // เมนูหลัก
 export const MenuSider: IMenu[] = [
-  // {
-  //   key: `dashboard`,
-  //   /* icon: <FileTextOutlined />, */
-  //   label: `โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง`,
-  //   roles: [group.admin],
-  // },
-  // {
-  //   key: `dashboard`,
-  //   icon: <FileTextOutlined />,
-  //   label: `โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง`,
-  //   // roles: [group.admin],
-  // },
+/*   {
+    key: "dashboard",
+    icon: <FileTextOutlined />,
+    label: "โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง",
+    roles: [group.admin],
+  }, */
   {
     key: "official-travel-request",
-    label: `ระบบขอไปราชการ`,
+    label: "ระบบขอไปราชการ",
     roles: [group.admin, group.user, group.pharmacy, group.asset],
     icon: <FileZipOutlined />,
     children: [
       {
-        key: `officialTravelRequest`,
-        label: `ข้อมูลขอไปราชการ`,
+        key: "officialTravelRequest",
+        label: "ข้อมูลขอไปราชการ",
         roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
       {
-        key: `officialTravelRequestBook`,
-        label: `ขอไปราชการ`,
+        key: "officialTravelRequestBook",
+        label: "ขอไปราชการ",
         roles: [group.admin, group.user, group.pharmacy, group.asset],
       },
       {
-        key: `manageOfficialTravelRequest`,
-        label: `จัดการการขอไปราชการ`,
+        key: "manageOfficialTravelRequest",
+        label: "จัดการการขอไปราชการ",
         roles: [group.admin],
       },
     ],

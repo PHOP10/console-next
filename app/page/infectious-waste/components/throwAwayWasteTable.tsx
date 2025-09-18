@@ -125,9 +125,15 @@ export default function ThrowAwayWasteTable({
               </Popconfirm>
 
               <Button
-                size="small"
                 type="primary"
+                size="small"
                 onClick={() => handleEdit(record)}
+                style={{
+                  marginRight: 8,
+                  backgroundColor: "#faad14", // สีเหลือง
+                  borderColor: "#faad14", // เส้นกรอบเป็นสีเดียวกัน
+                  color: "#ffffff", // ตัวอักษรสีขาว
+                }}
               >
                 แก้ไข
               </Button>
@@ -165,10 +171,20 @@ export default function ThrowAwayWasteTable({
       <Modal
         title="แก้ไขข้อมูลขยะติดเชื้อ"
         open={isModalOpen}
-        onOk={handleUpdate}
         onCancel={() => setIsModalOpen(false)}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
+        centered
+        footer={[
+          <div style={{ width: "100%", textAlign: "center" }} key="footer">
+            <Button onClick={() => setIsModalOpen(false)}>ยกเลิก</Button>
+            <Button
+              type="primary"
+              onClick={handleUpdate}
+              style={{ marginLeft: 8 }}
+            >
+              บันทึก
+            </Button>
+          </div>,
+        ]}
       >
         <Form form={form} layout="vertical">
           <Form.Item
