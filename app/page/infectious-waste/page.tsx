@@ -52,56 +52,56 @@ export default function Page() {
     }
   }, [loading, fetchData]);
 
-  const columns: ColumnsType<InfectiousWasteType> = [
-    {
-      title: "ประเภทขยะ",
-      dataIndex: "wasteType",
-      key: "wasteType",
-    },
-    {
-      title: "น้ำหนัก (กิโลกรัม)",
-      dataIndex: "wasteWeight",
-      key: "wasteWeight",
-    },
-    {
-      title: "วันที่ทิ้ง",
-      dataIndex: "discardedDate",
-      key: "discardedDate",
-      render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
-    },
-    {
-      title: "การจัดการ",
-      key: "action",
-      render: (_, record) => (
-        <Space>
-          <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteInfectiousWaste(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                setLoading(true);
-              } catch (error) {
-                console.error("Error deleting waste:", error);
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Button danger size="small">
-              ลบ
-            </Button>
-          </Popconfirm>
+  // const columns: ColumnsType<InfectiousWasteType> = [
+  //   {
+  //     title: "ประเภทขยะ",
+  //     dataIndex: "wasteType",
+  //     key: "wasteType",
+  //   },
+  //   {
+  //     title: "น้ำหนัก (กิโลกรัม)",
+  //     dataIndex: "wasteWeight",
+  //     key: "wasteWeight",
+  //   },
+  //   {
+  //     title: "วันที่ทิ้ง",
+  //     dataIndex: "discardedDate",
+  //     key: "discardedDate",
+  //     render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
+  //   },
+  //   {
+  //     title: "การจัดการ",
+  //     key: "action",
+  //     render: (_, record) => (
+  //       <Space>
+  //         <Popconfirm
+  //           title="ยืนยันการลบ"
+  //           description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+  //           onConfirm={async () => {
+  //             try {
+  //               await intraAuthService.deleteInfectiousWaste(record.id);
+  //               message.success("ลบข้อมูลสำเร็จ");
+  //               setLoading(true);
+  //             } catch (error) {
+  //               console.error("Error deleting waste:", error);
+  //               message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+  //             }
+  //           }}
+  //           okText="ใช่"
+  //           cancelText="ยกเลิก"
+  //         >
+  //           <Button danger size="small">
+  //             ลบ
+  //           </Button>
+  //         </Popconfirm>
 
-          <Button size="small" onClick={() => editRecord(record)}>
-            แก้ไข
-          </Button>
-        </Space>
-      ),
-    },
-  ];
+  //         <Button size="small" onClick={() => editRecord(record)}>
+  //           แก้ไข
+  //         </Button>
+  //       </Space>
+  //     ),
+  //   },
+  // ];
 
   const items: TabsProps["items"] = [
     {
@@ -118,7 +118,9 @@ export default function Page() {
     {
       key: "2",
       label: `ทิ้งขยะติดเชื้อ`,
-      children: <ThrowAwayWaste setLoading={setLoading} />,
+      children: (
+        <ThrowAwayWaste setLoading={setLoading} fetchData={fetchData} />
+      ),
     },
     {
       key: "3",
