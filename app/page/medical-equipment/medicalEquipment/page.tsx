@@ -63,6 +63,7 @@ export default function Page() {
           setLoading={setLoading}
           dataEQ={dataEQ}
           data={data}
+           fetchData={fetchData}
         />
       ),
     },

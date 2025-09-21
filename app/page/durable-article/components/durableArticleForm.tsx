@@ -21,6 +21,7 @@ import { infectiousWasteServices } from "../services/durableArticle.service";
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
+  fetchData: () => Promise<void>;
 };
 
 export default function DurableArticleForm({ setLoading, loading }: Props) {

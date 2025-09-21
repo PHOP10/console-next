@@ -56,7 +56,11 @@ export default function Page() {
       key: "2",
       label: "เพิ่มวัสดุสนับสนุน",
       children: (
-        <SupportingResourceForm setLoading={setLoading} loading={loading} />
+        <SupportingResourceForm
+          setLoading={setLoading}
+          loading={loading}
+          fetchData={fetchData}
+        />
       ),
     },
   ];

@@ -22,6 +22,7 @@ import { usePathname } from "next/navigation";
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
+  fetchData: () => Promise<void>;
 };
 
 export default function SupportingResourceForm({ setLoading, loading }: Props) {

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Form,
   Input,
@@ -10,9 +10,8 @@ import {
   Select,
   message,
   Card,
-  Space,
+  Table,
 } from "antd";
-import { MinusCircleOutlined, PlusOutlined } from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { DrugType } from "../../common";
@@ -22,14 +21,37 @@ interface MaDrugFormProps {
   refreshData: () => void;
 }
 
+interface DrugItemRow {
+  key: number;
+  drugId: number | null;
+  quantity: number;
+  note: string;
+}
+
 export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
+  const [loading, setLoading] = useState(false);
 
-  const [loading, setLoading] = React.useState(false);
+  const [dataSource, setDataSource] = useState<DrugItemRow[]>([
+    { key: Date.now(), drugId: null, quantity: 1, note: "" },
+  ]);
 
   const onFinish = async (values: any) => {
+    if (dataSource.length === 0) {
+      message.error("กรุณาเพิ่มรายการยาอย่างน้อย 1 รายการ");
+      return;
+    }
+
+    // ตรวจสอบว่าเลือกยาเรียบร้อย
+    for (let item of dataSource) {
+      if (!item.drugId || item.quantity < 1) {
+        message.error("กรุณาเลือกยาและกรอกจำนวนให้ถูกต้องทุกแถว");
+        return;
+      }
+    }
+
     try {
       setLoading(true);
 
@@ -41,17 +63,19 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
         dispenserName: values.dispenserName,
         requestDate: values.requestDate.toISOString(),
         note: values.note,
-        status: "PENDING", // default
-        maDrugItems: values.maDrugItems.map((item: any) => ({
+        status: "pending",
+        maDrugItems: dataSource.map((item) => ({
           drugId: item.drugId,
           quantity: item.quantity,
           note: item.note,
         })),
       };
 
+      console.log(payload);
       await intraAuthService.createMaDrug(payload);
       message.success("บันทึกการเบิกยาสำเร็จ");
       form.resetFields();
+      setDataSource([{ key: Date.now(), drugId: null, quantity: 1, note: "" }]);
       refreshData();
     } catch (error) {
       console.error(error);
@@ -61,12 +85,92 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
     }
   };
 
+  const columns = [
+    {
+      title: "ยา",
+      dataIndex: "drugId",
+      render: (value: number, record: DrugItemRow) => (
+        <Select
+          value={value}
+          placeholder="เลือกยา"
+          style={{ width: 200 }}
+          onChange={(val) => {
+            const newData = [...dataSource];
+            const index = newData.findIndex((item) => item.key === record.key);
+            newData[index].drugId = val;
+            setDataSource(newData);
+          }}
+        >
+          {drugs.map((drug) => (
+            <Select.Option key={drug.id} value={drug.id}>
+              {drug.name} ({drug.packagingSize})
+            </Select.Option>
+          ))}
+        </Select>
+      ),
+    },
+    {
+      title: "จำนวน",
+      dataIndex: "quantity",
+      render: (value: number, record: DrugItemRow) => (
+        <InputNumber
+          min={1}
+          value={value}
+          onChange={(val) => {
+            const newData = [...dataSource];
+            const index = newData.findIndex((item) => item.key === record.key);
+            newData[index].quantity = val || 1;
+            setDataSource(newData);
+          }}
+        />
+      ),
+    },
+    {
+      title: "หมายเหตุ",
+      dataIndex: "note",
+      render: (value: string, record: DrugItemRow) => (
+        <Input
+          value={value}
+          placeholder="หมายเหตุ"
+          onChange={(e) => {
+            const newData = [...dataSource];
+            const index = newData.findIndex((item) => item.key === record.key);
+            newData[index].note = e.target.value;
+            setDataSource(newData);
+          }}
+        />
+      ),
+    },
+    {
+      title: "ลบ",
+      render: (_: any, record: DrugItemRow) => (
+        <Button
+          danger
+          onClick={() => {
+            setDataSource(dataSource.filter((item) => item.key !== record.key));
+          }}
+        >
+          ลบ
+        </Button>
+      ),
+    },
+  ];
+
   return (
-    <Card title={
-        <div style={{ fontSize: "20px", textAlign: "center", fontWeight: "bold" , color: "#0683e9"  }}>
+    <Card
+      title={
+        <div
+          style={{
+            fontSize: "20px",
+            textAlign: "center",
+            fontWeight: "bold",
+            color: "#0683e9",
+          }}
+        >
           ทำรายการเบิกจ่ายยา
         </div>
-      }>
+      }
+    >
       <Form
         form={form}
         layout="vertical"
@@ -125,60 +229,28 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
           <Input.TextArea rows={3} />
         </Form.Item>
 
-        {/* รายการยาแบบ dynamic list */}
-        <Form.List name="maDrugItems">
-          {(fields, { add, remove }) => (
-            <>
-              {fields.map(({ key, name, ...restField }) => (
-                <Space
-                  key={key}
-                  style={{ display: "flex", marginBottom: 8 }}
-                  align="baseline"
-                >
-                  <Form.Item
-                    {...restField}
-                    name={[name, "drugId"]}
-                    rules={[{ required: true, message: "กรุณาเลือกรายการยา" }]}
-                  >
-                    <Select placeholder="เลือกยา" style={{ width: 200 }}>
-                      {drugs.map((drug) => (
-                        <Select.Option key={drug.id} value={drug.id}>
-                          {drug.name} ({drug.packagingSize})
-                        </Select.Option>
-                      ))}
-                    </Select>
-                  </Form.Item>
+        <Table
+          dataSource={dataSource}
+          columns={columns}
+          pagination={false}
+          rowKey="key"
+          style={{ marginBottom: 16 }}
+        />
 
-                  <Form.Item
-                    {...restField}
-                    name={[name, "quantity"]}
-                    rules={[{ required: true, message: "กรุณากรอกจำนวน" }]}
-                  >
-                    <InputNumber min={1} placeholder="จำนวน" />
-                  </Form.Item>
+        <Button
+          type="dashed"
+          block
+          onClick={() =>
+            setDataSource([
+              ...dataSource,
+              { key: Date.now(), drugId: null, quantity: 1, note: "" },
+            ])
+          }
+        >
+          เพิ่มรายการยา
+        </Button>
 
-                  <Form.Item {...restField} name={[name, "note"]}>
-                    <Input placeholder="หมายเหตุ" />
-                  </Form.Item>
-
-                  <MinusCircleOutlined onClick={() => remove(name)} />
-                </Space>
-              ))}
-              <Form.Item>
-                <Button
-                  type="dashed"
-                  onClick={() => add()}
-                  block
-                  icon={<PlusOutlined />}
-                >
-                  เพิ่มรายการยา
-                </Button>
-              </Form.Item>
-            </>
-          )}
-        </Form.List>
-
-        <Form.Item style={{ textAlign: "center" }}>
+        <Form.Item style={{ textAlign: "center", marginTop: 16 }}>
           <Button type="primary" htmlType="submit" loading={loading}>
             บันทึกข้อมูล
           </Button>

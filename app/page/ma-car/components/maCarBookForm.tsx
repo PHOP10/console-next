@@ -21,6 +21,7 @@ interface MaCarBookFormProps {
   cars: any[];
   dataUser: any[];
   loading: boolean;
+  fetchCarsAndUsers: () => Promise<void>;
 }
 
 const MaCarBookForm: React.FC<MaCarBookFormProps> = ({

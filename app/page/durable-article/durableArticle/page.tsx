@@ -55,7 +55,11 @@ export default function Page() {
       key: "2",
       label: "เพิ่มครุภัณฑ์",
       children: (
-        <DurableArticleForm setLoading={setLoading} loading={loading} />
+        <DurableArticleForm
+          setLoading={setLoading}
+          loading={loading}
+          fetchData={fetchData}
+        />
       ),
     },
   ];

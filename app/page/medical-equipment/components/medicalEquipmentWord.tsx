@@ -25,9 +25,8 @@ const ExportMedicalEquipmentWord: React.FC<ExportMedicalEquipmentWordProps> = ({
     const zip = new PizZip(arrayBuffer);
     const doc = new Docxtemplater(zip, {
       paragraphLoop: true,
-      linebreaks: true,
+      linebreaks: true, // สำคัญ
     });
-
     // เตรียมข้อมูล
     const data = {
       sentDate: record.sentDate
@@ -43,7 +42,7 @@ const ExportMedicalEquipmentWord: React.FC<ExportMedicalEquipmentWordProps> = ({
         index: index + 1,
         name: item.medicalEquipment?.equipmentName || "-",
         quantity: item.quantity || "-",
-        note: item.note || "",
+        note: item.note ? item.note.replace(/\r\n/g, "\n") : "",
       })),
     };
 

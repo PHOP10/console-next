@@ -25,6 +25,7 @@ interface LeaveBookingFormProps {
   masterLeaves: MasterLeaveType[];
   leaveByUserId?: DataLeaveType[];
   user: UserType[];
+   fetchData: () => Promise<void>;
 }
 
 export default function LeaveBookingForm({
@@ -34,6 +35,7 @@ export default function LeaveBookingForm({
   masterLeaves,
   leaveByUserId = [],
   user,
+  fetchData
 }: LeaveBookingFormProps) {
   const [form] = Form.useForm();
   const { data: session } = useSession();

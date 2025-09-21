@@ -33,6 +33,7 @@ type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   dataEQ: MedicalEquipmentType[];
   data: MaMedicalEquipmentType[];
+  fetchData: () => Promise<void>;
 };
 
 export default function CreateMedicalEquipmentForm({
@@ -191,7 +192,7 @@ export default function CreateMedicalEquipmentForm({
                           </Col>
 
                           {/* Quantity */}
-                          <Col flex="150px">
+                          <Col flex="100px">
                             <Form.Item
                               {...restField}
                               name={[name, "quantity"]}
