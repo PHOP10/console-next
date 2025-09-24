@@ -6,20 +6,56 @@ import { saveAs } from "file-saver";
 import { Button } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
+import { DataLeaveService } from "../services/dataLeave.service";
+import { useEffect, useState } from "react";
+import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
+import { userService } from "../../user/services/user.service";
 
 dayjs.locale("th");
 
 interface DataLeaveWordProps {
   record: any; // ควรเป็น DataLeave type
-  backupUserName?: string; // ถ้าอยากแสดงชื่อผู้รับผิดชอบงาน
-  masterLeaves?: any[]; // ควรเป็น MasterLeaveType[]
 }
 
-const DataLeaveWord: React.FC<DataLeaveWordProps> = ({
-  record,
-  backupUserName,
-  masterLeaves = [],
-}) => {
+const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
+  const intraAuth = useAxiosAuth();
+  const intraAuthDataLeaveService = DataLeaveService(intraAuth);
+  const intraAuthUserService = userService(intraAuth);
+  const [userData, setUserData] = useState<UserType[]>([]);
+  const [masterLeave, setMasterLeave] = useState<MasterLeaveType[]>([]);
+  const [dataLeaveUser, setDataLeaveUser] = useState<DataLeaveType[]>([]);
+
+  const fetchData = async () => {
+    try {
+      const res = await intraAuthUserService.getUserQuery();
+      const dataMasterLeaves =
+        await intraAuthDataLeaveService.getMasterLeaveQuery();
+      const dataLeaveUser =
+        await intraAuthDataLeaveService.getDataLeaveByUserId(
+          record.createdById
+        );
+      setUserData(res);
+      setMasterLeave(dataMasterLeaves);
+      setDataLeaveUser(dataLeaveUser);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const latestLeave =
+    dataLeaveUser.length > 0
+      ? dataLeaveUser.reduce((prev, current) =>
+          new Date(prev.createdAt) > new Date(current.createdAt)
+            ? prev
+            : current
+        )
+      : null;
+
   const handleExport = async () => {
     try {
       const response = await fetch("/dataLeaveTemplate.docx");
@@ -31,69 +67,73 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({
         paragraphLoop: true,
         linebreaks: true,
       });
-      //   console.log("record for word:", masterLeaves);
-      console.log("record:", record.masterLeave);
 
-      // แปลง typeId เป็นตัวแปร {1}, {2}, {3} แบบ dynamic
-      let leave1 = "-";
-      let leave2 = "-";
-      let leave3 = "-";
+      // 🔍 หาชื่อผู้รับผิดชอบงานจาก backupUserId
+      const backupUser =
+        record.backupUserId && userData.length
+          ? userData.find((u) => u.userId === record.backupUserId)
+          : null;
+      const backupUserName = backupUser
+        ? `${backupUser.firstName} ${backupUser.lastName}`
+        : "-";
 
-      // ตรวจสอบประเภทการลา
-      const masterLeave = record.masterLeave;
-      if (masterLeave) {
-        switch (masterLeave.leaveType) {
-          case "ลาป่วย":
-            leave1 = "{1}"; // ใส่เครื่องหมาย {1} เฉพาะลาป่วย
-            break;
-          case "ลากิจ":
-            leave2 = "{2}"; // ใส่ {2} เฉพาะลากิจ
-            break;
-          case "ลาคลอด":
-            leave3 = "{3}"; // ใส่ {3} เฉพาะลาคลอด
-            break;
-          default:
-            // กรณีอื่น ๆ ไม่ต้องใส่อะไร
-            break;
-        }
-      }
+      const toThaiNumber = (input: string | number): string => {
+        const thaiDigits = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
+        return input
+          .toString()
+          .replace(/[0-9]/g, (digit) => thaiDigits[parseInt(digit)]);
+      };
+
+      const formatThaiDate = (date: string | Date) => {
+        const d = dayjs(date);
+        const day = toThaiNumber(d.format("D"));
+        const month = d.format("MMMM");
+        const year = toThaiNumber(d.year() + 543);
+        return `${day} ${month} ${year}`;
+      };
+
+      // 🔍 ประเภทการลา
+      const leaveType = record.masterLeave?.leaveType ?? "-";
+
+      const latestLeave =
+        dataLeaveUser.length > 0
+          ? dataLeaveUser.reduce((prev, current) =>
+              new Date(prev.createdAt) > new Date(current.createdAt)
+                ? prev
+                : current
+            )
+          : null;
+      const latestDateStart = latestLeave ? latestLeave.dateStart : null;
+      const latestDateEnd = latestLeave ? latestLeave.dateEnd : null;
 
       const data = {
-        // reason: record.reason || "-",
-        // reason: reasonVariable,
-        "1": leave1,
-        "2": leave2,
-        "3": leave3,
-        dateStart: record.dateStart
-          ? `${dayjs(record.dateStart).format("D MMMM")} ${
-              dayjs(record.dateStart).year() + 543
-            }`
-          : "-",
-        dateEnd: record.dateEnd
-          ? `${dayjs(record.dateEnd).format("D MMMM")} ${
-              dayjs(record.dateEnd).year() + 543
-            }`
-          : "-",
-
+        dateStart: record.dateStart ? formatThaiDate(record.dateStart) : "-",
+        dateEnd: record.dateEnd ? formatThaiDate(record.dateEnd) : "-",
         writeAt: record.writeAt || "-",
         contactAddress: record.contactAddress || "-",
         contactPhone: record.contactPhone || "-",
-        backupUser: backupUserName || "-",
+        backupUser: backupUserName,
+        leaveType: leaveType, // เพิ่มตรงนี้
         details: record.details || "-",
         status: record.status || "-",
         approvedBy: record.approvedByName || "-",
         approvedDate: record.approvedDate
-          ? dayjs(record.approvedDate).format("D MMMM BBBB")
+          ? formatThaiDate(record.approvedDate)
           : "-",
         createdBy: record.createdName || "-",
-        createdAt: record.createdAt
-          ? dayjs(record.createdAt).format("D MMMM BBBB")
+        createdAt: record.createdAt ? formatThaiDate(record.createdAt) : "-",
+        D: record.createdAt
+          ? toThaiNumber(dayjs(record.createdAt).format("D"))
           : "-",
-        D: record.createdAt ? dayjs(record.createdAt).format("D") : "-",
         MM: record.createdAt
           ? dayjs(record.createdAt).locale("th").format("MMMM")
           : "-",
-        BBBB: record.createdAt ? dayjs(record.createdAt).year() + 543 : "-",
+        BBBB: record.createdAt
+          ? toThaiNumber(dayjs(record.createdAt).year() + 543)
+          : "-",
+
+        dateStarts: latestDateStart ? formatThaiDate(latestDateStart) : "-",
+        dateEnds: latestDateEnd ? formatThaiDate(latestDateEnd) : "-",
       };
 
       doc.render(data);

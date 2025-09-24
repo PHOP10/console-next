@@ -12,6 +12,7 @@ export interface UserType {
   createdAt?: string;
   updatedAt?: string;
   fullName?: string;
+  position?: string;
 }
 
 export interface OfficialTravelRequestType {
