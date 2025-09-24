@@ -18,6 +18,8 @@ import {
   Typography,
   Tooltip,
   Card,
+  Row,
+  Col,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
@@ -65,6 +67,8 @@ export default function MaMedicalEquipmentTable({
   const { Option } = Select;
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
+  const [recordReturn, setRecordReturn] = useState<any>(null);
+  const [formReturn] = Form.useForm();
 
   const handleEdit = (item: MaMedicalEquipmentType) => {
     setEditingItem(item);
@@ -154,6 +158,63 @@ export default function MaMedicalEquipmentTable({
     setRecordDetails(record);
     setOpenDetails(true);
   };
+
+  const handleOpenModalReturn = (record: any) => {
+    setRecordReturn(record);
+
+    formReturn.setFieldsValue({
+      id: record.id,
+      sentDate: record.sentDate ? dayjs(record.sentDate) : null,
+      status:
+        record.status === "pending"
+          ? "รอดำเนินการ"
+          : record.status === "approve"
+          ? "อนุมัติ"
+          : record.status === "cancel"
+          ? "ยกเลิก"
+          : record.status === "return"
+          ? "รับคืนแล้ว"
+          : "",
+      note: record.note,
+      returnName: record.returnName,
+    });
+
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmReturn = async () => {
+    if (!recordReturn) return;
+    try {
+      await intraAuthService.updateMaMedicalEquipment({
+        id: recordReturn.id,
+        status: "verified",
+        returnName: session?.user?.fullName,
+        returndAt: new Date().toISOString(),
+        note: formReturn.getFieldValue("note"),
+      });
+
+      message.success("รับคืนอุปกรณ์เรียบร้อยแล้ว");
+      setIsModalOpen(false);
+      setRecordReturn(null);
+      setLoading(true);
+    } catch (error) {
+      console.error("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์:", error);
+      message.error("ไม่สามารถรับคืนอุปกรณ์ได้");
+    }
+  };
+
+  const columnsReturn = [
+    {
+      title: "ชื่ออุปกรณ์",
+      dataIndex: ["medicalEquipment", "equipmentName"],
+      key: "equipmentName",
+    },
+    {
+      title: "จำนวน",
+      dataIndex: "quantity",
+      key: "quantity",
+    },
+  ];
 
   const columns: ColumnsType<MaMedicalEquipmentType> = [
     {
@@ -263,8 +324,12 @@ export default function MaMedicalEquipmentTable({
             text = "ยกเลิก";
             break;
           case "return":
-            color = "grey";
-            text = "รับคืนแล้ว";
+            color = "purple";
+            text = "คืนแล้ว"; // 👈 ผู้ใช้คืนเครื่องมือ
+            break;
+          case "verified":
+            color = "grey"; // 👈 เลือกสีใหม่ (แนะนำฟ้า)
+            text = "ตรวจรับคืนแล้ว"; // 👈 หัวหน้ายืนยัน
             break;
           default:
             text = status;
@@ -330,7 +395,20 @@ export default function MaMedicalEquipmentTable({
           >
             แก้ไข
           </Button>
-
+          <Button
+            size="small"
+            onClick={() => handleOpenModalReturn(record)}
+            style={{
+              backgroundColor:
+                record.status === "return" ? "#722ed1" : "#d9d9d9",
+              borderColor: record.status === "return" ? "#722ed1" : "#d9d9d9",
+              color: record.status === "return" ? "white" : "#888",
+              cursor: record.status === "return" ? "pointer" : "not-allowed",
+            }}
+            disabled={record.status !== "return"}
+          >
+            ยืนยันรับคืน
+          </Button>
           <Popover
             trigger="click"
             title={
@@ -625,6 +703,75 @@ export default function MaMedicalEquipmentTable({
         open={openDetails}
         onClose={() => setOpenDetails(false)}
       />
+      <Modal
+        title="รายละเอียดการรับคืนอุปกรณ์"
+        open={isModalOpen}
+        onOk={handleConfirmReturn}
+        onCancel={() => setIsModalOpen(false)}
+        okText="ยืนยันรับคืน"
+        cancelText="ยกเลิก"
+        width={700}
+      >
+        <Form form={formReturn} layout="vertical">
+          <Form.Item label="รายการอุปกรณ์ที่ส่ง">
+            <Table
+              dataSource={recordReturn?.items || []}
+              columns={columnsReturn}
+              rowKey="id"
+              pagination={false}
+              size="small"
+            />
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="วันที่ส่ง"
+                name="sentDate"
+                rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
+              >
+                <DatePicker
+                  disabled
+                  format="DD/MM/YYYY"
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="สถานะ" name="status">
+                <div>
+                  {recordReturn?.status === "pending" && (
+                    <Tag color="gold">รอดำเนินการ</Tag>
+                  )}
+                  {recordReturn?.status === "approve" && (
+                    <Tag color="green">อนุมัติ</Tag>
+                  )}
+                  {recordReturn?.status === "cancel" && (
+                    <Tag color="red">ยกเลิก</Tag>
+                  )}
+                  {recordReturn?.status === "return" && (
+                    <Tag color="blue">รับคืนแล้ว</Tag>
+                  )}
+                  {recordReturn?.status === "verified" && (
+                    <Tag color="purple">ตรวจรับคืนแล้ว</Tag>
+                  )}
+                </div>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="หมายเหตุ" name="note">
+                <Input.TextArea disabled rows={3} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="ผู้รับคืน" name="returnName">
+                <Input disabled />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </Card>
   );
 }

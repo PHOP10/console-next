@@ -13,6 +13,9 @@ import {
   InputNumber,
   DatePicker,
   Card,
+  Row,
+  Col,
+  Select,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
@@ -96,6 +99,11 @@ export default function DurableArticleTable({
         "createdBy",
         "note",
         "id",
+        "type",
+        "attributes",
+        "category",
+        "documentId",
+        "responsibleAgency",
       ].some((key) => {
         const value = item[key as keyof DurableArticleType];
         return value?.toString().toLowerCase().includes(searchLower);
@@ -109,6 +117,8 @@ export default function DurableArticleTable({
       dataIndex: "code",
       key: "code",
       align: "center",
+      // width: 150, // กำหนดความกว้างขั้นต่ำ (px)
+      // ellipsis: true, // ถ้าเนื้อหายาวเกิน จะตัดแล้วขึ้น ...
     },
     {
       title: "วัน เดือน ปี",
@@ -122,6 +132,8 @@ export default function DurableArticleTable({
       dataIndex: "description",
       key: "description",
       align: "center",
+      // width: 200, // กำหนดความกว้างขั้นต่ำ (px)
+      // ellipsis: true, // ถ้าเนื้อหายาวเกิน จะตัดแล้วขึ้น ...
     },
     {
       title: "ราคาต่อหน่วย",
@@ -251,83 +263,182 @@ export default function DurableArticleTable({
           onOk={handleUpdate}
           okText="บันทึก"
           cancelText="ยกเลิก"
+          width={900} // ✅ ทำให้ modal กว้างขึ้น
         >
           <Form form={form} layout="vertical">
-            <Form.Item
-              name="code"
-              label="รหัสครุภัณฑ์"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="acquiredDate"
-              label="วันที่ได้มา"
-              rules={[{ required: true }]}
-            >
-              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-            </Form.Item>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="code"
+                  label="เลขที่หรือรหัส"
+                  rules={[
+                    { required: true, message: "กรุณากรอกเลขที่หรือรหัส" },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item name="registrationNumber" label="หมายเลขหรือทะเบียน">
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="acquiredDate"
+                  label="วันที่ได้มา"
+                  rules={[{ required: true, message: "กรุณาเลือกวันที่ได้มา" }]}
+                >
+                  <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  name="unitPrice"
+                  label="ราคาต่อหน่วย"
+                  rules={[{ required: true, message: "กรุณากรอกราคาต่อหน่วย" }]}
+                >
+                  <InputNumber style={{ width: "100%" }} min={0} />
+                </Form.Item>
+              </Col>
+            </Row>
+
             <Form.Item
               name="description"
-              label="รายละเอียด"
-              rules={[{ required: true }]}
+              label="ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
+              rules={[
+                {
+                  required: true,
+                  message: "กรุณากรอยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
+                },
+              ]}
             >
-              <Input.TextArea />
+              <Input.TextArea rows={2} />
             </Form.Item>
-            <Form.Item
-              name="unitPrice"
-              label="ราคาต่อหน่วย"
-              rules={[{ required: true }]}
-            >
-              <InputNumber style={{ width: "100%" }} min={0} />
-            </Form.Item>
-            <Form.Item
-              name="acquisitionType"
-              label="วิธีที่ได้มา"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
-              name="usageLifespanYears"
-              label="อายุการใช้งาน (ปี)"
-              rules={[{ required: true }]}
-            >
-              <InputNumber style={{ width: "100%" }} min={0} />
-            </Form.Item>
-            <Form.Item
-              name="monthlyDepreciation"
-              label="ค่าเสื่อมราคาต่อเดือน"
-              rules={[{ required: true }]}
-            >
-              <InputNumber style={{ width: "100%" }} min={0} />
-            </Form.Item>
-            {/* <Form.Item
-            name="yearlyDepreciation"
-            label="ค่าเสื่อมราคาปีงบประมาณ"
-            rules={[{ required: true }]}
-          >
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
-          <Form.Item
-            name="accumulatedDepreciation"
-            label="ค่าเสื่อมราคาสะสม"
-            rules={[{ required: true }]}
-          >
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
-          <Form.Item
-            name="netValue"
-            label="มูลค่าสุทธิ"
-            rules={[{ required: true }]}
-          >
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item> */}
-            <Form.Item name="note" label="หมายเหตุ">
-              <Input.TextArea />
-            </Form.Item>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="acquisitionType"
+                  label="วิธีการได้มา"
+                  rules={[{ required: true, message: "กรุณากรอกวิธีที่ได้มา" }]}
+                >
+                  <Select placeholder="เลือกวิธีการได้มา">
+                    <Select.Option value="งบประมาณ">งบประมาณ</Select.Option>
+                    <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
+                    <Select.Option value="เงินงบประมาณ ตกลงราคา">
+                      เงินงบประมาณ ตกลงราคา
+                    </Select.Option>
+                    <Select.Option value="บริจาค">บริจาค</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  name="category"
+                  label="ประเภท"
+                  rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
+                >
+                  <Select
+                    placeholder="เลือกประเภท"
+                    options={[
+                      {
+                        label: "ครุภัณฑ์งานบ้านงานครัว",
+                        value: "ครุภัณฑ์งานบ้านงานครัว",
+                      },
+                      {
+                        label: "ครุภัณฑ์วิทยาศาสตร์การแพทย์",
+                        value: "ครุภัณฑ์วิทยาศาสตร์การแพทย์",
+                      },
+                      { label: "ครุภัณฑ์สำนักงาน", value: "ครุภัณฑ์สำนักงาน" },
+                      {
+                        label: "ครุภัณฑ์ยานพาหนะและขนส่ง",
+                        value: "ครุภัณฑ์ยานพาหนะและขนส่ง",
+                      },
+                      {
+                        label: "ครุภัณฑ์ไฟฟ้าและวิทยุ",
+                        value: "ครุภัณฑ์ไฟฟ้าและวิทยุ",
+                      },
+                      {
+                        label: "ครุภัณฑ์โฆษณาและเผยแพร่",
+                        value: "ครุภัณฑ์โฆษณาและเผยแพร่",
+                      },
+                      {
+                        label: "ครุภัณฑ์คอมพิวเตอร์",
+                        value: "ครุภัณฑ์คอมพิวเตอร์",
+                      },
+                      { label: "ครุภัณฑ์การแพทย์", value: "ครุภัณฑ์การแพทย์" },
+                      { label: "ครุภัณฑ์ก่อสร้าง", value: "ครุภัณฑ์ก่อสร้าง" },
+                      { label: "ครุภัณฑ์อื่น", value: "ครุภัณฑ์อื่น" },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="usageLifespanYears"
+                  label="อายุการใช้งาน (ปี)"
+                  rules={[
+                    { required: true, message: "กรุณากรอกอายุการใช้งาน" },
+                  ]}
+                >
+                  <InputNumber style={{ width: "100%" }} min={0} />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  name="monthlyDepreciation"
+                  label="ค่าเสื่อมราคาต่อเดือน"
+                  rules={[
+                    {
+                      required: true,
+                      message: "กรุณากรอกค่าเสื่อมราคาต่อเดือน",
+                    },
+                  ]}
+                >
+                  <InputNumber style={{ width: "100%" }} min={0} />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="attributes" label="ลักษณะ/คุณสมบัติ">
+                  <Input />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item name="documentId" label="ที่เอกสาร">
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="responsibleAgency" label="หน่วยงานรับผิดชอบ">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="note" label="หมายเหตุ">
+                  <Input.TextArea rows={2} />
+                </Form.Item>
+              </Col>
+            </Row>
           </Form>
         </Modal>
+
         <DurableArticleDetail
           open={detailModalOpen}
           onClose={handleCloseDetail}

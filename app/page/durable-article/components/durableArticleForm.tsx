@@ -36,6 +36,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
         acquiredDate: values.acquiredDate
           ? values.acquiredDate.toISOString()
           : null,
+        type: "durableArticles",
       };
       await intraAuthService.createDurableArticle(payload);
       setLoading(true);
@@ -109,24 +110,67 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
             </Form.Item>
           </Col>
         </Row>
-
-        <Form.Item
-          label="ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
-          name="description"
-          rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
-        >
-          <Input.TextArea rows={2} />
-        </Form.Item>
-
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item
+              label="หมายเลขและทะเบียน"
+              name="registrationNumber"
+              rules={[{ required: true, message: "กรุณาหมายเลขและทะเบียน" }]}
+            >
+              <Input placeholder="กรอกหมายเลขและทะเบียน" />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item
+              label="ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
+              name="description"
+              rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
+            >
+              <Input.TextArea rows={2} />
+            </Form.Item>
+          </Col>
+        </Row>
         {/* ✅ ฟิลด์ใหม่ */}
         <Row gutter={16}>
           <Col span={12}>
             <Form.Item
               label="ประเภท"
               name="category"
-              rules={[{ required: true, message: "กรุณากรอกประเภท" }]}
+              rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
             >
-              <Input placeholder="กรอกประเภท" />
+              <Select
+                placeholder="เลือกประเภท"
+                options={[
+                  {
+                    label: "ครุภัณฑ์งานบ้านงานครัว",
+                    value: "ครุภัณฑ์งานบ้านงานครัว",
+                  },
+                  {
+                    label: "ครุภัณฑ์วิทยาศาสตร์การแพทย์",
+                    value: "ครุภัณฑ์วิทยาศาสตร์การแพทย์",
+                  },
+                  { label: "ครุภัณฑ์สำนักงาน", value: "ครุภัณฑ์สำนักงาน" },
+                  {
+                    label: "ครุภัณฑ์ยานพาหนะและขนส่ง",
+                    value: "ครุภัณฑ์ยานพาหนะและขนส่ง",
+                  },
+                  {
+                    label: "ครุภัณฑ์ไฟฟ้าและวิทยุ",
+                    value: "ครุภัณฑ์ไฟฟ้าและวิทยุ",
+                  },
+                  {
+                    label: "ครุภัณฑ์โฆษณาและเผยแพร่",
+                    value: "ครุภัณฑ์โฆษณาและเผยแพร่",
+                  },
+                  {
+                    label: "ครุภัณฑ์คอมพิวเตอร์",
+                    value: "ครุภัณฑ์คอมพิวเตอร์",
+                  },
+                  { label: "ครุภัณฑ์การแพทย์", value: "ครุภัณฑ์การแพทย์" },
+                  { label: "ครุภัณฑ์ก่อสร้าง", value: "ครุภัณฑ์ก่อสร้าง" },
+                  { label: "ครุภัณฑ์อื่น", value: "ครุภัณฑ์อื่น" },
+                ]}
+              />
             </Form.Item>
           </Col>
 

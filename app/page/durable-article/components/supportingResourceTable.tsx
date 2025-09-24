@@ -10,45 +10,45 @@ import {
   Modal,
   Form,
   Input,
-  Select,
+  InputNumber,
   DatePicker,
   Card,
-  Tooltip,
+  Row,
+  Col,
+  Select,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
-import { SupportingResourceType } from "../../common";
-import { exportSupportingResources } from "./exportExcel";
-import SupportingResourceDetail from "./supportingResourceDetail";
-import TextArea from "antd/es/input/TextArea";
+import { DurableArticleType } from "../../common";
+import DurableArticleDetail from "./durableArticleDetail";
+import DurableArticleExport from "./durableArticleExportId";
+import DurableArticleExportWord from "./durableArticleExportWordId";
+import { exportDurableArticles } from "./exportDurableArticles";
+// import DurableArticleExportPdf from "./durableArticleExportPdfID";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
-  data: SupportingResourceType[];
-  fetchData: () => void;
+  data: DurableArticleType[];
 };
 
 export default function SupportingResourceTable({
   setLoading,
   loading,
-  fetchData,
   data,
 }: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editRecord, setEditRecord] = useState<SupportingResourceType | null>(
-    null
-  );
+  const [editRecord, setEditRecord] = useState<DurableArticleType | null>(null);
   const [form] = Form.useForm();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [searchText, setSearchText] = useState("");
 
-  const handleEdit = (record: SupportingResourceType) => {
+  const handleEdit = (record: DurableArticleType) => {
     setEditRecord(record);
     form.setFieldsValue({
       ...record,
@@ -60,7 +60,7 @@ export default function SupportingResourceTable({
   const handleUpdate = async () => {
     try {
       const values = await form.validateFields();
-      await intraAuthService.updateSupportingResource({
+      await intraAuthService.updateDurableArticle({
         id: editRecord?.id,
         ...values,
         acquiredDate: values.acquiredDate.toISOString(),
@@ -68,16 +68,20 @@ export default function SupportingResourceTable({
       message.success("แก้ไขข้อมูลสำเร็จ");
       setEditModalOpen(false);
       setLoading(true);
-      fetchData();
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการแก้ไข:", error);
       message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
     }
   };
 
-  const handleDetail = (record: any) => {
+  const handleShowDetail = (record: any) => {
     setSelectedRecord(record);
     setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedRecord(null);
   };
 
   const filteredData = useMemo(() => {
@@ -87,26 +91,34 @@ export default function SupportingResourceTable({
 
     return data.filter((item) =>
       [
-        "name",
+        "acquiredDate",
         "code",
         "status",
         "acquisitionType",
         "description",
         "createdBy",
+        "note",
         "id",
+        "type",
+        "attributes",
+        "category",
+        "documentId",
+        "responsibleAgency",
       ].some((key) => {
-        const value = item[key as keyof SupportingResourceType];
+        const value = item[key as keyof DurableArticleType];
         return value?.toString().toLowerCase().includes(searchLower);
       })
     );
   }, [data, searchText]);
 
-  const columns: ColumnsType<SupportingResourceType> = [
+  const columns: ColumnsType<DurableArticleType> = [
     {
-      title: "ลำดับ",
-      dataIndex: "id",
-      key: "id",
+      title: "เลขที่หรือรหัส",
+      dataIndex: "code",
+      key: "code",
       align: "center",
+      // width: 150, // กำหนดความกว้างขั้นต่ำ (px)
+      // ellipsis: true, // ถ้าเนื้อหายาวเกิน จะตัดแล้วขึ้น ...
     },
     {
       title: "วัน เดือน ปี",
@@ -116,75 +128,57 @@ export default function SupportingResourceTable({
       render: (value) => dayjs(value).format("DD/MM/YYYY"),
     },
     {
-      title: "เลขที่หรือรหัส",
-      dataIndex: "code",
-      key: "code",
+      title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
+      dataIndex: "description",
+      key: "description",
       align: "center",
+      // width: 200, // กำหนดความกว้างขั้นต่ำ (px)
+      // ellipsis: true, // ถ้าเนื้อหายาวเกิน จะตัดแล้วขึ้น ...
     },
     {
-      title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
-      dataIndex: "name",
-      key: "name",
+      title: "ราคาต่อหน่วย",
+      dataIndex: "unitPrice",
+      key: "unitPrice",
       align: "center",
-      // width: "100%",
-      render: (text: string) => {
-        const shortText =
-          text && text.length > 20 ? text.substring(0, 40) + "..." : text;
-        return (
-          <Tooltip title={text}>
-            <span>{shortText}</span>
-          </Tooltip>
-        );
-      },
+      render: (value) =>
+        value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
     },
     {
       title: "วิธีการได้มา",
       dataIndex: "acquisitionType",
       key: "acquisitionType",
       align: "center",
-      render: (text: string) => {
-        const shortText =
-          text && text.length > 20 ? text.substring(0, 40) + "..." : text;
-        return (
-          <Tooltip title={text}>
-            <span>{shortText}</span>
-          </Tooltip>
-        );
-      },
     },
+    // {
+    //   title: "อายุการใช้งาน (ปี)",
+    //   dataIndex: "usageLifespanYears",
+    //   key: "usageLifespanYears",
+    // },
+    // {
+    //   title: "ค่าเสื่อมราคาต่อเดือน",
+    //   dataIndex: "monthlyDepreciation",
+    //   key: "monthlyDepreciation",
+    //   render: (value) =>
+    //     value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
+    // },
     {
       title: "หมายเหตุ",
-      dataIndex: "description",
-      key: "description",
+      dataIndex: "note",
+      key: "note",
       align: "center",
-      render: (text: string) => {
-        const shortText =
-          text && text.length > 20 ? text.substring(0, 25) + "..." : text;
-        return (
-          <Tooltip title={text}>
-            <span>{shortText}</span>
-          </Tooltip>
-        );
-      },
     },
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => handleEdit(record)}
-          >
-            แก้ไข
-          </Button>
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
             onConfirm={async () => {
               try {
-                await intraAuthService.deleteSupportingResource(record.id);
+                await intraAuthService.deleteDurableArticle(record.id);
                 message.success("ลบข้อมูลสำเร็จ");
                 setLoading(true);
               } catch (error) {
@@ -200,12 +194,22 @@ export default function SupportingResourceTable({
             </Button>
           </Popconfirm>
           <Button
-            type="primary"
             size="small"
-            onClick={() => handleDetail(record)}
+            type="primary"
+            onClick={() => handleEdit(record)}
+          >
+            แก้ไข
+          </Button>
+          <Button
+            size="small"
+            type="primary"
+            onClick={() => handleShowDetail(record)}
           >
             รายละเอียด
           </Button>
+          {/* <DurableArticleExport record={record} /> */}
+          <DurableArticleExportWord record={record} /> {/* Word */}
+          {/* <DurableArticleExportPdf record={record} /> PDF */}
         </Space>
       ),
     },
@@ -216,14 +220,13 @@ export default function SupportingResourceTable({
       <Card>
         <div
           style={{
-            width: "100%",
+            fontSize: "20px",
             textAlign: "center",
             fontWeight: "bold",
-            fontSize: 20,
             color: "#0683e9",
           }}
         >
-          ข้อมูลวัสดุสนับสนุน
+          ข้อมูลครุภัณฑ์
         </div>
 
         <div
@@ -239,10 +242,7 @@ export default function SupportingResourceTable({
             style={{ width: 300 }}
           />
 
-          <Button
-            type="primary"
-            onClick={() => exportSupportingResources(data)}
-          >
+          <Button type="primary" onClick={() => exportDurableArticles(data)}>
             Export Excel
           </Button>
         </div>
@@ -257,64 +257,194 @@ export default function SupportingResourceTable({
         />
 
         <Modal
-          title="แก้ไขข้อมูลวัสดุสนับสนุน"
+          title="แก้ไขข้อมูลครุภัณฑ์"
           open={editModalOpen}
           onCancel={() => setEditModalOpen(false)}
           onOk={handleUpdate}
           okText="บันทึก"
           cancelText="ยกเลิก"
+          width={900} // ✅ ทำให้ modal กว้างขึ้น
         >
           <Form form={form} layout="vertical">
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="code"
+                  label="เลขที่หรือรหัส"
+                  rules={[
+                    { required: true, message: "กรุณากรอกเลขที่หรือรหัส" },
+                  ]}
+                >
+                  <Input />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item name="registrationNumber" label="หมายเลขหรือทะเบียน">
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="acquiredDate"
+                  label="วันที่ได้มา"
+                  rules={[{ required: true, message: "กรุณาเลือกวันที่ได้มา" }]}
+                >
+                  <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  name="unitPrice"
+                  label="ราคาต่อหน่วย"
+                  rules={[{ required: true, message: "กรุณากรอกราคาต่อหน่วย" }]}
+                >
+                  <InputNumber style={{ width: "100%" }} min={0} />
+                </Form.Item>
+              </Col>
+            </Row>
+
             <Form.Item
-              label="รหัสวัสดุ"
-              name="code"
-              rules={[{ required: true, message: "กรุณากรอกรหัสวัสดุ" }]}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item
+              name="description"
               label="ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
-              name="name"
-              rules={[{ required: true, message: "กรุณากรอกชื่อวัสดุ" }]}
+              rules={[
+                {
+                  required: true,
+                  message: "กรุณากรอยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
+                },
+              ]}
             >
-              <TextArea
-                rows={3}
-                placeholder="กรอกชื่อวัสดุ เช่น Toyota REVO 2024 รุ่น X"
-              />
+              <Input.TextArea rows={2} />
             </Form.Item>
-            <Form.Item
-              label="วัน เดือน ปี "
-              name="acquiredDate"
-              rules={[{ required: true, message: "กรุณาเลือกวันที่ได้รับ" }]}
-            >
-              <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-            </Form.Item>
-            <Form.Item
-              label="วิธีการได้มา"
-              name="acquisitionType"
-              rules={[{ required: true, message: "กรุณาเลือกวิธีที่ได้มา" }]}
-            >
-              <Select>
-                <Select.Option value="บริจาค">บริจาค</Select.Option>
-                <Select.Option value="โครงการสนับสนุน">
-                  โครงการสนับสนุน
-                </Select.Option>
-                <Select.Option value="จัดสรรจากส่วนกลาง">
-                  จัดสรรจากส่วนกลาง
-                </Select.Option>
-              </Select>
-            </Form.Item>
-            <Form.Item label="หมายเหตุ" name="description">
-              <Input.TextArea rows={3} />
-            </Form.Item>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="acquisitionType"
+                  label="วิธีการได้มา"
+                  rules={[{ required: true, message: "กรุณากรอกวิธีที่ได้มา" }]}
+                >
+                  <Select placeholder="เลือกวิธีการได้มา">
+                    <Select.Option value="งบประมาณ">งบประมาณ</Select.Option>
+                    <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
+                    <Select.Option value="เงินงบประมาณ ตกลงราคา">
+                      เงินงบประมาณ ตกลงราคา
+                    </Select.Option>
+                    <Select.Option value="บริจาค">บริจาค</Select.Option>
+                  </Select>
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  name="category"
+                  label="ประเภท"
+                  rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
+                >
+                  <Select
+                    placeholder="เลือกประเภท"
+                    options={[
+                      {
+                        label: "ครุภัณฑ์งานบ้านงานครัว",
+                        value: "ครุภัณฑ์งานบ้านงานครัว",
+                      },
+                      {
+                        label: "ครุภัณฑ์วิทยาศาสตร์การแพทย์",
+                        value: "ครุภัณฑ์วิทยาศาสตร์การแพทย์",
+                      },
+                      { label: "ครุภัณฑ์สำนักงาน", value: "ครุภัณฑ์สำนักงาน" },
+                      {
+                        label: "ครุภัณฑ์ยานพาหนะและขนส่ง",
+                        value: "ครุภัณฑ์ยานพาหนะและขนส่ง",
+                      },
+                      {
+                        label: "ครุภัณฑ์ไฟฟ้าและวิทยุ",
+                        value: "ครุภัณฑ์ไฟฟ้าและวิทยุ",
+                      },
+                      {
+                        label: "ครุภัณฑ์โฆษณาและเผยแพร่",
+                        value: "ครุภัณฑ์โฆษณาและเผยแพร่",
+                      },
+                      {
+                        label: "ครุภัณฑ์คอมพิวเตอร์",
+                        value: "ครุภัณฑ์คอมพิวเตอร์",
+                      },
+                      { label: "ครุภัณฑ์การแพทย์", value: "ครุภัณฑ์การแพทย์" },
+                      { label: "ครุภัณฑ์ก่อสร้าง", value: "ครุภัณฑ์ก่อสร้าง" },
+                      { label: "ครุภัณฑ์อื่น", value: "ครุภัณฑ์อื่น" },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item
+                  name="usageLifespanYears"
+                  label="อายุการใช้งาน (ปี)"
+                  rules={[
+                    { required: true, message: "กรุณากรอกอายุการใช้งาน" },
+                  ]}
+                >
+                  <InputNumber style={{ width: "100%" }} min={0} />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item
+                  name="monthlyDepreciation"
+                  label="ค่าเสื่อมราคาต่อเดือน"
+                  rules={[
+                    {
+                      required: true,
+                      message: "กรุณากรอกค่าเสื่อมราคาต่อเดือน",
+                    },
+                  ]}
+                >
+                  <InputNumber style={{ width: "100%" }} min={0} />
+                </Form.Item>
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="attributes" label="ลักษณะ/คุณสมบัติ">
+                  <Input />
+                </Form.Item>
+              </Col>
+
+              <Col span={12}>
+                <Form.Item name="documentId" label="ที่เอกสาร">
+                  <Input />
+                </Form.Item>
+              </Col>
+            </Row>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Form.Item name="responsibleAgency" label="หน่วยงานรับผิดชอบ">
+                  <Input />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item name="note" label="หมายเหตุ">
+                  <Input.TextArea rows={2} />
+                </Form.Item>
+              </Col>
+            </Row>
           </Form>
         </Modal>
+
+        <DurableArticleDetail
+          open={detailModalOpen}
+          onClose={handleCloseDetail}
+          record={selectedRecord}
+        />
       </Card>
-      <SupportingResourceDetail
-        open={detailModalOpen}
-        onClose={() => setDetailModalOpen(false)}
-        record={selectedRecord}
-      />
     </>
   );
 }
