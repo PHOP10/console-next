@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
@@ -18,33 +18,63 @@ export default function DataLeavePage() {
   const [leaveByUserId, setLeaveByUserId] = useState<DataLeaveType[]>([]);
   const [user, setUser] = useState<UserType[]>([]);
 
+  // useEffect(() => {
+  //   const fetchAll = async () => {
+  //     try {
+  //       setLoading(true);
+
+  //       const [dataRes, masterRes] = await Promise.all([
+  //         intraAuthService.getDataLeaveQuery(),
+  //         intraAuthService.getMasterLeaveQuery(),
+  //       ]);
+  //       const userId = session?.user?.userId;
+  //       const byUserId = await intraAuthService.getDataLeaveByUserId(
+  //         userId || ""
+  //       );
+  //       const user = await intraAuthService.getUserQuery();
+  //       setUser(user);
+  //       setLeaveByUserId(byUserId);
+  //       setData(dataRes);
+  //       setMasterLeaves(masterRes);
+  //     } catch (err) {
+  //       message.error("ไม่สามารถดึงข้อมูลได้");
+  //     } finally {
+  //       setLoading(false);
+  //     }
+  //   };
+
+  //   fetchAll();
+  // }, []);
+
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [dataRes, masterRes] = await Promise.all([
+        intraAuthService.getDataLeaveQuery(),
+        intraAuthService.getMasterLeaveQuery(),
+      ]);
+      const userId = session?.user?.userId;
+      const byUserId = await intraAuthService.getDataLeaveByUserId(
+        userId || ""
+      );
+      const user = await intraAuthService.getUserQuery();
+      setUser(user);
+      setLeaveByUserId(byUserId);
+      setData(dataRes);
+      setMasterLeaves(masterRes);
+    } catch (err) {
+      message.error("ไม่สามารถดึงข้อมูลได้");
+    } finally {
+      setLoading(false);
+    }
+  }, [intraAuthService, setLoading]);
+
   useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        setLoading(true);
-
-        const [dataRes, masterRes] = await Promise.all([
-          intraAuthService.getDataLeaveQuery(),
-          intraAuthService.getMasterLeaveQuery(),
-        ]);
-        const userId = session?.user?.userId;
-        const byUserId = await intraAuthService.getDataLeaveByUserId(
-          userId || ""
-        );
-        const user = await intraAuthService.getUserQuery();
-        setUser(user);
-        setLeaveByUserId(byUserId);
-        setData(dataRes);
-        setMasterLeaves(masterRes);
-      } catch (err) {
-        message.error("ไม่สามารถดึงข้อมูลได้");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAll();
-  }, []);
+    if (loading) {
+      fetchData();
+    }
+  }, [loading, fetchData]);
 
   const items: TabsProps["items"] = [
     {
@@ -59,6 +89,7 @@ export default function DataLeavePage() {
             masterLeaves={masterLeaves}
             leaveByUserId={leaveByUserId}
             user={user}
+            fetchData={fetchData}
           />
         </Card>
       ),

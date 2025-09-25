@@ -7,6 +7,7 @@ import { maCarService } from "../services/maCar.service";
 import { MaCarType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import MaCarDetail from "./maCarDetail";
+import MaCarExportWord from "./maCarExport";
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -98,6 +99,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
           >
             รายละเอียด
           </Button>
+          <MaCarExportWord record={record} />
         </Space>
       ),
     },
@@ -111,6 +113,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
         dataSource={data}
         rowKey="id"
         loading={loading}
+        scroll={{ x: 800 }}
       />{" "}
       <MaCarDetail
         open={detailModalOpen}

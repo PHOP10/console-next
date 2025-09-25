@@ -178,13 +178,7 @@ export default function DataLeaveTable({
           >
             รายละเอียด
           </Button>
-          <DataLeaveWord
-            record={record}
-            masterLeaves={masterLeaves}
-            backupUserName={
-              record.backupUser?.firstName + " " + record.backupUser?.lastName
-            }
-          />
+          <DataLeaveWord record={record} />
         </Space>
       ),
     },

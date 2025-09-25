@@ -36,19 +36,19 @@ export default function MaCarPage() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลการจองรถ",
+      label: "ข้อมูลปฏิทินรายการรถ",
       children: (
         <Card>
-          <MaCarTable data={data} loading={loading} fetchData={fetchData} />
+          <MaCarCalendar data={data} loading={loading} fetchData={fetchData} />
         </Card>
       ),
     },
     {
       key: "2",
-      label: "ข้อมูลปฏิทินรายการรถ",
+      label: "ข้อมูลการจองรถ",
       children: (
         <Card>
-          <MaCarCalendar data={data} loading={loading} fetchData={fetchData} />
+          <MaCarTable data={data} loading={loading} fetchData={fetchData} />
         </Card>
       ),
     },

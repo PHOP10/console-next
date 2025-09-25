@@ -15,6 +15,8 @@ import {
   Select,
   Tooltip,
   Card,
+  Col,
+  Row,
 } from "antd";
 import React, { useEffect, useState, useCallback } from "react";
 import type { ColumnsType } from "antd/es/table";
@@ -259,8 +261,12 @@ export default function MedicalEquipmentTable({
             text = "ยกเลิก";
             break;
           case "return":
+            color = "purple";
+            text = "คืนแล้ว";
+            break;
+          case "verified":
             color = "grey";
-            text = "รับคืนแล้ว";
+            text = "ตรวจรับคืนแล้ว";
             break;
           default:
             text = status;
@@ -551,7 +557,7 @@ export default function MedicalEquipmentTable({
         open={isModalOpen}
         onOk={handleConfirmReturn}
         onCancel={() => setIsModalOpen(false)}
-        okText="ยืนยันรับคืน"
+        okText="รับคืน"
         cancelText="ยกเลิก"
         width={700}
       >
@@ -565,26 +571,53 @@ export default function MedicalEquipmentTable({
               size="small"
             />
           </Form.Item>
-
-          <Form.Item
-            label="วันที่ส่ง"
-            name="sentDate"
-            rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
-          >
-            <DatePicker
-              disabled
-              format="DD/MM/YYYY"
-              style={{ width: "100%" }}
-            />
-          </Form.Item>
-
-          <Form.Item label="สถานะปัจจุบัน" name="status">
-            <Input disabled />
-          </Form.Item>
-
-          <Form.Item label="หมายเหตุ" name="note">
-            <Input.TextArea disabled rows={3} placeholder="หมายเหตุเพิ่มเติม" />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="วันที่ส่ง"
+                name="sentDate"
+                rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
+              >
+                <DatePicker
+                  disabled
+                  format="DD/MM/YYYY"
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="สถานะ" name="status">
+                <div>
+                  {recordReturn?.status === "pending" && (
+                    <Tag color="gold">รอดำเนินการ</Tag>
+                  )}
+                  {recordReturn?.status === "approve" && (
+                    <Tag color="green">อนุมัติ</Tag>
+                  )}
+                  {recordReturn?.status === "cancel" && (
+                    <Tag color="red">ยกเลิก</Tag>
+                  )}
+                  {recordReturn?.status === "return" && (
+                    <Tag color="blue">รับคืนแล้ว</Tag>
+                  )}
+                  {recordReturn?.status === "verified" && (
+                    <Tag color="purple">ตรวจรับคืนแล้ว</Tag>
+                  )}
+                </div>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="หมายเหตุ" name="note">
+                <Input.TextArea
+                  disabled
+                  rows={3}
+                  placeholder="หมายเหตุเพิ่มเติม"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
 

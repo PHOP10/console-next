@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Modal, Form, Input, DatePicker, Collapse, Tag } from "antd";
 import dayjs from "dayjs";
 import moment from "moment";
+import "moment/locale/th"; // 👈 โหลด locale ภาษาไทย
 import {
   Calendar,
   momentLocalizer,
@@ -13,6 +14,9 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { CaretRightOutlined } from "@ant-design/icons";
 import { MaCarType } from "../../common";
 import { useForm } from "antd/es/form/Form";
+
+moment.locale("th"); // 👈 ตั้ง moment ให้เป็นภาษาไทย
+const localizer = momentLocalizer(moment);
 
 interface CustomEvent extends RbcEvent {
   id: number;
@@ -34,7 +38,6 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
   const [form] = useForm();
   const [selected, setSelected] = useState<MaCarType | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const localizer = momentLocalizer(moment);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -68,8 +71,8 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
       setSelected(item);
       form.setFieldsValue({
         ...item,
-        departureDate: dayjs(item.departureDate),
-        returnDate: dayjs(item.returnDate),
+        departureDate: dayjs(item.dateStart),
+        returnDate: dayjs(item.dateEnd),
       });
       setModalOpen(true);
     }
@@ -83,8 +86,8 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
           (item): CustomEvent => ({
             id: item.id,
             title: item.purpose,
-            start: new Date(item.departureDate),
-            end: new Date(item.returnDate),
+            start: new Date(item.dateStart),
+            end: new Date(item.dateEnd),
             status: item.status,
             location: item.destination,
             masterCar: `ID: ${item.carId}`,
@@ -102,6 +105,19 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
             borderRadius: 4,
           },
         })}
+        messages={{
+          next: "ถัดไป",
+          previous: "ก่อนหน้า",
+          today: "วันนี้",
+          month: "เดือน",
+          week: "สัปดาห์",
+          day: "วัน",
+          agenda: "กำหนดการ",
+          date: "วันที่",
+          time: "เวลา",
+          event: "เหตุการณ์",
+          showMore: (total) => `+ ดูอีก ${total}`,
+        }}
       />
 
       <Modal

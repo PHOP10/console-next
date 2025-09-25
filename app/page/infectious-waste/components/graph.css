@@ -1,0 +1,45 @@
+/* กราฟ Column */
+.antv-column .g2-element {
+  transition: fill 0.4s ease, transform 0.2s ease;
+  rx: 6px; /* มุมโค้งแท่งกราฟ */
+}
+
+/* สีกราฟ */
+.antv-column .g2-element:nth-child(odd) {
+  fill: #ff4d4f !important;
+}
+
+.antv-column .g2-element:nth-child(even) {
+  fill: #1890ff !important;
+}
+
+/* Hover effect */
+.antv-column .g2-element:hover {
+  filter: brightness(1.1);
+  transform: scaleY(1.05);
+  cursor: pointer;
+}
+
+/* เวลาเมาส์ชี้กราฟ*/
+.g2-tooltip {
+  background: #ffffff !important;
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+}
+
+/* พื้นหลังหัวฟอร์ม */
+.infectious-card .ant-card-head {
+  background: linear-gradient(90deg, #d9f0ea 0%, #b6e6d8 100%);
+  color: #2e3a3a;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 1px rgba(0,0,0,0.1);
+}
+
+/* เลือกวันที่ */
+.infectious-card .ant-card-extra {
+  margin-right: 12px;
+}
+

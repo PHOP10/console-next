@@ -13,6 +13,9 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { CaretRightOutlined } from "@ant-design/icons";
 import { OfficialTravelRequestType } from "../../common";
 import { useForm } from "antd/es/form/Form";
+import "moment/locale/th";
+moment.locale("th"); // 👈 ตั้ง moment ให้เป็นภาษาไทย
+const localizer = momentLocalizer(moment);
 
 interface CustomEvent extends RbcEvent {
   id: number;
@@ -106,6 +109,19 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data }) => {
             borderRadius: 4,
           },
         })}
+        messages={{
+          next: "ถัดไป",
+          previous: "ก่อนหน้า",
+          today: "วันนี้",
+          month: "เดือน",
+          week: "สัปดาห์",
+          day: "วัน",
+          agenda: "กำหนดการ",
+          date: "วันที่",
+          time: "เวลา",
+          event: "เหตุการณ์",
+          showMore: (total) => `+ ดูอีก ${total}`,
+        }}
       />
 
       <Modal

@@ -18,13 +18,18 @@ export default function Page() {
   const fetchData = useCallback(async () => {
     try {
       const result = await intraAuthService.getDurableArticleQuery();
+
+      let articles: any[] = [];
+
       if (Array.isArray(result)) {
-        setData(result);
+        articles = result.filter((item) => item.type === "durableArticles");
       } else if (Array.isArray(result?.data)) {
-        setData(result.data);
-      } else {
-        setData([]);
+        articles = result.data.filter(
+          (item: any) => item.type === "durableArticles"
+        );
       }
+
+      setData(articles);
     } catch (error) {
       console.error("Failed to fetch data:", error);
       message.error("ไม่สามารถดึงข้อมูลครุภัณฑ์ได้");
@@ -55,7 +60,11 @@ export default function Page() {
       key: "2",
       label: "เพิ่มครุภัณฑ์",
       children: (
-        <DurableArticleForm setLoading={setLoading} loading={loading} />
+        <DurableArticleForm
+          setLoading={setLoading}
+          loading={loading}
+          fetchData={fetchData}
+        />
       ),
     },
   ];

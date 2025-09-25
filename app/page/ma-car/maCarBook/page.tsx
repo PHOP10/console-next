@@ -6,6 +6,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
 import MaCarBookForm from "../components/maCarBookForm";
 import { MasterCarType } from "../../common";
+import { fetchData } from "next-auth/client/_utils";
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
@@ -40,7 +41,7 @@ export default function MaCarPage() {
       label: "ยื่นแบบฟอร์ม",
       children: (
         <Card>
-          <MaCarBookForm cars={cars} dataUser={dataUser} loading={loading} />
+          <MaCarBookForm cars={cars} dataUser={dataUser} loading={loading}  fetchCarsAndUsers={fetchCarsAndUsers}/>
         </Card>
       ),
     },

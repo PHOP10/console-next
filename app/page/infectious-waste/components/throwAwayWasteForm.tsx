@@ -23,6 +23,7 @@ dayjs.locale("th");
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  fetchData: () => Promise<void>;
 };
 
 export default function ThrowAwayWasteForm({ setLoading }: Props) {
@@ -71,60 +72,63 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
         </div>
       }
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={handleSubmit}
-        initialValues={{
-          discardedDate: dayjs(),
-        }}
-      >
-        <Form.Item
-          label="ประเภทขยะติดเชื้อ"
-          name="wasteType"
-          rules={[{ required: true, message: "กรุณาระบุประเภทขยะ" }]}
-        >
-          <Select placeholder="เลือกประเภทขยะ">
-            <Select.Option value="ขยะติดเชื้อทั่วไป">
-              ขยะติดเชื้อทั่วไป
-            </Select.Option>
-            <Select.Option value="ขยะติดเชื้อมีคม">
-              ขยะติดเชื้อมีคม
-            </Select.Option>
-          </Select>
-        </Form.Item>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <div style={{ width: "100%", maxWidth: 350 }}>
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            initialValues={{ discardedDate: dayjs() }}
+          >
+            <Form.Item
+              label="ประเภทขยะติดเชื้อ"
+              name="wasteType"
+              rules={[{ required: true, message: "กรุณาระบุประเภทขยะ" }]}
+            >
+              <Select placeholder="เลือกประเภทขยะ">
+                <Select.Option value="ขยะติดเชื้อทั่วไป">
+                  ขยะติดเชื้อทั่วไป
+                </Select.Option>
+                <Select.Option value="ขยะติดเชื้อมีคม">
+                  ขยะติดเชื้อมีคม
+                </Select.Option>
+              </Select>
+            </Form.Item>
 
-        <Form.Item
-          label="น้ำหนักขยะติดเชื้อ (กิโลกรัม)"
-          name="wasteWeight"
-          rules={[
-            { required: true, message: "กรุณาระบุน้ำหนักขยะ" },
-            {
-              pattern: /^\d+(\.\d{1,2})?$/,
-              message: "กรุณากรอกตัวเลข เช่น 1.25",
-            },
-          ]}
-        >
-          <Input placeholder="เช่น 1.25" />
-        </Form.Item>
+            <Form.Item
+              label="น้ำหนักขยะติดเชื้อ (กิโลกรัม)"
+              name="wasteWeight"
+              rules={[
+                { required: true, message: "กรุณาระบุน้ำหนักขยะ" },
+                {
+                  pattern: /^\d+(\.\d{1,2})?$/,
+                  message: "กรุณากรอกตัวเลข เช่น 1.25",
+                },
+              ]}
+            >
+              <Input placeholder="เช่น 1.25" />
+            </Form.Item>
 
-        <Form.Item
-          label="วันที่ทิ้งขยะ"
-          name="discardedDate"
-          rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}
-        >
-          <DatePicker
-            locale={th_TH}
-            format="D MMMM BBBB" // BBBB = ปีพุทธศักราช
-          />
-        </Form.Item>
+            <Form.Item
+              label="วันที่ทิ้งขยะ"
+              name="discardedDate"
+              rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}
+            >
+              <DatePicker
+                locale={th_TH}
+                format="D MMMM BBBB"
+                style={{ width: "100%" }}
+              />
+            </Form.Item>
 
-        <Form.Item style={{ textAlign: "center" }}>
-          <Button type="primary" htmlType="submit" loading={submitting}>
-            บันทึกข้อมูล
-          </Button>
-        </Form.Item>
-      </Form>
+            <Form.Item style={{ textAlign: "center" }}>
+              <Button type="primary" htmlType="submit" loading={submitting}>
+                บันทึกข้อมูล
+              </Button>
+            </Form.Item>
+          </Form>
+        </div>
+      </div>
     </Card>
   );
 }

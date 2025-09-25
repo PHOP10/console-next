@@ -1,33 +1,40 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Breadcrumb, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
-import SupportingResourceTable from "../components/supportingResourceTable";
-import SupportingResourceForm from "../components/supportingResourceForm";
+import DurableArticleTable from "../components/durableArticleTable";
+import DurableArticleForm from "../components/durableArticleForm";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
-import { SupportingResourceType } from "../../common";
+import { DurableArticleType } from "../../common";
+import SupportingResourceForm from "../components/supportingResourceForm";
+import SupportingResourceTable from "../components/supportingResourceTable";
 
 export default function Page() {
-  const [loading, setLoading] = useState<boolean>(true);
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
 
-  const [data, setData] = useState<SupportingResourceType[]>([]);
+  const [data, setData] = useState<DurableArticleType[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const fetchData = useCallback(async () => {
     try {
-      const result = await intraAuthService.getSupportingResourceQuery();
+      const result = await intraAuthService.getDurableArticleQuery();
+
+      let articles: any[] = [];
+
       if (Array.isArray(result)) {
-        setData(result);
+        articles = result.filter((item) => item.type === "supportingResource");
       } else if (Array.isArray(result?.data)) {
-        setData(result.data);
-      } else {
-        setData([]);
+        articles = result.data.filter(
+          (item: any) => item.type === "supportingResource"
+        );
       }
+      setData(articles);
+      // console.log();
     } catch (error) {
-      console.error("Failed to fetch supporting resources:", error);
-      message.error("ไม่สามารถดึงข้อมูลวัสดุสนับสนุนได้");
+      console.error("Failed to fetch data:", error);
+      message.error("ไม่สามารถดึงข้อมูลครุภัณฑ์ได้");
     } finally {
       setLoading(false);
     }
@@ -42,21 +49,24 @@ export default function Page() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลวัสดุสนับสนุน",
+      label: "ข้อมูลครุภัณฑ์",
       children: (
         <SupportingResourceTable
           setLoading={setLoading}
           loading={loading}
           data={data}
-          fetchData={fetchData}
         />
       ),
     },
     {
       key: "2",
-      label: "เพิ่มวัสดุสนับสนุน",
+      label: "เพิ่มครุภัณฑ์",
       children: (
-        <SupportingResourceForm setLoading={setLoading} loading={loading} />
+        <SupportingResourceForm
+          setLoading={setLoading}
+          loading={loading}
+          fetchData={fetchData}
+        />
       ),
     },
   ];

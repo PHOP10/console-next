@@ -321,6 +321,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         dataSource={data}
         rowKey="id"
         loading={loading}
+        scroll={{ x: 800 }}
       />
       <MaCarDetail
         open={detailModalOpen}
