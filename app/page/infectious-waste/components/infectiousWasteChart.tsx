@@ -11,8 +11,6 @@ import thTH from "antd/locale/th_TH";
 import type { Dayjs } from "dayjs";
 import { InfectiousWasteType } from "../../common";
 
-import "./graph.css"; // ไฟล์ CSS สำหรับปรับแต่งกราฟ
-
 dayjs.locale("th");
 dayjs.extend(isSameOrAfter);
 dayjs.extend(isSameOrBefore);
@@ -70,7 +68,7 @@ export default function InfectiousWasteChart({ data }: Props) {
     label: {
       position: "top",
       style: {
-        fill: "#0000",
+        fill: "#f10000",
       },
     },
 
@@ -115,8 +113,8 @@ export default function InfectiousWasteChart({ data }: Props) {
           {...config}
           label={{
             style: {
-              fill: "#595959",
-              fontSize: 14,
+              fill: "#ffffffff",
+              fontSize: 18,
             },
           }}
           xAxis={{
