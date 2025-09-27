@@ -134,6 +134,12 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
 
         dateStarts: latestDateStart ? formatThaiDate(latestDateStart) : "-",
         dateEnds: latestDateEnd ? formatThaiDate(latestDateEnd) : "-",
+        cS: leaveType === "ลาป่วย" ? "\u2611" : "\u2610", // ☑ หรือ ☐
+        cP: leaveType === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
+        cM: leaveType === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
+        r1: leaveType === "ลาป่วย" ? record.reason : "",
+        r2: leaveType === "ลากิจส่วนตัว" ? record.reason : "",
+        r3: leaveType === "ลาคลอดบุตร" ? record.reason : "",
       };
 
       doc.render(data);

@@ -50,7 +50,20 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
   };
 
   return (
-    <Card>
+    <Card
+      title={
+        <div
+          style={{
+            textAlign: "center",
+            color: "#0683e9",
+            fontWeight: "bold",
+            fontSize: "20px",
+          }}
+        >
+          ฟอร์มขอใช้รถ
+        </div>
+      }
+    >
       <Form
         form={form}
         layout="vertical"
@@ -152,7 +165,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
           />
         </Form.Item>
 
-        <Form.Item>
+        <Form.Item style={{ textAlign: "center" }}>
           <Button type="primary" htmlType="submit">
             จองรถ
           </Button>

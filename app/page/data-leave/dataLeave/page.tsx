@@ -57,7 +57,7 @@ export default function DataLeavePage() {
     },
     {
       key: "2",
-      label: `ข้อมูลการลาผู้ใช้`,
+      label: `ข้อมูลตารางการลา`,
       children: (
         <Card>
           <DataLeaveTable

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Modal, Form, Input, DatePicker, Collapse, Tag } from "antd";
 import dayjs from "dayjs";
 import moment from "moment";
-import "moment/locale/th"; // 👈 โหลด locale ภาษาไทย
+import "moment/locale/th";
 import {
   Calendar,
   momentLocalizer,
@@ -14,8 +14,6 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { CaretRightOutlined } from "@ant-design/icons";
 import { MaCarType } from "../../common";
 import { useForm } from "antd/es/form/Form";
-
-moment.locale("th"); // 👈 ตั้ง moment ให้เป็นภาษาไทย
 const localizer = momentLocalizer(moment);
 
 interface CustomEvent extends RbcEvent {
@@ -76,6 +74,30 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
       });
       setModalOpen(true);
     }
+  };
+
+  const thaiMonths = [
+    "มกราคม",
+    "กุมภาพันธ์",
+    "มีนาคม",
+    "เมษายน",
+    "พฤษภาคม",
+    "มิถุนายน",
+    "กรกฎาคม",
+    "สิงหาคม",
+    "กันยายน",
+    "ตุลาคม",
+    "พฤศจิกายน",
+    "ธันวาคม",
+  ];
+
+  const formatBuddhist = (date?: string | Date) => {
+    if (!date) return "-";
+    const d = dayjs(date);
+    const day = d.date();
+    const month = thaiMonths[d.month()];
+    const year = d.year() + 543; 
+    return `${day} ${month} ${year}`;
   };
 
   return (
@@ -146,12 +168,15 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
                 <Form.Item label="ปลายทาง" name="destination">
                   <Input disabled />
                 </Form.Item>
-                <Form.Item label="วันเริ่มเดินทาง" name="departureDate">
-                  <DatePicker disabled style={{ width: "100%" }} />
+
+                <Form.Item label="ตั้งแต่วันที่">
+                  <Input value={formatBuddhist(selected.dateStart)} disabled />
                 </Form.Item>
-                <Form.Item label="วันกลับ" name="returnDate">
-                  <DatePicker disabled style={{ width: "100%" }} />
+
+                <Form.Item label="ถึงวันที่">
+                  <Input value={formatBuddhist(selected.dateEnd)} disabled />
                 </Form.Item>
+
                 <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
                   <Input disabled />
                 </Form.Item>

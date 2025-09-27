@@ -38,10 +38,15 @@ export default function MaCarPage() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ยื่นแบบฟอร์ม",
+      label: "ฟอร์มจองรถ",
       children: (
         <Card>
-          <MaCarBookForm cars={cars} dataUser={dataUser} loading={loading}  fetchCarsAndUsers={fetchCarsAndUsers}/>
+          <MaCarBookForm
+            cars={cars}
+            dataUser={dataUser}
+            loading={loading}
+            fetchCarsAndUsers={fetchCarsAndUsers}
+          />
         </Card>
       ),
     },

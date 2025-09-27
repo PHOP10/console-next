@@ -34,6 +34,8 @@ export interface OfficialTravelRequestType {
   createdAt: string;
   updatedAt: string;
   deletedAt?: string | null;
+  passengers?: number;
+  passengerNames?: string;
 }
 
 export interface MaCarType {

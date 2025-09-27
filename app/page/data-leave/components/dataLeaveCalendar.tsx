@@ -13,9 +13,6 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { CaretRightOutlined } from "@ant-design/icons";
 import { DataLeaveType } from "../../common";
 import { useForm } from "antd/es/form/Form";
-import "moment/locale/th";
-moment.locale("th"); // 👈 ตั้ง moment ให้เป็นภาษาไทย
-const localizer = momentLocalizer(moment);
 
 interface CustomEvent extends RbcEvent {
   id: number;
@@ -85,6 +82,30 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
       });
       setModalOpen(true);
     }
+  };
+
+  const thaiMonths = [
+    "มกราคม",
+    "กุมภาพันธ์",
+    "มีนาคม",
+    "เมษายน",
+    "พฤษภาคม",
+    "มิถุนายน",
+    "กรกฎาคม",
+    "สิงหาคม",
+    "กันยายน",
+    "ตุลาคม",
+    "พฤศจิกายน",
+    "ธันวาคม",
+  ];
+
+  const formatBuddhist = (date?: string | Date) => {
+    if (!date) return "-";
+    const d = dayjs(date);
+    const day = d.date();
+    const month = thaiMonths[d.month()]; // month() คืน 0-11
+    const year = d.year() + 543; // แปลงเป็น พ.ศ.
+    return `${day} ${month} ${year}`;
   };
 
   return (
@@ -162,7 +183,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
                 <Form.Item label="รายละเอียด" name="details">
                   <Input.TextArea rows={3} disabled />
                 </Form.Item>
-                <Form.Item label="วันที่เริ่มการลา" name="dateStart">
+                {/* <Form.Item label="วันที่เริ่มการลา" name="dateStart">
                   <DatePicker
                     disabled
                     style={{ width: "100%" }}
@@ -176,6 +197,14 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
                     style={{ width: "100%" }}
                     format="DD/MM/YYYY"
                   />
+                </Form.Item> */}
+
+                <Form.Item label="ตั้งแต่วันที่">
+                  <Input value={formatBuddhist(selected.dateStart)} disabled />
+                </Form.Item>
+
+                <Form.Item label="ถึงวันที่">
+                  <Input value={formatBuddhist(selected.dateEnd)} disabled />
                 </Form.Item>
 
                 <Form.Item label="สถานะ">

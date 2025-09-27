@@ -25,7 +25,7 @@ interface LeaveBookingFormProps {
   masterLeaves: MasterLeaveType[];
   leaveByUserId?: DataLeaveType[];
   user: UserType[];
-   fetchData: () => Promise<void>;
+  fetchData: () => Promise<void>;
 }
 
 export default function LeaveBookingForm({
@@ -35,7 +35,7 @@ export default function LeaveBookingForm({
   masterLeaves,
   leaveByUserId = [],
   user,
-  fetchData
+  fetchData,
 }: LeaveBookingFormProps) {
   const [form] = Form.useForm();
   const { data: session } = useSession();
@@ -78,6 +78,7 @@ export default function LeaveBookingForm({
         currentDays,
         totalDays,
       };
+      
     });
   }, [
     masterLeaves,
@@ -85,6 +86,7 @@ export default function LeaveBookingForm({
     selectedTypeId,
     selectedDateStart,
     selectedDateEnd,
+    // console.log(masterLeaves),
   ]);
 
   const columns = [
@@ -127,7 +129,20 @@ export default function LeaveBookingForm({
     <Row gutter={24}>
       {/* ฟอร์ม */}
       <Col span={12}>
-        <Card title="กรอกใบลา">
+        <Card
+          title={
+            <div
+              style={{
+                textAlign: "center",
+                color: "#0683e9",
+                fontWeight: "bold",
+                fontSize: "20px",
+              }}
+            >
+              ฟอร์มใบลา
+            </div>
+          }
+        >
           <Form form={form} layout="vertical" onFinish={onFinish}>
             <Form.Item
               label="เขียนที่"
@@ -273,7 +288,20 @@ export default function LeaveBookingForm({
 
       {/* ตาราง */}
       <Col span={12}>
-        <Card title="สรุปการลา">
+        <Card
+          title={
+            <div
+              style={{
+                textAlign: "center",
+                color: "#0683e9",
+                fontWeight: "bold",
+                fontSize: "20px",
+              }}
+            >
+              สรุปการลา
+            </div>
+          }
+        >
           <Table
             columns={columns}
             dataSource={tableData}

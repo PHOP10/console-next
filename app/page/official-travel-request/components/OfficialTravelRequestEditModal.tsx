@@ -1,105 +1,105 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
+  Modal,
   Form,
   Input,
-  Button,
   DatePicker,
   Select,
+  InputNumber,
   message,
   Spin,
-  Card,
-  InputNumber,
+  ConfigProvider,
   Row,
   Col,
-  ConfigProvider,
 } from "antd";
+import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { officialTravelRequestService } from "../services/officialTravelRequest.service";
-import { UserType, MasterCarType } from "../../common";
-import { useSession } from "next-auth/react";
+import {
+  UserType,
+  MasterCarType,
+  OfficialTravelRequestType,
+} from "../../common";
 import th_TH from "antd/locale/th_TH";
-import dayjs from "dayjs";
 import "dayjs/locale/th";
-dayjs.locale("th");
 
 interface Props {
+  open: boolean;
+  onClose: () => void;
+  record: OfficialTravelRequestType | null;
+  fetchData: () => void;
   dataUser: UserType[];
   cars: MasterCarType[];
 }
 
-export default function OfficialTravelRequestBookForm({
+const OfficialTravelRequestEditModal: React.FC<Props> = ({
+  open,
+  onClose,
+  record,
+  fetchData,
   dataUser,
   cars,
-}: Props) {
+}) => {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const service = officialTravelRequestService(intraAuth);
-  const { data: session } = useSession();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [submitting, setSubmitting] = useState<boolean>(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const onFinish = async (values: any) => {
+  useEffect(() => {
+    if (record) {
+      form.setFieldsValue({
+        ...record,
+        startDate: record.startDate ? dayjs(record.startDate) : null,
+        endDate: record.endDate ? dayjs(record.endDate) : null,
+      });
+    } else {
+      form.resetFields();
+    }
+  }, [record, form]);
+
+  const handleSubmit = async (values: any) => {
     setSubmitting(true);
     try {
       const payload = {
         ...values,
-        recipient: values.recipient || null,
-        documentNo: values.documentNo,
-        title: values.title,
-        missionDetail: values.missionDetail,
-        location: values.location,
-        startDate: values.startDate ? values.startDate.toISOString() : null,
-        endDate: values.endDate ? values.endDate.toISOString() : null,
-        passengers: values.passengers || null,
-        passengerNames: values.passengerNames || [],
-        carId: values.carId || null,
-        cancelReason: values.cancelReason || null,
-        status: "pending",
-        createdName: session?.user?.fullName,
-        createdById: session?.user?.userId,
+        id: record?.id,
+        startDate: values.startDate?.toISOString() || null,
+        endDate: values.endDate?.toISOString() || null,
       };
 
-      await service.createOfficialTravelRequest(payload);
-      message.success("บันทึกคำขอเรียบร้อยแล้ว");
-      form.resetFields();
-    } catch (err) {
-      console.error(err);
-      message.error("บันทึกคำขอไม่สำเร็จ");
+      await service.updateOfficialTravelRequest(payload);
+      message.success("แก้ไขคำขอสำเร็จ");
+      fetchData();
+      onClose();
+    } catch (error) {
+      console.error(error);
+      message.error("แก้ไขคำขอไม่สำเร็จ");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <Spin />;
- 
-  const formatBuddhist = (value: dayjs.Dayjs | null) => {
-    if (!value) return "";
-    const date = dayjs(value).locale("th");
+  const formatBuddhist = (date: dayjs.Dayjs | null) => {
+    if (!date) return "";
     const day = date.date();
-    const month = date.format("MMMM"); 
-    const year = date.year() + 543; 
+    const month = date.locale("th").format("MMMM"); // เดือนภาษาไทย
+    const year = date.year() + 543; // แปลงเป็น พ.ศ.
     return `${day} ${month} ${year}`;
   };
 
   return (
-    <Card
-      title={
-        <div
-          style={{
-            textAlign: "center",
-            color: "#0683e9",
-            fontWeight: "bold",
-            fontSize: "20px",
-          }}
-        >
-          ฟอร์มขอไปราชการ
-        </div>
-      }
+    <Modal
+      title="แก้ไขคำขอไปราชการ"
+      open={open}
+      onCancel={onClose}
+      onOk={() => form.submit()}
+      confirmLoading={submitting}
+      width={700}
     >
       <ConfigProvider locale={th_TH}>
-        <Form form={form} layout="vertical" onFinish={onFinish}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -115,17 +115,11 @@ export default function OfficialTravelRequestBookForm({
                 label="เลขที่เอกสาร"
                 name="documentNo"
                 rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอกเลขที่เอกสาร",
-                  },
-                  {
-                    pattern: /^[ก-ฮA-Za-z0-9./\s]+$/,
-                    message: "กรอกได้เฉพาะตัวอักษร ตัวเลข จุด และ /",
-                  },
+                  { required: true, message: "กรุณากรอกเลขที่เอกสาร" },
+                  { max: 15, message: "กรอกได้สูงสุด 15 ตัวอักษร" },
                 ]}
               >
-                <Input placeholder="กรอกเลขที่เอกสาร" maxLength={14} />
+                <Input placeholder="เช่น 0933.1/85" maxLength={15} />
               </Form.Item>
             </Col>
           </Row>
@@ -133,7 +127,7 @@ export default function OfficialTravelRequestBookForm({
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="ความประสงค์"
+                label="วัตถุประสงค์"
                 name="missionDetail"
                 rules={[{ required: true, message: "กรุณากรอกวัตถุประสงค์" }]}
               >
@@ -151,7 +145,6 @@ export default function OfficialTravelRequestBookForm({
             </Col>
           </Row>
 
-          {/* ✅ แสดงวันที่แบบ พ.ศ. */}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -163,8 +156,9 @@ export default function OfficialTravelRequestBookForm({
               >
                 <DatePicker
                   style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
-                  format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                  format={(value) =>
+                    value ? formatBuddhist(dayjs(value)) : ""
+                  }
                 />
               </Form.Item>
             </Col>
@@ -178,8 +172,9 @@ export default function OfficialTravelRequestBookForm({
               >
                 <DatePicker
                   style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
-                  format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                  format={(value) =>
+                    value ? formatBuddhist(dayjs(value)) : ""
+                  }
                 />
               </Form.Item>
             </Col>
@@ -188,11 +183,7 @@ export default function OfficialTravelRequestBookForm({
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
-                <InputNumber
-                  min={1}
-                  placeholder="จำนวนผู้โดยสาร"
-                  style={{ width: "100%" }}
-                />
+                <InputNumber min={1} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -225,14 +216,10 @@ export default function OfficialTravelRequestBookForm({
           <Form.Item label="หมายเหตุเพิ่มเติม" name="title">
             <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
           </Form.Item>
-
-          <Form.Item style={{ textAlign: "center" }}>
-            <Button type="primary" htmlType="submit" loading={submitting}>
-              ยื่นคำขอ
-            </Button>
-          </Form.Item>
         </Form>
       </ConfigProvider>
-    </Card>
+    </Modal>
   );
-}
+};
+
+export default OfficialTravelRequestEditModal;

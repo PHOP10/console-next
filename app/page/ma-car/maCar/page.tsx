@@ -45,7 +45,7 @@ export default function MaCarPage() {
     },
     {
       key: "2",
-      label: "ข้อมูลการจองรถ",
+      label: "ข้อมูลตารางการจองรถ",
       children: (
         <Card>
           <MaCarTable data={data} loading={loading} fetchData={fetchData} />
