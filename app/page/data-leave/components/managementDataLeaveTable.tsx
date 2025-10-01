@@ -15,6 +15,7 @@ import {
   DatePicker,
   Popover,
   Typography,
+  Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { DataLeaveType, MasterLeaveType } from "../../common";
@@ -173,9 +174,23 @@ export default function ManagementDataLeaveTable({
   };
 
   const columns: ColumnsType<DataLeaveType> = [
-    { title: "Id", dataIndex: "id", key: "id" },
-
-    { title: "เหตุผล", dataIndex: "reason", key: "reason" },
+    // { title: "Id", dataIndex: "id", key: "id" },
+    {
+      title: "เหตุผลการลา",
+      dataIndex: "reason",
+      key: "reason",
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
+    },
     {
       title: "วันที่เริ่มลา",
       dataIndex: "leaveDateStart",
@@ -320,7 +335,7 @@ export default function ManagementDataLeaveTable({
         dataSource={dataLeave}
         loading={loading}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal

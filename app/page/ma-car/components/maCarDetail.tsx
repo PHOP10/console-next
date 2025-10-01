@@ -1,15 +1,30 @@
 // MaCarDetail.tsx
 
-import { Modal, Form, Row, Col, Input } from "antd";
+import { Modal, Form, Row, Col, Input, Space, Tag } from "antd";
+import { MaCarType, UserType } from "../../common";
 
 interface MaCarDetailProps {
   open: boolean;
   onClose: () => void;
   record: any;
+  dataUser?: UserType[];
 }
 
 const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
   const { TextArea } = Input;
+
+  const getStatusTag = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Tag color="orange">รอดำเนินการ</Tag>;
+      case "approve":
+        return <Tag color="green">อนุมัติ</Tag>;
+      case "cancel":
+        return <Tag color="red">ยกเลิก</Tag>;
+      default:
+        return <Tag>{status}</Tag>;
+    }
+  };
 
   return (
     <Modal
@@ -23,8 +38,8 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
         <Form layout="vertical">
           <Row gutter={18}>
             <Col span={12}>
-              <Form.Item label="ผู้ขอรถ :">
-                <span>{record.requesterName || "-"}</span>
+              <Form.Item label="เรียน :">
+                <span>{record.recipient || "-"}</span>
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -42,19 +57,27 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
 
           <Row gutter={18}>
             <Col span={12}>
-              <Form.Item label="วันที่เริ่มใช้รถ :">
+              <Form.Item label="ตั้งแต่วันที่ :">
                 <span>
                   {record.dateStart
-                    ? new Date(record.dateStart).toLocaleDateString("th-TH")
+                    ? new Date(record.dateStart).toLocaleDateString("th-TH", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
                     : "-"}
                 </span>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="วันที่สิ้นสุด :">
+              <Form.Item label="ตั้งแต่วันที่ :">
                 <span>
                   {record.dateEnd
-                    ? new Date(record.dateEnd).toLocaleDateString("th-TH")
+                    ? new Date(record.dateEnd).toLocaleDateString("th-TH", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
                     : "-"}
                 </span>
               </Form.Item>
@@ -63,62 +86,65 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
 
           <Row gutter={18}>
             <Col span={12}>
-              <Form.Item label="จุดหมาย :">
-                <span>{record.destination || "-"}</span>
+              <Form.Item label="สถานที่ :">
+                <TextArea
+                  value={record.destination}
+                  rows={2}
+                  readOnly
+                  bordered={false}
+                  style={{ resize: "none" }}
+                />
               </Form.Item>
             </Col>
+            <Col span={12}>
+              <Form.Item label="งบประมาณ :">
+                <span>{record.budget}</span>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Row gutter={18}>
             <Col span={12}>
               <Form.Item label="จำนวนผู้โดยสาร :">
                 <span>{record.passengers || 0}</span>
               </Form.Item>
             </Col>
-          </Row>
-
-          <Row gutter={18}>
-            <Col span={24}>
+            <Col span={12}>
               <Form.Item label="รายชื่อผู้โดยสาร :">
-                <TextArea
-                  value={
-                    record.dataUser
-                      ? record.dataUser
-                          .filter((u: any) =>
-                            record.passengerNames?.includes(u.userId)
-                          )
-                          .map((u: any) => `${u.firstName} ${u.lastName}`)
-                          .join("\n") // 👈 ขึ้นบรรทัดใหม่
-                      : record.passengerNames?.join("\n")
-                  }
-                  rows={3}
-                  readOnly
-                  bordered={false}
-                  style={{ resize: "none", whiteSpace: "pre-line" }}
-                />
+                <Space wrap>
+                  {record.dataUser
+                    ? record.dataUser
+                        .filter((u: any) =>
+                          record.passengerNames?.includes(u.userId)
+                        )
+                        .map((u: any) => (
+                          <Tag key={u.userId} color="blue">
+                            {u.firstName} {u.lastName}
+                          </Tag>
+                        ))
+                    : record.passengerNames?.map(
+                        (name: string, index: number) => (
+                          <Tag key={index} color="blue">
+                            {name}
+                          </Tag>
+                        )
+                      )}
+                </Space>
               </Form.Item>
             </Col>
           </Row>
-
           <Row gutter={18}>
             <Col span={12}>
-              <Form.Item label="งบประมาณ :">
-                <span>{record.budget ? `${record.budget} บาท` : "-"}</span>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="สถานะ :">
+              <Form.Item label="ขอคนขับรถ :">
                 <span>
-                  {record?.status === "available"
-                    ? "รอดำเนินการ"
-                    : record?.status === "approve"
-                    ? "อนุมัติ"
-                    : record?.status === "cancel"
-                    ? "ยกเลิก"
-                    : record?.status}
+                  {record?.driver === "yes"
+                    ? "ขอพนักงานขับรถส่วนกลาง"
+                    : record?.driver === "no"
+                    ? "ไม่ขอพนักงานขับรถส่วนกลาง"
+                    : "-"}
                 </span>
               </Form.Item>
             </Col>
-          </Row>
-
-          <Row gutter={18}>
             <Col span={12}>
               <Form.Item label="รถที่ใช้ :">
                 <span>
@@ -126,6 +152,24 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                     ? `${record.masterCar.carName} (${record.masterCar.licensePlate})`
                     : "-"}
                 </span>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={18}>
+            <Col span={12}>
+              <Form.Item label="สถานะ :">
+                {getStatusTag(record.status)}
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="เหตุผลเพิ่มเติม">
+                <TextArea
+                  value={record.note}
+                  rows={2}
+                  readOnly
+                  bordered={false}
+                  style={{ resize: "none" }}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -141,7 +185,16 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                 <Col span={12}>
                   <Form.Item label="วันที่อนุมัติ :">
                     <span>
-                      {new Date(record.approvedAt).toLocaleDateString("th-TH")}
+                      {record.approvedAt
+                        ? new Date(record.approvedAt).toLocaleDateString(
+                            "th-TH",
+                            {
+                              day: "numeric",
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )
+                        : "-"}
                     </span>
                   </Form.Item>
                 </Col>
@@ -179,6 +232,35 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
               </Col>
             </Row>
           ) : null}
+
+          <Row gutter={18}>
+            <Col span={12}>
+              <Form.Item label="ยื่นคำขอเมื่อวันที่ :">
+                <span>
+                  {record.createdAt
+                    ? new Date(record.createdAt).toLocaleDateString("th-TH", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "-"}
+                </span>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="อัปเดตล่าสุดวันที่ :">
+                <span>
+                  {record.updatedAt
+                    ? new Date(record.updatedAt).toLocaleDateString("th-TH", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
+                    : "-"}
+                </span>
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       )}
     </Modal>

@@ -9,13 +9,14 @@ import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
 import SupportingResourceForm from "../components/supportingResourceForm";
 import SupportingResourceTable from "../components/supportingResourceTable";
+import { useSession } from "next-auth/react";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
-
   const [data, setData] = useState<DurableArticleType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const { data: session } = useSession();
 
   const fetchData = useCallback(async () => {
     try {
@@ -49,7 +50,7 @@ export default function Page() {
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลครุภัณฑ์",
+      label: "ข้อมูลวัสดุสนับสนุน",
       children: (
         <SupportingResourceTable
           setLoading={setLoading}
@@ -58,18 +59,21 @@ export default function Page() {
         />
       ),
     },
-    {
+  ];
+
+  if (session?.user?.role === "asset" || session?.user?.role === "admin") {
+    items.push({
       key: "2",
-      label: "เพิ่มครุภัณฑ์",
+      label: "เพิ่มวัสดุสนับสนุน",
       children: (
-        <SupportingResourceForm
+        <DurableArticleForm
           setLoading={setLoading}
           loading={loading}
           fetchData={fetchData}
         />
       ),
-    },
-  ];
+    });
+  }
 
   return (
     <div>

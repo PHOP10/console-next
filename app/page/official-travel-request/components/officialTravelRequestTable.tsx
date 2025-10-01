@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Button, Space, Table, Tag } from "antd";
+import { Button, Space, Table, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   MasterCarType,
@@ -10,13 +10,14 @@ import {
 } from "../../common";
 import OfficialTravelRequestDetail from "./officialTravelRequestDetail";
 import OfficialTravelRequestEditModal from "./OfficialTravelRequestEditModal";
+import { useSession } from "next-auth/react";
 
 interface Props {
   data: OfficialTravelRequestType[];
   loading: boolean;
   fetchData: () => void;
   dataUser: UserType[];
-  cars: MasterCarType[]; // ✅ เพิ่มตรงนี้
+  cars: MasterCarType[];
 }
 
 const OfficialTravelRequestTable: React.FC<Props> = ({
@@ -30,6 +31,11 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<any>(null);
+  const { data: session } = useSession();
+
+  const filteredData = data.filter(
+    (item) => item.createdById === session?.user?.userId
+  );
 
   const handleShowDetail = (record: any) => {
     setSelectedRecord(record);
@@ -42,7 +48,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   };
 
   const handleEdit = (record: any) => {
-    if (record.status !== "pending") return; // ✅ อนุญาตให้แก้ไขเฉพาะ pending
+    if (record.status !== "pending") return;
     setEditRecord(record);
     setEditModalOpen(true);
   };
@@ -53,38 +59,77 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   };
 
   const columns: ColumnsType<OfficialTravelRequestType> = [
-    {
-      title: "ผู้ยื่นคำขอ",
-      dataIndex: "createdName",
-      key: "createdName",
-    },
+    // {
+    //   title: "ผู้ยื่นคำขอ",
+    //   dataIndex: "createdName",
+    //   key: "createdName",
+    // },
     {
       title: "เลขที่เอกสาร",
       dataIndex: "documentNo",
       key: "documentNo",
     },
     {
-      title: "ความประสงค์",
+      title: "วัตถุประสงค์",
       dataIndex: "missionDetail",
       key: "missionDetail",
+      // ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "สถานที่",
       dataIndex: "location",
       key: "location",
+      // ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "ตั้งแต่วันที่",
       dataIndex: "startDate",
       key: "startDate",
-      render: (text) => new Date(text).toLocaleDateString("th-TH"),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "ถึงวันที่",
       dataIndex: "endDate",
       key: "endDate",
-      render: (text) => new Date(text).toLocaleDateString("th-TH"),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
+
     {
       title: "สถานะ",
       dataIndex: "status",
@@ -115,8 +160,20 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
     },
     {
       title: "หมมายเหตุ",
-      dataIndex: "title",
-      key: "title",
+      dataIndex: "note",
+      key: "note",
+      ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 15;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "จัดการ",
@@ -155,9 +212,9 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       <Table
         rowKey="id"
         columns={columns}
-        dataSource={data}
+        dataSource={filteredData}
         loading={loading}
-        scroll={{ x: 800 }}
+        scroll={{ x: "max-content" }}
       />
       <OfficialTravelRequestDetail
         open={detailModalOpen}

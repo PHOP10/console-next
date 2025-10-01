@@ -15,6 +15,7 @@ import {
   Select,
   Popover,
   Typography,
+  Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { OfficialTravelRequestType, UserType } from "../../common";
@@ -165,37 +166,76 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
 
   const columns: ColumnsType<OfficialTravelRequestType> = [
     {
+      title: "ผู้ยื่นคำขอ",
+      dataIndex: "createdName",
+      key: "createdName",
+    },
+    {
       title: "เลขที่เอกสาร",
       dataIndex: "documentNo",
       key: "documentNo",
     },
     {
-      title: "เรื่อง",
-      dataIndex: "title",
-      key: "title",
-    },
-    {
-      title: "รายละเอียดภารกิจ",
+      title: "วัตถุประสงค์",
       dataIndex: "missionDetail",
       key: "missionDetail",
+      // ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "สถานที่",
       dataIndex: "location",
       key: "location",
+      // ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
-      title: "วันที่เริ่ม",
+      title: "ตั้งแต่วันที่",
       dataIndex: "startDate",
       key: "startDate",
-      render: (text) => new Date(text).toLocaleDateString(),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
-      title: "วันที่สิ้นสุด",
+      title: "ถึงวันที่",
       dataIndex: "endDate",
       key: "endDate",
-      render: (text) => new Date(text).toLocaleDateString(),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
+
     {
       title: "สถานะ",
       dataIndex: "status",
@@ -225,17 +265,21 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       },
     },
     {
-      title: "รถที่ใช้",
-      dataIndex: ["MasterCar", "licensePlate"],
-      key: "licensePlate",
-      render: (_, record) =>
-        record.MasterCar ? `${record.MasterCar.licensePlate} ` : "-",
-    },
-    {
-      title: "ผู้อนุมัติ",
-      dataIndex: "approvedByName",
-      key: "approvedByName",
-      render: (text) => text || "-",
+      title: "หมมายเหตุ",
+      dataIndex: "title",
+      key: "title",
+      ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 15;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "จัดการ",
@@ -340,7 +384,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
         columns={columns}
         dataSource={data}
         loading={loading}
-        scroll={{ x: 800 }}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal

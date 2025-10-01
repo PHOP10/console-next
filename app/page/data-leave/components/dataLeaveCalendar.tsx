@@ -115,14 +115,13 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
         events={data.map(
           (item): CustomEvent => ({
             id: item.id,
-            title: item.reason,
+            title: item.createdName,
             start: new Date(item.dateStart),
             end: new Date(item.dateEnd),
             status: item.status,
             reason: item.reason,
             details: item.details,
             approvedByName: item.approvedByName,
-            createdName: item.createdName,
             leaveType: item.masterLeave?.leaveType,
             cancelName: item.cancelName,
             cancelReason: item.cancelReason,
@@ -178,27 +177,11 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
                   <Input disabled />
                 </Form.Item>
                 <Form.Item label="เหตุผลการลา" name="reason">
-                  <Input disabled />
+                  <Input.TextArea rows={2} disabled />
                 </Form.Item>
                 <Form.Item label="รายละเอียด" name="details">
-                  <Input.TextArea rows={3} disabled />
+                  <Input.TextArea rows={2} disabled />
                 </Form.Item>
-                {/* <Form.Item label="วันที่เริ่มการลา" name="dateStart">
-                  <DatePicker
-                    disabled
-                    style={{ width: "100%" }}
-                    format="DD/MM/YYYY"
-                  />
-                </Form.Item>
-
-                <Form.Item label="วันที่สิ้นสุดการลา" name="dateEnd">
-                  <DatePicker
-                    disabled
-                    style={{ width: "100%" }}
-                    format="DD/MM/YYYY"
-                  />
-                </Form.Item> */}
-
                 <Form.Item label="ตั้งแต่วันที่">
                   <Input value={formatBuddhist(selected.dateStart)} disabled />
                 </Form.Item>

@@ -36,6 +36,11 @@ export interface OfficialTravelRequestType {
   deletedAt?: string | null;
   passengers?: number;
   passengerNames?: string;
+  cancelName?: string;
+  cancelAt?: string;
+  createdName: string;
+  note?: string;
+  budget?: number;
 }
 
 export interface MaCarType {
@@ -59,6 +64,9 @@ export interface MaCarType {
   createdById?: string;
   createdAt: string;
   updatedAt: string;
+  createdName: string;
+  driver?: string;
+  note?: string;
 }
 
 export interface MasterCarType {
@@ -71,6 +79,7 @@ export interface MasterCarType {
   status: string;
   details?: string;
   maCars?: MaCarType[];
+  carId?: string;
 }
 
 export interface DataLeaveType {
@@ -85,7 +94,7 @@ export interface DataLeaveType {
   approvedAt?: string;
   cancelReason?: string;
   cancelName?: string;
-  createdName?: string;
+  createdName: string;
   createdById?: string;
   cancelAt?: string;
   details?: string;

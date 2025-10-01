@@ -12,6 +12,7 @@ import {
   Space,
   Table,
   Tag,
+  Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { DataLeaveType, MaDrugItemType, MasterLeaveType } from "../../common";
@@ -96,26 +97,46 @@ export default function DataLeaveTable({
 
   const columns: ColumnsType<DataLeaveType> = [
     {
-      title: "Id",
-      dataIndex: "id",
-      key: "id",
-    },
-    {
-      title: "เหตุผล",
+      title: "เหตุผลการลา",
       dataIndex: "reason",
       key: "reason",
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
-      title: "วันที่เริ่มลา",
+      title: "ตั้งแต่วันที่",
       dataIndex: "dateStart",
       key: "dateStart",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
-      title: "วันที่สิ้นสุด",
+      title: "ถึงวันที่",
       dataIndex: "dateEnd",
       key: "dateEnd",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "สถานะ",
@@ -145,17 +166,22 @@ export default function DataLeaveTable({
         return <Tag color={color}>{text}</Tag>;
       },
     },
-    // {
-    //   title: "ผู้อนุมัติ",
-    //   dataIndex: "approvedByName",
-    //   key: "approvedByName",
-    //   render: (value) => value || "-",
-    // },
     {
-      title: "รายละเอียด",
+      title: "หมายเหตุเพิ่มเติม",
       dataIndex: "details",
       key: "details",
-      render: (value) => value || "-",
+      ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 15;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
 
     {
@@ -168,6 +194,13 @@ export default function DataLeaveTable({
             size="small"
             onClick={() => openEditModal(record)}
             disabled={record.status !== "pending"}
+            style={{
+              backgroundColor:
+                record.status === "pending" ? "#faad14" : "#d9d9d9",
+              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
+              color: record.status === "pending" ? "white" : "#888",
+              cursor: record.status === "pending" ? "pointer" : "not-allowed",
+            }}
           >
             แก้ไข
           </Button>
@@ -203,7 +236,7 @@ export default function DataLeaveTable({
         dataSource={leaveByUserId}
         loading={loading}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
+        scroll={{ x: "max-content" }}
       />
       <Modal
         title="แก้ไขข้อมูลการลา"

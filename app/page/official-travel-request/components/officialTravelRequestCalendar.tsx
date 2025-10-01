@@ -115,12 +115,13 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         events={data.map(
           (item): CustomEvent => ({
             id: item.id,
-            title: item.title,
+            title: item.createdName,
             start: new Date(item.startDate),
             end: new Date(item.endDate),
             status: item.status,
-            location: `${item.location}`, // หรือรายละเอียดอื่นๆ
+            location: `${item.location}`,
             masterCar: item.MasterCar?.licensePlate || "",
+            allDay: false,
           })
         )}
         style={{ height: 500 }}
@@ -174,24 +175,32 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
                 <Form.Item label="เลขที่เอกสาร" name="documentNo">
                   <Input disabled />
                 </Form.Item>
-                <Form.Item label="เรื่อง" name="title">
+                {/* <Form.Item label="เรื่อง" name="title">
                   <Input disabled />
-                </Form.Item>
-                <Form.Item label="ความประสงค์" name="missionDetail">
+                </Form.Item> */}
+                <Form.Item label="วัตถุประสงค์" name="missionDetail">
                   <TextArea disabled />
                 </Form.Item>
                 <Form.Item label="สถานที่" name="location">
                   <Input disabled />
                 </Form.Item>
-
                 <Form.Item label="ตั้งแต่วันที่">
                   <Input value={formatBuddhist(selected.startDate)} disabled />
                 </Form.Item>
-
                 <Form.Item label="ถึงวันที่">
                   <Input value={formatBuddhist(selected.endDate)} disabled />
                 </Form.Item>
-
+                <Form.Item label="งบประมาณ" name="budget">
+                  <Input disabled />
+                </Form.Item>
+                {selected.MasterCar && (
+                  <Form.Item label="รถที่ใช้">
+                    <Input
+                      disabled
+                      value={`${selected.MasterCar.licensePlate} (${selected.MasterCar.brand} ${selected.MasterCar.model})`}
+                    />
+                  </Form.Item>
+                )}
                 <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
                   <Input disabled />
                 </Form.Item>
@@ -210,16 +219,7 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
                     <span>-</span>
                   )}
                 </Form.Item>
-
-                {selected.MasterCar && (
-                  <Form.Item label="รถที่ใช้">
-                    <Input
-                      disabled
-                      value={`${selected.MasterCar.licensePlate} (${selected.MasterCar.brand} ${selected.MasterCar.model})`}
-                    />
-                  </Form.Item>
-                )}
-                <Form.Item label="เหตุผลเพิ่มเติม" name="title">
+                <Form.Item label="เหตุผลเพิ่มเติม" name="note">
                   <TextArea disabled />
                 </Form.Item>
               </Collapse.Panel>
@@ -231,16 +231,41 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
                   </Tag>
                 </Form.Item>
 
-                {selected.approvedByName && (
+                {selected.approvedByName ? (
                   <>
                     <Form.Item label="ผู้อนุมัติ" name="approvedByName">
                       <Input disabled />
                     </Form.Item>
-                    <Form.Item label="วันที่อนุมัติ" name="approvedDate">
-                      <DatePicker disabled style={{ width: "100%" }} />
+
+                    <Form.Item label="วันที่อนุมัติ">
+                      <Input
+                        value={formatBuddhist(selected.approvedDate)}
+                        disabled
+                      />
                     </Form.Item>
                   </>
-                )}
+                ) : selected.cancelName ? (
+                  <>
+                    <Form.Item label="ผู้ยกเลิก" name="cancelName">
+                      <Input disabled />
+                    </Form.Item>
+
+                    <Form.Item label="วันที่ยกเลิก">
+                      <Input
+                        value={formatBuddhist(selected.cancelAt)}
+                        disabled
+                      />
+                    </Form.Item>
+                  </>
+                ) : null}
+
+                {selected.cancelReason ? (
+                  <>
+                    <Form.Item label="เหตุผลการยกเลิก" name="cancelReason">
+                      <Input disabled />
+                    </Form.Item>
+                  </>
+                ) : null}
               </Collapse.Panel>
             </Collapse>
           </Form>

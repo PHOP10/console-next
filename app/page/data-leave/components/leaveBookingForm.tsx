@@ -5,6 +5,7 @@ import {
   Button,
   Card,
   Col,
+  ConfigProvider,
   DatePicker,
   Form,
   Input,
@@ -13,10 +14,13 @@ import {
   Select,
   Table,
 } from "antd";
-import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
 import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import { useSession } from "next-auth/react";
+import th_TH from "antd/locale/th_TH";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+dayjs.locale("th");
 
 interface LeaveBookingFormProps {
   loading: boolean;
@@ -78,7 +82,6 @@ export default function LeaveBookingForm({
         currentDays,
         totalDays,
       };
-      
     });
   }, [
     masterLeaves,
@@ -116,6 +119,7 @@ export default function LeaveBookingForm({
     try {
       setLoading(true);
       await createDataLeave(payload);
+      fetchData;
       message.success("บันทึกใบลาสำเร็จ");
       form.resetFields();
     } catch (err) {
@@ -143,146 +147,165 @@ export default function LeaveBookingForm({
             </div>
           }
         >
-          <Form form={form} layout="vertical" onFinish={onFinish}>
-            <Form.Item
-              label="เขียนที่"
-              name="writeAt"
-              rules={[{ required: false }]}
-            >
-              <Input placeholder="เช่น รพ.สต.ผาผึ้ง" />
-            </Form.Item>
-            <Form.Item
-              label="ประเภทการลา"
-              name="typeId"
-              rules={[{ required: true, message: "กรุณาเลือกประเภทลา" }]}
-            >
-              <Select placeholder="เลือกประเภทลา">
-                {masterLeaves.map((item) => (
-                  <Select.Option key={item.id} value={item.id}>
-                    {item.leaveType}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+          <ConfigProvider locale={th_TH}>
+            <Form form={form} layout="vertical" onFinish={onFinish}>
+              <Form.Item
+                label="เขียนที่"
+                name="writeAt"
+                rules={[
+                  {
+                    required: true,
+                    message: "กรุณากรอกเขียนที่...",
+                  },
+                ]}
+              >
+                <Input placeholder="เช่น รพ.สต.ผาผึ้ง" />
+              </Form.Item>
+              <Form.Item
+                label="ประเภทการลา"
+                name="typeId"
+                rules={[{ required: true, message: "กรุณาเลือกประเภทลา" }]}
+              >
+                <Select placeholder="เลือกประเภทลา">
+                  {masterLeaves.map((item) => (
+                    <Select.Option key={item.id} value={item.id}>
+                      {item.leaveType}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
 
-            <Form.Item
-              label="เหตุผลการลา"
-              name="reason"
-              rules={[{ required: true, message: "กรุณากรอกเหตุผลการลา" }]}
-            >
-              <TextArea rows={3} placeholder="เช่น ลาป่วย" />
-            </Form.Item>
-            <Row gutter={8}>
-              <Col span={12}>
-                <Form.Item
-                  label="ตั้งแต่วันที่"
-                  name="dateStart"
-                  rules={[
-                    { required: true, message: "กรุณาเลือกวันที่เริ่มลา" },
-                  ]}
-                >
-                  <DatePicker
-                    format="DD/MM/YYYY"
-                    style={{ width: "100%" }}
-                    disabledDate={(current) => {
-                      if (!current) return false;
-                      // ห้ามเลือกวันในอดีต
-                      if (current < dayjs().startOf("day")) return true;
+              <Form.Item
+                label="เหตุผลการลา"
+                name="reason"
+                rules={[{ required: true, message: "กรุณากรอกเหตุผลการลา" }]}
+              >
+                <TextArea rows={3} placeholder="เช่น ลาป่วย" />
+              </Form.Item>
+              <Row gutter={8}>
+                <Col span={12}>
+                  <Form.Item
+                    label="ตั้งแต่วันที่"
+                    name="dateStart"
+                    rules={[
+                      { required: true, message: "กรุณาเลือกวันที่เริ่มลา" },
+                    ]}
+                  >
+                    <DatePicker
+                      format="DD/MM/YYYY"
+                      style={{ width: "100%" }}
+                      disabledDate={(current) => {
+                        if (!current) return false;
+                        // ห้ามเลือกวันในอดีต
+                        if (current < dayjs().startOf("day")) return true;
 
-                      // ตรวจสอบว่าทับกับการลาที่มีอยู่แล้วหรือไม่
-                      return leaveByUserId.some((leave) => {
-                        const start = dayjs(leave.dateStart).startOf("day");
-                        const end = dayjs(leave.dateEnd).endOf("day");
-                        return dayjs(current).isBetween(
-                          start,
-                          end,
-                          "day",
-                          "[]"
-                        ); // ✅ ใช้ dayjs(current)
-                      });
-                    }}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label="ถึงวันที่"
-                  name="dateEnd"
-                  rules={[
-                    { required: true, message: "กรุณาเลือกวันที่สิ้นสุดการลา" },
-                  ]}
-                >
-                  <DatePicker
-                    format="DD/MM/YYYY"
-                    style={{ width: "100%" }}
-                    disabledDate={(current) => {
-                      if (!current) return false;
-                      // ห้ามเลือกวันในอดีต
-                      if (current < dayjs().startOf("day")) return true;
+                        // ตรวจสอบว่าทับกับการลาที่มีอยู่แล้วหรือไม่
+                        return leaveByUserId.some((leave) => {
+                          const start = dayjs(leave.dateStart).startOf("day");
+                          const end = dayjs(leave.dateEnd).endOf("day");
+                          return dayjs(current).isBetween(
+                            start,
+                            end,
+                            "day",
+                            "[]"
+                          );
+                        });
+                      }}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label="ถึงวันที่"
+                    name="dateEnd"
+                    rules={[
+                      {
+                        required: true,
+                        message: "กรุณาเลือกวันที่สิ้นสุดการลา",
+                      },
+                    ]}
+                  >
+                    <DatePicker
+                      format="DD/MM/YYYY"
+                      style={{ width: "100%" }}
+                      disabledDate={(current) => {
+                        if (!current) return false;
+                        if (current < dayjs().startOf("day")) return true;
+                        return leaveByUserId.some((leave) => {
+                          const start = dayjs(leave.dateStart).startOf("day");
+                          const end = dayjs(leave.dateEnd).endOf("day");
+                          return dayjs(current).isBetween(
+                            start,
+                            end,
+                            "day",
+                            "[]"
+                          );
+                        });
+                      }}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+              <Form.Item
+                label="ระหว่างลาติดต่อได้ที่"
+                name="contactAddress"
+                rules={[{ required: false }]}
+              >
+                <Input placeholder="เช่น 123 หมู่ 4 ต.ผาผึ้ง อ.เมือง จ.เชียงราย" />
+              </Form.Item>
 
-                      // ตรวจสอบว่าทับกับการลาที่มีอยู่แล้วหรือไม่
-                      return leaveByUserId.some((leave) => {
-                        const start = dayjs(leave.dateStart).startOf("day");
-                        const end = dayjs(leave.dateEnd).endOf("day");
-                        return dayjs(current).isBetween(
-                          start,
-                          end,
-                          "day",
-                          "[]"
-                        );
-                      });
-                    }}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-            <Form.Item
-              label="ระหว่างลาติดต่อได้ที่"
-              name="contactAddress"
-              rules={[{ required: false }]}
-            >
-              <Input placeholder="เช่น 123 หมู่ 4 ต.ผาผึ้ง อ.เมือง จ.เชียงราย" />
-            </Form.Item>
+              {/* เบอร์โทรศัพท์ */}
+              <Form.Item
+                label="โทรศัพท์"
+                name="contactPhone"
+                rules={[
+                  {
+                    required: true,
+                    message: "กรุณากรอกเบอร์โทรศัพท์",
+                  },
+                ]}
+              >
+                <Input
+                  placeholder="เช่น 0812345678"
+                  maxLength={10}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+              </Form.Item>
 
-            {/* เบอร์โทรศัพท์ */}
-            <Form.Item
-              label="โทรศัพท์"
-              name="contactPhone"
-              rules={[
-                {
-                  required: false,
-                  pattern: /^[0-9]+$/,
-                  message: "กรุณากรอกเฉพาะตัวเลข",
-                },
-              ]}
-            >
-              <Input placeholder="เช่น 0812345678" maxLength={10} />
-            </Form.Item>
+              <Form.Item
+                label="ผู้รับผิดชอบงานระหว่างลา"
+                name="backupUserId"
+                rules={[
+                  {
+                    required: true,
+                    message: "กรุณาเลือกผู้รับผิดชอบงานระหว่างลา",
+                  },
+                ]}
+              >
+                <Select placeholder="เลือกผู้รับผิดชอบงาน">
+                  {user.map((user) => (
+                    <Select.Option key={user.userId} value={user.userId}>
+                      {user.firstName} {user.lastName}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
 
-            <Form.Item
-              label="ผู้รับผิดชอบงานระหว่างลา"
-              name="backupUserId"
-              rules={[{ required: false }]}
-            >
-              <Select placeholder="เลือกผู้รับผิดชอบงาน">
-                {user.map((user) => (
-                  <Select.Option key={user.userId} value={user.userId}>
-                    {user.firstName} {user.lastName} {/* แสดงชื่อเต็ม */}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+              <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
+                <TextArea rows={3} placeholder="เช่น มีใบรับรองแพทย์" />
+              </Form.Item>
 
-            <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
-              <TextArea rows={3} placeholder="เช่น มีใบรับรองแพทย์" />
-            </Form.Item>
-
-            <Form.Item style={{ textAlign: "center", marginTop: 20 }}>
-              <Button type="primary" htmlType="submit" loading={loading}>
-                ส่งใบลา
-              </Button>
-            </Form.Item>
-          </Form>
+              <Form.Item style={{ textAlign: "center", marginTop: 20 }}>
+                <Button type="primary" htmlType="submit">
+                  ส่งใบลา
+                </Button>
+              </Form.Item>
+            </Form>
+          </ConfigProvider>
         </Card>
       </Col>
 

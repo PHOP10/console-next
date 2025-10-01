@@ -7,8 +7,8 @@ import { Modal, Form, Row, Col, Input, Tag, Card } from "antd";
 interface OfficialTravelRequestDetailProps {
   open: boolean;
   onClose: () => void;
-  record: any; // ใช้ type OfficialTravelRequestType ของคุณแทนได้
-  dataUser?: any[]; // optional ถ้าต้องการ map passengerNames -> user
+  record: any;
+  dataUser?: any[];
 }
 
 const OfficialTravelRequestDetail: React.FC<
@@ -47,21 +47,8 @@ const OfficialTravelRequestDetail: React.FC<
             {/* 🔹 ผู้ขอ & เรื่อง */}
             <Row gutter={18}>
               <Col span={12}>
-                <Form.Item label="ผู้นยื่นคำขอ :">
-                  <span>{record.createdName || "-"}</span>
-                </Form.Item>
-              </Col>
-              <Col span={12}>
                 <Form.Item label="เลขที่เอกสาร :">
                   <span>{record.documentNo}</span>
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={18}>
-              <Col span={12}>
-                <Form.Item label="เรื่อง :">
-                  <span>{record.title}</span>
                 </Form.Item>
               </Col>
               <Col span={12}>
@@ -74,7 +61,7 @@ const OfficialTravelRequestDetail: React.FC<
             {/* 🔹 รายละเอียดภารกิจ */}
             <Row gutter={18}>
               <Col span={12}>
-                <Form.Item label="ความประสงค์ :">
+                <Form.Item label="วัตถุประสงค์ :">
                   <TextArea
                     value={record.missionDetail}
                     rows={2}
@@ -86,7 +73,14 @@ const OfficialTravelRequestDetail: React.FC<
               </Col>
               <Col span={12}>
                 <Form.Item label="สถานที่ :">
-                  <span>{record.location || "-"}</span>
+                  {/* <span>{record.location || "-"}</span> */}
+                  <TextArea
+                    value={record.location}
+                    rows={2}
+                    readOnly
+                    bordered={false}
+                    style={{ resize: "none" }}
+                  />
                 </Form.Item>
               </Col>
             </Row>
@@ -120,7 +114,22 @@ const OfficialTravelRequestDetail: React.FC<
                 </Form.Item>
               </Col>
             </Row>
-
+            <Row gutter={18}>
+              <Col span={12}>
+                <Form.Item label="งบประมาณ :">
+                  <span>{record.budget || 0}</span>
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item label="รถที่ใช้ :">
+                  <span>
+                    {record.MasterCar
+                      ? `${record.MasterCar.licensePlate} (${record.MasterCar.brand} ${record.MasterCar.model})`
+                      : "-"}
+                  </span>
+                </Form.Item>
+              </Col>
+            </Row>
             {/* 🔹 สถานที่ & ผู้โดยสาร */}
             <Row gutter={18}>
               <Col span={12}>
@@ -145,20 +154,23 @@ const OfficialTravelRequestDetail: React.FC<
                 </Form.Item>
               </Col>
             </Row>
-            {/* 🔹 รถ */}
+
             <Row gutter={18}>
-              <Col span={12}>
-                <Form.Item label="รถที่ใช้ :">
-                  <span>
-                    {record.MasterCar
-                      ? `${record.MasterCar.licensePlate} (${record.MasterCar.brand} ${record.MasterCar.model})`
-                      : "-"}
-                  </span>
-                </Form.Item>
-              </Col>
               <Col span={12}>
                 <Form.Item label="สถานะ :">
                   {getStatusTag(record.status)}
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item label="หมายเหตุ :">
+                  {/* <span>{record.title}</span> */}
+                  <TextArea
+                    value={record.title}
+                    rows={2}
+                    readOnly
+                    bordered={false}
+                    style={{ resize: "none" }}
+                  />
                 </Form.Item>
               </Col>
             </Row>
@@ -237,7 +249,7 @@ const OfficialTravelRequestDetail: React.FC<
             {/* 🔹 ข้อมูลระบบ */}
             <Row gutter={18}>
               <Col span={12}>
-                <Form.Item label="สร้างเมื่อวันที่ :">
+                <Form.Item label="ยื่นคำขอเมื่อวันที่ :">
                   <span>
                     {record.createdAt
                       ? new Date(record.createdAt).toLocaleDateString("th-TH", {

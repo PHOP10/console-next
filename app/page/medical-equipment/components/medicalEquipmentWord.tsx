@@ -59,7 +59,7 @@ const ExportMedicalEquipmentWord: React.FC<ExportMedicalEquipmentWordProps> = ({
       onClick={handleExport}
       disabled={record.status !== "pending"}
     >
-      Export Word
+      Export
     </Button>
   );
 };

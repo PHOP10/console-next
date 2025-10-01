@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Form, Input, DatePicker, Collapse, Tag } from "antd";
+import { Modal, Form, Input, DatePicker, Collapse, Tag, Select } from "antd";
 import dayjs from "dayjs";
 import moment from "moment";
 import "moment/locale/th";
@@ -12,8 +12,9 @@ import {
 } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { CaretRightOutlined } from "@ant-design/icons";
-import { MaCarType } from "../../common";
+import { MaCarType, MasterCarType, UserType } from "../../common";
 import { useForm } from "antd/es/form/Form";
+import TextArea from "antd/es/input/TextArea";
 const localizer = momentLocalizer(moment);
 
 interface CustomEvent extends RbcEvent {
@@ -30,9 +31,11 @@ interface Props {
   data: MaCarType[];
   loading: boolean;
   fetchData: () => void;
+  cars: MasterCarType[];
+  dataUser: UserType[];
 }
 
-const MaCarCalendar: React.FC<Props> = ({ data }) => {
+const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
   const [form] = useForm();
   const [selected, setSelected] = useState<MaCarType | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -96,7 +99,7 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
     const d = dayjs(date);
     const day = d.date();
     const month = thaiMonths[d.month()];
-    const year = d.year() + 543; 
+    const year = d.year() + 543;
     return `${day} ${month} ${year}`;
   };
 
@@ -107,7 +110,7 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
         events={data.map(
           (item): CustomEvent => ({
             id: item.id,
-            title: item.purpose,
+            title: item.createdName,
             start: new Date(item.dateStart),
             end: new Date(item.dateEnd),
             status: item.status,
@@ -159,32 +162,60 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
               )}
             >
               <Collapse.Panel header="ข้อมูลการจอง" key="1">
-                <Form.Item label="ผู้ขอใช้รถ" name="requesterName">
+                <Form.Item label="ผู้ขอใช้รถ" name="createdName">
                   <Input disabled />
                 </Form.Item>
                 <Form.Item label="วัตถุประสงค์" name="purpose">
                   <Input disabled />
                 </Form.Item>
-                <Form.Item label="ปลายทาง" name="destination">
+                <Form.Item label="สถานที่" name="destination">
                   <Input disabled />
                 </Form.Item>
-
                 <Form.Item label="ตั้งแต่วันที่">
                   <Input value={formatBuddhist(selected.dateStart)} disabled />
                 </Form.Item>
-
                 <Form.Item label="ถึงวันที่">
                   <Input value={formatBuddhist(selected.dateEnd)} disabled />
+                </Form.Item>
+                <Form.Item label="งบประมาณ" name="budget">
+                  <Input disabled />
+                </Form.Item>
+                <Form.Item label="รถที่ใช้">
+                  <Input disabled value={selected?.masterCar?.carName || ""} />
+                </Form.Item>
+                <Form.Item label="ขอคนขับรถ">
+                  <Input
+                    value={
+                      selected?.driver === "yes"
+                        ? "ขอพนักงานขับรถส่วนกลาง"
+                        : selected?.driver === "no"
+                        ? "ไม่ขอพนักงานขับรถส่วนกลาง"
+                        : ""
+                    }
+                    disabled
+                  />
+                </Form.Item>
+                <Form.Item label="เหตุผลเพิ่มเติม" name="note">
+                  <TextArea disabled />
                 </Form.Item>
 
                 <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
                   <Input disabled />
                 </Form.Item>
-                <Form.Item label="งบประมาณ" name="budget">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="รหัสรถ" name="carId">
-                  <Input disabled />
+                <Form.Item label="รายชื่อผู้โดยสาร">
+                  {Array.isArray(selected.passengerNames) &&
+                  selected.passengerNames.length > 0 ? (
+                    selected.passengerNames.map((uid: string) => {
+                      const user = dataUser.find((u) => u.userId === uid);
+                      return (
+                        <Tag key={uid} color="blue">
+                          {user ? `${user.firstName} ${user.lastName}` : uid}
+                        </Tag>
+                      );
+                    })
+                  ) : (
+                    <span>-</span>
+                  )}
                 </Form.Item>
               </Collapse.Panel>
               <Collapse.Panel header="สถานะ" key="2">
@@ -193,6 +224,42 @@ const MaCarCalendar: React.FC<Props> = ({ data }) => {
                     {getStatusLabel(selected.status)}
                   </Tag>
                 </Form.Item>
+
+                {selected.approvedByName ? (
+                  <>
+                    <Form.Item label="ผู้อนุมัติ" name="approvedByName">
+                      <Input disabled />
+                    </Form.Item>
+
+                    <Form.Item label="วันที่อนุมัติ">
+                      <Input
+                        value={formatBuddhist(selected.approvedAt)}
+                        disabled
+                      />
+                    </Form.Item>
+                  </>
+                ) : selected.cancelName ? (
+                  <>
+                    <Form.Item label="ผู้ยกเลิก" name="cancelName">
+                      <Input disabled />
+                    </Form.Item>
+
+                    <Form.Item label="วันที่ยกเลิก">
+                      <Input
+                        value={formatBuddhist(selected.cancelAt)}
+                        disabled
+                      />
+                    </Form.Item>
+                  </>
+                ) : null}
+
+                {selected.cancelReason ? (
+                  <>
+                    <Form.Item label="เหตุผลการยกเลิก" name="cancelReason">
+                      <Input disabled />
+                    </Form.Item>
+                  </>
+                ) : null}
               </Collapse.Panel>
             </Collapse>
           </Form>

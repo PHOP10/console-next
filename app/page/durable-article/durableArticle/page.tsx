@@ -7,13 +7,14 @@ import DurableArticleForm from "../components/durableArticleForm";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
+import { useSession } from "next-auth/react";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
-
   const [data, setData] = useState<DurableArticleType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const { data: session } = useSession();
 
   const fetchData = useCallback(async () => {
     try {
@@ -56,7 +57,9 @@ export default function Page() {
         />
       ),
     },
-    {
+  ];
+  if (session?.user?.role === "asset" || session?.user?.role === "admin") {
+    items.push({
       key: "2",
       label: "เพิ่มครุภัณฑ์",
       children: (
@@ -66,8 +69,8 @@ export default function Page() {
           fetchData={fetchData}
         />
       ),
-    },
-  ];
+    });
+  }
 
   return (
     <div>

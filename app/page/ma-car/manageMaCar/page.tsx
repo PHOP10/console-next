@@ -50,6 +50,7 @@ export default function manageMaCarPage() {
             loading={loading}
             fetchData={fetchData}
             dataUser={dataUser}
+            cars={dataCar}
           />
         </Card>
       ),

@@ -509,7 +509,7 @@ export default function MaMedicalEquipmentTable({
         loading={loading}
         bordered
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
+        scroll={{ x: "max-content" }}
       />
 
       {/* Modal แก้ไขข้อมูล */}

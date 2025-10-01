@@ -164,6 +164,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
                 { label: "หัวหน้า", value: "admin" },
                 { label: "ผู้ดูแลระบบคลังยา", value: "pharmacy" },
                 { label: "ผู้ดูแลระบบครุภัณฑ์", value: "asset" },
+                { label: "ผู้ดูแลระบบเยี่ยมบ้าน", value: "home" },
               ]}
             />
           </Form.Item>

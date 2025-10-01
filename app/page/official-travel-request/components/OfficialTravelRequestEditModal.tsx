@@ -13,6 +13,7 @@ import {
   ConfigProvider,
   Row,
   Col,
+  Button,
 } from "antd";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -94,8 +95,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
       title="แก้ไขคำขอไปราชการ"
       open={open}
       onCancel={onClose}
-      onOk={() => form.submit()}
-      confirmLoading={submitting}
+      footer={null}
       width={700}
     >
       <ConfigProvider locale={th_TH}>
@@ -182,8 +182,42 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
-                <InputNumber min={1} style={{ width: "100%" }} />
+              <Form.Item
+                name="budget"
+                label="งบประมาณ"
+                rules={[{ required: true, message: "กรุณากรอกงบประมาณ" }]}
+              >
+                <Select
+                  placeholder="เลือกงบประมาณ"
+                  onChange={(value) => {
+                    form.setFieldValue(
+                      "budget",
+                      value === "other" ? "" : value
+                    );
+                  }}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <div style={{ display: "flex", padding: 8 }}>
+                        <Input
+                          placeholder="กรอกงบประมาณอื่นๆ"
+                          onPressEnter={(e) => {
+                            form.setFieldValue("budget", e.currentTarget.value);
+                          }}
+                          onBlur={(e) => {
+                            form.setFieldValue("budget", e.currentTarget.value);
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                >
+                  <Select.Option value="งบกลาง">งบกลาง</Select.Option>
+                  <Select.Option value="งบโครงการ">งบโครงการ</Select.Option>
+                  <Select.Option value="งบผู้จัด">งบผู้จัด</Select.Option>
+                  <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
+                  <Select.Option value="other">อื่นๆ...</Select.Option>
+                </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -198,23 +232,40 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
               </Form.Item>
             </Col>
           </Row>
-
-          <Form.Item label="รายชื่อผู้โดยสาร" name="passengerNames">
-            <Select
-              mode="multiple"
-              placeholder="เลือกผู้โดยสาร"
-              optionFilterProp="children"
-            >
-              {dataUser.map((user) => (
-                <Select.Option key={user.userId} value={user.userId}>
-                  {user.firstName} {user.lastName}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
+                <InputNumber min={1} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="รายชื่อผู้โดยสาร" name="passengerNames">
+                <Select
+                  mode="multiple"
+                  placeholder="เลือกผู้โดยสาร"
+                  optionFilterProp="children"
+                >
+                  {dataUser.map((user) => (
+                    <Select.Option key={user.userId} value={user.userId}>
+                      {user.firstName} {user.lastName}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item label="หมายเหตุเพิ่มเติม" name="title">
             <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
+          </Form.Item>
+          
+          <Form.Item style={{ textAlign: "center" }}>
+            <Button type="primary" htmlType="submit">
+              บันทึก
+            </Button>
+            <Button onClick={onClose} style={{ marginLeft: 8 }}>
+              ยกเลิก
+            </Button>
           </Form.Item>
         </Form>
       </ConfigProvider>

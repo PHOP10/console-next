@@ -47,7 +47,7 @@ export default function OfficialTravelRequestBookForm({
         ...values,
         recipient: values.recipient || null,
         documentNo: values.documentNo,
-        title: values.title,
+        // title: values.title,
         missionDetail: values.missionDetail,
         location: values.location,
         startDate: values.startDate ? values.startDate.toISOString() : null,
@@ -73,13 +73,13 @@ export default function OfficialTravelRequestBookForm({
   };
 
   if (loading) return <Spin />;
- 
+
   const formatBuddhist = (value: dayjs.Dayjs | null) => {
     if (!value) return "";
     const date = dayjs(value).locale("th");
     const day = date.date();
-    const month = date.format("MMMM"); 
-    const year = date.year() + 543; 
+    const month = date.format("MMMM");
+    const year = date.year() + 543;
     return `${day} ${month} ${year}`;
   };
 
@@ -107,7 +107,42 @@ export default function OfficialTravelRequestBookForm({
                 name="recipient"
                 rules={[{ required: true, message: "กรุณากรอกเรียน..." }]}
               >
-                <Input placeholder="กรอกเรียน..." />
+                <Select
+                  placeholder="เรียน"
+                  onChange={(value) => {
+                    form.setFieldValue(
+                      "recipient",
+                      value === "other" ? "" : value
+                    );
+                  }}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <div style={{ display: "flex", padding: 8 }}>
+                        <Input
+                          placeholder="กรอกอื่นๆ..."
+                          onPressEnter={(e) => {
+                            form.setFieldValue(
+                              "recipient",
+                              e.currentTarget.value
+                            );
+                          }}
+                          onBlur={(e) => {
+                            form.setFieldValue(
+                              "recipient",
+                              e.currentTarget.value
+                            );
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                >
+                  <Select.Option value="สาธารณสุขอำเภอวังเจ้า">
+                    สาธารณสุขอำเภอวังเจ้า
+                  </Select.Option>
+                  <Select.Option value="other">อื่นๆ...</Select.Option>
+                </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -133,7 +168,7 @@ export default function OfficialTravelRequestBookForm({
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
-                label="ความประสงค์"
+                label="วัตถุประสงค์"
                 name="missionDetail"
                 rules={[{ required: true, message: "กรุณากรอกวัตถุประสงค์" }]}
               >
@@ -187,12 +222,42 @@ export default function OfficialTravelRequestBookForm({
 
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
-                <InputNumber
-                  min={1}
-                  placeholder="จำนวนผู้โดยสาร"
-                  style={{ width: "100%" }}
-                />
+              <Form.Item
+                name="budget"
+                label="งบประมาณ"
+                rules={[{ required: true, message: "กรุณากรอกงบประมาณ" }]}
+              >
+                <Select
+                  placeholder="เลือกงบประมาณ"
+                  onChange={(value) => {
+                    form.setFieldValue(
+                      "budget",
+                      value === "other" ? "" : value
+                    );
+                  }}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <div style={{ display: "flex", padding: 8 }}>
+                        <Input
+                          placeholder="กรอกงบประมาณอื่นๆ"
+                          onPressEnter={(e) => {
+                            form.setFieldValue("budget", e.currentTarget.value);
+                          }}
+                          onBlur={(e) => {
+                            form.setFieldValue("budget", e.currentTarget.value);
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                >
+                  <Select.Option value="งบกลาง">งบกลาง</Select.Option>
+                  <Select.Option value="งบโครงการ">งบโครงการ</Select.Option>
+                  <Select.Option value="งบผู้จัด">งบผู้จัด</Select.Option>
+                  <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
+                  <Select.Option value="other">อื่นๆ...</Select.Option>
+                </Select>
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -207,22 +272,33 @@ export default function OfficialTravelRequestBookForm({
               </Form.Item>
             </Col>
           </Row>
-
-          <Form.Item label="รายชื่อผู้โดยสาร" name="passengerNames">
-            <Select
-              mode="multiple"
-              placeholder="เลือกผู้โดยสาร"
-              optionFilterProp="children"
-            >
-              {dataUser.map((user) => (
-                <Select.Option key={user.userId} value={user.userId}>
-                  {user.firstName} {user.lastName}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item label="หมายเหตุเพิ่มเติม" name="title">
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
+                <InputNumber
+                  min={1}
+                  placeholder="จำนวนผู้โดยสาร"
+                  style={{ width: "100%" }}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="รายชื่อผู้โดยสาร" name="passengerNames">
+                <Select
+                  mode="multiple"
+                  placeholder="เลือกผู้โดยสาร"
+                  optionFilterProp="children"
+                >
+                  {dataUser.map((user) => (
+                    <Select.Option key={user.userId} value={user.userId}>
+                      {user.firstName} {user.lastName}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>{" "}
+            </Col>
+          </Row>
+          <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
             <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
           </Form.Item>
 

@@ -7,20 +7,28 @@ import { maCarService } from "../services/maCar.service";
 import MaCarTable from "../components/maCarTable";
 import MaCarCalendar from "../components/maCarCalendar";
 import { useSession } from "next-auth/react";
+import { userService } from "../../user/services/user.service";
+import { MasterCarType, UserType } from "../../common";
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
+  const intraAuthUserService = userService(intraAuth);
   const { data: session } = useSession();
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<any[]>([]);
-
+  const [dataUser, setDataUser] = useState<UserType[]>([]);
+  const [cars, setCars] = useState<MasterCarType[]>([]);
   // ฟังก์ชันดึงข้อมูล
   const fetchData = async () => {
     setLoading(true);
     try {
       const res = await intraAuthService.getMaCarQuery();
+      const resCars = await intraAuthService.getMasterCarQuery();
+      const resUsers = await intraAuthUserService.getUserQuery();
       setData(res);
+      setCars(resCars);
+      setDataUser(resUsers);
     } catch (err) {
       console.error(err);
       message.error("ไม่สามารถดึงข้อมูลรถได้");
@@ -39,7 +47,13 @@ export default function MaCarPage() {
       label: "ข้อมูลปฏิทินรายการรถ",
       children: (
         <Card>
-          <MaCarCalendar data={data} loading={loading} fetchData={fetchData} />
+          <MaCarCalendar
+            data={data}
+            loading={loading}
+            fetchData={fetchData}
+            cars={cars}
+            dataUser={dataUser}
+          />
         </Card>
       ),
     },
@@ -48,7 +62,13 @@ export default function MaCarPage() {
       label: "ข้อมูลตารางการจองรถ",
       children: (
         <Card>
-          <MaCarTable data={data} loading={loading} fetchData={fetchData} />
+          <MaCarTable
+            data={data}
+            loading={loading}
+            fetchData={fetchData}
+            dataUser={dataUser}
+            cars={cars}
+          />
         </Card>
       ),
     },

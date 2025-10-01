@@ -15,7 +15,7 @@ import { userService } from "../../user/services/user.service";
 dayjs.locale("th");
 
 interface DataLeaveWordProps {
-  record: any; // ควรเป็น DataLeave type
+  record: any;
 }
 
 const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
@@ -47,14 +47,41 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
     fetchData();
   }, []);
 
-  const latestLeave =
-    dataLeaveUser.length > 0
-      ? dataLeaveUser.reduce((prev, current) =>
-          new Date(prev.createdAt) > new Date(current.createdAt)
-            ? prev
-            : current
-        )
-      : null;
+  // ฟังก์ชันคำนวณวันลา
+  const calculateDays = (start: string | Date, end: string | Date) => {
+    if (!start || !end) return 0;
+    return dayjs(end).endOf("day").diff(dayjs(start).startOf("day"), "day") + 1;
+  };
+
+  // ฟังก์ชันคำนวณสรุปการลาตามประเภท
+  const getLeaveStats = (leaveTypeName: string) => {
+    const leave = masterLeave.find((l) => l.leaveType === leaveTypeName);
+    if (!leave) return { usedDays: 0, currentDays: 0, totalDays: 0 };
+
+    // ลามาแล้ว (approve แล้ว ไม่รวมครั้งปัจจุบัน)
+    const usedDays = dataLeaveUser
+      .filter(
+        (item) =>
+          item.typeId === leave.id &&
+          item.status === "approve" &&
+          item.id !== record.id
+      )
+      .reduce(
+        (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd),
+        0
+      );
+
+    // ลาครั้งนี้
+    const currentDays =
+      record.typeId === leave.id
+        ? calculateDays(record.dateStart, record.dateEnd)
+        : 0;
+
+    // รวมการลา
+    const totalDays = usedDays + currentDays;
+
+    return { usedDays, currentDays, totalDays };
+  };
 
   const handleExport = async () => {
     try {
@@ -68,7 +95,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         linebreaks: true,
       });
 
-      // 🔍 หาชื่อผู้รับผิดชอบงานจาก backupUserId
+      // หาชื่อผู้รับผิดชอบงาน
       const backupUser =
         record.backupUserId && userData.length
           ? userData.find((u) => u.userId === record.backupUserId)
@@ -92,19 +119,32 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         return `${day} ${month} ${year}`;
       };
 
-      // 🔍 ประเภทการลา
       const leaveType = record.masterLeave?.leaveType ?? "-";
 
       const latestLeave =
         dataLeaveUser.length > 0
-          ? dataLeaveUser.reduce((prev, current) =>
-              new Date(prev.createdAt) > new Date(current.createdAt)
-                ? prev
-                : current
-            )
+          ? dataLeaveUser
+              .filter((leave) => leave.status === "approve")
+              .reduce((prev, current) =>
+                new Date(prev.createdAt) > new Date(current.createdAt)
+                  ? prev
+                  : current
+              )
           : null;
+
       const latestDateStart = latestLeave ? latestLeave.dateStart : null;
       const latestDateEnd = latestLeave ? latestLeave.dateEnd : null;
+      const leaveTypes = record.masterLeave?.leaveType ?? "-";
+
+      // 🎯 คำนวณสรุปการลาแต่ละประเภท
+      const sickLeave = getLeaveStats("ลาป่วย");
+      const maternityLeave = getLeaveStats("ลาคลอดบุตร");
+      const personalLeave = getLeaveStats("ลากิจส่วนตัว");
+
+      const leaveD =
+        latestDateStart && latestDateEnd
+          ? dayjs(latestDateEnd).diff(dayjs(latestDateStart), "day") + 1 // +1 ถ้ารวมวันแรก
+          : 0;
 
       const data = {
         dateStart: record.dateStart ? formatThaiDate(record.dateStart) : "-",
@@ -113,7 +153,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         contactAddress: record.contactAddress || "-",
         contactPhone: record.contactPhone || "-",
         backupUser: backupUserName,
-        leaveType: leaveType, // เพิ่มตรงนี้
+        leaveType: leaveType,
         details: record.details || "-",
         status: record.status || "-",
         approvedBy: record.approvedByName || "-",
@@ -131,15 +171,34 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         BBBB: record.createdAt
           ? toThaiNumber(dayjs(record.createdAt).year() + 543)
           : "-",
-
         dateStarts: latestDateStart ? formatThaiDate(latestDateStart) : "-",
         dateEnds: latestDateEnd ? formatThaiDate(latestDateEnd) : "-",
-        cS: leaveType === "ลาป่วย" ? "\u2611" : "\u2610", // ☑ หรือ ☐
+        leaveD,
+        sS: leaveTypes === "ลาป่วย" ? "\u2611" : "\u2610",
+        sP: leaveTypes === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
+        sM: leaveTypes === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
+
+        cS: leaveType === "ลาป่วย" ? "\u2611" : "\u2610",
         cP: leaveType === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
         cM: leaveType === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
         r1: leaveType === "ลาป่วย" ? record.reason : "",
         r2: leaveType === "ลากิจส่วนตัว" ? record.reason : "",
         r3: leaveType === "ลาคลอดบุตร" ? record.reason : "",
+
+        // ✅ สรุปการลา - ลาป่วย
+        sickUsed: sickLeave.usedDays,
+        sickCurrent: sickLeave.currentDays,
+        sickTotal: sickLeave.totalDays,
+
+        // ✅ สรุปการลา - ลาคลอดบุตร
+        matUs: maternityLeave.usedDays,
+        matCur: maternityLeave.currentDays,
+        matTot: maternityLeave.totalDays,
+
+        // ✅ สรุปการลา - ลากิจส่วนตัว
+        perUs: personalLeave.usedDays,
+        perCur: personalLeave.currentDays,
+        perTot: personalLeave.totalDays,
       };
 
       doc.render(data);
@@ -158,7 +217,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       onClick={handleExport}
       disabled={record.status !== "pending"}
     >
-      Export Word
+      Export
     </Button>
   );
 };

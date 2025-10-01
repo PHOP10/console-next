@@ -151,7 +151,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
 
   return (
     <Button size="small" type="primary" onClick={handleExport}>
-      Export Word
+      Export
     </Button>
   );
 };
