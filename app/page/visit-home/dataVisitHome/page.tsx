@@ -5,7 +5,7 @@ import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { visitHomeServices } from "../services/visitHome.service";
 import VisitHomeTable from "../components/visitHomeTable";
-import { VisitHomeType } from "../../common";
+import { MasterPatientType, VisitHomeType } from "../../common";
 
 export default function VisitHomePage() {
   const intraAuth = useAxiosAuth();
@@ -13,10 +13,13 @@ export default function VisitHomePage() {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [data, setData] = useState<VisitHomeType[]>([]);
+  const [masterPatients, setMasterPatients] = useState<MasterPatientType[]>([]);
 
   const fetchData = useCallback(async () => {
     try {
       const res = await intraAuthService.getVisitHomeQuery();
+      const ress = await intraAuthService.getMasterPatientQuery();
+      setMasterPatients(ress);
       setData(res);
     } catch (err) {
       message.error("ไม่สามารถดึงข้อมูลการเยี่ยมบ้านได้");
@@ -39,6 +42,8 @@ export default function VisitHomePage() {
             data={data}
             loading={loading}
             setLoading={setLoading}
+            fetchData={fetchData}
+            masterPatients={masterPatients}
           />
         </Card>
       ),

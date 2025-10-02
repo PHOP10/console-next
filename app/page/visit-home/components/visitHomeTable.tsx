@@ -31,6 +31,7 @@ interface VisitHomeTableProps {
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   masterPatients: MasterPatientType[];
+  fetchData: () => Promise<void>;
 }
 
 export default function VisitHomeTable({
@@ -38,6 +39,7 @@ export default function VisitHomeTable({
   loading,
   setLoading,
   masterPatients,
+  fetchData,
 }: VisitHomeTableProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
@@ -127,6 +129,17 @@ export default function VisitHomeTable({
     }
   };
 
+  const handleDelete = async (id: number) => {
+    try {
+      await intraAuthService.deleteVisitHome(id);
+      message.success("ลบผู้ใช้สำเร็จ");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error("ไม่สามารถลบผู้ใช้ได้");
+    }
+  };
+
   const columns: ColumnsType<VisitHomeType> = [
     {
       title: "ชื่อ",
@@ -173,6 +186,33 @@ export default function VisitHomeTable({
         value ? dayjs(value).format("DD-MM-YYYY") : "-",
     },
     { title: "หมายเหตุ", dataIndex: "notes", key: "notes", align: "center" },
+    {
+      title: "จัดการ",
+      key: "action",
+      align: "center",
+      render: (_, record) => (
+        <Space>
+          <Popconfirm
+            title="คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?"
+            onConfirm={() => handleDelete(record.id)}
+            okText="ใช่"
+            cancelText="ยกเลิก"
+          >
+            <Button
+              type="default"
+              size="small"
+              style={{
+                color: "#ff4d4f", // ตัวอักษรสีแดง
+                borderColor: "#ff4d4f", // กรอบสีแดง
+                backgroundColor: "#ffffff", // พื้นหลังขาว
+              }}
+            >
+              ลบ
+            </Button>
+          </Popconfirm>
+        </Space>
+      ),
+    },
   ];
 
   return (
@@ -208,7 +248,7 @@ export default function VisitHomeTable({
           prefix={<SearchOutlined />}
         />
 
-        <Button
+        {/* <Button
           type="primary"
           onClick={() => {
             // สร้าง worksheet จากข้อมูล
@@ -221,7 +261,7 @@ export default function VisitHomeTable({
           }}
         >
           Export Excel
-        </Button>
+        </Button> */}
       </div>
 
       {/* ตารางข้อมูล พร้อม Pagination */}
@@ -231,6 +271,7 @@ export default function VisitHomeTable({
         loading={loading}
         rowKey="id"
         pagination={{ pageSize: 10 }}
+        scroll={{ x: "max-content" }}
       />
 
       {/* Modal แก้ไขข้อมูล */}
