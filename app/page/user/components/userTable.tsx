@@ -76,7 +76,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   };
 
   const columns: ColumnsType<UserType> = [
-    // { title: "Username", dataIndex: "username", key: "username" },
+    { title: "รหัสพนักงาน", dataIndex: "employeeId", key: "employeeId" },
     {
       title: "ชื่อ",
       dataIndex: "firstName",
@@ -175,7 +175,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
         columns={columns}
         dataSource={data}
         loading={loading}
-        scroll={{ x: 800 }}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal
