@@ -120,22 +120,45 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
 
       const leaveType = record.masterLeave?.leaveType ?? "-";
 
-      const latestLeave =
-        dataLeaveUser.length > 0
-          ? dataLeaveUser
-              .filter((leave) => leave.status === "approve")
-              .reduce((prev, current) =>
-                new Date(prev.createdAt) > new Date(current.createdAt)
-                  ? prev
-                  : current
-              )
-          : null;
+      // const latestLeave =
+      //   dataLeaveUser.length > 0
+      //     ? dataLeaveUser
+      //         .filter((leave) => leave.status === "approve")
+      //         .reduce((prev, current) =>
+      //           new Date(prev.createdAt) > new Date(current.createdAt)
+      //             ? prev
+      //             : current
+      //         )
+      //     : null;
 
-      const latestDateStart = latestLeave ? latestLeave.dateStart : null;
-      const latestDateEnd = latestLeave ? latestLeave.dateEnd : null;
+      // const latestDateStart = latestLeave ? latestLeave.dateStart : null;
+      // const latestDateEnd = latestLeave ? latestLeave.dateEnd : null;
       const leaveTypes = record.masterLeave?.leaveType ?? "-";
 
-      // 🎯 คำนวณสรุปการลาแต่ละประเภท
+      const approvedLeaves = dataLeaveUser.filter(
+        (leave) => leave.status === "approve"
+      );
+
+      const latestLeave =
+        approvedLeaves.length > 0
+          ? approvedLeaves.reduce((prev, current) =>
+              new Date(prev.createdAt) > new Date(current.createdAt)
+                ? prev
+                : current
+            )
+          : {
+              dateStart: null,
+              dateEnd: null,
+              createdAt: null,
+              status: "approve",
+              reason: "",
+              approvedByName: "",
+              // ใส่ค่าเริ่มต้นฟิลด์อื่น ๆ ตามที่ model ของคุณต้องมี
+            };
+
+      const latestDateStart = latestLeave.dateStart;
+      const latestDateEnd = latestLeave.dateEnd;
+
       const sickLeave = getLeaveStats("ลาป่วย");
       const maternityLeave = getLeaveStats("ลาคลอดบุตร");
       const personalLeave = getLeaveStats("ลากิจส่วนตัว");
