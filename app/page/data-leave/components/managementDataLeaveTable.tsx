@@ -174,7 +174,7 @@ export default function ManagementDataLeaveTable({
   };
 
   const columns: ColumnsType<DataLeaveType> = [
-    // { title: "Id", dataIndex: "id", key: "id" },
+    { title: "ชื่อผู้ลา", dataIndex: "createdName", key: "createdName" },
     {
       title: "เหตุผลการลา",
       dataIndex: "reason",
@@ -192,16 +192,30 @@ export default function ManagementDataLeaveTable({
       },
     },
     {
-      title: "วันที่เริ่มลา",
-      dataIndex: "leaveDateStart",
+      title: "ตั้งแต่วันที่",
+      dataIndex: "dateStart",
       key: "dateStart",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
-      title: "วันที่สิ้นสุด",
-      dataIndex: "leaveDateEnd",
-      key: "leaveDateEnd",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      title: "ถึงวันที่",
+      dataIndex: "dateEnd",
+      key: "dateEnd",
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "สถานะ",
@@ -251,6 +265,13 @@ export default function ManagementDataLeaveTable({
             size="small"
             onClick={() => openEditModal(record)}
             disabled={record.status !== "pending"}
+            style={{
+              backgroundColor:
+                record.status === "pending" ? "#faad14" : "#d9d9d9",
+              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
+              color: record.status === "pending" ? "white" : "#888",
+              cursor: record.status === "pending" ? "pointer" : "not-allowed",
+            }}
           >
             แก้ไข
           </Button>

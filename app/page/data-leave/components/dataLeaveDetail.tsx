@@ -1,6 +1,6 @@
 // DataLeaveDetail.tsx
 
-import { Modal, Form, Row, Col, Input } from "antd";
+import { Modal, Form, Row, Col, Input, Tag } from "antd";
 
 interface DataLeaveDetailProps {
   open: boolean;
@@ -15,6 +15,18 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
 }) => {
   const { TextArea } = Input;
 
+  const getStatusTag = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Tag color="orange">รอดำเนินการ</Tag>;
+      case "approve":
+        return <Tag color="green">อนุมัติ</Tag>;
+      case "cancel":
+        return <Tag color="red">ยกเลิก</Tag>;
+      default:
+        return <Tag>{status}</Tag>;
+    }
+  };
   return (
     <Modal
       title="รายละเอียดการลา"
@@ -47,20 +59,38 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
 
           <Row gutter={18}>
             <Col span={12}>
-              <Form.Item label="วันที่เริ่มลา :">
-                <span>
+              <Form.Item label="ตั้งแต่วันที่ :">
+                {/* <span>
                   {record.dateStart
                     ? new Date(record.dateStart).toLocaleDateString("th-TH")
+                    : "-"}
+                </span> */}
+                <span>
+                  {record.dateStart
+                    ? new Date(record.dateStart).toLocaleDateString("th-TH", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
                     : "-"}
                 </span>
               </Form.Item>
             </Col>
 
             <Col span={12}>
-              <Form.Item label="วันที่สิ้นสุด :">
-                <span>
+              <Form.Item label="ถึงวันที่ :">
+                {/* <span>
                   {record.dateEnd
                     ? new Date(record.dateEnd).toLocaleDateString("th-TH")
+                    : "-"}
+                </span> */}
+                <span>
+                  {record.dateEnd
+                    ? new Date(record.dateEnd).toLocaleDateString("th-TH", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })
                     : "-"}
                 </span>
               </Form.Item>
@@ -69,7 +99,7 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
 
           <Row gutter={18}>
             <Col span={12}>
-              <Form.Item label="สถานะ :">
+              {/* <Form.Item label="สถานะ :">
                 <span>
                   {record?.status === "pending"
                     ? "รอดำเนินการ"
@@ -79,6 +109,9 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
                     ? "ยกเลิก"
                     : ""}
                 </span>
+              </Form.Item> */}
+              <Form.Item label="สถานะ :">
+                {getStatusTag(record.status)}
               </Form.Item>
             </Col>
 

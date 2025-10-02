@@ -96,6 +96,7 @@ export default function DataLeaveTable({
   };
 
   const columns: ColumnsType<DataLeaveType> = [
+    { title: "ชื่อผู้ลา", dataIndex: "createdName", key: "createdName" },
     {
       title: "เหตุผลการลา",
       dataIndex: "reason",
