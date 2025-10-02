@@ -95,7 +95,6 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         linebreaks: true,
       });
 
-      // หาชื่อผู้รับผิดชอบงาน
       const backupUser =
         record.backupUserId && userData.length
           ? userData.find((u) => u.userId === record.backupUserId)
@@ -143,7 +142,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
 
       const leaveD =
         latestDateStart && latestDateEnd
-          ? dayjs(latestDateEnd).diff(dayjs(latestDateStart), "day") + 1 // +1 ถ้ารวมวันแรก
+          ? dayjs(latestDateEnd).diff(dayjs(latestDateStart), "day") + 1
           : 0;
 
       const data = {
