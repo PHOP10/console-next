@@ -167,6 +167,8 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         latestDateStart && latestDateEnd
           ? dayjs(latestDateEnd).diff(dayjs(latestDateStart), "day") + 1
           : 0;
+      const checked = "☑"; // \u2611
+      const unchecked = "☐"; // \u2610
 
       const data = {
         dateStart: record.dateStart ? formatThaiDate(record.dateStart) : "-",
@@ -196,13 +198,25 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         dateStarts: latestDateStart ? formatThaiDate(latestDateStart) : "-",
         dateEnds: latestDateEnd ? formatThaiDate(latestDateEnd) : "-",
         leaveD,
-        sS: leaveTypes === "ลาป่วย" ? "\u2611" : "\u2610",
-        sP: leaveTypes === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
-        sM: leaveTypes === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
+        // sS: leaveTypes === "ลาป่วย" ? "\u2611" : "\u2610",
+        // sP: leaveTypes === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
+        // sM: leaveTypes === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
 
-        cS: leaveType === "ลาป่วย" ? "\u2611" : "\u2610",
-        cP: leaveType === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
-        cM: leaveType === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
+        // cS: leaveType === "ลาป่วย" ? "\u2611" : "\u2610",
+        // cP: leaveType === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
+        // cM: leaveType === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
+        // r1: leaveType === "ลาป่วย" ? record.reason : "",
+        // r2: leaveType === "ลากิจส่วนตัว" ? record.reason : "",
+        // r3: leaveType === "ลาคลอดบุตร" ? record.reason : "",
+        // ✅ แก้ให้ใช้ checked / unchecked
+        sS: leaveTypes === "ลาป่วย" ? checked : unchecked,
+        sP: leaveTypes === "ลากิจส่วนตัว" ? checked : unchecked,
+        sM: leaveTypes === "ลาคลอดบุตร" ? checked : unchecked,
+
+        cS: leaveType === "ลาป่วย" ? checked : unchecked,
+        cP: leaveType === "ลากิจส่วนตัว" ? checked : unchecked,
+        cM: leaveType === "ลาคลอดบุตร" ? checked : unchecked,
+
         r1: leaveType === "ลาป่วย" ? record.reason : "",
         r2: leaveType === "ลากิจส่วนตัว" ? record.reason : "",
         r3: leaveType === "ลาคลอดบุตร" ? record.reason : "",
