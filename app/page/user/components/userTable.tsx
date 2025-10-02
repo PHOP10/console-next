@@ -77,12 +77,37 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
 
   const columns: ColumnsType<UserType> = [
     // { title: "Username", dataIndex: "username", key: "username" },
-    { title: "ชื่อ", dataIndex: "firstName", key: "firstName", align: "center" },
-    { title: "นามสกุล", dataIndex: "lastName", key: "lastName", align: "center" },
-    { title: "ชื่อเล่น", dataIndex: "nickName", key: "nickName", align: "center" },
+    {
+      title: "ชื่อ",
+      dataIndex: "firstName",
+      key: "firstName",
+      align: "center",
+    },
+    {
+      title: "นามสกุล",
+      dataIndex: "lastName",
+      key: "lastName",
+      align: "center",
+    },
+    {
+      title: "ชื่อเล่น",
+      dataIndex: "nickName",
+      key: "nickName",
+      align: "center",
+    },
     { title: "อีเมล", dataIndex: "email", key: "email", align: "center" },
-    { title: "เบอร์โทร", dataIndex: "phoneNumber", key: "phoneNumber", align: "center" },
-    { title: "ตำแหน่ง", dataIndex: "position", key: "position", align: "center" },
+    {
+      title: "เบอร์โทร",
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
+      align: "center",
+    },
+    {
+      title: "ตำแหน่ง",
+      dataIndex: "position",
+      key: "position",
+      align: "center",
+    },
     {
       title: "ความรับผิดชอบ",
       dataIndex: "role",
@@ -163,6 +188,20 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
       >
         <Form form={form} layout="vertical">
           <Form.Item
+            label="รหัสพนักงาน"
+            name="employeeId"
+            rules={[{ required: true, message: "กรุณากรอกรหัสพนักงาน" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="ชื่อผู้ใช้"
+            name="username"
+            rules={[{ required: true, message: "กรุณากรอก Username" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
             label="ชื่อ"
             name="firstName"
             rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}
@@ -186,11 +225,51 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
           >
             <Input />
           </Form.Item>
-          <Form.Item label="Role" name="role">
+          <Form.Item
+            label="เบอร์โทร"
+            name="phoneNumber"
+            rules={[
+              { required: true, message: "กรุณากรอกเบอร์โทร" },
+              { pattern: /^[0-9]{10}$/, message: "กรุณากรอกเบอร์โทร 10 หลัก" },
+            ]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
+            label="ตำแหน่ง"
+            name="position"
+            rules={[{ required: true, message: "กรุณาเลือกตำแหน่ง" }]}
+          >
+            <Select
+              placeholder="เลือกตำแหน่ง"
+              options={[
+                {
+                  label: "ผู้อำนวยการสถานีอนามัย",
+                  value: "ผู้อำนวยการสถานีอนามัย",
+                },
+                { label: "พยาบาลวิชาชีพ", value: "พยาบาลวิชาชีพ" },
+                {
+                  label: "เจ้าหน้าที่ทันตสาธารณสุข",
+                  value: "เจ้าหน้าที่ทันตสาธารณสุข",
+                },
+                { label: "เจ้าหน้าที่พนักงาน", value: "เจ้าหน้าที่พนักงาน" },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="ระดับผู้ใช้"
+            name="role"
+            initialValue="user"
+            rules={[{ required: true, message: "กรุณาเลือก Role" }]}
+          >
             <Select
               options={[
                 { label: "ผู้ใช้", value: "user" },
                 { label: "หัวหน้า", value: "admin" },
+                { label: "ผู้ดูแลระบบคลังยา", value: "pharmacy" },
+                { label: "ผู้ดูแลระบบครุภัณฑ์", value: "asset" },
+                { label: "ผู้ดูแลระบบเยี่ยมบ้าน", value: "home" },
               ]}
             />
           </Form.Item>

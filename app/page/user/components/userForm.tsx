@@ -62,6 +62,13 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
       >
         <Form form={form} layout="vertical">
           <Form.Item
+            label="รหัสพนักงาน"
+            name="employeeId"
+            rules={[{ required: true, message: "กรุณากรอกรหัสพนักงาน" }]}
+          >
+            <Input />
+          </Form.Item>
+          <Form.Item
             label="ชื่อผู้ใช้"
             name="username"
             rules={[{ required: true, message: "กรุณากรอก Username" }]}
@@ -118,14 +125,6 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
               { required: true, message: "กรุณากรอกเบอร์โทร" },
               { pattern: /^[0-9]{10}$/, message: "กรุณากรอกเบอร์โทร 10 หลัก" },
             ]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="รหัสพนักงาน"
-            name="employeeId"
-            rules={[{ required: true, message: "กรุณากรอกรหัสพนักงาน" }]}
           >
             <Input />
           </Form.Item>
