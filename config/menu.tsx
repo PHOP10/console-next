@@ -323,12 +323,24 @@ export const MenuSider: IMenu[] = [
       {
         key: "officialTravelRequest",
         label: "ข้อมูลขอไปราชการ",
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: "officialTravelRequestBook",
         label: "ขอไปราชการ",
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: "manageOfficialTravelRequest",
@@ -346,12 +358,24 @@ export const MenuSider: IMenu[] = [
       {
         key: `maCar`,
         label: `ข้อมูลการจองรถ`,
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: `maCarBook`,
         label: `จองรถ`,
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: `manageMaCar`,
@@ -369,12 +393,24 @@ export const MenuSider: IMenu[] = [
       {
         key: `dataLeave`,
         label: `ข้อมูลการลา`,
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: `dataLeaveBook`,
         label: `ยื่นใบลา`,
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: `manageDataLeave`,
