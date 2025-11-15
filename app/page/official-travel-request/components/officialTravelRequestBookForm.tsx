@@ -23,15 +23,19 @@ import th_TH from "antd/locale/th_TH";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 dayjs.locale("th");
+import isBetween from "dayjs/plugin/isBetween";
+dayjs.extend(isBetween);
 
 interface Props {
   dataUser: UserType[];
   cars: MasterCarType[];
+  oTRUser: any[];
 }
 
 export default function OfficialTravelRequestBookForm({
   dataUser,
   cars,
+  oTRUser,
 }: Props) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
@@ -198,24 +202,84 @@ export default function OfficialTravelRequestBookForm({
               >
                 <DatePicker
                   style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
+                  placeholder="เลือกวันที่เริ่มเดินทาง"
                   format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                  onChange={() => {
+                    form.setFieldValue("endDate", null); // reset endDate เมื่อเปลี่ยน startDate
+                  }}
+                  disabledDate={(current) => {
+                    if (!current) return false;
+
+                    // ห้ามเลือกวันย้อนหลัง
+                    if (current < dayjs().startOf("day")) return true;
+
+                    // ห้ามเลือกวันทับกับช่วงจองรถ
+                    return oTRUser.some((maCar) => {
+                      const start = dayjs(maCar.dateStart).startOf("day");
+                      const end = dayjs(maCar.dateEnd).endOf("day");
+                      return dayjs(current).isBetween(start, end, "day", "[]");
+                    });
+                  }}
                 />
               </Form.Item>
             </Col>
+
             <Col span={12}>
               <Form.Item
-                label="ถึงวันที่"
-                name="endDate"
-                rules={[
-                  { required: true, message: "กรุณาเลือกวันที่สิ้นสุดเดินทาง" },
-                ]}
+                noStyle
+                shouldUpdate={(prev, cur) => prev.startDate !== cur.startDate}
               >
-                <DatePicker
-                  style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
-                  format={(value) => formatBuddhist(value as dayjs.Dayjs)}
-                />
+                {({ getFieldValue }) => {
+                  const dateStart = getFieldValue("startDate");
+                  return (
+                    <Form.Item
+                      name="endDate"
+                      label="ถึงวันที่"
+                      rules={[
+                        {
+                          required: true,
+                          message: "กรุณาเลือกวันที่สิ้นสุดการเดินทาง",
+                        },
+                      ]}
+                    >
+                      <DatePicker
+                        style={{ width: "100%" }}
+                        placeholder={
+                          dateStart
+                            ? `เลือกตั้งแต่ ${dayjs(dateStart).format(
+                                "DD/MM/YYYY"
+                              )} เป็นต้นไป`
+                            : "กรุณาเลือกวันที่เริ่มเดินทางก่อน"
+                        }
+                        format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                        disabled={!dateStart}
+                        disabledDate={(current) => {
+                          if (!current) return false;
+
+                          if (
+                            dateStart &&
+                            current < dayjs(dateStart).startOf("day")
+                          ) {
+                            return true;
+                          }
+                          if (current < dayjs().startOf("day")) return true;
+
+                          // ห้ามเลือกวันที่ทับกับช่วงจองรถ
+                          return oTRUser.some((maCar) => {
+                            const start = dayjs(maCar.dateStart).startOf("day");
+                            const end = dayjs(maCar.dateEnd).endOf("day");
+                            return dayjs(current).isBetween(
+                              start,
+                              end,
+                              "day",
+                              "[]"
+                            );
+                          });
+                        }}
+                      />
+                    </Form.Item>
+                  );
+                }}
               </Form.Item>
             </Col>
           </Row>

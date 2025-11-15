@@ -102,6 +102,12 @@ export interface DataLeaveType {
   masterLeave: MasterLeaveType;
   createdAt: string;
   updatedAt: string;
+  fileName?: string;
+  writeAt?: string;
+  contactAddress?: string;
+  contactPhone?: string;
+  backupUserId?: string;
+  backupUserName?: string;
 }
 
 export interface MasterLeaveType {

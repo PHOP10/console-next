@@ -18,14 +18,20 @@ import {
   Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { DataLeaveType, MasterLeaveType } from "../../common";
+import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveDetail from "./dataLeaveDetail";
 import { useSession } from "next-auth/react";
 import isBetween from "dayjs/plugin/isBetween";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  FileSearchOutlined,
+  RollbackOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 
 interface Props {
   dataLeave: DataLeaveType[];
@@ -35,6 +41,7 @@ interface Props {
   masterLeave: MasterLeaveType[];
   fetchData: () => Promise<void>;
   leaveByUserId?: DataLeaveType[];
+  user: UserType[];
 }
 
 export default function ManagementDataLeaveTable({
@@ -45,6 +52,7 @@ export default function ManagementDataLeaveTable({
   masterLeave,
   fetchData,
   leaveByUserId,
+  user,
 }: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
@@ -110,6 +118,20 @@ export default function ManagementDataLeaveTable({
     } catch (err) {
       console.error(err);
       message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+    }
+  };
+
+  const returnEdit = async (record: DataLeaveType) => {
+    try {
+      await intraAuthService.updateDataLeave({
+        id: record.id,
+        status: "edit",
+      });
+      message.success("ส่งคืนเพื่อแก้ไขเรียบร้อย");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error("เกิดข้อผิดพลาดในการส่งคืนเพื่อแก้ไข");
     }
   };
 
@@ -224,10 +246,15 @@ export default function ManagementDataLeaveTable({
       render: (status) => {
         let color = "default";
         let text = "";
+
         switch (status) {
           case "pending":
             color = "blue";
             text = "รอดำเนินการ";
+            break;
+          case "edit":
+            color = "orange";
+            text = "รอแก้ไข";
             break;
           case "approve":
             color = "green";
@@ -240,6 +267,7 @@ export default function ManagementDataLeaveTable({
           default:
             text = status;
         }
+
         return <Tag color={color}>{text}</Tag>;
       },
     },
@@ -287,6 +315,26 @@ export default function ManagementDataLeaveTable({
             </Button>
           </Popconfirm>
 
+          <Popconfirm
+            title="ยืนยันการส่งคืนเพื่อแก้ไข"
+            okText="ยืนยัน"
+            cancelText="ยกเลิก"
+            onConfirm={() => returnEdit(record)}
+            disabled={record.status !== "approve"}
+          >
+            <Tooltip title="ส่งคืนเพื่อแก้ไข">
+              <UndoOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status === "approve" ? "orange" : "#d9d9d9",
+                  cursor:
+                    record.status === "approve" ? "pointer" : "not-allowed",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
+          </Popconfirm>
+
           <Popover
             trigger="click"
             title={
@@ -321,23 +369,46 @@ export default function ManagementDataLeaveTable({
             open={openPopoverId === record.id}
             onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
-            <Button
+            {/* <Button
               type="primary"
               size="small"
               disabled={record.status !== "pending"}
               onClick={() => setOpenPopoverId(record.id)}
             >
               อนุมัติ
-            </Button>
+            </Button> */}
+            <Tooltip title="อนุมัติ">
+              <CheckCircleOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status !== "pending" ? "#ccc" : "#52c41a", // เทาเมื่อ disable, เขียวเมื่อ active
+                  cursor:
+                    record.status !== "pending" ? "not-allowed" : "pointer",
+                  opacity: record.status !== "pending" ? 0.5 : 1,
+                }}
+                onClick={() => {
+                  if (record.status === "pending") {
+                    setOpenPopoverId(record.id);
+                  }
+                }}
+              />
+            </Tooltip>
           </Popover>
-
-          <Button
+          {/* <br></br> */}
+          {/* <Button
             size="small"
             type="primary"
             onClick={() => handleShowDetail(record)}
           >
             รายละเอียด
-          </Button>
+          </Button> */}
+
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -349,6 +420,7 @@ export default function ManagementDataLeaveTable({
         open={detailModalOpen}
         onClose={handleCloseDetail}
         record={selectedRecord}
+        user={user}
       />
       <Table
         rowKey="id"

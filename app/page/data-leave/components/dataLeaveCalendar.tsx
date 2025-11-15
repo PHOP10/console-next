@@ -47,6 +47,8 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
         return "red";
       case "pending":
         return "blue";
+      case "edit":
+        return "orange";
       default:
         return "blue";
     }
@@ -60,6 +62,8 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
         return "ยกเลิก";
       case "pending":
         return "รอดำเนินการ";
+      case "edit":
+        return "รอแก้ไข";
       default:
         return status;
     }
@@ -172,24 +176,21 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
                 <Form.Item label="ผู้ลา" name="createdName">
                   <Input disabled />
                 </Form.Item>
-
                 <Form.Item label="ประเภทการลา" name="leaveType">
                   <Input disabled />
                 </Form.Item>
                 <Form.Item label="เหตุผลการลา" name="reason">
                   <Input.TextArea rows={2} disabled />
                 </Form.Item>
-                <Form.Item label="รายละเอียด" name="details">
-                  <Input.TextArea rows={2} disabled />
-                </Form.Item>
                 <Form.Item label="ตั้งแต่วันที่">
                   <Input value={formatBuddhist(selected.dateStart)} disabled />
                 </Form.Item>
-
                 <Form.Item label="ถึงวันที่">
                   <Input value={formatBuddhist(selected.dateEnd)} disabled />
                 </Form.Item>
-
+                <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
+                  <Input.TextArea rows={2} disabled />
+                </Form.Item>
                 <Form.Item label="สถานะ">
                   <Tag color={getStatusColor(selected.status)}>
                     {getStatusLabel(selected.status)}

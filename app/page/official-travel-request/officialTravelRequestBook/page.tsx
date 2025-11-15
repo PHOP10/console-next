@@ -8,6 +8,7 @@ import { userService } from "../../user/services/user.service";
 import { officialTravelRequestService } from "../services/officialTravelRequest.service";
 import { maCarService } from "../../ma-car/services/maCar.service";
 import { MasterCarType, UserType } from "../../common";
+import { useSession } from "next-auth/react";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
@@ -16,15 +17,23 @@ export default function Page() {
   const intraAuthCarService = maCarService(intraAuth);
   const [dataUser, setDataUser] = useState<UserType[]>([]);
   const [cars, setCars] = useState<MasterCarType[]>([]);
+  const [oTRUser, setOTRUser] = useState<MasterCarType[]>([]);
+  const { data: session } = useSession();
 
   const fetchData = async () => {
     // setLoading(true);
     try {
       const resUsers = await intraAuthUserService.getUserQuery();
-
       const res = await intraAuthCarService.getMasterCarQuery();
+      const ress = await intraAuthService.getOfficialTravelRequestQuery();
+
+      const dataOTRUser = ress.filter(
+        (car: any) => car.createdById === session?.user?.userId
+      );
+      
       setCars(res);
       setDataUser(resUsers);
+      setOTRUser(dataOTRUser);
     } catch (err) {
       console.error(err);
       message.error("ไม่สามารถดึงข้อมูลได้");
@@ -43,7 +52,11 @@ export default function Page() {
       label: "ฟอร์มคำขอไปราชการ",
       children: (
         <Card>
-          <OfficialTravelRequestBookForm dataUser={dataUser} cars={cars} />
+          <OfficialTravelRequestBookForm
+            dataUser={dataUser}
+            cars={cars}
+            oTRUser={oTRUser}
+          />
         </Card>
       ),
     },

@@ -29,8 +29,13 @@ export default function DataLeavePage() {
       const byUserId = await intraAuthService.getDataLeaveByUserId(
         userId || ""
       );
-      const user = await intraAuthService.getUserQuery();
-      setUser(user);
+      const userAll = await intraAuthService.getUserQuery();
+      const currentUserId = session?.user?.userId;
+      const filteredUsers = userAll.filter(
+        (u: any) => u.userId !== currentUserId
+      );
+      setUser(filteredUsers);
+
       setLeaveByUserId(byUserId);
       setData(dataRes);
       setMasterLeaves(masterRes);
@@ -54,7 +59,7 @@ export default function DataLeavePage() {
           <LeaveBookingForm
             loading={loading}
             setLoading={setLoading}
-            createDataLeave={intraAuthService.createDataLeave}
+            // createDataLeave={intraAuthService.createDataLeave}
             masterLeaves={masterLeaves}
             leaveByUserId={leaveByUserId}
             user={user}

@@ -21,20 +21,24 @@ import { useSession } from "next-auth/react";
 import th_TH from "antd/locale/th_TH";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import isBetween from "dayjs/plugin/isBetween";
 dayjs.locale("th");
+dayjs.extend(isBetween);
 
 interface MaCarBookFormProps {
   cars: any[];
   dataUser: any[];
   loading: boolean;
-  fetchCarsAndUsers: () => Promise<void>;
+  fetchData: () => Promise<void>;
+  maCarUser: any[];
 }
 
 const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
   cars,
   dataUser,
   loading,
-  fetchCarsAndUsers,
+  fetchData,
+  maCarUser,
 }) => {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
@@ -50,7 +54,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         createdById: session?.user?.userId,
       };
       await intraAuthService.createMaCar(payload);
-      fetchCarsAndUsers;
+      fetchData;
       message.success("จองรถสำเร็จ");
       form.resetFields();
     } catch (err) {
@@ -154,34 +158,96 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               </Form.Item>
             </Col>
           </Row>
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
                 name="dateStart"
                 label="ตั้งแต่วันที่"
-                rules={[{ required: true }]}
+                rules={[
+                  { required: true, message: "กรุณาเลือกวันที่เริ่มจอง" },
+                ]}
               >
                 <DatePicker
                   style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
+                  placeholder="เลือกวันที่เริ่มจอง"
                   format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                  onChange={() => {
+                    form.setFieldValue("dateEnd", null); // reset ค่าเมื่อเปลี่ยนวันเริ่ม
+                  }}
+                  disabledDate={(current) => {
+                    if (!current) return false;
+                    if (current < dayjs().startOf("day")) return true;
+
+                    return maCarUser.some((maCar) => {
+                      const start = dayjs(maCar.dateStart).startOf("day");
+                      const end = dayjs(maCar.dateEnd).endOf("day");
+                      return dayjs(current).isBetween(start, end, "day", "[]");
+                    });
+                  }}
                 />
               </Form.Item>
             </Col>
+
             <Col span={12}>
               <Form.Item
-                name="dateEnd"
-                label="ถึงวันที่"
-                rules={[{ required: true }]}
+                noStyle
+                shouldUpdate={(prev, cur) => prev.dateStart !== cur.dateStart}
               >
-                <DatePicker
-                  style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
-                  format={(value) => formatBuddhist(value as dayjs.Dayjs)}
-                />
+                {({ getFieldValue }) => {
+                  const dateStart = getFieldValue("dateStart");
+                  return (
+                    <Form.Item
+                      name="dateEnd"
+                      label="ถึงวันที่"
+                      rules={[
+                        {
+                          required: true,
+                          message: "กรุณาเลือกวันที่สิ้นสุดการจอง",
+                        },
+                      ]}
+                    >
+                      <DatePicker
+                        style={{ width: "100%" }}
+                        placeholder={
+                          dateStart
+                            ? `เลือกตั้งแต่ ${dayjs(dateStart).format(
+                                "DD/MM/YYYY"
+                              )} เป็นต้นไป`
+                            : "กรุณาเลือกวันที่เริ่มจองก่อน"
+                        }
+                        format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                        disabled={!dateStart}
+                        disabledDate={(current) => {
+                          if (!current) return false;
+
+                          if (
+                            dateStart &&
+                            current < dayjs(dateStart).startOf("day")
+                          ) {
+                            return true;
+                          }
+                          if (current < dayjs().startOf("day")) return true;
+
+                          return maCarUser.some((maCar) => {
+                            const start = dayjs(maCar.dateStart).startOf("day");
+                            const end = dayjs(maCar.dateEnd).endOf("day");
+                            return dayjs(current).isBetween(
+                              start,
+                              end,
+                              "day",
+                              "[]"
+                            );
+                          });
+                        }}
+                      />
+                    </Form.Item>
+                  );
+                }}
               </Form.Item>
             </Col>
           </Row>
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item

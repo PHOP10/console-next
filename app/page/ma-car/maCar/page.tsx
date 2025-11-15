@@ -8,7 +8,7 @@ import MaCarTable from "../components/maCarTable";
 import MaCarCalendar from "../components/maCarCalendar";
 import { useSession } from "next-auth/react";
 import { userService } from "../../user/services/user.service";
-import { MasterCarType, UserType } from "../../common";
+import { MaCarType, MasterCarType, UserType } from "../../common";
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
@@ -16,7 +16,7 @@ export default function MaCarPage() {
   const intraAuthUserService = userService(intraAuth);
   const { data: session } = useSession();
   const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<any[]>([]);
+  const [data, setData] = useState<MaCarType[]>([]);
   const [dataUser, setDataUser] = useState<UserType[]>([]);
   const [cars, setCars] = useState<MasterCarType[]>([]);
   // ฟังก์ชันดึงข้อมูล

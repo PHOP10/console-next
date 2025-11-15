@@ -50,6 +50,25 @@ export const DataLeaveService = (axiosInstance: AxiosInstance) => {
         });
     },
 
+    uploadDataLeaveFile: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      return await axiosInstance
+        .post(`${baseUrlApiDataLeave}/upload`, formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        })
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.error("Upload file error:", err);
+          throw err;
+        });
+    },
+
     updateDataLeave: async (body: any) => {
       return await axiosInstance
         .patch(`${baseUrlApiDataLeave}/${body.id}`, body)
@@ -73,6 +92,7 @@ export const DataLeaveService = (axiosInstance: AxiosInstance) => {
           return [];
         });
     },
+
     getMasterLeaveQuery: async () => {
       return await axiosInstance
         .get(`${baseUrlApiMasterLeave}`)
@@ -119,6 +139,13 @@ export const DataLeaveService = (axiosInstance: AxiosInstance) => {
           console.log(err);
           return [];
         });
+    },
+
+    getFileUrl: (fileName: string) => {
+      if (!fileName) return "";
+      return `http://localhost:4000/uploads/data-leave/${encodeURIComponent(
+        fileName
+      )}`;
     },
   };
 };

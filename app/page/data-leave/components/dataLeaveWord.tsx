@@ -3,7 +3,7 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -11,6 +11,7 @@ import { DataLeaveService } from "../services/dataLeave.service";
 import { useEffect, useState } from "react";
 import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import { userService } from "../../user/services/user.service";
+import { ExportOutlined } from "@ant-design/icons";
 
 dayjs.locale("th");
 
@@ -135,29 +136,16 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       // const latestDateEnd = latestLeave ? latestLeave.dateEnd : null;
       const leaveTypes = record.masterLeave?.leaveType ?? "-";
 
-      const approvedLeaves = dataLeaveUser.filter(
-        (leave) => leave.status === "approve"
+      const sortedLeave = [...(dataLeaveUser || [])].sort(
+        (a, b) => dayjs(b.dateEnd).valueOf() - dayjs(a.dateEnd).valueOf()
       );
 
-      const latestLeave =
-        approvedLeaves.length > 0
-          ? approvedLeaves.reduce((prev, current) =>
-              new Date(prev.createdAt) > new Date(current.createdAt)
-                ? prev
-                : current
-            )
-          : {
-              dateStart: null,
-              dateEnd: null,
-              createdAt: null,
-              status: "approve",
-              reason: "",
-              approvedByName: "",
-              // ใส่ค่าเริ่มต้นฟิลด์อื่น ๆ ตามที่ model ของคุณต้องมี
-            };
+      // ถ้ามีหลายครั้ง → เอาครั้งก่อนล่าสุด (index 1)
+      // ถ้ามีครั้งเดียว → เอาครั้งนั้นเอง (index 0)
+      const previousLeave = sortedLeave[1] || sortedLeave[0];
 
-      const latestDateStart = latestLeave.dateStart;
-      const latestDateEnd = latestLeave.dateEnd;
+      const latestDateStart = previousLeave?.dateStart;
+      const latestDateEnd = previousLeave?.dateEnd;
 
       const sickLeave = getLeaveStats("ลาป่วย");
       const maternityLeave = getLeaveStats("ลาคลอดบุตร");
@@ -197,6 +185,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
           : "-",
         dateStarts: latestDateStart ? formatThaiDate(latestDateStart) : "-",
         dateEnds: latestDateEnd ? formatThaiDate(latestDateEnd) : "-",
+
         leaveD,
         // sS: leaveTypes === "ลาป่วย" ? "\u2611" : "\u2610",
         // sP: leaveTypes === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
@@ -247,14 +236,43 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
   };
 
   return (
-    <Button
-      size="small"
-      type="primary"
-      onClick={handleExport}
-      disabled={record.status !== "pending"}
-    >
-      Export
-    </Button>
+    // <>
+    //   <Button
+    //     size="small"
+    //     type="primary"
+    //     onClick={handleExport}
+    //     disabled={record.status !== "pending"}
+    //   >
+    //     Export
+    //   </Button>
+    // </>
+    <>
+      <Tooltip title="Export">
+        <ExportOutlined
+          style={{
+            fontSize: 20,
+            color: record.status === "pending" ? "#1677ff" : "#d9d9d9",
+            cursor: record.status === "pending" ? "pointer" : "not-allowed",
+            transition: "color 0.2s",
+          }}
+          onClick={() => {
+            if (record.status === "pending") {
+              handleExport();
+            }
+          }}
+          onMouseEnter={(e) => {
+            if (record.status === "pending") {
+              (e.currentTarget as HTMLElement).style.color = "#0958d9";
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (record.status === "pending") {
+              (e.currentTarget as HTMLElement).style.color = "#1677ff";
+            }
+          }}
+        />
+      </Tooltip>
+    </>
   );
 };
 

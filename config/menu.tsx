@@ -582,15 +582,12 @@ export const itemBreadcrumbMenu = (pathname: string) => {
             replaceSpecialCharactersWithSpace(childPath.toLowerCase())
         );
         return [
-          { title: <Link href={"/page"}>Home</Link> },
+          { title: <Link href={"/page"}></Link> },
           { title: item.label },
           { title: childMenu?.label },
         ];
       }
-      return [
-        { title: <Link href={"/page"}>Home</Link> },
-        { title: item.label },
-      ];
+      return [{ title: <Link href={"/page"}></Link> }, { title: item.label }];
     }
   )[0];
 };

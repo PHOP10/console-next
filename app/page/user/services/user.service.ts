@@ -3,6 +3,7 @@ import { AxiosInstance } from "axios";
 export const userService = (axiosInstance: AxiosInstance) => {
   const baseUrlApiUser = "/user";
   return {
+    
     getUserQuery: async () => {
       return await axiosInstance
         .get(`${baseUrlApiUser}`)
