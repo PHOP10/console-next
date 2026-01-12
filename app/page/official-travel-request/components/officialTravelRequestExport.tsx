@@ -3,25 +3,65 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { Button } from "antd";
+import { Tooltip } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
+import { userService } from "../../user/services/user.service";
+import { useEffect, useState } from "react";
+import { UserType } from "../../common";
+import { ExportOutlined } from "@ant-design/icons";
 
 dayjs.locale("th");
 
 interface OfficialTravelExportWordProps {
-  record: any;
+  record: any; // ควรเปลี่ยนเป็น Type ของ OfficialTravelRequest เมื่อพร้อม
 }
 
 const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
   record,
 }) => {
+  const intraAuth = useAxiosAuth();
+  const intraAuthService = userService(intraAuth);
+  const [userData, setUserData] = useState<UserType[]>([]);
+  const now = dayjs();
+
+  const fetchData = async () => {
+    try {
+      const res = await intraAuthService.getUserQuery();
+      setUserData(res);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const toThaiNumber = (input: string | number | null | undefined): string => {
+    if (input === null || input === undefined) return "-";
+    const thaiDigits = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
+    return input
+      .toString()
+      .replace(/[0-9]/g, (digit) => thaiDigits[parseInt(digit)]);
+  };
+
+  const formatThaiDate = (date: string | Date) => {
+    if (!date) return "-";
+    const d = dayjs(date);
+    const day = toThaiNumber(d.format("D"));
+    const month = d.format("MMMM");
+    const year = toThaiNumber(d.year() + 543);
+    return `${day} ${month} ${year}`;
+  };
+
   const handleExport = async () => {
     try {
-      // โหลด template Word
-      const response = await fetch("/officialTravelTemplate.docx");
+      // ✅ เปลี่ยนชื่อไฟล์ Template
+      const response = await fetch("/officialTravelRequestTemplate.docx");
       if (!response.ok)
-        throw new Error("ไม่สามารถโหลด officialTravelTemplate.docx");
+        throw new Error("ไม่สามารถโหลด officialTravelRequestTemplate.docx");
       const arrayBuffer = await response.arrayBuffer();
 
       const zip = new PizZip(arrayBuffer);
@@ -30,59 +70,203 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
         linebreaks: true,
       });
 
-      // เตรียมข้อมูล
+      if (userData.length === 0) {
+        try {
+          const res = await intraAuthService.getUserQuery();
+          setUserData(res);
+        } catch (err) {
+          console.error(err);
+          return;
+        }
+      }
+
+      // หาตำแหน่งของผู้สร้างเอกสาร
+      const userPosition =
+        record.createdName && userData.length > 0
+          ? userData.find(
+              (u) => `${u.firstName} ${u.lastName}` === record.createdName
+            )?.position || "ไม่ระบุตำแหน่ง"
+          : "ไม่ระบุตำแหน่ง";
+
+      // จัดการรายชื่อผู้โดยสาร
+      const passengerList = Array.isArray(record.passengerNames)
+        ? record.passengerNames.map((userId: string, i: number) => {
+            const user = userData.find((u) => u.userId === userId);
+            let prefix = "";
+            if (user) {
+              if (user.gender === "male") prefix = "นาย";
+              else if (user.gender === "female") prefix = "นาง";
+              else if (user.gender === "miss") prefix = "นางสาว";
+            }
+
+            return {
+              index: toThaiNumber(i + 1),
+              name: user
+                ? `${prefix}${user.firstName} ${user.lastName}`
+                : "(ไม่พบชื่อ)",
+              position: user?.position ?? "-",
+            };
+          })
+        : [];
+
+      // หาข้อมูลผู้สร้างเพื่อระบุเพศ
+      const creator = userData.find((u) => {
+        const fullName = `${u.firstName} ${u.lastName}`;
+        return fullName === record.createdName;
+      });
+
+      const genderPrefix = creator
+        ? creator.gender === "male"
+          ? "นาย"
+          : creator.gender === "female"
+          ? "นาง"
+          : creator.gender === "miss"
+          ? "นางสาว"
+          : creator.gender ?? "-"
+        : "-";
+
+      const checkeds = "(/)";
+      const uncheckeds = "( )";
+      const checked = "☑"; // \u2611
+      const unchecked = "☐"; // \u2610
+      const standardBudgets = ["งบกลาง", "งบโครงการ", "งบผู้จัด", "เงินบำรุง"];
+
+      // ✅ เตรียมข้อมูลส่งเข้า template (Mapping ใหม่)
       const data = {
-        id: record.id ?? "-",
-        documentNo: record.documentNo ?? "-",
-        title: record.title ?? "-",
-        missionDetail: record.missionDetail ?? "-",
-        location: record.location ?? "-",
-        status: record.status ?? "-",
-        cancelReason: record.cancelReason ?? "-",
+        // --- ข้อมูลเอกสารทั่วไป ---
+        id: toThaiNumber(record.id),
+        documentNo: toThaiNumber(record.documentNo ?? "-"),
+        title: record.title ?? "-", // หัวข้อเรื่อง
+        recipient: record.recipient ?? "-", // เรียน (ใคร)
 
-        // วันเวลา
-        startDate: record.startDate
-          ? dayjs(record.startDate).format("D MMMM BBBB HH:mm")
+        // --- รายละเอียดการเดินทาง ---
+        missionDetail: record.missionDetail ?? "-", // map จาก purpose เดิม เป็น missionDetail
+        location: record.location ?? "-", // map จาก destination เดิม
+        passengers: toThaiNumber(record.passengers ?? "-"),
+        passengerss: passengerList, // Loop รายชื่อ
+
+        // --- วันเวลา ---
+        // ใช้ startDate / endDate แทน dateStart / dateEnd
+        dateStart: record.startDate ? formatThaiDate(record.startDate) : "-",
+        dateEnd: record.endDate ? formatThaiDate(record.endDate) : "-",
+        // timeStart: record.startDate
+        //   ? toThaiNumber(dayjs(record.startDate).format("HH:mm"))
+        //   : "-",
+        // timeEnd: record.endDate
+        //   ? toThaiNumber(dayjs(record.endDate).format("HH:mm"))
+        //   : "-",
+        EndDate: formatThaiDate(new Date()),
+        wd: toThaiNumber(now.format("D")), // วันที่ (เลขไทย)
+        wm: now.format("MMMM"), // เดือน (ชื่อเต็มภาษาไทย)
+        wb: toThaiNumber(now.year() + 543), // ปี พ.ศ. (เลขไทย)
+        // --- ผู้ขอ / ผู้สร้าง ---
+        createdName: record.createdName ?? "-",
+        gd: genderPrefix,
+        userPosition: userPosition,
+
+        // --- วันที่สร้างเอกสาร (ส่วนท้ายกระดาษ) ---
+        D: record.createdAt
+          ? toThaiNumber(dayjs(record.createdAt).format("D"))
           : "-",
-        endDate: record.endDate
-          ? dayjs(record.endDate).format("D MMMM BBBB HH:mm")
-          : "-",
-        createdAt: record.createdAt
-          ? dayjs(record.createdAt).format("D MMMM BBBB HH:mm")
-          : "-",
-        updatedAt: record.updatedAt
-          ? dayjs(record.updatedAt).format("D MMMM BBBB HH:mm")
-          : "-",
-        approvedDate: record.approvedDate
-          ? dayjs(record.approvedDate).format("D MMMM BBBB HH:mm")
+        MM: record.createdAt ? dayjs(record.createdAt).format("MMMM") : "-",
+        BBBB: record.createdAt
+          ? toThaiNumber(dayjs(record.createdAt).year() + 543)
           : "-",
 
-        // การอนุมัติ
+        // --- งบประมาณ ---
+        budget: record.budget
+          ? toThaiNumber(
+              // ถ้า budget เก็บเป็น string ตัวเลข หรือ number ให้แปลงก่อน
+              // สมมติถ้าเก็บเป็น Text ชื่องบเฉยๆ ก็แสดงเลย แต่ถ้าเป็นตัวเงินต้องแปลง
+              record.budget
+            )
+          : "-",
+
+        // Checkbox งบประมาณ (ถ้า logic เดิมยังใช้อยู่)
+        kl: record.budget === "งบกลาง" ? checked : unchecked,
+        k: record.budget === "งบโครงการ" ? checked : unchecked,
+        j: record.budget === "งบผู้จัด" ? checked : unchecked,
+        br: record.budget === "เงินบำรุง" ? checked : unchecked,
+        no: record.budget === "ไม่ขอเบิก" ? checked : unchecked,
+
+        // o:
+        //   record.budget && !standardBudgets.includes(record.budget)
+        //     ? checked
+        //     : unchecked,
+        // oBName: !standardBudgets.includes(record.budget)
+        //   ? record.budget
+        //   : "..........",
+
+        // --- การอนุมัติ ---
         approvedByName: record.approvedByName ?? "-",
+        approvedDate: record.approvedDate
+          ? formatThaiDate(record.approvedDate)
+          : "-",
 
-        // ข้อมูลรถ
+        // --- การยกเลิก ---
+        status: record.status ?? "-",
+        cancelName: record.cancelName ?? "-",
+        cancelReason: record.cancelReason ?? "-",
+        cancelAt: record.cancelAt
+          ? toThaiNumber(dayjs(record.cancelAt).format("D MMMM BBBB HH:mm"))
+          : "-",
+
+        // --- ข้อมูลรถ (Relation MasterCar) ---
+        // ใน Schema ใหม่เป็น MasterCar (ตัวพิมพ์ใหญ่ M) และเป็น Optional
         carName: record.MasterCar?.carName ?? "-",
-        licensePlate: record.MasterCar?.licensePlate ?? "-",
+        licensePlate: toThaiNumber(
+          record.MasterCar?.licensePlate ?? "................"
+        ),
         brand: record.MasterCar?.brand ?? "-",
         model: record.MasterCar?.model ?? "-",
-        year: record.MasterCar?.year ?? "-",
+
+        // Checkbox ประเภทเชื้อเพลิง (ถ้ามีข้อมูลรถ)
+        // fN: record.MasterCar?.fuelType === "เบนซิน 95" ? checkeds : uncheckeds,
+        // fD: record.MasterCar?.fuelType === "ดีเซล" ? checkeds : uncheckeds,
+        // fO: record.MasterCar?.fuelType === "เบนซิน 91" ? checkeds : uncheckeds,
+
+        // --- ประเภทการเดินทาง (Travel Type) ---
+        // Schema เป็น String[] (Array)
+        // ตัวอย่างการเช็ค (ต้องดูว่าใน DB เก็บค่าอะไร แต่ใส่ logic ดักไว้ก่อน)
+        OC: record.travelType?.includes("official") ? checked : unchecked,
+        AC: record.travelType?.includes("bus") ? checked : unchecked,
+        AP: record.travelType?.includes("plane") ? checked : unchecked,
+        PC: record.travelType?.includes("private") ? checked : unchecked,
+        OT: record.travelType?.includes("other") ? checked : unchecked,
+
+        // รถส่วนตัว (ถ้ามี)
+        privateCarId: record.privateCarId ?? ".................",
+        otherTravelType: record.otherTravelType ?? ".................",
+
+        // --- ส่วนที่ตัดออก / ยังไม่มีใน Schema ใหม่ ---
+        // driver (yes/no) -> ตัดออก
+        // typeName (ในจังหวัด/นอกจังหวัด) -> ถ้าจะใช้ต้อง map จาก travelType หรือ location
       };
 
-      // render ลง template
       doc.render(data);
-
-      // บันทึกไฟล์
       const blob = doc.getZip().generate({ type: "blob" });
-      saveAs(blob, `คำสั่งไปราชการ_${record.documentNo}.docx`);
+      // เปลี่ยนชื่อไฟล์ตอน Save
+      saveAs(blob, `ขอไปราชการ_${record.documentNo || record.id}.docx`);
     } catch (error) {
       console.error("Export error:", error);
     }
   };
 
   return (
-    <Button size="small" type="primary" onClick={handleExport}>
-      Export Word
-    </Button>
+    <Tooltip title="Export Official Travel Request">
+      <ExportOutlined
+        style={{
+          fontSize: 20,
+          color:
+            record.status === "pending" || record.status === "approved"
+              ? "#1677ff"
+              : "#d9d9d9", // ปรับเงื่อนไขสีปุ่มตามต้องการ
+          cursor: "pointer",
+          transition: "color 0.2s",
+        }}
+        onClick={handleExport}
+      />
+    </Tooltip>
   );
 };
 

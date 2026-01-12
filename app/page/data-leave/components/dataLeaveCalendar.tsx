@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Modal, Form, Input, DatePicker, Collapse, Tag } from "antd";
 import dayjs from "dayjs";
 import moment from "moment";
+import "moment/locale/th";
 import {
   Calendar,
   momentLocalizer,

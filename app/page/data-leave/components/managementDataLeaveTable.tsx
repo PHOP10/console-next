@@ -278,10 +278,21 @@ export default function ManagementDataLeaveTable({
     //   render: (value) => value || "-",
     // },
     {
-      title: "รายละเอียด",
+      title: "หมายเหตุเพิ่มเติม",
       dataIndex: "details",
       key: "details",
-      render: (value) => value || "-",
+      ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 15;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "จัดการ",
@@ -369,14 +380,6 @@ export default function ManagementDataLeaveTable({
             open={openPopoverId === record.id}
             onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
-            {/* <Button
-              type="primary"
-              size="small"
-              disabled={record.status !== "pending"}
-              onClick={() => setOpenPopoverId(record.id)}
-            >
-              อนุมัติ
-            </Button> */}
             <Tooltip title="อนุมัติ">
               <CheckCircleOutlined
                 style={{
@@ -394,14 +397,6 @@ export default function ManagementDataLeaveTable({
               />
             </Tooltip>
           </Popover>
-          {/* <br></br> */}
-          {/* <Button
-            size="small"
-            type="primary"
-            onClick={() => handleShowDetail(record)}
-          >
-            รายละเอียด
-          </Button> */}
 
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined

@@ -19,11 +19,13 @@ const OfficialTravelRequestDetail: React.FC<
   const getStatusTag = (status: string) => {
     switch (status) {
       case "pending":
-        return <Tag color="orange">รอดำเนินการ</Tag>;
+        return <Tag color="blue">รอดำเนินการ</Tag>;
       case "approve":
         return <Tag color="green">อนุมัติ</Tag>;
       case "cancel":
         return <Tag color="red">ยกเลิก</Tag>;
+      case "edit":
+        return <Tag color="orange">รอแก้ไข</Tag>;
       default:
         return <Tag>{status}</Tag>;
     }
@@ -120,12 +122,52 @@ const OfficialTravelRequestDetail: React.FC<
                   <span>{record.budget || 0}</span>
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              {/* <Col span={12}>
                 <Form.Item label="รถที่ใช้ :">
                   <span>
                     {record.MasterCar
                       ? `${record.MasterCar.licensePlate} (${record.MasterCar.brand} ${record.MasterCar.model})`
                       : "-"}
+                  </span>
+                </Form.Item>
+              </Col> */}
+
+              <Col span={12}>
+                <Form.Item label="ประเภทการเดินทาง :">
+                  <span>
+                    {(() => {
+                      // 1. ดึงค่าจาก record
+                      const type = record.travelType?.[0];
+                      const otherDetail = record.otherTravelType;
+                      const privateCar = record.privateCarId;
+                      const officialCar = record.MasterCar;
+
+                      // 2. กำหนดชื่อภาษาไทยสำหรับแต่ละประเภท
+                      const typeMap: Record<string, string> = {
+                        official: "โดยรถยนต์ราชการ",
+                        bus: "รถยนต์โดยสารประจำทาง",
+                        plane: "เครื่องบินโดยสาร",
+                        private: "รถยนต์ส่วนบุคคล",
+                        other: "อื่น ๆ",
+                      };
+
+                      const label = typeMap[type] || "-";
+
+                      // 3. จัดรูปแบบการแสดงผล () ต่อท้ายตามเงื่อนไข
+                      if (type === "official" && officialCar) {
+                        return `${label} ( ทะเบียน : ${officialCar.licensePlate} )`;
+                      }
+
+                      if (type === "private" && privateCar) {
+                        return `${label} ( ทะเบียน : ${privateCar} )`;
+                      }
+
+                      if (type === "other" && otherDetail) {
+                        return `${label} ( ระบุ : ${otherDetail} )`;
+                      }
+
+                      return label;
+                    })()}
                   </span>
                 </Form.Item>
               </Col>

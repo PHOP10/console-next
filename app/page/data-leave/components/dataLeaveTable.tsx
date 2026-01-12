@@ -1,26 +1,9 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Button,
-  DatePicker,
-  Form,
-  Input,
-  message,
-  Modal,
-  Select,
-  Space,
-  Table,
-  Tag,
-  Tooltip,
-} from "antd";
+import { Form, Space, Table, Tag, Tooltip, Row } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import {
-  DataLeaveType,
-  MaDrugItemType,
-  MasterLeaveType,
-  UserType,
-} from "../../common";
+import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import dayjs from "dayjs";
 import DataLeaveDetail from "./dataLeaveDetail";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -53,6 +36,7 @@ export default function DataLeaveTable({
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [form] = Form.useForm();
+  const [formEdit] = Form.useForm();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<DataLeaveType | null>(
     null
@@ -72,6 +56,7 @@ export default function DataLeaveTable({
   const openEditModal = (record: DataLeaveType) => {
     setCurrentRecord(record);
     setIsEditOpen(true);
+    // formEdit.setFieldsValue(record);
   };
 
   const handleUpdate = (updated: any) => {
@@ -267,24 +252,29 @@ export default function DataLeaveTable({
         record={selectedRecord}
         user={user}
       />
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={leaveByUserId}
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: "max-content" }}
-      />
-
+      <Row gutter={[24, 24]}>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={leaveByUserId}
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: "max-content" }}
+        />
+      </Row>
       <DataLeaveEdit
         open={isEditOpen}
         record={currentRecord}
         masterLeaves={masterLeaves}
-        onClose={() => setIsEditOpen(false)}
+        onClose={() => {
+          setIsEditOpen(false);
+          // formEdit.resetFields();
+        }}
         onUpdate={handleUpdate}
         fetchData={fetchData}
         leaveByUserId={leaveByUserId}
         user={user}
+        formEdit={formEdit}
       />
     </>
   );

@@ -10,6 +10,7 @@ import MaCarDetail from "./maCarDetail";
 import MaCarExportWord from "./maCarExport";
 import MaCarEditModal from "./MaCarEditModal";
 import { useSession } from "next-auth/react";
+import { FileSearchOutlined, FormOutlined } from "@ant-design/icons";
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -17,6 +18,7 @@ interface MaCarTableProps {
   fetchData: () => void;
   dataUser: UserType[];
   cars: MasterCarType[];
+  maCarUser: MaCarType[];
 }
 
 const MaCarTable: React.FC<MaCarTableProps> = ({
@@ -25,6 +27,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
   fetchData,
   dataUser,
   cars,
+  maCarUser,
 }) => {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
@@ -147,6 +150,10 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
             color = "green";
             text = "อนุมัติ";
             break;
+          case "edit":
+            color = "orange";
+            text = "รอแก้ไข";
+            break;
           case "cancel":
             color = "red";
             text = "ยกเลิก";
@@ -180,7 +187,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button
+          {/* <Button
             size="small"
             type="primary"
             style={{
@@ -194,14 +201,47 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
             onClick={() => handleEdit(record)}
           >
             แก้ไข
-          </Button>
-          <Button
+          </Button> */}
+
+          <Tooltip title="แก้ไข">
+            <FormOutlined
+              style={{
+                fontSize: 22,
+                color:
+                  record.status === "pending" || record.status === "edit"
+                    ? "#faad14"
+                    : "#d9d9d9",
+                cursor:
+                  record.status === "pending" || record.status === "edit"
+                    ? "pointer"
+                    : "not-allowed",
+                opacity:
+                  record.status === "pending" || record.status === "edit"
+                    ? 1
+                    : 0.6,
+              }}
+              onClick={() => {
+                if (record.status === "pending" || record.status === "edit") {
+                  handleEdit(record);
+                }
+              }}
+            />
+          </Tooltip>
+
+          {/* <Button
             size="small"
             type="primary"
             onClick={() => handleShowDetail(record, dataUser)}
           >
             รายละเอียด
-          </Button>
+          </Button> */}
+
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record, dataUser)}
+            />
+          </Tooltip>
           <MaCarExportWord record={record} />
         </Space>
       ),
@@ -231,6 +271,8 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
         dataUser={dataUser}
         // onUpdate={handleUpdate}
         fetchData={fetchData}
+        data={data}
+        maCarUser={maCarUser}
       />
     </>
   );

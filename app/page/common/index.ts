@@ -1,3 +1,5 @@
+import dayjs from "dayjs";
+
 export interface UserType {
   id: number;
   userId: string;
@@ -13,6 +15,8 @@ export interface UserType {
   updatedAt?: string;
   fullName?: string;
   position?: string;
+  startDate?: string;
+  gender?: string;
 }
 
 export interface OfficialTravelRequestType {
@@ -80,6 +84,8 @@ export interface MasterCarType {
   details?: string;
   maCars?: MaCarType[];
   carId?: string;
+  numberType?: number;
+  fuelType?: string;
 }
 
 export interface DataLeaveType {

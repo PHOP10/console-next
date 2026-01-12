@@ -255,10 +255,10 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
             </Col>
           </Row>
 
-          <Form.Item label="หมายเหตุเพิ่มเติม" name="title">
+          <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
             <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
           </Form.Item>
-          
+
           <Form.Item style={{ textAlign: "center" }}>
             <Button type="primary" htmlType="submit">
               บันทึก

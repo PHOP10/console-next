@@ -11,6 +11,8 @@ import {
 import OfficialTravelRequestDetail from "./officialTravelRequestDetail";
 import OfficialTravelRequestEditModal from "./OfficialTravelRequestEditModal";
 import { useSession } from "next-auth/react";
+import { FileSearchOutlined, FormOutlined } from "@ant-design/icons";
+import OfficialTravelExportWord from "./officialTravelRequestExport";
 
 interface Props {
   data: OfficialTravelRequestType[];
@@ -48,7 +50,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   };
 
   const handleEdit = (record: any) => {
-    if (record.status !== "pending") return;
+    // if (record.status !== "pending") return;
     setEditRecord(record);
     setEditModalOpen(true);
   };
@@ -150,6 +152,9 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
           case "cancel":
             color = "red";
             text = "ยกเลิก";
+          case "edit":
+            color = "orange";
+            text = "รอแก้ไข";
             break;
           default:
             text = status;
@@ -159,7 +164,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       },
     },
     {
-      title: "หมมายเหตุ",
+      title: "หมายเหตุ",
       dataIndex: "note",
       key: "note",
       ellipsis: true,
@@ -180,7 +185,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button
+          {/* <Button
             size="small"
             type="primary"
             style={{
@@ -194,14 +199,40 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
             onClick={() => handleEdit(record)}
           >
             แก้ไข
-          </Button>
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => handleShowDetail(record)}
-          >
-            รายละเอียด
-          </Button>
+          </Button> */}
+
+          <Tooltip title="แก้ไข">
+            <FormOutlined
+              style={{
+                fontSize: 22,
+                color:
+                  record.status === "pending" || record.status === "edit"
+                    ? "#faad14"
+                    : "#d9d9d9",
+                cursor:
+                  record.status === "pending" || record.status === "edit"
+                    ? "pointer"
+                    : "not-allowed",
+                opacity:
+                  record.status === "pending" || record.status === "edit"
+                    ? 1
+                    : 0.6,
+              }}
+              onClick={() => {
+                if (record.status === "pending" || record.status === "edit") {
+                  handleEdit(record);
+                }
+              }}
+            />
+          </Tooltip>
+
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
+          <OfficialTravelExportWord record={record} />
         </Space>
       ),
     },

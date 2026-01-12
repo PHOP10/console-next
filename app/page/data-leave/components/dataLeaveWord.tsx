@@ -104,6 +104,35 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         ? `${backupUser.firstName} ${backupUser.lastName}`
         : "-";
 
+      const creators = userData.find((u) => {
+        const fullName = `${u.firstName} ${u.lastName}`;
+        return fullName === backupUserName;
+      });
+      const genderPrefixs = creators
+        ? creators.gender === "male"
+          ? "นาย"
+          : creators.gender === "female"
+          ? "นาง"
+          : creators.gender === "miss"
+          ? "นางสาว"
+          : creators.gender ?? "-"
+        : "-";
+
+      // const userPosition =
+      //   record.createdName && userData.length
+      //     ? userData.find((u) => u.username === record.createdName)
+      //     : null;
+      const userPosition =
+        record.createdName && userData.length > 0
+          ? userData.find(
+              (u) => `${u.firstName} ${u.lastName}` === record.createdName
+            )?.position || "ไม่ระบุตำแหน่ง"
+          : "ไม่ระบุตำแหน่ง";
+
+      // console.log("User:", userPosition);
+      // console.log("User:", userData);
+      // console.log("User:", record.createdName);
+
       const toThaiNumber = (input: string | number): string => {
         const thaiDigits = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
         return input
@@ -120,20 +149,6 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       };
 
       const leaveType = record.masterLeave?.leaveType ?? "-";
-
-      // const latestLeave =
-      //   dataLeaveUser.length > 0
-      //     ? dataLeaveUser
-      //         .filter((leave) => leave.status === "approve")
-      //         .reduce((prev, current) =>
-      //           new Date(prev.createdAt) > new Date(current.createdAt)
-      //             ? prev
-      //             : current
-      //         )
-      //     : null;
-
-      // const latestDateStart = latestLeave ? latestLeave.dateStart : null;
-      // const latestDateEnd = latestLeave ? latestLeave.dateEnd : null;
       const leaveTypes = record.masterLeave?.leaveType ?? "-";
 
       const sortedLeave = [...(dataLeaveUser || [])].sort(
@@ -157,6 +172,24 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
           : 0;
       const checked = "☑"; // \u2611
       const unchecked = "☐"; // \u2610
+      const checkeds = "(/)"; // กรณีเลือก
+      const uncheckeds = "( )"; // กรณีไม่ได้เลือก
+
+      const creator = userData.find((u) => {
+        const fullName = `${u.firstName} ${u.lastName}`;
+        return fullName === record.createdName;
+      });
+
+      // 2. ตรวจสอบเพศ/คำนำหน้าจาก User ที่หาเจอ
+      const genderPrefix = creator
+        ? creator.gender === "male"
+          ? "นาย"
+          : creator.gender === "female"
+          ? "นาง"
+          : creator.gender === "miss"
+          ? "นางสาว"
+          : creator.gender ?? "-"
+        : "-";
 
       const data = {
         dateStart: record.dateStart ? formatThaiDate(record.dateStart) : "-",
@@ -165,6 +198,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         contactAddress: record.contactAddress || "-",
         contactPhone: record.contactPhone || "-",
         backupUser: backupUserName,
+        userPosition: userPosition,
         leaveType: leaveType,
         details: record.details || "-",
         status: record.status || "-",
@@ -185,19 +219,9 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
           : "-",
         dateStarts: latestDateStart ? formatThaiDate(latestDateStart) : "-",
         dateEnds: latestDateEnd ? formatThaiDate(latestDateEnd) : "-",
-
         leaveD,
-        // sS: leaveTypes === "ลาป่วย" ? "\u2611" : "\u2610",
-        // sP: leaveTypes === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
-        // sM: leaveTypes === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
-
-        // cS: leaveType === "ลาป่วย" ? "\u2611" : "\u2610",
-        // cP: leaveType === "ลากิจส่วนตัว" ? "\u2611" : "\u2610",
-        // cM: leaveType === "ลาคลอดบุตร" ? "\u2611" : "\u2610",
-        // r1: leaveType === "ลาป่วย" ? record.reason : "",
-        // r2: leaveType === "ลากิจส่วนตัว" ? record.reason : "",
-        // r3: leaveType === "ลาคลอดบุตร" ? record.reason : "",
-        // ✅ แก้ให้ใช้ checked / unchecked
+        gd: genderPrefix,
+        gds:genderPrefixs,
         sS: leaveTypes === "ลาป่วย" ? checked : unchecked,
         sP: leaveTypes === "ลากิจส่วนตัว" ? checked : unchecked,
         sM: leaveTypes === "ลาคลอดบุตร" ? checked : unchecked,
@@ -229,7 +253,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       doc.render(data);
 
       const blob = doc.getZip().generate({ type: "blob" });
-      saveAs(blob, `ใบลาครั้งที่_${record.id}.docx`);
+      saveAs(blob, `ใบลา_${record.id}.docx`);
     } catch (error) {
       console.error("Export Word error:", error);
     }

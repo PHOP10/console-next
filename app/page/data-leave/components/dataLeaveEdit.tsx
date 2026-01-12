@@ -33,6 +33,7 @@ interface DataLeaveEditProps {
   fetchData: () => Promise<void>;
   leaveByUserId: DataLeaveType[];
   user: UserType[];
+  formEdit: any;
 }
 
 export default function DataLeaveEdit({
@@ -44,14 +45,32 @@ export default function DataLeaveEdit({
   fetchData,
   leaveByUserId,
   user,
+  formEdit,
 }: DataLeaveEditProps) {
-  const [form] = Form.useForm();
+  // const [formEdit] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const service = DataLeaveService(intraAuth);
 
+  // React.useEffect(() => {
+  //   if (record) {
+  //     formEdit.setFieldsValue({
+  //       typeId: record.typeId,
+  //       reason: record.reason,
+  //       details: record.details,
+  //       writeAt: record.writeAt,
+  //       dateStart: dayjs(record.dateStart),
+  //       dateEnd: dayjs(record.dateEnd),
+  //       contactAddress: record.contactAddress,
+  //       contactPhone: record.contactPhone,
+  //       backupUserId: record.backupUserId,
+  //     });
+  //   }
+  // }, [record]);
+
   React.useEffect(() => {
-    if (record) {
-      form.setFieldsValue({
+    if (open && record) {
+      // จังหวะเปิด Modal: เซตค่าจาก record เข้าไปในฟอร์ม
+      formEdit.setFieldsValue({
         typeId: record.typeId,
         reason: record.reason,
         details: record.details,
@@ -62,16 +81,19 @@ export default function DataLeaveEdit({
         contactPhone: record.contactPhone,
         backupUserId: record.backupUserId,
       });
+    } else if (!open) {
+      // จังหวะปิด Modal (open === false): รีเซ็ตค่าที่ค้างในฟอร์มทั้งหมด
+      formEdit.resetFields();
     }
-  }, [record]);
+  }, [open, record, formEdit]);
 
-  const selectedTypeId = Form.useWatch("typeId", form);
-  const selectedDateStart = Form.useWatch("dateStart", form);
-  const selectedDateEnd = Form.useWatch("dateEnd", form);
+  const selectedTypeId = Form.useWatch("typeId", formEdit);
+  const selectedDateStart = Form.useWatch("dateStart", formEdit);
+  const selectedDateEnd = Form.useWatch("dateEnd", formEdit);
 
   const handleOk = async () => {
     try {
-      const values = await form.validateFields();
+      const values = await formEdit.validateFields();
       if (!record) return;
 
       // ส่งเฉพาะข้อมูลที่ต้องการแก้ไข
@@ -120,13 +142,16 @@ export default function DataLeaveEdit({
       }
       open={open}
       onOk={handleOk}
-      onCancel={onClose}
+      onCancel={() => {
+        onClose(); // 1. เรียกฟังก์ชันปิดที่ส่งมาจากตัวแม่ (เพื่อให้ open กลายเป็น false)
+        // formEdit.resetFields(); // 2. รีเซ็ตค่าในฟอร์มกลับเป็นค่าเดิม
+      }}
       okText="บันทึก"
       cancelText="ยกเลิก"
     >
       <Card>
         <ConfigProvider locale={th_TH}>
-          <Form form={form} layout="vertical">
+          <Form form={formEdit} layout="vertical" preserve={false}>
             <Form.Item
               label="เขียนที่"
               name="writeAt"
@@ -140,7 +165,10 @@ export default function DataLeaveEdit({
               <Select
                 placeholder="เขียนที่"
                 onChange={(value) => {
-                  form.setFieldValue("writeAt", value === "other" ? "" : value);
+                  formEdit.setFieldValue(
+                    "writeAt",
+                    value === "other" ? "" : value
+                  );
                 }}
                 dropdownRender={(menu) => (
                   <>
@@ -149,10 +177,16 @@ export default function DataLeaveEdit({
                       <Input
                         placeholder="กรอกอื่น ๆ..."
                         onPressEnter={(e) => {
-                          form.setFieldValue("writeAt", e.currentTarget.value);
+                          formEdit.setFieldValue(
+                            "writeAt",
+                            e.currentTarget.value
+                          );
                         }}
                         onBlur={(e) => {
-                          form.setFieldValue("writeAt", e.currentTarget.value);
+                          formEdit.setFieldValue(
+                            "writeAt",
+                            e.currentTarget.value
+                          );
                         }}
                       />
                     </div>
@@ -162,7 +196,7 @@ export default function DataLeaveEdit({
                 <Select.Option value="รพ.สต.บ้านผาผึ้ง">
                   รพ.สต.บ้านผาผึ้ง
                 </Select.Option>
-                <Select.Option value="other">อื่นๆ...</Select.Option>
+                {/* <Select.Option value="other">อื่นๆ...</Select.Option> */}
               </Select>
             </Form.Item>
 
@@ -202,12 +236,16 @@ export default function DataLeaveEdit({
                   ]}
                 >
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    format={(value) =>
+                      value
+                        ? `${value.format("DD / MMMM")} / ${value.year() + 543}`
+                        : ""
+                    }
                     style={{ width: "100%" }}
                     placeholder="เลือกวันที่เริ่มลา"
                     onChange={() => {
                       // ล้างค่า dateEnd เมื่อเปลี่ยน dateStart
-                      form.setFieldValue("dateEnd", null);
+                      formEdit.setFieldValue("dateEnd", null);
                     }}
                     disabledDate={(current) => {
                       if (!current) return false;
@@ -241,7 +279,11 @@ export default function DataLeaveEdit({
                   ]}
                 >
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    format={(value) =>
+                      value
+                        ? `${value.format("DD / MMMM")} / ${value.year() + 543}`
+                        : ""
+                    }
                     style={{ width: "100%" }}
                     placeholder={
                       selectedDateStart
@@ -282,7 +324,11 @@ export default function DataLeaveEdit({
               name="contactAddress"
               rules={[{ required: false }]}
             >
-              <TextArea rows={2} placeholder="กรอกระหว่างลาติดต่อได้ที่" />
+              <TextArea
+                rows={2}
+                maxLength={50}
+                placeholder="กรอกระหว่างลาติดต่อได้ที่"
+              />
             </Form.Item>
 
             {/* เบอร์โทรศัพท์ */}
@@ -325,7 +371,7 @@ export default function DataLeaveEdit({
               </Select>
             </Form.Item>
 
-            <Form.Item label="รายละเอียด" name="details">
+            <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
               <Input.TextArea rows={3} />
             </Form.Item>
           </Form>

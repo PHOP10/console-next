@@ -53,6 +53,8 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         return "red";
       case "pending":
         return "blue";
+      case "edit":
+        return "orange";
       default:
         return "blue";
     }
@@ -66,6 +68,8 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         return "รอดำเนินการ";
       case "cancel":
         return "ยกเลิก";
+      case "edit":
+        return "orange";
       default:
         return status;
     }
@@ -152,7 +156,7 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
       <Modal
         title="รายละเอียดการเดินทางไปราชการ"
         open={modalOpen}
-        width={600}
+        width={700}
         onCancel={() => setModalOpen(false)}
         footer={null}
       >
@@ -193,14 +197,69 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
                 <Form.Item label="งบประมาณ" name="budget">
                   <Input disabled />
                 </Form.Item>
-                {selected.MasterCar && (
-                  <Form.Item label="รถที่ใช้">
+                {/* 1. แสดงประเภทการเดินทาง (แปลงจาก Key เป็นข้อความภาษาไทย) */}
+                <Form.Item label="ประเภทการเดินทาง">
+                  <Input
+                    disabled
+                    value={(() => {
+                      // 1. ดึงค่าแรก และระบุว่าเป็น string เพื่อให้ Type แม่นยำ
+                      const type = form.getFieldValue(
+                        "travelType"
+                      )?.[0] as string;
+                      const otherDetail = form.getFieldValue("otherTravelType");
+
+                      // 2. ระบุ Type ให้ Map (ใช้อักษรภาษาอังกฤษตาม Prisma Model)
+                      const typeMap: Record<string, string> = {
+                        official: "โดยรถยนต์ราชการ",
+                        bus: "รถยนต์โดยสารประจำทาง",
+                        plane: "เครื่องบินโดยสาร",
+                        private: "รถยนต์ส่วนบุคคล",
+                        other: "อื่น ๆ",
+                      };
+
+                      // 3. ตรวจสอบว่ามี Key นี้ใน Map หรือไม่
+                      const label = typeMap[type] || "ไม่ระบุ";
+
+                      // 4. เงื่อนไขรวมรายละเอียด "อื่นๆ" หรือ "รถส่วนตัว" ไว้ในบรรทัดเดียว
+                      if (type === "other" && otherDetail) {
+                        return `${label} (${otherDetail})`;
+                      }
+
+                      if (type === "private") {
+                        const privateCarId = form.getFieldValue("privateCarId");
+                        return `${label}${
+                          privateCarId ? ` (ทะเบียน: ${privateCarId})` : ""
+                        }`;
+                      }
+
+                      return label;
+                    })()}
+                  />
+                </Form.Item>
+
+                {/* กรณีเป็นรถยนต์ราชการ ยังคงแสดงข้อมูลรถแยกออกมาเพื่อให้เห็นทะเบียนชัดเจน */}
+                {form.getFieldValue("travelType")?.[0] === "official" &&
+                  selected?.MasterCar && (
+                    <Form.Item label="รถที่ใช้">
+                      <Input
+                        disabled
+                        value={`${selected.MasterCar.licensePlate} (${selected.MasterCar.brand} ${selected.MasterCar.model})`}
+                      />
+                    </Form.Item>
+                  )}
+
+                {/* กรณีเป็นรถส่วนตัว ให้แสดงทะเบียนต่อท้าย
+                {form.getFieldValue("travelType")?.[0] === "private" && (
+                  <Form.Item label="ทะเบียนรถส่วนบุคคล">
                     <Input
                       disabled
-                      value={`${selected.MasterCar.licensePlate} (${selected.MasterCar.brand} ${selected.MasterCar.model})`}
+                      value={
+                        form.getFieldValue("privateCarId") || "ไม่ระบุทะเบียน"
+                      }
                     />
                   </Form.Item>
-                )}
+                )} */}
+
                 <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
                   <Input disabled />
                 </Form.Item>

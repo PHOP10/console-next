@@ -11,12 +11,22 @@ import {
   Input,
   Select,
   Space,
+  Tooltip,
+  Col,
+  DatePicker,
+  Row,
+  ConfigProvider,
 } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { UserType } from "../../common";
 import { userService } from "../services/user.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import UserForm from "./userForm";
+import { DeleteOutlined, FormOutlined } from "@ant-design/icons";
+import locale from "antd/es/locale/th_TH";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+dayjs.locale("th");
 
 interface UserTableProps {
   data: UserType[];
@@ -35,7 +45,13 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
 
   const handleEdit = (record: UserType) => {
     setEditingUser(record);
-    form.setFieldsValue(record);
+    form.setFieldsValue({
+      ...record,
+      // แปลง String ให้เป็น Dayjs Object
+      createdAt: record.createdAt ? dayjs(record.createdAt) : null,
+      startDate: record.startDate ? dayjs(record.startDate) : null,
+    });
+    // form.setFieldsValue(record);
     setIsModalOpen(true);
   };
 
@@ -47,6 +63,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
       const body = {
         ...values,
         userId: editingUser.userId,
+        startDate: values.startDate ? values.startDate.toISOString() : null,
       };
 
       const result = await intraAuthService.updateUser(body);
@@ -130,38 +147,36 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
       align: "center",
       render: (_, record) => (
         <Space>
-          <Button
-            size="small"
-            onClick={() => handleEdit(record)}
-            style={{
-              marginRight: 8,
-              backgroundColor: "#faad14", // สีเหลือง
-              color: "#ffffff", // ตัวอักษรสีขาว
-              border: "none", // เอากรอบออก
-              fontWeight: "bold",
-            }}
-          >
-            แก้ไข
-          </Button>
-
-          <Popconfirm
-            title="คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Button
-              type="default"
-              size="small"
+          <Tooltip title="แก้ไข">
+            <FormOutlined
               style={{
-                color: "#ff4d4f", // ตัวอักษรสีแดง
-                borderColor: "#ff4d4f", // กรอบสีแดง
-                backgroundColor: "#ffffff", // พื้นหลังขาว
+                fontSize: 20,
+                color: "#faad14",
+                cursor: "pointer",
               }}
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
+
+          <Tooltip title="ลบข้อมูล">
+            <Popconfirm
+              title="ยืนยันการลบ"
+              description="คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?"
+              okText="ใช่"
+              cancelText="ไม่"
+              onConfirm={() => handleDelete(record.id)}
+              okButtonProps={{ danger: true }} // ทำให้ปุ่ม "ใช่" ใน Popconfirm เป็นสีแดงด้วย
             >
-              ลบ
-            </Button>
-          </Popconfirm>
+              <DeleteOutlined
+                style={{
+                  fontSize: 20, // ขนาดไอคอน (ใกล้เคียงกับไอคอนแก้ไขที่คุณใช้)
+                  color: "#ff4d4f", // สีแดงของ Ant Design
+                  cursor: "pointer",
+                  marginLeft: 12,
+                }}
+              />
+            </Popconfirm>
+          </Tooltip>
         </Space>
       ),
     },
@@ -185,94 +200,161 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
         onCancel={() => setIsModalOpen(false)}
         okText="บันทึก"
         cancelText="ยกเลิก"
+        width={800}
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            label="รหัสพนักงาน"
-            name="employeeId"
-            rules={[{ required: true, message: "กรุณากรอกรหัสพนักงาน" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="ชื่อผู้ใช้"
-            name="username"
-            rules={[{ required: true, message: "กรุณากรอก Username" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="ชื่อ"
-            name="firstName"
-            rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="นามสกุล"
-            name="lastName"
-            rules={[{ required: true, message: "กรุณากรอกนามสกุล" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item label="ชื่อเล่น" name="nickName">
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="อีเมล"
-            name="email"
-            rules={[{ type: "email", message: "อีเมลไม่ถูกต้อง" }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="เบอร์โทร"
-            name="phoneNumber"
-            rules={[
-              { required: true, message: "กรุณากรอกเบอร์โทร" },
-              { pattern: /^[0-9]{10}$/, message: "กรุณากรอกเบอร์โทร 10 หลัก" },
-            ]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item
-            label="ตำแหน่ง"
-            name="position"
-            rules={[{ required: true, message: "กรุณาเลือกตำแหน่ง" }]}
-          >
-            <Select
-              placeholder="เลือกตำแหน่ง"
-              options={[
-                {
-                  label: "ผู้อำนวยการสถานีอนามัย",
-                  value: "ผู้อำนวยการสถานีอนามัย",
-                },
-                { label: "พยาบาลวิชาชีพ", value: "พยาบาลวิชาชีพ" },
-                {
-                  label: "นักวิชาการสาธารณสุข",
-                  value: "นักวิชาการสาธารณสุข",
-                },
-                { label: "เจ้าหน้าที่พนักงาน", value: "เจ้าหน้าที่พนักงาน" },
-              ]}
-            />
-          </Form.Item>
-
-          <Form.Item
-            label="ระดับผู้ใช้"
-            name="role"
-            initialValue="user"
-            rules={[{ required: true, message: "กรุณาเลือก Role" }]}
-          >
-            <Select
-              options={[
-                { label: "ผู้ใช้", value: "user" },
-                { label: "หัวหน้า", value: "admin" },
-                { label: "ผู้ดูแลระบบคลังยา", value: "pharmacy" },
-                { label: "ผู้ดูแลระบบครุภัณฑ์", value: "asset" },
-                { label: "ผู้ดูแลระบบเยี่ยมบ้าน", value: "home" },
-              ]}
-            />
-          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="ชื่อผู้ใช้"
+                name="username"
+                rules={[{ required: true, message: "กรุณากรอก Username" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="เพศ"
+                name="gender"
+                rules={[{ required: true, message: "กรุณาเลือกเพศ" }]}
+              >
+                <Select
+                  placeholder="เลือกเพศ"
+                  options={[
+                    { label: "นาย", value: "male" },
+                    { label: "นาง", value: "female" },
+                    { label: "นางสาว", value: "miss" },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <ConfigProvider locale={locale}>
+                <Form form={form} layout="vertical">
+                  <Form.Item
+                    label="วันเริ่มงาน"
+                    name="startDate"
+                    rules={[
+                      { required: true, message: "กรุณาเลือกวันเริ่มงาน" },
+                    ]}
+                  >
+                    <DatePicker
+                      style={{ width: "100%" }}
+                      placeholder="เลือกวันที่เริ่มงาน"
+                      format={(value) =>
+                        value
+                          ? `${value.format("DD / MMMM")} / ${
+                              value.year() + 543
+                            }`
+                          : ""
+                      }
+                    />
+                  </Form.Item>
+                </Form>
+              </ConfigProvider>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="ชื่อ"
+                name="firstName"
+                rules={[{ required: true, message: "กรุณากรอกชื่อ" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>{" "}
+            <Col span={12}>
+              <Form.Item
+                label="นามสกุล"
+                name="lastName"
+                rules={[{ required: true, message: "กรุณากรอกนามสกุล" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item label="ชื่อเล่น" name="nickName">
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="รหัสพนักงาน"
+                name="employeeId"
+                rules={[{ required: true, message: "กรุณากรอกรหัสพนักงาน" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="อีเมล"
+                name="email"
+                rules={[{ type: "email", message: "อีเมลไม่ถูกต้อง" }]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="เบอร์โทร"
+                name="phoneNumber"
+                rules={[
+                  { required: true, message: "กรุณากรอกเบอร์โทร" },
+                  {
+                    pattern: /^[0-9]{10}$/,
+                    message: "กรุณากรอกเบอร์โทร 10 หลัก",
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="ตำแหน่ง"
+                name="position"
+                rules={[{ required: true, message: "กรุณาเลือกตำแหน่ง" }]}
+              >
+                <Select
+                  placeholder="เลือกตำแหน่ง"
+                  options={[
+                    {
+                      label: "ผู้อำนวยการสถานีอนามัย",
+                      value: "ผู้อำนวยการสถานีอนามัย",
+                    },
+                    { label: "พยาบาลวิชาชีพ", value: "พยาบาลวิชาชีพ" },
+                    {
+                      label: "นักวิชาการสาธารณสุข",
+                      value: "นักวิชาการสาธารณสุข",
+                    },
+                    {
+                      label: "เจ้าหน้าที่พนักงาน",
+                      value: "เจ้าหน้าที่พนักงาน",
+                    },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="ระดับผู้ใช้"
+                name="role"
+                initialValue="user"
+                rules={[{ required: true, message: "กรุณาเลือก Role" }]}
+              >
+                <Select
+                  options={[
+                    { label: "ผู้ใช้", value: "user" },
+                    { label: "หัวหน้า", value: "admin" },
+                    { label: "ผู้ดูแลระบบคลังยา", value: "pharmacy" },
+                    { label: "ผู้ดูแลระบบครุภัณฑ์", value: "asset" },
+                    { label: "ผู้ดูแลระบบเยี่ยมบ้าน", value: "home" },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
         </Form>
       </Modal>
     </>

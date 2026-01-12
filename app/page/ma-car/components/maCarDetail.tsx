@@ -16,11 +16,13 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
   const getStatusTag = (status: string) => {
     switch (status) {
       case "pending":
-        return <Tag color="orange">รอดำเนินการ</Tag>;
+        return <Tag color="blue">รอดำเนินการ</Tag>;
       case "approve":
         return <Tag color="green">อนุมัติ</Tag>;
       case "cancel":
         return <Tag color="red">ยกเลิก</Tag>;
+      case "edit":
+        return <Tag color="orange">รอแก้ไข</Tag>;
       default:
         return <Tag>{status}</Tag>;
     }
@@ -59,26 +61,48 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
             <Col span={12}>
               <Form.Item label="ตั้งแต่วันที่ :">
                 <span>
-                  {record.dateStart
-                    ? new Date(record.dateStart).toLocaleDateString("th-TH", {
+                  {record.dateStart ? (
+                    <>
+                      {new Date(record.dateStart).toLocaleDateString("th-TH", {
                         day: "numeric",
-                        month: "long",
+                        month: "short", // ใช้ "short" สำหรับ ม.ค. หรือ "long" สำหรับ มกราคม
                         year: "numeric",
-                      })
-                    : "-"}
+                      })}
+                      {" เวลา "}
+                      {new Date(record.dateStart).toLocaleTimeString("th-TH", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })}
+                      {" น."}
+                    </>
+                  ) : (
+                    "-"
+                  )}
                 </span>
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item label="ตั้งแต่วันที่ :">
+              <Form.Item label="ถึงวันที่ :">
                 <span>
-                  {record.dateEnd
-                    ? new Date(record.dateEnd).toLocaleDateString("th-TH", {
+                  {record.dateEnd ? (
+                    <>
+                      {new Date(record.dateEnd).toLocaleDateString("th-TH", {
                         day: "numeric",
-                        month: "long",
+                        month: "short",
                         year: "numeric",
-                      })
-                    : "-"}
+                      })}
+                      {" เวลา "}
+                      {new Date(record.dateEnd).toLocaleTimeString("th-TH", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: false,
+                      })}
+                      {" น."}
+                    </>
+                  ) : (
+                    "-"
+                  )}
                 </span>
               </Form.Item>
             </Col>
@@ -173,7 +197,30 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
               </Form.Item>
             </Col>
           </Row>
-
+          <Row gutter={18}>
+            <Col span={24}>
+              <Form.Item
+                label="ประเภทการเดินทางและแผนงาน :"
+                style={{ marginBottom: 0 }}
+              >
+                <Space wrap size={[16, 8]}>
+                  {record.typeName && record.typeName.length > 0 ? (
+                    record.typeName.map((name: string, index: number) => (
+                      <span
+                        key={index}
+                        style={{ fontSize: "14px", fontWeight: 500 }}
+                      >
+                        (x) {name}
+                      </span>
+                    ))
+                  ) : (
+                    <span style={{ color: "blue" }}>- ไม่ได้ระบุ -</span>
+                  )}
+                </Space>
+              </Form.Item>
+            </Col>
+          </Row>
+          <br></br>
           <Row gutter={18}>
             {record.approvedByName && record.approvedAt ? (
               <>

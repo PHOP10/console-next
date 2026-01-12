@@ -24,7 +24,12 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import dayjs from "dayjs";
 import OfficialTravelRequestDetail from "./officialTravelRequestDetail";
 import OfficialTravelRequestEditModal from "./OfficialTravelRequestEditModal";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  FileSearchOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 import { useSession } from "next-auth/react";
 
 interface Props {
@@ -65,6 +70,16 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       console.error(err);
       message.error("ไม่สามารถโหลดข้อมูลรถได้");
     }
+  };
+
+  const handleShowDetail = (record: any) => {
+    setSelectedRecord(record);
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedRecord(null);
   };
 
   useEffect(() => {
@@ -111,14 +126,18 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
     }
   };
 
-  const handleShowDetail = (record: any) => {
-    setSelectedRecord(record);
-    setDetailModalOpen(true);
-  };
-
-  const handleCloseDetail = () => {
-    setDetailModalOpen(false);
-    setSelectedRecord(null);
+  const returnEdit = async (record: any) => {
+    try {
+      await intraAuthService.updateOfficialTravelRequest({
+        id: record.id,
+        status: "edit",
+      });
+      message.success("ส่งคืนเพื่อแก้ไขเรียบร้อย");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error("เกิดข้อผิดพลาดในการส่งคืนเพื่อแก้ไข");
+    }
   };
 
   const handleApprove = async (record: any) => {
@@ -256,6 +275,9 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
           case "cancel":
             color = "red";
             text = "ยกเลิก";
+          case "edit":
+            color = "orange";
+            text = "รอแก้ไข";
             break;
           default:
             text = status;
@@ -266,8 +288,8 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
     },
     {
       title: "หมมายเหตุ",
-      dataIndex: "title",
-      key: "title",
+      dataIndex: "note",
+      key: "note",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -321,7 +343,28 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
           >
             แก้ไข
           </Button>
-          <Popover
+
+          <Popconfirm
+            title="ยืนยันการส่งคืนเพื่อแก้ไข"
+            okText="ยืนยัน"
+            cancelText="ยกเลิก"
+            onConfirm={() => returnEdit(record)}
+            disabled={record.status !== "approve"}
+          >
+            <Tooltip title="ส่งคืนเพื่อแก้ไข">
+              <UndoOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status === "approve" ? "orange" : "#d9d9d9",
+                  cursor:
+                    record.status === "approve" ? "pointer" : "not-allowed",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
+          </Popconfirm>
+
+          {/* <Popover
             trigger="click"
             title={
               <Space>
@@ -363,15 +406,74 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             >
               อนุมัติ
             </Button>
+          </Popover> */}
+
+          <Popover
+            trigger="click"
+            title={
+              <Space>
+                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
+                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
+              </Space>
+            }
+            content={
+              <Space style={{ display: "flex", marginTop: 13 }}>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => handleApprove(record)}
+                >
+                  อนุมัติ
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  onClick={() => {
+                    setSelectedCancelRecord(record);
+                    setModalCancelOpen(true);
+                    // setPopoverOpen(false);
+                    setOpenPopoverId(null);
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+              </Space>
+            }
+            open={openPopoverId === record.id}
+            onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
+          >
+            <Tooltip title="อนุมัติ">
+              <CheckCircleOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status !== "pending" ? "#ccc" : "#52c41a",
+                  cursor:
+                    record.status !== "pending" ? "not-allowed" : "pointer",
+                  opacity: record.status !== "pending" ? 0.5 : 1,
+                }}
+                onClick={() => {
+                  if (record.status === "pending") {
+                    setOpenPopoverId(record.id);
+                  }
+                }}
+              />
+            </Tooltip>
           </Popover>
 
-          <Button
+          {/* <Button
             size="small"
             type="primary"
             onClick={() => handleShowDetail(record)}
           >
             รายละเอียด
-          </Button>
+          </Button> */}
+
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
         </Space>
       ),
     },

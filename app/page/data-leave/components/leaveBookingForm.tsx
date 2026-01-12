@@ -239,9 +239,9 @@ export default function LeaveBookingForm({
     }
   };
   return (
-    <Row gutter={24}>
+    <Row gutter={[24, 24]}>
       {/* ฟอร์ม */}
-      <Col span={12}>
+      <Col xs={24} md={12}>
         <Card
           title={
             <div
@@ -499,7 +499,7 @@ export default function LeaveBookingForm({
       </Col>
 
       {/* ตาราง */}
-      <Col span={12}>
+      <Col xs={24} md={12}>
         <Card
           title={
             <div

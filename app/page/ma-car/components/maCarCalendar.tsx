@@ -48,6 +48,8 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
         return "red";
       case "pending":
         return "blue";
+      case "edit":
+        return "orange";
       default:
         return "blue";
     }
@@ -61,6 +63,8 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
         return "ยกเลิก";
       case "pending":
         return "รอดำเนินการ";
+      case "edit":
+        return "รอแก้ไข";
       default:
         return status;
     }
@@ -166,24 +170,56 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
                   <Input disabled />
                 </Form.Item>
                 <Form.Item label="วัตถุประสงค์" name="purpose">
-                  <Input disabled />
+                  <TextArea disabled />
                 </Form.Item>
                 <Form.Item label="สถานที่" name="destination">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="ตั้งแต่วันที่">
-                  <Input value={formatBuddhist(selected.dateStart)} disabled />
-                </Form.Item>
-                <Form.Item label="ถึงวันที่">
-                  <Input value={formatBuddhist(selected.dateEnd)} disabled />
-                </Form.Item>
-                <Form.Item label="งบประมาณ" name="budget">
                   <Input disabled />
                 </Form.Item>
                 <Form.Item label="รถที่ใช้">
                   <Input disabled value={selected?.masterCar?.carName || ""} />
                 </Form.Item>
-                <Form.Item label="ขอคนขับรถ">
+                {/* <Form.Item label="ตั้งแต่วันที่">
+                  <Input value={formatBuddhist(selected.dateStart)} disabled />
+                </Form.Item>
+                <Form.Item label="ถึงวันที่">
+                  <Input value={formatBuddhist(selected.dateEnd)} disabled />
+                </Form.Item> */}
+                <Form.Item label="ตั้งแต่วันที่">
+                  <Input
+                    value={
+                      selected.dateStart
+                        ? `${dayjs(selected.dateStart)
+                            .add(543, "year")
+                            .locale("th")
+                            .format("D MMM YYYY")} เวลา ${dayjs(
+                            selected.dateStart
+                          ).format("HH:mm")} น.`
+                        : "-"
+                    }
+                    disabled
+                  />
+                </Form.Item>
+
+                <Form.Item label="ถึงวันที่">
+                  <Input
+                    value={
+                      selected.dateEnd
+                        ? `${dayjs(selected.dateEnd)
+                            .add(543, "year")
+                            .locale("th")
+                            .format("D MMM YYYY")} เวลา ${dayjs(
+                            selected.dateEnd
+                          ).format("HH:mm")} น.`
+                        : "-"
+                    }
+                    disabled
+                  />
+                </Form.Item>
+                {/* <Form.Item label="งบประมาณ" name="budget">
+                  <Input disabled />
+                </Form.Item> */}
+
+                {/* <Form.Item label="ขอคนขับรถ">
                   <Input
                     value={
                       selected?.driver === "yes"
@@ -194,7 +230,7 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
                     }
                     disabled
                   />
-                </Form.Item>
+                </Form.Item> */}
                 <Form.Item label="เหตุผลเพิ่มเติม" name="note">
                   <TextArea disabled />
                 </Form.Item>

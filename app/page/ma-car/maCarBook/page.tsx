@@ -15,6 +15,8 @@ export default function MaCarPage() {
   const [cars, setCars] = useState<MasterCarType[]>([]);
   const [dataUser, setDataUser] = useState<any[]>([]);
   const [maCarUser, setMaCarUser] = useState<MaCarType[]>([]);
+  const [maCar, setMaCar] = useState<MaCarType[]>([]);
+
   const { data: session } = useSession();
 
   // โหลดข้อมูลรถและผู้ใช้
@@ -23,13 +25,12 @@ export default function MaCarPage() {
     try {
       const resCars = await intraAuthService.getMasterCarQuery();
       const resMaCar = await intraAuthService.getMaCarQuery();
-
       const resUsers = await intraAuthService.getUserQuery();
 
       const resMaCarUser = resMaCar.filter(
         (car: any) => car.createdById === session?.user?.userId
       );
-
+      setMaCar(resMaCar);
       setCars(resCars);
       setDataUser(resUsers);
       setMaCarUser(resMaCarUser);
@@ -57,6 +58,7 @@ export default function MaCarPage() {
             loading={loading}
             fetchData={fetchData}
             maCarUser={maCarUser}
+            maCar={maCar}
           />
         </Card>
       ),

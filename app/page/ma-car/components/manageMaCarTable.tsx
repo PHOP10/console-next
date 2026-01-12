@@ -21,7 +21,12 @@ import { maCarService } from "../services/maCar.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import dayjs from "dayjs";
 import { useSession } from "next-auth/react";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  FileSearchOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 import MaCarDetail from "./maCarDetail";
 import MaCarEditModal from "./MaCarEditModal";
 
@@ -31,6 +36,7 @@ interface MaCarTableProps {
   fetchData: () => void;
   dataUser: UserType[];
   cars: MasterCarType[];
+  maCarUser: MaCarType[];
 }
 
 const ManageMaCarTable: React.FC<MaCarTableProps> = ({
@@ -39,6 +45,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   fetchData,
   dataUser,
   cars,
+  maCarUser,
 }) => {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
@@ -58,6 +65,26 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   const [editRecord, setEditRecord] = useState<any>(null);
 
   // const handleEdit = (record: MaCarType) => {
+
+  const handleShowDetail = (record: any, dataUser: any) => {
+    setSelectedRecord({ ...record, dataUser });
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseDetail = () => {
+    setDetailModalOpen(false);
+    setSelectedRecord(null);
+  };
+
+  const handleEdit = (record: any) => {
+    setEditRecord(record);
+    setEditModalOpen(true);
+  };
+
+  const handleCloseEdit = () => {
+    setEditModalOpen(false);
+    setEditRecord(null);
+  };
   //   setEditingCar(record);
   //   form.setFieldsValue({
   //     requesterName: record.requesterName,
@@ -137,24 +164,18 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     }
   };
 
-  const handleShowDetail = (record: any, dataUser: any) => {
-    setSelectedRecord({ ...record, dataUser });
-    setDetailModalOpen(true);
-  };
-
-  const handleCloseDetail = () => {
-    setDetailModalOpen(false);
-    setSelectedRecord(null);
-  };
-
-  const handleEdit = (record: any) => {
-    setEditRecord(record);
-    setEditModalOpen(true);
-  };
-
-  const handleCloseEdit = () => {
-    setEditModalOpen(false);
-    setEditRecord(null);
+  const returnEdit = async (record: any) => {
+    try {
+      await intraAuthService.updateMaCar({
+        id: record.id,
+        status: "edit",
+      });
+      message.success("ส่งคืนเพื่อแก้ไขเรียบร้อย");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error("เกิดข้อผิดพลาดในการส่งคืนเพื่อแก้ไข");
+    }
   };
 
   const columns: ColumnsType<MaCarType> = [
@@ -241,6 +262,10 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             color = "green";
             text = "อนุมัติ";
             break;
+          case "edit":
+            color = "orange";
+            text = "รอแก้ไข";
+            break;
           case "cancel":
             color = "red";
             text = "ยกเลิก";
@@ -310,6 +335,26 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Button>
           </Popconfirm>
 
+          <Popconfirm
+            title="ยืนยันการส่งคืนเพื่อแก้ไข"
+            okText="ยืนยัน"
+            cancelText="ยกเลิก"
+            onConfirm={() => returnEdit(record)}
+            disabled={record.status !== "approve"}
+          >
+            <Tooltip title="ส่งคืนเพื่อแก้ไข">
+              <UndoOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status === "approve" ? "orange" : "#d9d9d9",
+                  cursor:
+                    record.status === "approve" ? "pointer" : "not-allowed",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
+          </Popconfirm>
+
           <Popover
             trigger="click"
             title={
@@ -344,23 +389,38 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             open={openPopoverId === record.id}
             onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
-            <Button
-              type="primary"
-              size="small"
-              disabled={record.status !== "pending"}
-              onClick={() => setOpenPopoverId(record.id)}
-            >
-              อนุมัติ
-            </Button>
+         
+            <Tooltip title="อนุมัติ">
+              <CheckCircleOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status !== "pending" ? "#ccc" : "#52c41a", // เทาเมื่อ disable, เขียวเมื่อ active
+                  cursor:
+                    record.status !== "pending" ? "not-allowed" : "pointer",
+                  opacity: record.status !== "pending" ? 0.5 : 1,
+                }}
+                onClick={() => {
+                  if (record.status === "pending") {
+                    setOpenPopoverId(record.id);
+                  }
+                }}
+              />
+            </Tooltip>
           </Popover>
 
-          <Button
+          {/* <Button
             size="small"
             type="primary"
             onClick={() => handleShowDetail(record, dataUser)}
           >
             รายละเอียด
-          </Button>
+          </Button> */}
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record, dataUser)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -443,6 +503,8 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         cars={cars}
         dataUser={dataUser}
         fetchData={fetchData}
+        maCarUser={maCarUser}
+        data={data}
       />
     </>
   );
