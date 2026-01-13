@@ -1,13 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Table, message, Card } from "antd";
+import { Table, message, Card, Button, Tooltip } from "antd";
+import { FileExcelOutlined, EyeOutlined } from "@ant-design/icons"; // เพิ่ม Icons
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { MaDrugType } from "../../common";
+import { exportMaDrugToExcel } from "./maDrugExport";
 
-export default function maDrugTable() {
+export default function MaDrugTable() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
 
@@ -18,7 +20,7 @@ export default function maDrugTable() {
     try {
       setLoading(true);
       const result = await intraAuthService.getMaDrugQuery();
-      // ปรับให้แน่ใจว่าผลลัพธ์เป็น array
+      // ต้องแน่ใจว่า Backend ส่ง maDrugItems มาด้วย (include: { maDrugItems: { include: { drug: true } } })
       setData(Array.isArray(result) ? result : result?.data || []);
     } catch (error) {
       console.error("โหลดข้อมูลล้มเหลว:", error);
@@ -32,18 +34,24 @@ export default function maDrugTable() {
     fetchData();
   }, []);
 
+  // ฟังก์ชันกดปุ่ม Export
+  const handleExport = (record: MaDrugType) => {
+    try {
+      message.loading("กำลังสร้างไฟล์ Excel...", 1);
+      exportMaDrugToExcel(record); // เรียกใช้ฟังก์ชันจาก maDrugExport.tsx
+    } catch (error) {
+      console.error(error);
+      message.error("เกิดข้อผิดพลาดในการสร้างไฟล์");
+    }
+  };
+
   const columns: ColumnsType<MaDrugType> = [
-    {
-      title: "รหัสเบิกยา",
-      dataIndex: "MaDrugId",
-      key: "MaDrugId",
-      align: "center",
-    },
     {
       title: "เลขที่เบิก",
       dataIndex: "requestNumber",
       key: "requestNumber",
       align: "center",
+      width: 120,
     },
     {
       title: "หน่วยงาน",
@@ -56,6 +64,7 @@ export default function maDrugTable() {
       dataIndex: "roundNumber",
       key: "roundNumber",
       align: "center",
+      width: 80,
     },
     {
       title: "ผู้ขอเบิก",
@@ -77,23 +86,53 @@ export default function maDrugTable() {
       render: (value) => new Date(value).toLocaleDateString("th-TH"),
     },
     {
-      title: "จำนวนที่เบิก",
-      dataIndex: "quantityUsed",
-      key: "quantityUsed",
+      title: "สถานะ",
+      dataIndex: "status",
+      key: "status",
       align: "center",
+      render: (text) => (
+        <span style={{ color: text === "pending" ? "orange" : "green" }}>
+          {text}
+        </span>
+      ),
     },
     {
-      title: "หมายเหตุ",
-      dataIndex: "note",
-      key: "note",
+      title: "จัดการ", // ✅ เพิ่มคอลัมน์จัดการ
+      key: "action",
       align: "center",
+      width: 150,
+      render: (_, record) => (
+        <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
+          {/* ปุ่มดูรายละเอียด (ตัวอย่าง) */}
+          <Tooltip title="ดูรายละเอียด">
+            <Button icon={<EyeOutlined />} size="small" />
+          </Tooltip>
+
+          {/* ปุ่ม Export Excel */}
+          <Tooltip title="พิมพ์ใบเบิก (Excel)">
+            <Button
+              type="primary"
+              icon={<FileExcelOutlined />}
+              size="small"
+              style={{ backgroundColor: "#217346", borderColor: "#217346" }} // สีเขียว Excel
+              onClick={() => handleExport(record)}
+            >
+              Export
+            </Button>
+          </Tooltip>
+        </div>
+      ),
     },
   ];
 
   return (
     <Card
       bordered
-      style={{ backgroundColor: "white" }} // พื้นหลัง Card สีขาว
+      style={{
+        backgroundColor: "white",
+        borderRadius: "8px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+      }}
       title={
         <div
           style={{
@@ -103,18 +142,18 @@ export default function maDrugTable() {
             color: "#0683e9",
           }}
         >
-          ข้อมูลการเบิกจ่ายยา
+          📋 ประวัติการเบิกจ่ายยา
         </div>
       }
     >
       <Table
-        rowKey="id"
+        rowKey="id" // เปลี่ยนเป็น id ตาม Prisma model ปกติ
         columns={columns}
         dataSource={data}
         loading={loading}
         bordered
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 1000 }} // หากต้องการให้ตารางเลื่อนแนวนอน
+        scroll={{ x: 1000 }}
       />
     </Card>
   );

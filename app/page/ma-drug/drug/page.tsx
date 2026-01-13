@@ -42,7 +42,12 @@ export default function Page() {
       key: "1",
       label: "ข้อมูลยา",
       children: (
-        <DataDrugTable setLoading={setLoading} loading={loading} data={data} />
+        <DataDrugTable
+          setLoading={setLoading}
+          loading={loading}
+          data={data}
+          setData={setData}
+        />
       ),
     },
     {

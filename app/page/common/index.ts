@@ -123,19 +123,46 @@ export interface MasterLeaveType {
 }
 export interface VisitHomeType {
   id: number;
-  firstName: string;
-  lastName: string;
-  age: number;
-  address: string;
-  visitDate: string;
-  symptoms?: string;
-  medication?: string;
-  nextAppointment?: string;
-  notes?: string;
+  // --- 1. ข้อมูลทั่วไปและระบุตัวตน (Identity) ---
+  hhcNo?: string; // เลขที่ HHC
+  referralDate?: string; // วันที่ส่งต่อ (ISO String)
+  firstName: string; // ชื่อจริง
+  lastName: string; // นามสกุล
+  fullName: string; // ชื่อ-นามสกุล
+  age: number; // อายุ
+  hn: string; // HN
+  dob?: string; // วันเดือนปีเกิด (ISO String)
+  cid?: string; // เลขบัตรประชาชน 13 หลัก
+  phone?: string; // เบอร์โทรศัพท์
+  address: string; // ที่อยู่
+  allergies?: string; // ประวัติแพ้ยา/อาหาร
+  // --- 2. ข้อมูลการรักษา (Admission) ---
+  admissionDate?: string; // วันที่แอดมิท (ISO String)
+  dischargeDate?: string; // วันที่จำหน่าย (ISO String)
+  // --- 3. สัญญาณชีพ (Vital Signs) ---
+  temperature?: number; // อุณหภูมิ (T)
+  pulseRate?: number; // ชีพจร (PR)
+  respRate?: number; // อัตราการหายใจ (RR)
+  bloodPressure?: string; // ความดันโลหิต (BP) เช่น "120/80"
+  oxygenSat?: number; // ออกซิเจนในเลือด (O2 Sat)
+  // --- 4. อาการและการวินิจฉัย (Clinical Data) ---
+  initialHistory?: string; // ประวัติเจ็บป่วยแรกรับ
+  symptoms?: string; // อาการปัจจุบัน
+  diagnosis?: string; // การวินิจฉัยโรค
+  // --- 5. การดูแลและอุปกรณ์ (Care & Equipment) ---
+  medication?: string; // ยาที่ได้รับ/ใช้
+  medicalEquipment?: string; // อุปกรณ์ติดตัวกลับบ้าน
+  careNeeds?: string; // ความต้องการดูแล / ปัญหาที่พบ
+  // --- 6. การนัดหมาย (Appointment) ---
+  visitDate: string; // วันที่เยี่ยมบ้าน (ISO String)
+  nextAppointment?: string; // วันนัดครั้งถัดไป (ISO String)
+  notes?: string; // หมายเหตุ
+  // --- 7. ข้อมูลระบบ (System & Relations) ---
+  createdName?: string; // ชื่อผู้บันทึก
   createdAt: string;
   updatedAt: string;
-  patientTypeId: number;
-  patientType: MasterPatientType;
+  patientTypeId?: number; // FK ID ประเภทผู้ป่วย
+  patientType?: MasterPatientType; // Relation Object (ถ้ามีการ Join)
 }
 
 export interface MasterPatientType {

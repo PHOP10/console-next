@@ -6,3 +6,5 @@ npm
 ```npm install react-chartjs-2 chart.js````
 
 ```npm install exceljs file-saver```
+
+```npm install --save-dev @types/crypto-js```
