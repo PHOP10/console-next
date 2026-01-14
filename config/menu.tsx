@@ -303,11 +303,12 @@ export const group = {
   user: "user",
   asset: "asset",
   pharmacy: "pharmacy",
+  home: "home",
 };
 
 // เมนูหลัก
 export const MenuSider: IMenu[] = [
-/*   {
+  /*   {
     key: "dashboard",
     icon: <FileTextOutlined />,
     label: "โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง",
@@ -316,18 +317,30 @@ export const MenuSider: IMenu[] = [
   {
     key: "official-travel-request",
     label: "ระบบขอไปราชการ",
-    roles: [group.admin, group.user, group.pharmacy, group.asset],
+    // roles: [group.admin, group.user, group.pharmacy, group.asset, group.home],
     icon: <FileZipOutlined />,
     children: [
       {
         key: "officialTravelRequest",
         label: "ข้อมูลขอไปราชการ",
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: "officialTravelRequestBook",
         label: "ขอไปราชการ",
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: "manageOfficialTravelRequest",
@@ -339,18 +352,30 @@ export const MenuSider: IMenu[] = [
   {
     key: "ma-car",
     label: `ระบบจองรถ`,
-    roles: [group.admin, group.user, group.pharmacy, group.asset],
+    // roles: [group.admin, group.user, group.pharmacy, group.asset],
     icon: <CarOutlined />,
     children: [
       {
         key: `maCar`,
         label: `ข้อมูลการจองรถ`,
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: `maCarBook`,
         label: `จองรถ`,
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: `manageMaCar`,
@@ -362,18 +387,30 @@ export const MenuSider: IMenu[] = [
   {
     key: "data-leave",
     label: `ระบบการลา`,
-    roles: [group.admin, group.user, group.pharmacy, group.asset],
+    // roles: [group.admin, group.user, group.pharmacy, group.asset],
     icon: <FrownOutlined />,
     children: [
       {
         key: `dataLeave`,
         label: `ข้อมูลการลา`,
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: `dataLeaveBook`,
         label: `ยื่นใบลา`,
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: `manageDataLeave`,
@@ -385,18 +422,24 @@ export const MenuSider: IMenu[] = [
   {
     key: "visit-home",
     label: `ระบบเยี่ยมบ้าน`,
-    roles: [group.admin, group.user, group.pharmacy, group.asset],
+    // roles: [group.admin, group.user, group.pharmacy, group.asset],
     icon: <HomeOutlined />,
     children: [
       {
         key: "visitHome",
         label: "การเยี่ยบ้าน",
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [group.admin, group.home],
       },
       {
         key: "dataVisitHome",
         label: "ข้อมูลการเยี่ยบ้าน",
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
     ],
   },
@@ -426,31 +469,49 @@ export const MenuSider: IMenu[] = [
   {
     key: "durable-article",
     label: `ระบบครุภัณฑ์`,
-    roles: [group.admin, group.asset],
+    // roles: [group.admin, group.asset],
     icon: <HddOutlined />,
     children: [
       {
         key: "durableArticle",
         label: "ข้อมูลครุภัณฑ์",
-        roles: [group.admin, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: "supportingResource",
         label: "วัสดุสนับสนุน",
-        roles: [group.admin, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
     ],
   },
   {
     key: "medical-equipment",
     label: `เครื่องมือแพทย์`,
-    roles: [group.admin, group.user, group.pharmacy, group.asset],
+    // roles: [group.admin, group.user, group.pharmacy, group.asset],
     icon: <TruckOutlined />,
     children: [
       {
         key: "medicalEquipment",
         label: "ข้อมมูลเครื่องมือแพทย์",
-        roles: [group.admin, group.user, group.pharmacy, group.asset],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: "maMedicalEquipment",
@@ -462,7 +523,7 @@ export const MenuSider: IMenu[] = [
   {
     key: "infectious-waste",
     label: `ทิ้งขยะ`,
-    roles: [group.admin, group.user, group.pharmacy, group.asset],
+    // roles: [group.admin, group.user, group.pharmacy, group.asset],
     icon: <DeleteOutlined />,
   },
   {
@@ -521,15 +582,12 @@ export const itemBreadcrumbMenu = (pathname: string) => {
             replaceSpecialCharactersWithSpace(childPath.toLowerCase())
         );
         return [
-          { title: <Link href={"/page"}>Home</Link> },
+          { title: <Link href={"/page"}></Link> },
           { title: item.label },
           { title: childMenu?.label },
         ];
       }
-      return [
-        { title: <Link href={"/page"}>Home</Link> },
-        { title: item.label },
-      ];
+      return [{ title: <Link href={"/page"}></Link> }, { title: item.label }];
     }
   )[0];
 };

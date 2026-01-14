@@ -12,11 +12,16 @@ import {
   message,
   Card,
   Popconfirm,
+  Space,
+  Row,
+  Col,
+  Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
 import { MasterCarType } from "../../common";
+import { DeleteOutlined, FormOutlined } from "@ant-design/icons";
 
 interface ManageCarTableProps {
   dataCar: MasterCarType[];
@@ -31,8 +36,10 @@ export default function ManageCarPage({
 }: ManageCarTableProps) {
   const [data, setData] = useState<MasterCarType[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingCar, setEditingCar] = useState<MasterCarType | null>(null);
   const [form] = Form.useForm();
+  const [editForm] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
 
@@ -56,14 +63,60 @@ export default function ManageCarPage({
   // ฟังก์ชันเพิ่มรถ
   const onFinish = async (values: any) => {
     try {
-      await intraAuthService.createMasterCar(values);
+      const { carName, licensePlate, numberType } = values;
+      const isDuplicate = data.some(
+        (car: any) =>
+          car.licensePlate === licensePlate || car.carName === carName
+      );
+      if (isDuplicate) {
+        const duplicateCar = data.find(
+          (car: any) => car.licensePlate === licensePlate
+        );
+        const msg = duplicateCar
+          ? `ทะเบียนรถ "${licensePlate}" มีอยู่ในระบบแล้ว`
+          : `ชื่อรถ "${carName}" มีอยู่ในระบบแล้ว`;
+
+        return message.warning(msg);
+      }
+
+      const payload = {
+        ...values,
+        status: values.status || "available",
+      };
+
+      await intraAuthService.createMasterCar(payload);
+
       message.success("เพิ่มรถสำเร็จ");
       form.resetFields();
       setIsModalOpen(false);
+      fetchData(); // ดึงข้อมูลใหม่เพื่อให้อัปเดต dataCars ครั้งต่อไป
+    } catch (err: any) {
+      console.error(err);
+      // ดัก Error เผื่อกรณีมีการเพิ่มจากเครื่องอื่นพร้อมกัน (Race Condition)
+      if (err.response?.status === 409) {
+        message.error("ข้อมูลนี้ถูกเพิ่มโดยผู้ใช้อื่นไปก่อนหน้าแล้ว");
+      } else {
+        message.error("เพิ่มรถไม่สำเร็จ");
+      }
+    }
+  };
+
+  // ฟังก์ชันแก้ไขรถ
+  const onEditFinish = async (values: any) => {
+    if (!editingCar) return;
+    try {
+      const payload = {
+        ...editingCar,
+        ...values,
+      };
+      await intraAuthService.updateMasterCar(payload);
+      message.success("แก้ไขรถสำเร็จ");
+      setIsEditModalOpen(false);
+      setEditingCar(null);
       fetchData();
     } catch (err) {
       console.error(err);
-      message.error("เพิ่มรถไม่สำเร็จ");
+      message.error("แก้ไขรถไม่สำเร็จ");
     }
   };
 
@@ -84,45 +137,97 @@ export default function ManageCarPage({
     { title: "ทะเบียนรถ", dataIndex: "licensePlate", key: "licensePlate" },
     { title: "ยี่ห้อ", dataIndex: "brand", key: "brand" },
     { title: "รุ่น", dataIndex: "model", key: "model" },
-    { title: "ปี", dataIndex: "year", key: "year" },
-    { title: "สถานะ", dataIndex: "status", key: "status" },
-    { title: "รายละเอียด", dataIndex: "details", key: "details" },
+    // { title: "ปี", dataIndex: "year", key: "year" },
+    {
+      title: "สถานะ",
+      dataIndex: "status",
+      key: "status",
+      render: (status) =>
+        status === "available" ? "พร้อมใช้งาน" : "ไม่พร้อมใช้งาน",
+    },
+    // { title: "รายละเอียด", dataIndex: "details", key: "details" },
+    {
+      title: "รายละเอียด",
+      dataIndex: "details",
+      key: "details",
+      ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 15;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
+    },
     {
       title: "จัดการ",
       key: "action",
       render: (_, record) => (
-        <Popconfirm
-          title="ยืนยันการลบ"
-          description="คุณแน่ใจหรือไม่ว่าต้องการลบรถคันนี้?"
-          okText="ใช่"
-          cancelText="ไม่"
-          onConfirm={() => handleDelete(record.id)}
-        >
-          <Button danger>ลบ</Button>
-        </Popconfirm>
+        <Space>
+          <Tooltip title="แก้ไข">
+            <FormOutlined
+              style={{
+                fontSize: 20,
+                color: "#faad14",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                setEditingCar(record);
+                editForm.setFieldsValue(record);
+                setIsEditModalOpen(true);
+              }}
+            />
+          </Tooltip>
+          <Tooltip title="ลบข้อมูล">
+            <Popconfirm
+              title="ยืนยันการลบ"
+              description="คุณแน่ใจหรือไม่ว่าต้องการลบรถคันนี้?"
+              okText="ใช่"
+              cancelText="ไม่"
+              onConfirm={() => handleDelete(record.id)}
+              okButtonProps={{ danger: true }} // ทำให้ปุ่ม "ใช่" ใน Popconfirm เป็นสีแดงด้วย
+            >
+              <DeleteOutlined
+                style={{
+                  fontSize: 20, // ขนาดไอคอน (ใกล้เคียงกับไอคอนแก้ไขที่คุณใช้)
+                  color: "#ff4d4f", // สีแดงของ Ant Design
+                  cursor: "pointer",
+                  marginLeft: 12, // ระยะห่างจากไอคอนแก้ไข
+                }}
+              />
+            </Popconfirm>
+          </Tooltip>
+        </Space>
       ),
     },
   ];
 
   return (
     <Card>
-      <Button
-        type="primary"
-        onClick={() => {
-          form.resetFields();
-          setIsModalOpen(true);
-        }}
-        style={{ marginBottom: 16 }}
-      >
-        เพิ่มรถ
-      </Button>
+      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <Button
+          type="primary"
+          onClick={() => {
+            form.resetFields();
+            setIsModalOpen(true);
+          }}
+          style={{ marginBottom: 16 }}
+        >
+          เพิ่มรถ
+        </Button>
+      </div>
 
       <Table
         columns={columns}
         dataSource={data}
         rowKey="id"
         loading={loading}
-        scroll={{ x: 800 }}
+        pagination={{ pageSize: 10 }}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal
@@ -131,62 +236,314 @@ export default function ManageCarPage({
         footer={null}
         onCancel={() => setIsModalOpen(false)}
         destroyOnClose
+        // width={700} // เพิ่มความกว้างเพื่อให้แสดง 2 คอลัมน์ได้สวยงาม
       >
         <Form form={form} layout="vertical" onFinish={onFinish}>
-          <Form.Item
-            name="carName"
-            label="ชื่อรถ"
-            rules={[{ required: true, message: "กรุณากรอกชื่อรถ" }]}
-          >
-            <Input />
-          </Form.Item>
+          <Row gutter={16}>
+            {/* แถวที่ 1 */}
+            <Col span={12}>
+              <Form.Item
+                name="carName"
+                label="ชื่อรถ"
+                rules={[
+                  { required: true, message: "กรุณากรอกชื่อรถ" },
+                  {
+                    validator: (_, value) => {
+                      if (data.some((car) => car.carName === value)) {
+                        return Promise.reject(
+                          new Error("ชื่อรถนี้มีในระบบแล้ว")
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <Input placeholder="เช่น รถตู้ส่วนกลาง" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="numberType"
+                label="หมายเลขรถ"
+                rules={[
+                  { required: true, message: "กรุณากรอกหมายเลขรถ" },
+                  {
+                    validator: (_, value) => {
+                      if (data.some((car) => car.numberType === value)) {
+                        return Promise.reject(
+                          new Error("หมายเลขรถนี้มีในระบบแล้ว")
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="หมายเลขลำดับรถ"
+                />
+              </Form.Item>
+            </Col>
 
-          <Form.Item
-            name="licensePlate"
-            label="ทะเบียนรถ"
-            rules={[{ required: true, message: "กรุณากรอกทะเบียนรถ" }]}
-          >
-            <Input />
-          </Form.Item>
+            {/* แถวที่ 2 */}
+            <Col span={12}>
+              <Form.Item
+                name="licensePlate"
+                label="ทะเบียนรถ"
+                rules={[
+                  { required: true, message: "กรุณากรอกทะเบียนรถ" },
+                  {
+                    validator: (_, value) => {
+                      if (data.some((car) => car.licensePlate === value)) {
+                        return Promise.reject(
+                          new Error("ทะเบียนรถนี้มีในระบบแล้ว")
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <Input />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="brand"
+                label="ยี่ห้อ"
+                rules={[{ required: true, message: "กรุณากรอกยี่ห้อรถ" }]}
+              >
+                <Input placeholder="เช่น Toyota" />
+              </Form.Item>
+            </Col>
 
-          <Form.Item
-            name="brand"
-            label="ยี่ห้อ"
-            rules={[{ required: true, message: "กรุณากรอกยี่ห้อรถ" }]}
-          >
-            <Input />
-          </Form.Item>
+            {/* แถวที่ 3 */}
+            <Col span={12}>
+              <Form.Item
+                name="model"
+                label="รุ่น"
+                rules={[{ required: true, message: "กรุณากรอกรุ่นรถ" }]}
+              >
+                <Input placeholder="เช่น Commuter" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="fuelType"
+                label="ประเภทน้ำมัน"
+                rules={[{ required: true, message: "กรุณาเลือกประเภทน้ำมัน" }]}
+              >
+                <Select placeholder="เลือกประเภทน้ำมัน">
+                  <Select.Option value="ดีเซล">ดีเซล</Select.Option>
+                  <Select.Option value="เบนซิน 95">เบนซิน 95</Select.Option>
+                  <Select.Option value="แก๊สโซฮอล์ 91">
+                    แก๊สโซฮอล์ 91
+                  </Select.Option>
+                  <Select.Option value="ไฟฟ้า">ไฟฟ้า (EV)</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
 
-          <Form.Item
-            name="model"
-            label="รุ่น"
-            rules={[{ required: true, message: "กรุณากรอกรุ่นรถ" }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            name="year"
-            label="ปี"
-            rules={[{ required: true, message: "กรุณากรอกปีรถ" }]}
-          >
-            <InputNumber min={1900} max={2100} style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item name="status" label="สถานะ" initialValue="available">
-            <Select>
-              <Select.Option value="available">ใช้งานได้ปกติ</Select.Option>
-              <Select.Option value="unavailable">
-                ไม่สามารถใช้งานได้
-              </Select.Option>
-            </Select>
-          </Form.Item>
+            {/* แถวที่ 4 - สถานะ (เต็มแถวหรือครึ่งแถวตามความชอบ) */}
+            <Col span={12}>
+              <Form.Item
+                name="status"
+                label="สถานะการใช้งาน"
+                initialValue="available"
+              >
+                <Select>
+                  <Select.Option value="available">พร้อมใช้งาน</Select.Option>
+                  <Select.Option value="unavailable">
+                    ไม่พร้อมใช้งาน (ซ่อม/งดใช้)
+                  </Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item name="details" label="รายละเอียดเพิ่มเติม">
-            <Input.TextArea rows={3} />
+            <Input.TextArea
+              rows={3}
+              placeholder="ระบุข้อมูลอื่นๆ เช่น สีรถ, ประกันภัย"
+            />
           </Form.Item>
 
-          <Form.Item>
+          <Form.Item style={{ textAlign: "right", marginBottom: 0 }}>
+            <Button
+              style={{ marginRight: 8 }}
+              onClick={() => setIsModalOpen(false)}
+            >
+              ยกเลิก
+            </Button>
+            <Button type="primary" htmlType="submit">
+              บันทึกข้อมูล
+            </Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modal แก้ไขรถ */}
+      <Modal
+        title="แก้ไขรถ"
+        open={isEditModalOpen}
+        footer={null}
+        onCancel={() => setIsEditModalOpen(false)}
+        destroyOnClose
+      >
+        <Form form={editForm} layout="vertical" onFinish={onEditFinish}>
+          <Row gutter={16}>
+            {/* แถวที่ 1 */}
+            <Col span={12}>
+              <Form.Item
+                name="carName"
+                label="ชื่อรถ"
+                rules={[
+                  { required: true, message: "กรุณากรอกชื่อรถ" },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
+
+                      const isDuplicate = data.some(
+                        (car) =>
+                          car.carName === value && car.id !== editingCar?.id
+                      );
+
+                      if (isDuplicate) {
+                        return Promise.reject(
+                          new Error("ชื่อรถนี้มีในระบบแล้ว")
+                        );
+                      }
+
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <Input placeholder="เช่น รถตู้ส่วนกลาง" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="numberType"
+                label="หมายเลขรถ"
+                rules={[
+                  { required: true, message: "กรุณากรอกหมายเลขรถ" },
+                  {
+                    validator: (_, value) => {
+                      if (value === undefined || value === null)
+                        return Promise.resolve();
+                      const isDuplicate = data.some(
+                        (car) =>
+                          car.numberType === value && car.id !== editingCar?.id
+                      );
+                      if (isDuplicate) {
+                        return Promise.reject(
+                          new Error("หมายเลขรถนี้มีในระบบแล้ว")
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  placeholder="หมายเลขลำดับรถ"
+                />
+              </Form.Item>
+            </Col>
+
+            <Col span={12}>
+              <Form.Item
+                name="licensePlate"
+                label="ทะเบียนรถ"
+                rules={[
+                  { required: true, message: "กรุณากรอกทะเบียนรถ" },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
+                      const isDuplicate = data.some(
+                        (car) =>
+                          car.licensePlate === value &&
+                          car.id !== editingCar?.id
+                      );
+                      if (isDuplicate) {
+                        return Promise.reject(
+                          new Error("ทะเบียนรถนี้มีในระบบแล้ว")
+                        );
+                      }
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+              >
+                <Input placeholder="เช่น กข 1234 ตาก" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="brand"
+                label="ยี่ห้อ"
+                rules={[{ required: true, message: "กรุณากรอกยี่ห้อรถ" }]}
+              >
+                <Input placeholder="เช่น Toyota" />
+              </Form.Item>
+            </Col>
+
+            {/* แถวที่ 3 */}
+            <Col span={12}>
+              <Form.Item
+                name="model"
+                label="รุ่น"
+                rules={[{ required: true, message: "กรุณากรอกรุ่นรถ" }]}
+              >
+                <Input placeholder="เช่น Commuter" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="fuelType"
+                label="ประเภทน้ำมัน"
+                rules={[{ required: true, message: "กรุณาเลือกประเภทน้ำมัน" }]}
+              >
+                <Select placeholder="เลือกประเภทน้ำมัน">
+                  <Select.Option value="ดีเซล">ดีเซล</Select.Option>
+                  <Select.Option value="เบนซิน 95">เบนซิน 95</Select.Option>
+                  <Select.Option value="แก๊สโซฮอล์ 91">
+                    แก๊สโซฮอล์ 91
+                  </Select.Option>
+                  <Select.Option value="ไฟฟ้า">ไฟฟ้า (EV)</Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+
+            {/* แถวที่ 4 - สถานะ (เต็มแถวหรือครึ่งแถวตามความชอบ) */}
+            <Col span={12}>
+              <Form.Item
+                name="status"
+                label="สถานะการใช้งาน"
+                initialValue="available"
+              >
+                <Select>
+                  <Select.Option value="available">พร้อมใช้งาน</Select.Option>
+                  <Select.Option value="unavailable">
+                    ไม่พร้อมใช้งาน (ซ่อม/งดใช้)
+                  </Select.Option>
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item name="details" label="รายละเอียดเพิ่มเติม">
+            <Input.TextArea
+              rows={3}
+              placeholder="ระบุข้อมูลอื่นๆ เช่น สีรถ, ประกันภัย"
+            />
+          </Form.Item>
+
+          <Form.Item style={{ textAlign: "center", marginTop: "24px" }}>
             <Button type="primary" htmlType="submit">
               บันทึก
             </Button>

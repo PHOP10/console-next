@@ -40,6 +40,7 @@ export default function CreateMedicalEquipmentForm({
   setLoading,
   dataEQ,
   data,
+  fetchData,
 }: Props) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
@@ -67,6 +68,7 @@ export default function CreateMedicalEquipmentForm({
       const res = await maService.createMaMedicalEquipment(payload);
       if (res) {
         setLoading(true);
+        fetchData;
         message.success("บันทึกข้อมูลสำเร็จ");
         form.resetFields();
       } else {

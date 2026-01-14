@@ -7,16 +7,17 @@ import { maCarService } from "../services/maCar.service";
 import ManageMaCarTable from "../components/manageMaCarTable";
 import ManageCarTable from "../components/manageCarTable";
 import { MaCarType, MasterCarType } from "../../common";
+import { useSession } from "next-auth/react";
 
 export default function manageMaCarPage() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
-
+  const { data: session } = useSession();
   const [loading, setLoading] = useState<boolean>(false);
   const [data, setData] = useState<MaCarType[]>([]); // เก็บข้อมูล MaCar
   const [dataCar, setDataCar] = useState<MasterCarType[]>([]); // เก็บข้อมูล MaCar
   const [dataUser, setDataUser] = useState<any[]>([]);
-
+  const [maCarUser, setMaCarUser] = useState<MaCarType[]>([]);
   // ฟังก์ชันดึงข้อมูล
   const fetchData = async () => {
     setLoading(true);
@@ -24,8 +25,13 @@ export default function manageMaCarPage() {
       const res = await intraAuthService.getMaCarQuery();
       const dataCar = await intraAuthService.getMasterCarQuery();
       const resUsers = await intraAuthService.getUserQuery();
+      const resMaCar = await intraAuthService.getMaCarQuery();
+      const resMaCarUser = resMaCar.filter(
+        (car: any) => car.createdById === session?.user?.userId
+      );
       setDataUser(resUsers);
       setDataCar(dataCar);
+      setMaCarUser(resMaCarUser);
       setData(res);
     } catch (err) {
       console.error(err);
@@ -50,6 +56,8 @@ export default function manageMaCarPage() {
             loading={loading}
             fetchData={fetchData}
             dataUser={dataUser}
+            cars={dataCar}
+            maCarUser={maCarUser}
           />
         </Card>
       ),

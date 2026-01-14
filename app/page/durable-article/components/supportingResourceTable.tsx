@@ -16,6 +16,7 @@ import {
   Row,
   Col,
   Select,
+  Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
@@ -26,6 +27,7 @@ import DurableArticleDetail from "./durableArticleDetail";
 import DurableArticleExport from "./durableArticleExportId";
 import DurableArticleExportWord from "./durableArticleExportWordId";
 import { exportDurableArticles } from "./exportDurableArticles";
+import { useSession } from "next-auth/react";
 // import DurableArticleExportPdf from "./durableArticleExportPdfID";
 
 type Props = {
@@ -47,6 +49,7 @@ export default function SupportingResourceTable({
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [searchText, setSearchText] = useState("");
+  const { data: session } = useSession();
 
   const handleEdit = (record: DurableArticleType) => {
     setEditRecord(record);
@@ -117,23 +120,59 @@ export default function SupportingResourceTable({
       dataIndex: "code",
       key: "code",
       align: "center",
-      // width: 150, // กำหนดความกว้างขั้นต่ำ (px)
-      // ellipsis: true, // ถ้าเนื้อหายาวเกิน จะตัดแล้วขึ้น ...
     },
     {
       title: "วัน เดือน ปี",
       dataIndex: "acquiredDate",
       key: "acquiredDate",
       align: "center",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
+    },
+
+    {
+      title: "เลขที่เอกสาร",
+      dataIndex: "documentId",
+      key: "documentId",
+      align: "center",
     },
     {
       title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
       dataIndex: "description",
       key: "description",
-      align: "center",
-      // width: 200, // กำหนดความกว้างขั้นต่ำ (px)
-      // ellipsis: true, // ถ้าเนื้อหายาวเกิน จะตัดแล้วขึ้น ...
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
+    },
+    {
+      title: "วิธีการได้มา",
+      dataIndex: "acquisitionType",
+      key: "acquisitionType",
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "ราคาต่อหน่วย",
@@ -144,28 +183,29 @@ export default function SupportingResourceTable({
         value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
     },
     {
-      title: "วิธีการได้มา",
-      dataIndex: "acquisitionType",
-      key: "acquisitionType",
+      title: "มูลค่าสุทธิ",
+      dataIndex: "netValue",
+      key: "netValue",
       align: "center",
+      render: (value) =>
+        value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
     },
-    // {
-    //   title: "อายุการใช้งาน (ปี)",
-    //   dataIndex: "usageLifespanYears",
-    //   key: "usageLifespanYears",
-    // },
-    // {
-    //   title: "ค่าเสื่อมราคาต่อเดือน",
-    //   dataIndex: "monthlyDepreciation",
-    //   key: "monthlyDepreciation",
-    //   render: (value) =>
-    //     value.toLocaleString(undefined, { minimumFractionDigits: 2 }),
-    // },
     {
       title: "หมายเหตุ",
       dataIndex: "note",
       key: "note",
-      align: "center",
+      ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "จัดการ",
@@ -173,33 +213,40 @@ export default function SupportingResourceTable({
       align: "center",
       render: (_, record) => (
         <Space>
-          <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteDurableArticle(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                setLoading(true);
-              } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการลบ:", error);
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Button danger size="small">
-              ลบ
-            </Button>
-          </Popconfirm>
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => handleEdit(record)}
-          >
-            แก้ไข
-          </Button>
+          {(session?.user?.role === "asset" ||
+            session?.user?.role === "admin") && (
+            <>
+              <Popconfirm
+                title="ยืนยันการลบ"
+                description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+                onConfirm={async () => {
+                  try {
+                    await intraAuthService.deleteDurableArticle(record.id);
+                    message.success("ลบข้อมูลสำเร็จ");
+                    setLoading(true);
+                  } catch (error) {
+                    console.error("เกิดข้อผิดพลาดในการลบ:", error);
+                    message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+                  }
+                }}
+                okText="ใช่"
+                cancelText="ยกเลิก"
+              >
+                <Button danger size="small">
+                  ลบ
+                </Button>
+              </Popconfirm>
+
+              <Button
+                size="small"
+                type="primary"
+                onClick={() => handleEdit(record)}
+                style={{ backgroundColor: "#faad14", marginLeft: 8 }}
+              >
+                แก้ไข
+              </Button>
+            </>
+          )}
           <Button
             size="small"
             type="primary"
@@ -253,7 +300,7 @@ export default function SupportingResourceTable({
           dataSource={filteredData}
           loading={loading}
           bordered
-          scroll={{ x: 800 }}
+          scroll={{ x: "max-content" }}
         />
 
         <Modal

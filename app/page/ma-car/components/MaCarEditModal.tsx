@@ -1,142 +1,136 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
+  Modal,
   Form,
   Input,
   DatePicker,
   InputNumber,
-  Button,
-  message,
   Select,
-  Card,
+  message,
+  Button,
   Row,
   Col,
   ConfigProvider,
   Radio,
   Checkbox,
 } from "antd";
+import dayjs from "dayjs";
+import th_TH from "antd/locale/th_TH";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
-import { useSession } from "next-auth/react";
-import th_TH from "antd/locale/th_TH";
-import dayjs from "dayjs";
-import "dayjs/locale/th";
-import isBetween from "dayjs/plugin/isBetween";
-import { useRouter } from "next/navigation";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { MaCarType } from "../../common";
+import "dayjs/locale/th";
+import isBetween from "dayjs/plugin/isBetween";
 import TextArea from "antd/es/input/TextArea";
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 dayjs.locale("th");
 dayjs.extend(isBetween);
-dayjs.extend(isSameOrBefore); // ลงทะเบียน plugin
-dayjs.extend(isSameOrAfter); // ลงทะเบียน plugin
 
-interface MaCarBookFormProps {
+interface MaCarEditModalProps {
+  open: boolean;
+  onClose: () => void;
+  record: any;
   cars: any[];
   dataUser: any[];
-  loading: boolean;
-  fetchData: () => Promise<void>;
+  fetchData: () => void;
+  data: any[];
   maCarUser: MaCarType[];
-  maCar: MaCarType[];
 }
 
-const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
+const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
+  open,
+  onClose,
+  record,
   cars,
   dataUser,
-  loading,
   fetchData,
+  data,
   maCarUser,
-  maCar,
 }) => {
-  const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
-  const { data: session } = useSession();
+  const [form] = Form.useForm();
   const selectedCarId = form.getFieldValue("carId");
-  const router = useRouter();
 
-  console.log("user:", session?.user?.userId);
-  console.log("maCarUser:", maCarUser);
+  useEffect(() => {
+    if (record) {
+      form.setFieldsValue({
+        ...record,
+        dateStart: record.dateStart ? dayjs(record.dateStart) : null,
+        dateEnd: record.dateEnd ? dayjs(record.dateEnd) : null,
+      });
+    }
+  }, [record, form]);
 
-  const onFinish = async (values: any) => {
-    // เริ่ม Loading (ถ้าคุณมี state นี้)
-    // setSubmitting(true);
+  // const handleSubmit = async (values: any) => {
+  //   try {
+  //     const payload = {
+  //       ...values,
+  //       id: record?.id,
+  //       dateStart: values.dateStart?.toISOString() || null,
+  //       dateEnd: values.dateEnd?.toISOString() || null,
+  //     };
+  //     await intraAuthService.updateMaCar(payload);
+  //     fetchData();
+  //     message.success("แก้ไขการจองสำเร็จ");
+  //     onClose();
+  //   } catch (error) {
+  //     console.error(error);
+  //     message.error("แก้ไขไม่สำเร็จ");
+  //   }
+  // };
 
+  const handleSubmit = async (values: any) => {
     try {
       const { carId, dateStart, dateEnd } = values;
-      const currentUserId = session?.user?.userId;
 
-      // ตรวจสอบการจองซ้ำ
-      const isOverlaps =
-        maCar &&
-        maCar.some((booking) => {
-          const isNotCancel = booking.status !== "cancel";
+      // 1. ตรวจสอบการจองซ้ำ (Logic เดียวกับด้านบน แต่ต้องไม่เช็คซ้ำกับ ID ตัวเอง)
+      const isOverlap =
+        maCarUser &&
+        maCarUser.some((booking) => {
+          const isSameCar = booking.carId === carId;
 
-          // ตรวจสอบช่วงเวลาที่ทับซ้อนกัน (เช็คละเอียดระดับนาที)
+          // --- จุดที่แก้ไข: ต้องไม่ใช่รายการเดิมที่กำลังแก้ไขอยู่ ---
+          const isNotSelf = booking.id !== record?.id;
+
+          const isNotCancelled =
+            booking.status !== "cancel" && booking.status !== "edit";
+
           const isTimeOverlap =
-            dayjs(dateStart).isBefore(dayjs(booking.dateEnd)) &&
-            dayjs(dateEnd).isAfter(dayjs(booking.dateStart));
+            dayjs(dateStart)
+              .startOf("day")
+              .isSameOrBefore(dayjs(booking.dateEnd).endOf("day")) &&
+            dayjs(dateEnd)
+              .endOf("day")
+              .isSameOrAfter(dayjs(booking.dateStart).startOf("day"));
 
-          // เงื่อนไขที่ 1: รถคันนี้ถูกจองไปแล้วในช่วงเวลานั้น
-          const isSameCarOverlap = booking.carId === carId;
-
-          // เงื่อนไขที่ 2: ผู้ใช้งานคนนี้ (ตัวเอง) มีรายการจองอื่นอยู่แล้วในช่วงเวลานั้น
-          const isUserOverlap = booking.createdById === currentUserId;
-          return (
-            isNotCancel && isTimeOverlap && (isSameCarOverlap || isUserOverlap)
-          );
+          // ต้องเป็นรถคันเดียวกัน + ไม่ใช่ตัวเอง + สถานะปกติ + เวลาซ้อนทับกัน
+          return isSameCar && isNotSelf && isNotCancelled && isTimeOverlap;
         });
 
-      if (isOverlaps) {
-        // เช็คว่าซ้ำเพราะอะไรเพื่อแจ้งเตือนให้ถูกต้อง
-        const conflictType =
-          maCar.find(
-            (b) =>
-              b.status !== "cancel" &&
-              dayjs(dateStart).isBefore(dayjs(b.dateEnd)) &&
-              dayjs(dateEnd).isAfter(dayjs(b.dateStart)) &&
-              (b.carId === carId || b.createdById === currentUserId)
-          )?.carId === carId
-            ? "รถคันนี้ถูกจองในช่วงเวลานี้แล้ว"
-            : "คุณมีรายการจองอื่นในช่วงเวลานี้แล้ว";
-
-        message.warning(`ไม่สามารถจองรถได้: ${conflictType}`);
-        return;
+      if (isOverlap) {
+        return message.warning("ไม่สามารถจองรถคันนี้ ในช่วงเวลาที่คุณเลือกได้");
       }
-
-      // 2. เตรียม Payload
       const payload = {
         ...values,
-        status: "pending",
-        createdName: session?.user?.fullName,
-        createdById: session?.user?.userId,
-        dateStart: dayjs(dateStart).toISOString(),
-        dateEnd: dayjs(dateEnd).toISOString(),
+        id: record?.id,
+        dateStart: values.dateStart?.toISOString() || null,
+        dateEnd: values.dateEnd?.toISOString() || null,
+        status: record.status === "edit" ? "pending" : record.status,
       };
 
-      // 3. เรียก API
-      await intraAuthService.createMaCar(payload);
-
-      // 4. สำเร็จ
-      message.success("จองรถสำเร็จ");
-      form.resetFields();
-
-      // ดึงข้อมูลใหม่เพื่อให้ maCarUser ตัวล่าสุดมาใช้ในการเช็คครั้งต่อไป
-      if (typeof fetchData === "function") {
-        await fetchData();
-      }
-
-      setTimeout(() => {
-        router.push("/page/ma-car/maCar"); // เปลี่ยนเป็น Path ของหน้าที่คุณต้องการให้ไป
-      }, 1000);
-    } catch (err) {
-      console.error("Booking Error:", err);
-      message.error("เกิดข้อผิดพลาดจากระบบ ไม่สามารถดำเนินการได้");
-    } finally {
-      // ไม่ว่าจะสำเร็จหรือ error ให้ปลดล็อก loading ตรงนี้
-      // setSubmitting(false);
+      await intraAuthService.updateMaCar(payload);
+      fetchData();
+      message.success("แก้ไขการจองสำเร็จ");
+      onClose();
+    } catch (error) {
+      console.error(error);
+      message.error("แก้ไขไม่สำเร็จ");
     }
   };
 
@@ -150,29 +144,15 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
   };
 
   return (
-    <Card
-      title={
-        <div
-          style={{
-            textAlign: "center",
-            color: "#0683e9",
-            fontWeight: "bold",
-            fontSize: "20px",
-          }}
-        >
-          ฟอร์มจองรถ
-        </div>
-      }
+    <Modal
+      title="แก้ไขการจองรถ"
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width={700}
     >
       <ConfigProvider locale={th_TH}>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{
-            requesterName: session?.user?.fullName,
-          }}
-        >
+        <Form form={form} layout="vertical" onFinish={handleSubmit}>
           <Form.Item
             name="typeName"
             label="ประเภทการเดินทางและแผนงาน"
@@ -204,7 +184,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 label="เลือกรถ"
                 rules={[{ required: true }]}
               >
-                <Select placeholder="เลือกรถ" loading={loading}>
+                <Select placeholder="เลือกรถ">
                   {cars.map((car) => (
                     <Select.Option key={car.id} value={car.id}>
                       {car.carName} ({car.licensePlate})
@@ -220,7 +200,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 rules={[{ required: true, message: "กรุณากรอกเรียน..." }]}
               >
                 <Select
-                  placeholder="กรอกเรียน"
+                  placeholder="เรียน"
                   onChange={(value) => {
                     form.setFieldValue(
                       "recipient",
@@ -232,7 +212,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                       {menu}
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
-                          placeholder="กรอกอื่น ๆ ..."
+                          placeholder="กรอกอื่นๆ..."
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "recipient",
@@ -253,11 +233,11 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   <Select.Option value="สาธารณสุขอำเภอวังเจ้า">
                     สาธารณสุขอำเภอวังเจ้า
                   </Select.Option>
+                  {/* <Select.Option value="other">อื่นๆ...</Select.Option> */}
                 </Select>
               </Form.Item>
             </Col>
           </Row>
-
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -278,6 +258,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               </Form.Item>
             </Col>
           </Row>
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -291,15 +272,28 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 ]}
               >
                 <DatePicker
-                  showTime={{ format: "HH:mm" }}
+                  showTime={{ format: "HH:mm" }} // เปิดให้เลือกเวลา
                   style={{ width: "100%" }}
-                  format="DD/MM/YYYY HH:mm"
-                  onChange={() => form.setFieldValue("dateEnd", null)}
-                  // 1. ป้องกันการเลือก "วันที่" ย้อนหลัง
-                  disabledDate={(current) => {
-                    return current && current < dayjs().startOf("day");
+                  // format="DD/MMMM/YYYY HH:mm"
+                  format={(value) =>
+                    value
+                      ? `${value.format("DD / MMMM")} / ${
+                          value.year() + 543
+                        } เวลา ${value.format("HH:mm")} น.`
+                      : ""
+                  }
+                  placeholder="เลือกวันที่และเวลาเริ่ม"
+                  onChange={() => {
+                    form.setFieldValue("dateEnd", null);
                   }}
-                  // 2. ป้องกันการเลือก "เวลา" ย้อนหลัง (เฉพาะกรณีเลือกวันปัจจุบัน)
+                  // ป้องกันการเลือก "วันที่" ย้อนหลัง
+                  disabledDate={(current) => {
+                    if (!current) return false;
+                    return current < dayjs().startOf("day");
+                    // หมายเหตุ: ตรงนี้ไม่ต้องเช็ค maCarUser.some เพราะเป็นการจองของตัวเอง
+                    // หากต้องการเช็คซ้ำกับคนอื่น ต้องใส่ Logic car.id !== record.id เพิ่ม
+                  }}
+                  // ป้องกันการเลือก "เวลา" ย้อนหลัง (กรณีเลือกวันปัจจุบัน)
                   disabledTime={(current) => {
                     if (current && current.isSame(dayjs(), "day")) {
                       return {
@@ -343,19 +337,29 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                       <DatePicker
                         showTime={{ format: "HH:mm" }}
                         style={{ width: "100%" }}
-                        format="DD/MM/YYYY HH:mm"
+                        format={(value) =>
+                          value
+                            ? `${value.format("DD / MMMM")} / ${
+                                value.year() + 543
+                              } เวลา ${value.format("HH:mm")} น.`
+                            : ""
+                        }
                         disabled={!dateStart}
-                        // ป้องกันวันที่ย้อนหลัง และห้ามเลือกก่อนวันเริ่ม (dateStart)
+                        placeholder={
+                          dateStart
+                            ? "เลือกวันที่และเวลาสิ้นสุด"
+                            : "กรุณาเลือกวันเริ่มก่อน"
+                        }
+                        // ป้องกันวันที่ย้อนหลัง และห้ามเลือกก่อนวันเริ่ม
                         disabledDate={(current) => {
+                          if (!current) return false;
                           const today = dayjs().startOf("day");
                           const startDay = dateStart
                             ? dayjs(dateStart).startOf("day")
                             : today;
-                          return (
-                            current && (current < today || current < startDay)
-                          );
+                          return current < today || current < startDay;
                         }}
-                        // ป้องกันเวลาสิ้นสุดย้อนหลัง (ถ้าเลือกวันเดียวกับวันเริ่ม ห้ามเลือกเวลาที่น้อยกว่าวันเริ่ม)
+                        // ป้องกันเวลาสิ้นสุดย้อนหลัง (ถ้าเลือกวันเดียวกับวันเริ่ม ห้ามเลือกเวลาน้อยกว่าเวลาเริ่ม)
                         disabledTime={(current) => {
                           if (
                             current &&
@@ -436,7 +440,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   <Select.Option value="งบโครงการ">งบโครงการ</Select.Option>
                   <Select.Option value="งบผู้จัด">งบผู้จัด</Select.Option>
                   <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
-                  {/* <Select.Option value="other">อื่นๆ...</Select.Option> */}
+                  <Select.Option value="other">อื่นๆ...</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
@@ -451,26 +455,11 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               >
                 <InputNumber
                   min={1}
-                  max={10}
                   style={{ width: "100%" }}
                   placeholder="กรอกจำนวนผู้โดยสาร"
-                  // ดักจับการกดปุ่ม (Keyboard Event)
-                  onKeyDown={(e) => {
-                    // อนุญาตให้กดได้แค่ ตัวเลข, Backspace, Delete, Tab, และลูกศร
-                    if (
-                      !/[0-9]/.test(e.key) &&
-                      e.key !== "Backspace" &&
-                      e.key !== "Delete" &&
-                      e.key !== "Tab" &&
-                      e.key !== "ArrowLeft" &&
-                      e.key !== "ArrowRight"
-                    ) {
-                      e.preventDefault();
-                    }
-                  }}
                 />
               </Form.Item>
-            </Col>
+            </Col>{" "}
             <Col span={16}>
               <Form.Item
                 name="passengerNames"
@@ -480,7 +469,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 <Select
                   mode="multiple"
                   placeholder="เลือกผู้ใช้รถ"
-                  loading={loading}
+                  // loading={loading}
                   options={dataUser.map((u) => ({
                     label: `${u.firstName} ${u.lastName}`,
                     value: u.userId,
@@ -489,19 +478,21 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               </Form.Item>
             </Col>
           </Row>
-
           <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
             <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
           </Form.Item>
           <Form.Item style={{ textAlign: "center" }}>
             <Button type="primary" htmlType="submit">
-              จองรถ
+              บันทึก
+            </Button>
+            <Button onClick={onClose} style={{ marginLeft: 8 }}>
+              ยกเลิก
             </Button>
           </Form.Item>
         </Form>
       </ConfigProvider>
-    </Card>
+    </Modal>
   );
 };
 
-export default MaCarBookForm;
+export default MaCarEditModal;

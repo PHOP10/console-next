@@ -5,8 +5,8 @@ import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
 import MaCarBookForm from "../components/maCarBookForm";
-import { MasterCarType } from "../../common";
-import { fetchData } from "next-auth/client/_utils";
+import { MaCarType, MasterCarType } from "../../common";
+import { useSession } from "next-auth/react";
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
@@ -14,15 +14,26 @@ export default function MaCarPage() {
   const [loading, setLoading] = useState<boolean>(false);
   const [cars, setCars] = useState<MasterCarType[]>([]);
   const [dataUser, setDataUser] = useState<any[]>([]);
+  const [maCarUser, setMaCarUser] = useState<MaCarType[]>([]);
+  const [maCar, setMaCar] = useState<MaCarType[]>([]);
+
+  const { data: session } = useSession();
 
   // โหลดข้อมูลรถและผู้ใช้
-  const fetchCarsAndUsers = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
       const resCars = await intraAuthService.getMasterCarQuery();
+      const resMaCar = await intraAuthService.getMaCarQuery();
       const resUsers = await intraAuthService.getUserQuery();
+
+      const resMaCarUser = resMaCar.filter(
+        (car: any) => car.createdById === session?.user?.userId
+      );
+      setMaCar(resMaCar);
       setCars(resCars);
       setDataUser(resUsers);
+      setMaCarUser(resMaCarUser);
     } catch (err) {
       console.error(err);
       message.error("ไม่สามารถดึงข้อมูลได้");
@@ -32,16 +43,23 @@ export default function MaCarPage() {
   };
 
   useEffect(() => {
-    fetchCarsAndUsers();
+    fetchData();
   }, []);
 
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ยื่นแบบฟอร์ม",
+      label: "ฟอร์มจองรถ",
       children: (
         <Card>
-          <MaCarBookForm cars={cars} dataUser={dataUser} loading={loading}  fetchCarsAndUsers={fetchCarsAndUsers}/>
+          <MaCarBookForm
+            cars={cars}
+            dataUser={dataUser}
+            loading={loading}
+            fetchData={fetchData}
+            maCarUser={maCarUser}
+            maCar={maCar}
+          />
         </Card>
       ),
     },

@@ -37,8 +37,6 @@ export default function MedicalEquipmentTableDetails({
       ),
     },
   ];
-
-  // ฟังก์ชันช่วยจัด label + value
   const InfoItem = ({
     label,
     value,

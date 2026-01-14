@@ -10,10 +10,12 @@ import {
   message,
   Popconfirm,
   Space,
+  Tooltip,
 } from "antd";
 import { MasterLeaveType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
+import { DeleteOutlined, FormOutlined } from "@ant-design/icons";
 
 interface ManagementMasterLeaveTableProps {
   data: MasterLeaveType[];
@@ -111,14 +113,19 @@ export default function ManagementMasterLeaveTable({
       key: "action",
       render: (_: any, record: MasterLeaveType) => (
         <Space>
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => handleEdit(record)}
-          >
-            แก้ไข
-          </Button>
+          {/* ปุ่มแก้ไข */}
+          <Tooltip title="แก้ไข">
+            <FormOutlined
+              style={{
+                fontSize: 20,
+                color: "#faad14",
+                cursor: "pointer",
+              }}
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
 
+          {/* ปุ่มลบ */}
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -140,9 +147,15 @@ export default function ManagementMasterLeaveTable({
             okText="ใช่"
             cancelText="ยกเลิก"
           >
-            <Button danger size="small">
-              ลบ
-            </Button>
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 20,
+                  color: "#ff4d4f",
+                  cursor: "pointer",
+                }}
+              />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
@@ -161,7 +174,7 @@ export default function ManagementMasterLeaveTable({
         columns={columns}
         loading={loading}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
+        scroll={{ x: "max-content" }}
       />
 
       {/* ------------------ Modal Add ------------------ */}

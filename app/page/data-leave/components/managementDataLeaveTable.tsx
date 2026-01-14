@@ -15,16 +15,23 @@ import {
   DatePicker,
   Popover,
   Typography,
+  Tooltip,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { DataLeaveType, MasterLeaveType } from "../../common";
+import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveDetail from "./dataLeaveDetail";
 import { useSession } from "next-auth/react";
 import isBetween from "dayjs/plugin/isBetween";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  FileSearchOutlined,
+  RollbackOutlined,
+  UndoOutlined,
+} from "@ant-design/icons";
 
 interface Props {
   dataLeave: DataLeaveType[];
@@ -34,6 +41,7 @@ interface Props {
   masterLeave: MasterLeaveType[];
   fetchData: () => Promise<void>;
   leaveByUserId?: DataLeaveType[];
+  user: UserType[];
 }
 
 export default function ManagementDataLeaveTable({
@@ -44,6 +52,7 @@ export default function ManagementDataLeaveTable({
   masterLeave,
   fetchData,
   leaveByUserId,
+  user,
 }: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
@@ -112,6 +121,20 @@ export default function ManagementDataLeaveTable({
     }
   };
 
+  const returnEdit = async (record: DataLeaveType) => {
+    try {
+      await intraAuthService.updateDataLeave({
+        id: record.id,
+        status: "edit",
+      });
+      message.success("ส่งคืนเพื่อแก้ไขเรียบร้อย");
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      message.error("เกิดข้อผิดพลาดในการส่งคืนเพื่อแก้ไข");
+    }
+  };
+
   const handleApprove = async (record: any) => {
     try {
       await intraAuthService.updateDataLeave({
@@ -173,20 +196,48 @@ export default function ManagementDataLeaveTable({
   };
 
   const columns: ColumnsType<DataLeaveType> = [
-    { title: "Id", dataIndex: "id", key: "id" },
-
-    { title: "เหตุผล", dataIndex: "reason", key: "reason" },
+    { title: "ชื่อผู้ลา", dataIndex: "createdName", key: "createdName" },
     {
-      title: "วันที่เริ่มลา",
-      dataIndex: "leaveDateStart",
-      key: "dateStart",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      title: "เหตุผลการลา",
+      dataIndex: "reason",
+      key: "reason",
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
-      title: "วันที่สิ้นสุด",
-      dataIndex: "leaveDateEnd",
-      key: "leaveDateEnd",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      title: "ตั้งแต่วันที่",
+      dataIndex: "dateStart",
+      key: "dateStart",
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
+    },
+    {
+      title: "ถึงวันที่",
+      dataIndex: "dateEnd",
+      key: "dateEnd",
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "สถานะ",
@@ -195,10 +246,15 @@ export default function ManagementDataLeaveTable({
       render: (status) => {
         let color = "default";
         let text = "";
+
         switch (status) {
           case "pending":
             color = "blue";
             text = "รอดำเนินการ";
+            break;
+          case "edit":
+            color = "orange";
+            text = "รอแก้ไข";
             break;
           case "approve":
             color = "green";
@@ -211,6 +267,7 @@ export default function ManagementDataLeaveTable({
           default:
             text = status;
         }
+
         return <Tag color={color}>{text}</Tag>;
       },
     },
@@ -221,10 +278,21 @@ export default function ManagementDataLeaveTable({
     //   render: (value) => value || "-",
     // },
     {
-      title: "รายละเอียด",
+      title: "หมายเหตุเพิ่มเติม",
       dataIndex: "details",
       key: "details",
-      render: (value) => value || "-",
+      ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 15;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
       title: "จัดการ",
@@ -236,6 +304,13 @@ export default function ManagementDataLeaveTable({
             size="small"
             onClick={() => openEditModal(record)}
             disabled={record.status !== "pending"}
+            style={{
+              backgroundColor:
+                record.status === "pending" ? "#faad14" : "#d9d9d9",
+              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
+              color: record.status === "pending" ? "white" : "#888",
+              cursor: record.status === "pending" ? "pointer" : "not-allowed",
+            }}
           >
             แก้ไข
           </Button>
@@ -249,6 +324,26 @@ export default function ManagementDataLeaveTable({
             <Button danger size="small">
               ลบ
             </Button>
+          </Popconfirm>
+
+          <Popconfirm
+            title="ยืนยันการส่งคืนเพื่อแก้ไข"
+            okText="ยืนยัน"
+            cancelText="ยกเลิก"
+            onConfirm={() => returnEdit(record)}
+            disabled={record.status !== "approve"}
+          >
+            <Tooltip title="ส่งคืนเพื่อแก้ไข">
+              <UndoOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status === "approve" ? "orange" : "#d9d9d9",
+                  cursor:
+                    record.status === "approve" ? "pointer" : "not-allowed",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
           </Popconfirm>
 
           <Popover
@@ -285,23 +380,30 @@ export default function ManagementDataLeaveTable({
             open={openPopoverId === record.id}
             onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
-            <Button
-              type="primary"
-              size="small"
-              disabled={record.status !== "pending"}
-              onClick={() => setOpenPopoverId(record.id)}
-            >
-              อนุมัติ
-            </Button>
+            <Tooltip title="อนุมัติ">
+              <CheckCircleOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status !== "pending" ? "#ccc" : "#52c41a", // เทาเมื่อ disable, เขียวเมื่อ active
+                  cursor:
+                    record.status !== "pending" ? "not-allowed" : "pointer",
+                  opacity: record.status !== "pending" ? 0.5 : 1,
+                }}
+                onClick={() => {
+                  if (record.status === "pending") {
+                    setOpenPopoverId(record.id);
+                  }
+                }}
+              />
+            </Tooltip>
           </Popover>
 
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => handleShowDetail(record)}
-          >
-            รายละเอียด
-          </Button>
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -313,6 +415,7 @@ export default function ManagementDataLeaveTable({
         open={detailModalOpen}
         onClose={handleCloseDetail}
         record={selectedRecord}
+        user={user}
       />
       <Table
         rowKey="id"
@@ -320,7 +423,7 @@ export default function ManagementDataLeaveTable({
         dataSource={dataLeave}
         loading={loading}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
+        scroll={{ x: "max-content" }}
       />
 
       <Modal

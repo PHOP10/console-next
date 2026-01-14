@@ -1,25 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Button,
-  DatePicker,
-  Form,
-  Input,
-  message,
-  Modal,
-  Select,
-  Space,
-  Table,
-  Tag,
-} from "antd";
+import { Form, Space, Table, Tag, Tooltip, Row } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { DataLeaveType, MaDrugItemType, MasterLeaveType } from "../../common";
+import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import dayjs from "dayjs";
 import DataLeaveDetail from "./dataLeaveDetail";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveWord from "./dataLeaveWord";
+import { FileSearchOutlined, FormOutlined } from "@ant-design/icons";
+import { User } from "next-auth";
+import DataLeaveEdit from "./dataLeaveEdit";
 
 interface DataLeaveTableProps {
   data: DataLeaveType[];
@@ -28,6 +20,7 @@ interface DataLeaveTableProps {
   masterLeaves: MasterLeaveType[];
   fetchData: () => Promise<void>;
   leaveByUserId: DataLeaveType[];
+  user: UserType[];
 }
 
 export default function DataLeaveTable({
@@ -36,17 +29,19 @@ export default function DataLeaveTable({
   masterLeaves,
   fetchData,
   leaveByUserId,
+  user,
 }: DataLeaveTableProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  const [form] = Form.useForm();
+  const [formEdit] = Form.useForm();
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<DataLeaveType | null>(
     null
   );
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const { RangePicker } = DatePicker;
-  const [form] = Form.useForm();
+  const [dataLeave, setDataLeave] = useState<DataLeaveType[]>(leaveByUserId);
 
   const handleShowDetail = (record: any) => {
     setSelectedRecord(record);
@@ -60,62 +55,61 @@ export default function DataLeaveTable({
 
   const openEditModal = (record: DataLeaveType) => {
     setCurrentRecord(record);
-    form.setFieldsValue({
-      typeId: record.typeId, // ✅ เพิ่มตรงนี้
-      leaveDates: [dayjs(record.dateStart), dayjs(record.dateEnd)],
-      reason: record.reason,
-      details: record.details,
-    });
-    setIsModalOpen(true);
+    setIsEditOpen(true);
+    // formEdit.setFieldsValue(record);
   };
 
-  const handleUpdate = async () => {
-    try {
-      const values = await form.validateFields();
-      if (!currentRecord) return;
-
-      const { leaveDates, ...rest } = values;
-
-      const payload = {
-        id: currentRecord.id,
-        ...rest,
-        dateStart: leaveDates[0].startOf("day").toISOString(),
-        dateEnd: leaveDates[1].endOf("day").toISOString(),
-      };
-
-      await intraAuthService.updateDataLeave(payload);
-      fetchData();
-      message.success("แก้ไขข้อมูลเรียบร้อย");
-      setIsModalOpen(false);
-      form.resetFields();
-    } catch (err) {
-      console.error(err);
-      message.error("ไม่สามารถแก้ไขข้อมูลได้");
-    }
+  const handleUpdate = (updated: any) => {
+    setDataLeave((prev) =>
+      prev.map((item: any) =>
+        item.id === updated.id ? { ...item, ...updated } : item
+      )
+    );
   };
 
   const columns: ColumnsType<DataLeaveType> = [
+    { title: "ชื่อผู้ลา", dataIndex: "createdName", key: "createdName" },
     {
-      title: "Id",
-      dataIndex: "id",
-      key: "id",
-    },
-    {
-      title: "เหตุผล",
+      title: "เหตุผลการลา",
       dataIndex: "reason",
       key: "reason",
+      render: (text: string) => {
+        const maxLength = 25;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
     {
-      title: "วันที่เริ่มลา",
+      title: "ตั้งแต่วันที่",
       dataIndex: "dateStart",
       key: "dateStart",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
-      title: "วันที่สิ้นสุด",
+      title: "ถึงวันที่",
       dataIndex: "dateEnd",
       key: "dateEnd",
-      render: (value) => dayjs(value).format("DD/MM/YYYY"),
+      render: (text: string) => {
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "สถานะ",
@@ -129,6 +123,10 @@ export default function DataLeaveTable({
           case "pending":
             color = "blue";
             text = "รอดำเนินการ";
+            break;
+          case "edit":
+            color = "orange";
+            text = "รอแก้ไข";
             break;
           case "approve":
             color = "green";
@@ -145,17 +143,22 @@ export default function DataLeaveTable({
         return <Tag color={color}>{text}</Tag>;
       },
     },
-    // {
-    //   title: "ผู้อนุมัติ",
-    //   dataIndex: "approvedByName",
-    //   key: "approvedByName",
-    //   render: (value) => value || "-",
-    // },
     {
-      title: "รายละเอียด",
+      title: "หมายเหตุเพิ่มเติม",
       dataIndex: "details",
       key: "details",
-      render: (value) => value || "-",
+      ellipsis: true,
+      render: (text: string) => {
+        const maxLength = 15;
+        if (!text) return "-";
+        return text.length > maxLength ? (
+          <Tooltip placement="topLeft" title={text}>
+            {text.slice(0, maxLength) + "..."}
+          </Tooltip>
+        ) : (
+          text
+        );
+      },
     },
 
     {
@@ -163,31 +166,82 @@ export default function DataLeaveTable({
       key: "action",
       render: (_: any, record: any) => (
         <Space>
-          <Button
+          {/* <Button
             type="primary"
             size="small"
             onClick={() => openEditModal(record)}
             disabled={record.status !== "pending"}
+            style={{
+              backgroundColor:
+                record.status === "pending" ? "#faad14" : "#d9d9d9",
+              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
+              color: record.status === "pending" ? "white" : "#888",
+              cursor: record.status === "pending" ? "pointer" : "not-allowed",
+            }}
           >
             แก้ไข
-          </Button>
-          <Button
-            size="small"
-            type="primary"
-            onClick={() => handleShowDetail(record)}
-          >
-            รายละเอียด
-          </Button>
+          </Button> */}
+          {/* <Tooltip title="แก้ไข">
+            <FormOutlined
+              style={{
+                fontSize: 22,
+                color:
+                  record.status === "pending" || record.status === "edit"
+                    ? "#faad14"
+                    : "#d9d9d9",
+                cursor:
+                  record.status === "pending" || record.status === "edit"
+                    ? "pointer"
+                    : "not-allowed",
+                opacity:
+                  record.status === "pending" || record.status === "edit"
+                    ? 1
+                    : 0.6,
+              }}
+              onClick={() => {
+                if (record.status === "pending" || record.status === "edit") {
+                  openEditModal(record);
+                }
+              }}
+            />
+          </Tooltip> */}
+
+          <Tooltip title="แก้ไข">
+            <FormOutlined
+              style={{
+                fontSize: 22,
+                color:
+                  record.status === "pending" || record.status === "edit"
+                    ? "#faad14"
+                    : "#d9d9d9",
+                cursor:
+                  record.status === "pending" || record.status === "edit"
+                    ? "pointer"
+                    : "not-allowed",
+                opacity:
+                  record.status === "pending" || record.status === "edit"
+                    ? 1
+                    : 0.6,
+              }}
+              onClick={() => {
+                if (record.status === "pending" || record.status === "edit") {
+                  openEditModal(record);
+                }
+              }}
+            />
+          </Tooltip>
+
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
+
           <DataLeaveWord record={record} />
         </Space>
       ),
     },
-    // {
-    //   title: "อัปเดตล่าสุด",
-    //   dataIndex: "updatedAt",
-    //   key: "updatedAt",
-    //   render: (value) => dayjs(value).format("DD/MM/YYYY HH:mm"),
-    // },
   ];
 
   return (
@@ -196,59 +250,32 @@ export default function DataLeaveTable({
         open={detailModalOpen}
         onClose={handleCloseDetail}
         record={selectedRecord}
+        user={user}
       />
-      <Table
-        rowKey="id"
-        columns={columns}
-        dataSource={leaveByUserId}
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
+      <Row gutter={[24, 24]}>
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={leaveByUserId}
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: "max-content" }}
+        />
+      </Row>
+      <DataLeaveEdit
+        open={isEditOpen}
+        record={currentRecord}
+        masterLeaves={masterLeaves}
+        onClose={() => {
+          setIsEditOpen(false);
+          // formEdit.resetFields();
+        }}
+        onUpdate={handleUpdate}
+        fetchData={fetchData}
+        leaveByUserId={leaveByUserId}
+        user={user}
+        formEdit={formEdit}
       />
-      <Modal
-        title="แก้ไขข้อมูลการลา"
-        open={isModalOpen}
-        onOk={handleUpdate}
-        onCancel={() => setIsModalOpen(false)}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="ประเภทการลา"
-            name="typeId"
-            rules={[{ required: true, message: "กรุณาเลือกประเภทลา" }]}
-          >
-            <Select placeholder="เลือกประเภทลา">
-              {masterLeaves.map((item) => (
-                <Select.Option key={item.id} value={item.id}>
-                  {item.leaveType}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="ช่วงวันที่ลา"
-            name="leaveDates"
-            rules={[{ required: true, message: "กรุณาเลือกช่วงวันที่ลา" }]}
-          >
-            <RangePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item
-            label="เหตุผล"
-            name="reason"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผล" }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="รายละเอียด" name="details">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-        </Form>
-      </Modal>
     </>
   );
 }

@@ -3,14 +3,14 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../../user/services/user.service";
 import { useEffect, useState } from "react";
 import { UserType } from "../../common";
-
+import { ExportOutlined } from "@ant-design/icons";
 dayjs.locale("th");
 
 interface MaCarExportWordProps {
@@ -21,6 +21,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
   const intraAuth = useAxiosAuth();
   const intraAuthService = userService(intraAuth);
   const [userData, setUserData] = useState<UserType[]>([]);
+  // console.log("record in MaCarExportWord:", record);
 
   const fetchData = async () => {
     try {
@@ -61,8 +62,6 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
         paragraphLoop: true,
         linebreaks: true,
       });
-      console.log("record.passengerNames:", record.passengerNames);
-      console.log("userData:", userData);
 
       if (userData.length === 0) {
         // โหลด userData ก่อนถ้ายังว่าง
@@ -75,31 +74,69 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
         }
       }
 
-      // 🔍 แมป id → ชื่อจริง
+      const userPosition =
+        record.createdName && userData.length > 0
+          ? userData.find(
+              (u) => `${u.firstName} ${u.lastName}` === record.createdName
+            )?.position || "ไม่ระบุตำแหน่ง"
+          : "ไม่ระบุตำแหน่ง";
+
       const passengerList = Array.isArray(record.passengerNames)
         ? record.passengerNames.map((userId: string, i: number) => {
             const user = userData.find((u) => u.userId === userId);
-            const fullName = user
-              ? `${user.firstName} ${user.lastName}`
-              : "(ไม่พบชื่อ)";
-            const position = user?.position ?? "-";
+            let prefix = "";
+            if (user) {
+              if (user.gender === "male") prefix = "นาย";
+              else if (user.gender === "female") prefix = "นาง";
+              else if (user.gender === "miss") prefix = "นางสาว";
+            }
+
             return {
               index: toThaiNumber(i + 1),
-              name: fullName,
-              position: position,
+              name: user
+                ? `${prefix}${user.firstName} ${user.lastName}`
+                : "(ไม่พบชื่อ)",
+              position: user?.position ?? "-",
             };
           })
         : [];
 
+      // 1. ค้นหา User ที่มีชื่อและนามสกุลตรงกับ record.createdName
+      const creator = userData.find((u) => {
+        const fullName = `${u.firstName} ${u.lastName}`;
+        return fullName === record.createdName;
+      });
+
+      // 2. ตรวจสอบเพศ/คำนำหน้าจาก User ที่หาเจอ
+      const genderPrefix = creator
+        ? creator.gender === "male"
+          ? "นาย"
+          : creator.gender === "female"
+          ? "นาง"
+          : creator.gender === "miss"
+          ? "นางสาว"
+          : creator.gender ?? "-"
+        : "-";
+
+      // const checked = "☑"; // \u2611
+      // const unchecked = "☐"; // \u2610
+      const checkeds = "(/)"; // กรณีเลือก
+      const uncheckeds = "( )"; // กรณีไม่ได้เลือก
+      const standardBudgets = ["งบกลาง", "งบโครงการ", "งบผู้จัด", "เงินบำรุง"];
       // ✅ เตรียมข้อมูลส่งเข้า template
       const data = {
+        ny: record.typeName?.includes("ในจังหวัด") ? checkeds : uncheckeds,
+        nn: record.typeName?.includes("นอกจังหวัด") ? checkeds : uncheckeds,
+        np: record.typeName?.includes("แผนปกติ") ? checkeds : uncheckeds,
+        nd: record.typeName?.includes("แผนด่วน") ? checkeds : uncheckeds,
         id: toThaiNumber(record.id ?? "-"),
         requesterName: record.requesterName ?? "-",
+        createdName: record.createdName ?? "-",
         purpose: record.purpose ?? "-",
         destination: record.destination ?? "-",
         passengers: toThaiNumber(record.passengers ?? "-"),
-        passengerss: passengerList,
-        passengerNames: passengerList.join("\n"), // 👉 ให้ขึ้นบรรทัดใหม่
+        gd: genderPrefix,
+        passengerss: passengerList, // สำหรับนำไปใช้ใน Loop (ถ้ามี)
         budget: record.budget
           ? toThaiNumber(
               record.budget.toLocaleString("th-TH", {
@@ -109,9 +146,13 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
             )
           : "-",
         status: record.status ?? "-",
-
         dateStart: record.dateStart ? formatThaiDate(record.dateStart) : "-",
         dateEnd: record.dateEnd ? formatThaiDate(record.dateEnd) : "-",
+        timeStart: record.dateStart
+          ? dayjs(record.dateStart).format("HH:mm")
+          : "-",
+        timeEnd: record.dateEnd ? dayjs(record.dateEnd).format("HH:mm") : "-",
+
         createdAt: record.createdAt ? formatThaiDate(record.createdAt) : "-",
         updatedAt: record.updatedAt ? formatThaiDate(record.updatedAt) : "-",
         D: record.createdAt
@@ -121,7 +162,9 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
         BBBB: record.createdAt
           ? toThaiNumber(dayjs(record.createdAt).year() + 543)
           : "-",
-
+        // cer
+        EndDate: formatThaiDate(new Date()),
+        userPosition: userPosition,
         cancelName: record.cancelName ?? "-",
         cancelReason: record.cancelReason ?? "-",
         cancelAt: record.cancelAt
@@ -131,17 +174,40 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
         approvedAt: record.approvedAt
           ? toThaiNumber(dayjs(record.approvedAt).format("D MMMM BBBB HH:mm"))
           : "-",
-
         carName: record.masterCar?.carName ?? "-",
-        licensePlate: toThaiNumber(record.masterCar?.licensePlate ?? "-"),
+        // licensePlate: toThaiNumber(record.masterCar?.licensePlate ?? "-"),
         brand: record.masterCar?.brand ?? "-",
         model: record.masterCar?.model ?? "-",
         year: toThaiNumber(record.masterCar?.year ?? "-"),
         carDetails: record.masterCar?.details ?? "-",
+        licensePlate: record.masterCar.licensePlate,
+        nT: record.masterCar.numberType,
+        fN: record.masterCar.fuelType === "เบนซิน 95" ? checkeds : uncheckeds,
+        fD: record.masterCar.fuelType === "ดีเซล" ? checkeds : uncheckeds,
+        fO: record.masterCar.fuelType === "เบนซิน 91" ? checkeds : uncheckeds,
+        y: record.driver === "yes" ? checkeds : uncheckeds,
+        n: record.driver === "no" ? checkeds : uncheckeds,
+        kl: record.budget === "งบกลาง" ? checkeds : uncheckeds,
+        k: record.budget === "งบโครงการ" ? checkeds : uncheckeds,
+        j: record.budget === "งบผู้จัด" ? checkeds : uncheckeds,
+        br: record.budget === "เงินบำรุง" ? checkeds : uncheckeds,
+        // o: record.budget === "งบอื่นๆ" ? checkeds : uncheckeds,
+        o:
+          (record.budget && !standardBudgets.includes(record.budget)) ||
+          record.budget === "งบอื่นๆ"
+            ? checkeds
+            : uncheckeds,
+        oBName: !standardBudgets.includes(record.budget)
+          ? record.budget
+          : "..........",
+        namedriver:
+          record.driver === "no"
+            ? record.createdName ?? "-"
+            : ".......................",
+        gds: record.driver === "no" ? genderPrefix ?? "-" : "",
       };
 
       doc.render(data);
-
       const blob = doc.getZip().generate({ type: "blob" });
       saveAs(blob, `การใช้รถ_${record.id}.docx`);
     } catch (error) {
@@ -150,9 +216,31 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
   };
 
   return (
-    <Button size="small" type="primary" onClick={handleExport}>
-      Export Word
-    </Button>
+    <Tooltip title="Export">
+      <ExportOutlined
+        style={{
+          fontSize: 20,
+          color: record.status === "pending" ? "#1677ff" : "#d9d9d9",
+          cursor: record.status === "pending" ? "pointer" : "not-allowed",
+          transition: "color 0.2s",
+        }}
+        onClick={() => {
+          if (record.status === "pending") {
+            handleExport();
+          }
+        }}
+        onMouseEnter={(e) => {
+          if (record.status === "pending") {
+            (e.currentTarget as HTMLElement).style.color = "#0958d9";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (record.status === "pending") {
+            (e.currentTarget as HTMLElement).style.color = "#1677ff";
+          }
+        }}
+      />
+    </Tooltip>
   );
 };
 

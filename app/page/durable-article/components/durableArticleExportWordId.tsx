@@ -82,7 +82,7 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
 
   return (
     <Button size="small" type="primary" onClick={handleExport}>
-      Export Word
+      Export
     </Button>
   );
 };

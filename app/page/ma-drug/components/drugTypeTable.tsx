@@ -11,153 +11,168 @@ import {
   Popconfirm,
   Modal,
   Card,
+  Divider,
 } from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  SaveOutlined,
+} from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import type { MasterDrugType } from "../../common";
 
 export default function DrugTypeTable() {
+  const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
 
+  // --- States ---
   const [data, setData] = useState<MasterDrugType[]>([]);
   const [loading, setLoading] = useState(false);
-  const [mode, setMode] = useState<"table" | "form">("table");
 
-  const [form] = Form.useForm();
-
-  // สำหรับ modal แก้ไข
-  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  // Modal State (ใช้ร่วมกันทั้ง เพิ่ม และ แก้ไข)
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MasterDrugType | null>(
     null
   );
-  const [editForm] = Form.useForm();
+  const [submitLoading, setSubmitLoading] = useState(false);
 
-  // ดึงข้อมูลประเภทยา
+  // --- Actions ---
+
+  // โหลดข้อมูล
   const fetchData = async () => {
     try {
       setLoading(true);
       const result = await intraAuthService.getMasterDrugQuery();
       const drugData = Array.isArray(result)
         ? result
-        : Array.isArray(result?.data)
-        ? result.data
+        : Array.isArray((result as any)?.data)
+        ? (result as any).data
         : [];
       setData(drugData);
     } catch (error) {
-      console.error("โหลดข้อมูลประเภทยาไม่สำเร็จ:", error);
+      console.error("Error fetching data:", error);
       message.error("ไม่สามารถดึงข้อมูลได้");
     } finally {
       setLoading(false);
     }
   };
 
-  // เพิ่มข้อมูลใหม่
-  const handleAdd = async (values: Omit<MasterDrugType, "id">) => {
-    try {
-      const payload = {
-        ...values,
-        drugTypeId: Number(values.drugTypeId),
-      };
-      await intraAuthService.createMasterDrug(payload);
-      message.success("เพิ่มประเภทยาสำเร็จ");
-      form.resetFields();
-      setMode("table");
-      fetchData();
-    } catch (error) {
-      console.error("เพิ่มข้อมูลไม่สำเร็จ:", error);
-      message.error("เพิ่มข้อมูลไม่สำเร็จ");
-    }
-  };
-
-  // เปิด modal แก้ไข และเซ็ตค่า form
-  const openEditModal = (record: MasterDrugType) => {
-    setEditingRecord(record);
-    editForm.setFieldsValue(record);
-    setIsEditModalVisible(true);
-  };
-
-  // บันทึกข้อมูลแก้ไข
-  const handleEdit = async (values: any) => {
-    try {
-      const payload = {
-        ...values,
-        id: editingRecord?.id,
-        drugTypeId: Number(values.drugTypeId),
-      };
-      await intraAuthService.updateMasterDrug(payload);
-      message.success("แก้ไขประเภทยาสำเร็จ");
-      setIsEditModalVisible(false);
-      setEditingRecord(null);
-      fetchData();
-    } catch (error) {
-      console.error("แก้ไขข้อมูลไม่สำเร็จ:", error);
-      message.error("แก้ไขข้อมูลไม่สำเร็จ");
-    }
-  };
-
-  // ปิด modal แก้ไข
-  const handleCancelEditModal = () => {
-    setIsEditModalVisible(false);
-    setEditingRecord(null);
-  };
-
   useEffect(() => {
-    if (mode === "table") {
-      fetchData();
-      form.resetFields();
-    }
-  }, [mode]);
+    fetchData();
+  }, []);
 
+  // เปิด Modal สำหรับ "เพิ่มข้อมูล"
+  const handleOpenAdd = () => {
+    setEditingRecord(null); // เคลียร์ record เพื่อระบุว่าเป็นโหมดเพิ่ม
+    form.resetFields();
+    setIsModalOpen(true);
+  };
+
+  // เปิด Modal สำหรับ "แก้ไขข้อมูล"
+  const handleOpenEdit = (record: MasterDrugType) => {
+    setEditingRecord(record); // ใส่ record เพื่อระบุว่าเป็นโหมดแก้ไข
+    form.setFieldsValue(record); // set ค่าเดิมลงฟอร์ม
+    setIsModalOpen(true);
+  };
+
+  // ฟังก์ชันบันทึก (ทำงานทั้ง Add และ Edit)
+  const handleSave = async (values: any) => {
+    try {
+      setSubmitLoading(true);
+      const payload = {
+        ...values,
+        drugTypeId: Number(values.drugTypeId), // แปลงเป็นตัวเลข
+      };
+
+      if (editingRecord) {
+        // --- โหมดแก้ไข ---
+        await intraAuthService.updateMasterDrug({
+          ...payload,
+          id: editingRecord.id,
+        });
+        message.success("แก้ไขข้อมูลสำเร็จ");
+      } else {
+        // --- โหมดเพิ่ม ---
+        await intraAuthService.createMasterDrug(payload);
+        message.success("เพิ่มข้อมูลสำเร็จ");
+      }
+
+      setIsModalOpen(false);
+      form.resetFields();
+      fetchData(); // โหลดตารางใหม่
+    } catch (error) {
+      console.error("Save error:", error);
+      message.error("บันทึกข้อมูลไม่สำเร็จ");
+    } finally {
+      setSubmitLoading(false);
+    }
+  };
+
+  // ลบข้อมูล
+  const handleDelete = async (id: number) => {
+    try {
+      await intraAuthService.deleteMasterDrug(id);
+      message.success("ลบข้อมูลสำเร็จ");
+      fetchData();
+    } catch (error) {
+      console.error("Delete error:", error);
+      message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+    }
+  };
+
+  // --- Columns Config ---
   const columns: ColumnsType<MasterDrugType> = [
     {
-      title: "ลำดับ",
+      title: "รหัสประเภท",
       dataIndex: "drugTypeId",
       key: "drugTypeId",
       align: "center",
+      width: 150,
+      sorter: (a, b) => a.drugTypeId - b.drugTypeId,
     },
     {
       title: "ชื่อประเภทยา",
       dataIndex: "drugType",
       key: "drugType",
-      align: "center",
     },
     {
       title: "คำอธิบาย",
       dataIndex: "description",
       key: "description",
-      align: "center",
+      render: (text) => text || "-", // ถ้าไม่มีข้อมูลให้โชว์ขีด
     },
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
+      width: 200,
       render: (_, record) => (
         <Space>
+          <Button
+            type="primary"
+            ghost
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => handleOpenEdit(record)}
+          >
+            แก้ไข
+          </Button>
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteMasterDrug(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                fetchData();
-              } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการลบ:", error);
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-              }
-            }}
-            okText="ใช่"
+            onConfirm={() => handleDelete(record.id)}
+            okText="ลบ"
             cancelText="ยกเลิก"
+            okButtonProps={{ danger: true }}
           >
-            <Button danger size="small">
+            <Button danger icon={<DeleteOutlined />} size="small">
               ลบ
             </Button>
           </Popconfirm>
-
-          <Button type="link" onClick={() => openEditModal(record)}>
-            แก้ไข
-          </Button>
         </Space>
       ),
     },
@@ -165,56 +180,83 @@ export default function DrugTypeTable() {
 
   return (
     <Card
+      bordered={false}
+      className="shadow-sm"
       title={
         <div
           style={{
-            textAlign: "center",
-            fontSize: "20px",
-            fontWeight: "bold",
             color: "#0683e9",
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
           }}
         >
-          ทำรายการประเภทยา
+          <span>จัดการประเภทยา</span>
         </div>
       }
-      bordered
     >
-      {mode === "table" ? (
-        <>
-          <div style={{ textAlign: "left", marginBottom: 16 }}>
-            <Button
-              type="primary"
-              onClick={() => {
-                form.resetFields();
-                setMode("form");
-              }}
-            >
-              + เพิ่มประเภทยา
-            </Button>
-          </div>
+      {/* ปุ่มเพิ่มข้อมูลอยู่เหนือตาราง */}
+      <div
+        style={{
+          marginBottom: 16,
+          display: "flex",
+          justifyContent: "flex-end",
+        }}
+      >
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={handleOpenAdd}
+          size="small"
+        >
+          เพิ่มประเภทยา
+        </Button>
+      </div>
 
-          <Table
-            rowKey="id"
-            columns={columns}
-            dataSource={data}
-            loading={loading}
-            bordered
-            pagination={{ pageSize: 10 }}
-          />
-        </>
-      ) : (
+      <Table
+        rowKey="id"
+        columns={columns}
+        dataSource={data}
+        loading={loading}
+        bordered
+        pagination={{ pageSize: 10 }}
+        size="middle"
+      />
+
+      {/* Modal สำหรับทั้ง เพิ่ม และ แก้ไข */}
+      <Modal
+        title={
+          editingRecord ? (
+            <span>
+              <EditOutlined /> แก้ไขประเภทยา
+            </span>
+          ) : (
+            <span>
+              <PlusOutlined /> เพิ่มประเภทยาใหม่
+            </span>
+          )
+        }
+        open={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={() => form.submit()} // สั่ง submit form เมื่อกดปุ่ม OK ของ Modal
+        confirmLoading={submitLoading}
+        okText="บันทึก"
+        cancelText="ยกเลิก"
+        destroyOnClose
+      >
+        <Divider style={{ margin: "12px 0" }} />
         <Form
           form={form}
           layout="vertical"
-          onFinish={handleAdd}
-          style={{ maxWidth: 400, margin: "0 auto" }} // จัดกลางฟอร์ม
+          onFinish={handleSave}
+          preserve={false} // รีเซ็ตค่าเมื่อปิด Modal
         >
           <Form.Item
-            label="รหัสประเภทยา"
+            label="รหัสประเภทยา (ID)"
             name="drugTypeId"
             rules={[{ required: true, message: "กรุณากรอกรหัสประเภทยา" }]}
           >
-            <Input placeholder="เช่น 1" />
+            <Input type="number" placeholder="เช่น 101" />
           </Form.Item>
 
           <Form.Item
@@ -222,76 +264,11 @@ export default function DrugTypeTable() {
             name="drugType"
             rules={[{ required: true, message: "กรุณากรอกชื่อประเภทยา" }]}
           >
-            <Input placeholder="เช่น ยาเม็ด" />
+            <Input placeholder="เช่น ยาเม็ด, ยาน้ำ" />
           </Form.Item>
 
-          <Form.Item label="คำอธิบาย" name="description">
-            <Input.TextArea rows={3} placeholder="รายละเอียดเพิ่มเติม" />
-          </Form.Item>
-
-          <Form.Item style={{ textAlign: "center" }}>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                บันทึก
-              </Button>
-              <Button
-                onClick={() => {
-                  form.resetFields();
-                  setMode("table");
-                }}
-              >
-                ยกเลิก
-              </Button>
-            </Space>
-          </Form.Item>
-        </Form>
-      )}
-
-      {/* Modal แก้ไข */}
-      <Modal
-        title="แก้ไขประเภทยา"
-        visible={isEditModalVisible}
-        onCancel={handleCancelEditModal}
-        footer={null}
-        destroyOnClose
-      >
-        <Form
-          form={editForm}
-          layout="vertical"
-          onFinish={handleEdit}
-          initialValues={editingRecord || {}}
-        >
-          <Form.Item name="id" hidden>
-            <Input />
-          </Form.Item>
-
-          <Form.Item
-            label="รหัสประเภทยา"
-            name="drugTypeId"
-            rules={[{ required: true, message: "กรุณากรอกรหัสประเภทยา" }]}
-          >
-            <Input type="number" />
-          </Form.Item>
-
-          <Form.Item
-            label="ชื่อประเภทยา"
-            name="drugType"
-            rules={[{ required: true, message: "กรุณากรอกชื่อประเภทยา" }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="คำอธิบาย" name="description">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-
-          <Form.Item style={{ textAlign: "center" }}>
-            <Space>
-              <Button type="primary" htmlType="submit">
-                บันทึก
-              </Button>
-              <Button onClick={handleCancelEditModal}>ยกเลิก</Button>
-            </Space>
+          <Form.Item label="คำอธิบายเพิ่มเติม" name="description">
+            <Input.TextArea rows={3} placeholder="รายละเอียด (ถ้ามี)" />
           </Form.Item>
         </Form>
       </Modal>
