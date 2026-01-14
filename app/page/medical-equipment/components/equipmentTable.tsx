@@ -212,17 +212,17 @@ export default function EquipmentTable({
             เพิ่มเครื่องมือแพทย์
           </Button>
         </Space>
-        <Card>
-          <Table
-            columns={columns}
-            dataSource={dataEQ}
-            rowKey="id"
-            loading={loading}
-            bordered
-            pagination={{ pageSize: 10 }}
-          />
-        </Card>
+
+        <Table
+          columns={columns}
+          dataSource={dataEQ}
+          rowKey="id"
+          loading={loading}
+          bordered
+          pagination={{ pageSize: 10 }}
+        />
       </Card>
+      
       <Modal
         title={editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}
         open={isModalOpen}

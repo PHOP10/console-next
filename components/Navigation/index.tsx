@@ -37,21 +37,36 @@ const Navigation: React.FC<Prop> = ({
     <>
       <Header
         className="flex justify-between w-full shadow p-0   "
-        // style={{ backgroundColor: "#00a191" }}
+         style={{ backgroundColor: "#1c64a8ff" }} /* พื้นหลัง Navigation bar */
       >
-        <div className="hidden md:block">
+        <div className="hidden md:flex items-center">   {/* เปิดปิดเมนู */}
           <Button
             type="text"
             icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
             onClick={() => setCollapsed(!collapsed)}
             style={{
               fontSize: "16px",
-              width: 64,
-              height: 64,
+              width: 46,
+              height: 46,
               color: "white",
             }}
           />
+
+          {/* logo รพ*/}
+          <Image
+            src="/rpst.png"
+            alt="RPST Logo"
+            width={0}
+            height={0}
+            sizes="100vw"
+            style={{ width: '40px', height: 'auto', marginRight: '4px' }} 
+          />
+
+          <span className="text-white text-base font-semibold ml-2">
+            โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง
+          </span>
         </div>
+
         <div className="block md:hidden">
           <Button
             type="text"

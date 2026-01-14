@@ -11,12 +11,14 @@ import {
   Input,
   Select,
   Space,
+  Tag, // เพิ่ม Tag
 } from "antd";
 import { ColumnsType } from "antd/es/table";
 import { UserType } from "../../common";
 import { userService } from "../services/user.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import UserForm from "./userForm";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons"; // เพิ่ม Icon
 
 interface UserTableProps {
   data: UserType[];
@@ -24,6 +26,8 @@ interface UserTableProps {
   fetchData: () => Promise<void>;
   setData: React.Dispatch<React.SetStateAction<UserType[]>>;
 }
+
+const PRIMARY_COLOR = "#00a191"; // กำหนดสีหลัก
 
 const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   const intraAuth = useAxiosAuth();
@@ -42,24 +46,13 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   const handleUpdate = async () => {
     try {
       if (!editingUser) return;
-
       const values = await form.validateFields();
-      const body = {
-        ...values,
-        userId: editingUser.userId,
-      };
-
-      const result = await intraAuthService.updateUser(body);
-
-      if (result && Array.isArray(result) && result.length === 0) {
-        throw new Error("API returned error");
-      }
-
+      const body = { ...values, userId: editingUser.userId };
+      await intraAuthService.updateUser(body);
       message.success("แก้ไขข้อมูลสำเร็จ");
       setIsModalOpen(false);
       fetchData();
     } catch (error) {
-      console.error("Update user error:", error);
       message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
     }
   };
@@ -70,70 +63,81 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
       message.success("ลบผู้ใช้สำเร็จ");
       fetchData();
     } catch (err) {
-      console.error(err);
       message.error("ไม่สามารถลบผู้ใช้ได้");
     }
   };
 
   const columns: ColumnsType<UserType> = [
-    // { title: "Username", dataIndex: "username", key: "username" },
-    { title: "ชื่อ", dataIndex: "firstName", key: "firstName", align: "center" },
-    { title: "นามสกุล", dataIndex: "lastName", key: "lastName", align: "center" },
-    { title: "ชื่อเล่น", dataIndex: "nickName", key: "nickName", align: "center" },
+    {
+      title: "ชื่อ",
+      dataIndex: "firstName",
+      key: "firstName",
+      align: "center",
+    },
+    {
+      title: "นามสกุล",
+      dataIndex: "lastName",
+      key: "lastName",
+      align: "center",
+    },
+    {
+      title: "ชื่อเล่น",
+      dataIndex: "nickName",
+      key: "nickName",
+      align: "center",
+    },
     { title: "อีเมล", dataIndex: "email", key: "email", align: "center" },
-    { title: "เบอร์โทร", dataIndex: "phoneNumber", key: "phoneNumber", align: "center" },
-    { title: "ตำแหน่ง", dataIndex: "position", key: "position", align: "center" },
+    {
+      title: "เบอร์โทร",
+      dataIndex: "phoneNumber",
+      key: "phoneNumber",
+      align: "center",
+    },
+    {
+      title: "ตำแหน่ง",
+      dataIndex: "position",
+      key: "position",
+      align: "center",
+    },
     {
       title: "ความรับผิดชอบ",
       dataIndex: "role",
       key: "role",
       align: "center",
       render: (role: string) => {
-        const roleMap: Record<string, string> = {
-          admin: "หัวหน้า",
-          user: "ผู้ใช้",
-          pharmacy: "ผู้ดูแลระบบคลังยา",
-          asset: "ผู้ดูแลระบบครุภัณฑ์",
+        const roleConfig: Record<string, { label: string; color: string }> = {
+          admin: { label: "หัวหน้า", color: "volcano" },
+          user: { label: "ผู้ใช้", color: "cyan" },
+          pharmacy: { label: "ผู้ดูแลคลังยา", color: "green" },
+          asset: { label: "ผู้ดูแลครุภัณฑ์", color: "purple" },
         };
-        return roleMap[role] || role;
+        const config = roleConfig[role] || { label: role, color: "default" };
+        return <Tag color={config.color}>{config.label}</Tag>;
       },
     },
-
     {
       title: "จัดการ",
       key: "action",
       align: "center",
       render: (_, record) => (
-        <Space>
+        <Space size="small">
           <Button
-            size="small"
+            type="primary"
+            ghost
+            icon={<EditOutlined />}
             onClick={() => handleEdit(record)}
-            style={{
-              marginRight: 8,
-              backgroundColor: "#faad14", // สีเหลือง
-              color: "#ffffff", // ตัวอักษรสีขาว
-              border: "none", // เอากรอบออก
-              fontWeight: "bold",
-            }}
+            style={{ borderColor: "#faad14", color: "#faad14" }}
           >
             แก้ไข
           </Button>
-
           <Popconfirm
-            title="คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?"
+            title="ยืนยันการลบผู้ใช้?"
             onConfirm={() => handleDelete(record.id)}
-            okText="ใช่"
+            okText="ลบ"
             cancelText="ยกเลิก"
+            okButtonProps={{ danger: true }}
           >
-            <Button
-              type="default"
-              size="small"
-              style={{
-                color: "#ff4d4f", // ตัวอักษรสีแดง
-                borderColor: "#ff4d4f", // กรอบสีแดง
-                backgroundColor: "#ffffff", // พื้นหลังขาว
-              }}
-            >
+            <Button danger ghost icon={<DeleteOutlined />}>
               ลบ
             </Button>
           </Popconfirm>
@@ -143,25 +147,85 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   ];
 
   return (
-    <>
+    <div className="custom-table-container">
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+        /* 1. เคลียร์ Border เดิมของ Ant Design เพื่อป้องกันเส้นซ้อน */
+        .custom-table-container .ant-table-wrapper .ant-table-container,
+        .custom-table-container .ant-table-wrapper .ant-table-content,
+        .custom-table-container .ant-table-wrapper table {
+          border: none !important;
+        }
+
+        /* 2. บังคับให้ยุบเส้นที่ซ้อนกัน (แก้ปัญหาเส้นหนาบางไม่เท่ากัน) */
+        .custom-table-container table {
+          border-collapse: collapse !important;
+          border: 1px solid #000 !important; /* เส้นขอบนอกสุด */
+          width: 100% !important;
+        }
+
+        /* 3. กำหนดเส้นแบ่งคอลัมน์และแถวให้หนา 1px เท่ากันทุกด้าน */
+        .custom-table-container .ant-table-thead > tr > th,
+        .custom-table-container .ant-table-tbody > tr > td {
+          border: 1px solid #000 !important; /* ใส่เส้นให้ทุกช่อง */
+          padding: 12px px !important;
+          border-radius: 0 !important;
+        }
+
+        /* 4. สีหัวตาราง */
+        .custom-table-container .ant-table-thead > tr > th {
+          background-color: #d9fcf4 !important; 
+          color: ${PRIMARY_COLOR} !important;
+          font-weight: bold;
+          text-align: center !important;
+        }
+
+        /* 5. เอามุมโค้งออกเพื่อให้เส้นตารางสีดำเชื่อมกันสนิท */
+        .ant-table-wrapper .ant-table-container {
+          border-radius: 0 !important;
+        } 
+      `,
+        }}
+      />
+
       <UserForm fetchData={fetchData} />
+
       <Table
+        className="custom-table"
         rowKey="id"
         columns={columns}
         dataSource={data}
         loading={loading}
+        bordered={false}
+        pagination={{
+          pageSize: 10,
+          position: ["bottomCenter"],
+          showSizeChanger: false,
+        }}
         scroll={{ x: 800 }}
+        style={{
+          marginTop: "16px",
+          marginBottom: "16px",
+          marginLeft: "24px",
+          marginRight: "24px",
+        }}
       />
 
       <Modal
-        title="แก้ไขข้อมูลผู้ใช้"
+        title={
+          <span style={{ color: PRIMARY_COLOR }}>📝 แก้ไขข้อมูลผู้ใช้</span>
+        }
         open={isModalOpen}
         onOk={handleUpdate}
         onCancel={() => setIsModalOpen(false)}
         okText="บันทึก"
         cancelText="ยกเลิก"
+        okButtonProps={{
+          style: { backgroundColor: PRIMARY_COLOR, borderColor: PRIMARY_COLOR },
+        }}
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
             label="ชื่อ"
             name="firstName"
@@ -186,17 +250,19 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
           >
             <Input />
           </Form.Item>
-          <Form.Item label="Role" name="role">
+          <Form.Item label="ความรับผิดชอบ" name="role">
             <Select
               options={[
                 { label: "ผู้ใช้", value: "user" },
                 { label: "หัวหน้า", value: "admin" },
+                { label: "ผู้ดูแลคลังยา", value: "pharmacy" },
+                { label: "ผู้ดูแลครุภัณฑ์", value: "asset" },
               ]}
             />
           </Form.Item>
         </Form>
       </Modal>
-    </>
+    </div>
   );
 };
 

@@ -246,11 +246,14 @@ export default function MainLayout({
               user={session.user as UserProfileType}
             />
           </div>
-          <div className="flext justify-col w-full h-14 bg-white shadow mb-3">
+
+          {/* แถบขาวใต้ Navigation bar */}
+{/*           <div className="flext justify-col w-full h-14 bg-white shadow mb-3">
             <div className="mt-2 ml-2">
               <Breadcrumb items={itemBreadcrumbMenu(pathname)} />
             </div>
-          </div>
+          </div> */}
+          
           <Content
             style={{
               paddingBottom: 0,

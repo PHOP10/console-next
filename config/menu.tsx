@@ -535,17 +535,17 @@ export const itemBreadcrumbMenu = (pathname: string) => {
 };
 
 // เมนู user dropdown
-const MenuNav: MenuProps["items"] = [
+const MenuNav: MenuProps["items"] = [     
   {
     key: "1",
-    label: <Link href={`/page/profile`}>Profile</Link>,
+    label: <Link href={`/page/user`}>โปรไฟล์</Link>,  /* app/page/user/components/ProfileDetails.tsx */
     icon: <UserOutlined />,
   },
   {
     key: "2",
     label: (
       <Link href={"#"} onClick={() => signOut()}>
-        Logout
+        ออกจากระบบ
       </Link>
     ),
     icon: <LogoutOutlined />,

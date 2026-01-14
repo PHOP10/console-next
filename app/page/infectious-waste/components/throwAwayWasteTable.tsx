@@ -169,6 +169,7 @@ export default function ThrowAwayWasteTable({
         loading={loading}
         pagination={{ pageSize: 10 }}
         scroll={{ x: 800 }}
+        bordered
       />
 
       {/* Modal สำหรับแก้ไข */}

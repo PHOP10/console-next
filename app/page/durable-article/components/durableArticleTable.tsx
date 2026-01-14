@@ -217,13 +217,18 @@ export default function DurableArticleTable({
 
   return (
     <>
-      <Card>
+      <Card bodyStyle={{ padding: 0 }}>
         <div
           style={{
             fontSize: "20px",
             textAlign: "center",
             fontWeight: "bold",
             color: "#0683e9",
+
+            marginBottom: "20px",
+            borderBottom: "1px solid #e8e8e8",
+            paddingTop: "14px",
+            height: "59px" /* ห่างจากหัวฟอร์ม */,
           }}
         >
           ข้อมูลครุภัณฑ์
@@ -233,7 +238,10 @@ export default function DurableArticleTable({
           style={{
             display: "flex",
             justifyContent: "space-between",
+
             marginBottom: 16,
+            paddingLeft: 24,
+            paddingRight: 24,
           }}
         >
           <Input.Search
@@ -254,6 +262,13 @@ export default function DurableArticleTable({
           loading={loading}
           bordered
           scroll={{ x: 800 }}
+          style={{
+            width: "96%",
+            padding: 0,
+            margin: "0 auto", // จัดกึ่งกลาง
+
+            marginBottom: 24, /* ขอบตารางด้านนอก (ข้างหลัง) */
+          }}
         />
 
         <Modal
@@ -263,7 +278,7 @@ export default function DurableArticleTable({
           onOk={handleUpdate}
           okText="บันทึก"
           cancelText="ยกเลิก"
-          width={900} // ✅ ทำให้ modal กว้างขึ้น
+          width={900}
         >
           <Form form={form} layout="vertical">
             <Row gutter={16}>
@@ -278,7 +293,6 @@ export default function DurableArticleTable({
                   <Input />
                 </Form.Item>
               </Col>
-
               <Col span={12}>
                 <Form.Item name="registrationNumber" label="หมายเลขหรือทะเบียน">
                   <Input />
@@ -296,7 +310,6 @@ export default function DurableArticleTable({
                   <DatePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
                 </Form.Item>
               </Col>
-
               <Col span={12}>
                 <Form.Item
                   name="unitPrice"
@@ -338,7 +351,6 @@ export default function DurableArticleTable({
                   </Select>
                 </Form.Item>
               </Col>
-
               <Col span={12}>
                 <Form.Item
                   name="category"
@@ -394,7 +406,6 @@ export default function DurableArticleTable({
                   <InputNumber style={{ width: "100%" }} min={0} />
                 </Form.Item>
               </Col>
-
               <Col span={12}>
                 <Form.Item
                   name="monthlyDepreciation"
@@ -417,7 +428,6 @@ export default function DurableArticleTable({
                   <Input />
                 </Form.Item>
               </Col>
-
               <Col span={12}>
                 <Form.Item name="documentId" label="ที่เอกสาร">
                   <Input />
