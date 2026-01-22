@@ -15,19 +15,29 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import {
+  UserOutlined,
+  LockOutlined,
+  MailOutlined,
+  ArrowLeftOutlined,
+  LoginOutlined,
+} from "@ant-design/icons"; 
+
+/* import "../components/Navigation/font.css";  */
+
+
 export default function Login() {
   const router = useRouter();
   const [form] = useForm();
   const [loading, setLoading] = useState<boolean>(true);
   const [remember, setRemember] = useState<boolean>(false);
-  const [mode, setMode] = useState<"login" | "forgot">("login"); // เพิ่ม state
+  const [mode, setMode] = useState<"login" | "forgot">("login");
 
   const [user, setUser] = useState({
     username: "",
     password: "",
   });
 
-  // ฟังก์ชัน Login
   const onFinish = () => {
     if (remember) {
       if (!localStorage.getItem("username")) {
@@ -44,22 +54,22 @@ export default function Login() {
         redirect: false,
       });
       if (result?.error) {
-        message.error("Failed to authenticate. Please try again.");
+        message.error("ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง");
       } else {
-        message.success("Login Success");
+        message.success("เข้าสู่ระบบสำเร็จ");
         router.push("/page");
       }
     });
   };
 
-  // ฟังก์ชันส่งลิงก์รีเซ็ตรหัสผ่าน
   const onForgotFinish = (values: { email: string }) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       message.success(
-        `Reset link sent to ${values.email}. Please check your email.`
+        `ลิงก์รีเซ็ตรหัสผ่านถูกส่งไปยัง ${values.email} แล้ว กรุณาตรวจสอบอีเมล`
       );
+      setMode("login"); // ส่งเสร็จให้กลับมาหน้า Login
     }, 1500);
   };
 
@@ -84,225 +94,251 @@ export default function Login() {
       });
       setUser({ username: getUsername, password: getPassword });
     }
-  }, []);
+  }, [form]);
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-screen">
-        <Spin />
+      <div className="flex justify-center items-center h-screen bg-gray-50">
+        <Spin size="large" />
       </div>
     );
   }
 
+  const glassCardStyle = {
+    background: "rgba(255, 255, 255, 0.75)", 
+    backdropFilter: "blur(16px)", 
+    WebkitBackdropFilter: "blur(16px)",
+    borderRadius: "24px",
+    boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.15)", 
+    border: "1px solid rgba(255, 255, 255, 0.4)",
+    overflow: "hidden",
+  };
+
+  // สไตล์ช่องกรอกข้อมูล
+  const inputStyle = {
+    borderRadius: "12px",
+    padding: "10px 12px",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  };
+
+  // สไตล์ปุ่มกด
+  const buttonStyle = {
+    height: "48px",
+    borderRadius: "12px",
+    fontSize: "16px",
+    fontWeight: 600,
+    boxShadow: "0 4px 12px rgba(24, 144, 255, 0.3)",
+  };
+
   return (
-    <>
-      <ConfigProvider>
-        <div className="relative h-screen w-screen flex justify-center items-center">
-          {/* Background layer */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: 'url("/login page background.jpg")',
-              backgroundSize: "cover",
-              backgroundPosition: "center",
-              backgroundRepeat: "no-repeat",
-              filter: "brightness(0.7)",
-              backdropFilter: "blur(4px)",
-              zIndex: 0,
-            }}
-          />
-          <Card className="max-w-lg w-full rounded-xl shadow-md bg-white bg-opacity-95">
-            {mode === "login" && (
-              <Form
-                form={form}
-                initialValues={{ remember: false }}
-                onFinish={onFinish}
-                autoComplete="off"
-                layout="vertical"
-              >
-                <div className="flex justify-center m-5 mb-8">
-                  {" "}
-                  {/* logo */}
-                  <img
-                    src="/rpst.png"
-                    alt="logo-page"
-                    className="w-20 md:w-40 h-auto"
-                  />
-                </div>
+    <ConfigProvider>
+      <div className="relative min-h-screen w-full flex justify-center items-center overflow-hidden">
+        <div
+          className="absolute inset-0 z-0 transform scale-105"
+          style={{
+            backgroundImage: 'url("/login page background.jpg")',
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            filter: "brightness(0.65) blur(3px)",
+          }}
+        />
 
-                <p className="mt-4 text-center text-lg font-semibold">
-                  โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง
-                </p>
-
-                <Form.Item
-                  label="ชื่อผู้ใช้"
-                  name="username"
-                  rules={[{ required: true, message: "กรุณากรอกชื่อผู้ใช้!" }]}
-                >
-                  <Input
-                    placeholder="userName"
-                    onChange={(e) =>
-                      setUser((prev) => ({ ...prev, username: e.target.value }))
-                    }
-                    style={{ borderRadius: 12 }}
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label="รหัสผ่าน"
-                  name="password"
-                  rules={[{ required: true, message: "กรุณากรอกรหัสผ่าน!" }]}
-                >
-                  <Input.Password
-                    placeholder="*********"
-                    onChange={(e) =>
-                      setUser((prev) => ({ ...prev, password: e.target.value }))
-                    }
-                    style={{ borderRadius: 12 }}
-                    size="large"
-                  />
-                </Form.Item>
-
-                <div className="flex justify-between items-center w-full">
-                  <Form.Item
-                    name="remember"
-                    valuePropName="checked"
-                    className="m-0"
-                  >
-                    <Checkbox onClick={handleRemember}>จดจำรหัสผ่าน</Checkbox>
-                  </Form.Item>
-
-                  <Form.Item className="m-0">
-                    {/* เปลี่ยนเป็นปุ่มลิงก์ที่เปลี่ยน state */}
-                    <button
-                      type="button"
-                      onClick={() => setMode("forgot")}
-                      className="text-blue-500 hover:text-blue-700 text-sm"
-                      style={{
-                        outline: "none",
-                        border: "none",
-                        background: "none",
-                        padding: 0,
-                        cursor: "pointer",
-                      }}
-                    >
-                      ลืมรหัสผ่าน?
-                    </button>
-                  </Form.Item>
-                </div>
-
-                <Form.Item className="mt-6">
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    className="w-full py-5 text-lg font-semibold h-6 rounded-lg"
-                  >
-                    เข้าสู่ระบบ
-                  </Button>
-                </Form.Item>
-              </Form>
-            )}
-
-            {mode === "forgot" && (
-              <Form layout="vertical" onFinish={onForgotFinish}>
-                <h2 className="text-left text-lg font-semibold mb-6">
-                  ลืมรหัสผ่าน
+        <Card
+          className="w-full max-w-[440px] mx-4 relative z-10"
+          bordered={false}
+          style={glassCardStyle}
+          bodyStyle={{ padding: "40px 32px" }} 
+        >
+          {mode === "login" ? (
+            <Form
+              form={form}
+              initialValues={{ remember: false }}
+              onFinish={onFinish}
+              autoComplete="off"
+              layout="vertical"
+              requiredMark={false}
+            >
+              <div className="flex flex-col items-center mb-8">
+                <img
+                  src="/rpst.png"
+                  alt="logo-page"
+                  className="w-24 h-auto mb-4 drop-shadow-md transition-transform hover:scale-105 duration-300"
+                />
+                <h2 className="text-center text-xl md:text-2xl font-bold text-gray-800 leading-tight">
+                  โรงพยาบาลส่งเสริมสุขภาพ
+                  <br />
+                  ตำบลบ้านผาผึ้ง
                 </h2>
+                <p className="text-gray-500 mt-2 text-sm">
+                  กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ
+                </p>
+              </div>
+              <Form.Item
+                label={<span className="font-medium text-gray-600">ชื่อผู้ใช้</span>}
+                name="username"
+                rules={[{ required: true, message: "กรุณากรอกชื่อผู้ใช้!" }]}
+                className="mb-5"
+              >
+                <Input
+                  placeholder="กรอกชื่อผู้ใช้"
+                  prefix={<UserOutlined className="text-gray-400 mr-2" />}
+                  size="large"
+                  style={inputStyle}
+                  onChange={(e) =>
+                    setUser((prev) => ({ ...prev, username: e.target.value }))
+                  }
+                />
+              </Form.Item>
 
-                <div className="flex justify-center m-5 mb-8">
-                  <img
-                    src="/rpst.png"
-                    alt="logo-page"
-                    className="w-20 md:w-40 h-auto"
-                  />
-                </div>
+              {/* Password Input */}
+              <Form.Item
+                label={<span className="font-medium text-gray-600">รหัสผ่าน</span>}
+                name="password"
+                rules={[{ required: true, message: "กรุณากรอกรหัสผ่าน!" }]}
+                className="mb-5"
+              >
+                <Input.Password
+                  placeholder="กรอกรหัสผ่าน"
+                  prefix={<LockOutlined className="text-gray-400 mr-2" />}
+                  size="large"
+                  style={inputStyle}
+                  onChange={(e) =>
+                    setUser((prev) => ({ ...prev, password: e.target.value }))
+                  }
+                />
+              </Form.Item>
 
-                {/* ฟอร์มลืมรหัสผ่าน */}
+              {/* Remember Me & Forgot Password */}
+              <div className="flex justify-between items-center mb-6">
                 <Form.Item
-                  label="ชื่อผู้ใช้"
-                  name="username"
-                  rules={[{ required: true, message: "กรุณากรอกชื่อผู้ใช้!" }]}
+                  name="remember"
+                  valuePropName="checked"
+                  noStyle
                 >
-                  <Input
-                    placeholder="กรอกชื่อผู้ใช้ของคุณ"
-                    style={{ borderRadius: 12 }}
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label="รหัสผ่านเก่า"
-                  name="oldPassword"
-                  rules={[
-                    { required: true, message: "กรุณากรอกรหัสผ่านเก่า!" },
-                  ]}
-                >
-                  <Input.Password
-                    placeholder="กรอกรหัสผ่านเก่า"
-                    style={{ borderRadius: 12 }}
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Form.Item
-                  label="อีเมล"
-                  name="email"
-                  rules={[
-                    { required: true, message: "กรุณากรอกอีเมลของคุณ!" },
-                    { type: "email", message: "กรุณากรอกอีเมลให้ถูกต้อง!" },
-                  ]}
-                >
-                  <Input
-                    placeholder="กรอกอีเมลของคุณ"
-                    style={{ borderRadius: 12 }}
-                    size="large"
-                  />
-                </Form.Item>
-
-                <Form.Item>
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    className="w-full py-5 text-lg font-semibold h-6 rounded-lg"
+                  <Checkbox
+                    onClick={handleRemember}
+                    className="text-gray-600"
                   >
-                    ยืนยัน
-                  </Button>
+                    จดจำรหัสผ่าน
+                  </Checkbox>
                 </Form.Item>
 
-                <button
-                  type="button"
+                <Button
+                  type="link"
+                  onClick={() => setMode("forgot")}
+                  className="p-0 text-blue-600 hover:text-blue-700 font-medium h-auto"
+                >
+                  ลืมรหัสผ่าน?
+                </Button>
+              </div>
+
+              {/* Submit Button */}
+              <Form.Item className="mb-2">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  icon={<LoginOutlined />}
+                  style={buttonStyle}
+                  className="bg-blue-600 hover:bg-blue-500 border-none transition-all duration-300 transform hover:-translate-y-0.5"
+                >
+                  เข้าสู่ระบบ
+                </Button>
+              </Form.Item>
+            </Form>
+          ) : (
+            // ================== FORGOT PASSWORD FORM ==================
+            <Form layout="vertical" onFinish={onForgotFinish} requiredMark={false}>
+              {/* Header */}
+              <div className="flex flex-col items-center mb-6">
+                <img
+                  src="/rpst.png"
+                  alt="logo-page"
+                  className="w-16 h-auto mb-3 opacity-80"
+                />
+                <h2 className="text-xl font-bold text-gray-800">ลืมรหัสผ่าน</h2>
+                <p className="text-gray-500 text-sm text-center px-4">
+                  กรอกข้อมูลเพื่อยืนยันตัวตนและรีเซ็ตรหัสผ่าน
+                </p>
+              </div>
+
+              {/* Username Input */}
+              <Form.Item
+                label={<span className="font-medium text-gray-600">ชื่อผู้ใช้</span>}
+                name="username"
+                rules={[{ required: true, message: "กรุณากรอกชื่อผู้ใช้!" }]}
+                className="mb-4"
+              >
+                <Input
+                  placeholder="ชื่อผู้ใช้ของคุณ"
+                  prefix={<UserOutlined className="text-gray-400 mr-2" />}
+                  size="large"
+                  style={inputStyle}
+                />
+              </Form.Item>
+
+              {/* Old Password Input */}
+              <Form.Item
+                label={<span className="font-medium text-gray-600">รหัสผ่านเก่า</span>}
+                name="oldPassword"
+                rules={[{ required: true, message: "กรุณากรอกรหัสผ่านเก่า!" }]}
+                className="mb-4"
+              >
+                <Input.Password
+                  placeholder="กรอกรหัสผ่านเก่า"
+                  prefix={<LockOutlined className="text-gray-400 mr-2" />}
+                  size="large"
+                  style={inputStyle}
+                />
+              </Form.Item>
+
+              {/* Email Input */}
+              <Form.Item
+                label={<span className="font-medium text-gray-600">อีเมล</span>}
+                name="email"
+                rules={[
+                  { required: true, message: "กรุณากรอกอีเมล!" },
+                  { type: "email", message: "รูปแบบอีเมลไม่ถูกต้อง!" },
+                ]}
+                className="mb-8"
+              >
+                <Input
+                  placeholder="example@email.com"
+                  prefix={<MailOutlined className="text-gray-400 mr-2" />}
+                  size="large"
+                  style={inputStyle}
+                />
+              </Form.Item>
+
+              {/* Confirm Button */}
+              <Form.Item className="mb-4">
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  block
+                  style={buttonStyle}
+                  className="bg-blue-600 hover:bg-blue-500 border-none"
+                >
+                  ยืนยันข้อมูล
+                </Button>
+              </Form.Item>
+
+              {/* Back to Login Button */}
+              <div className="text-center">
+                <Button
+                  type="text"
+                  icon={<ArrowLeftOutlined />}
                   onClick={() => setMode("login")}
-                  className="text-blue-600 flex items-center gap-1 bg-transparent border-none p-0 outline-none cursor-pointer"
-                  style={{
-                    border: "none",
-                    background: "transparent",
-                    padding: 0,
-                    outline: "none",
-                    textDecoration: "none",
-                  }}
+                  className="text-gray-500 hover:text-blue-600 transition-colors"
                 >
-                  <span
-                    className="text-sm relative -top-[6px]"
-                    style={{ textDecoration: "none" }}
-                  >
-                    ←
-                  </span>
-                  <span className="hover:underline text-sm relative -top-[6px]">
-                    กลับไปยังหน้าล็อกอิน
-                  </span>
-                </button>
-              </Form>
-            )}
-          </Card>
-        </div>
-      </ConfigProvider>
-      <style jsx global>{`
-        .ant-card .ant-card-body {
-          padding-inline: 14px !important;
-          padding-block: 3px !important;
-        }
-      `}</style>
-    </>
+                  กลับไปยังหน้าเข้าสู่ระบบ
+                </Button>
+              </div>
+            </Form>
+          )}
+        </Card>
+      </div>
+    </ConfigProvider>
   );
 }

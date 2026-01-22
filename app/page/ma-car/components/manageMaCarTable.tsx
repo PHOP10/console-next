@@ -179,11 +179,17 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   };
 
   const columns: ColumnsType<MaCarType> = [
-    { title: "ผู้ขอใช้รถ", dataIndex: "createdName", key: "createdName" },
+    {
+      title: "ผู้ขอใช้รถ",
+      dataIndex: "createdName",
+      key: "createdName",
+      align: "center",
+    },
     {
       title: "วัตถุประสงค์",
       dataIndex: "purpose",
       key: "purpose",
+      align: "center",
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -200,6 +206,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "ปลายทาง",
       dataIndex: "destination",
       key: "destination",
+      align: "center",
       render: (text: string) => {
         const maxLength = 20;
         if (!text) return "-";
@@ -216,6 +223,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "ตั้งแต่วันที่",
       dataIndex: "dateStart",
       key: "dateStart",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -229,6 +237,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "ถึงวันที่",
       dataIndex: "dateEnd",
       key: "dateEnd",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -242,6 +251,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "รถที่ใช้",
       dataIndex: "masterCar",
       key: "masterCar",
+      align: "center",
       render: (masterCar) =>
         masterCar ? `${masterCar.carName} (${masterCar.licensePlate})` : "-",
     },
@@ -249,6 +259,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) => {
         let color = "default";
         let text = "";
@@ -281,6 +292,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "หมมายเหตุ",
       dataIndex: "note",
       key: "note",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -297,6 +309,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           <Button
@@ -389,7 +402,6 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             open={openPopoverId === record.id}
             onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
-         
             <Tooltip title="อนุมัติ">
               <CheckCircleOutlined
                 style={{
@@ -428,6 +440,25 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
 
   return (
     <>
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "20px",
+          fontWeight: "bold",
+          color: "#0683e9",
+          marginTop: "-12px",
+
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+          marginBottom: "24px",
+
+          marginLeft: "-24px",
+          marginRight: "-24px",
+        }}
+      >
+        จัดการการจองรถ
+      </div>
+
       <Table
         columns={columns}
         dataSource={data}

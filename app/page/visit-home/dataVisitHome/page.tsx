@@ -37,7 +37,7 @@ export default function VisitHomePage() {
       key: "1",
       label: `ข้อมูลการเยี่ยมบ้าน`,
       children: (
-        <Card>
+  
           <VisitHomeTable
             data={data}
             loading={loading}
@@ -45,7 +45,7 @@ export default function VisitHomePage() {
             fetchData={fetchData}
             masterPatients={masterPatients}
           />
-        </Card>
+      
       ),
     },
   ];

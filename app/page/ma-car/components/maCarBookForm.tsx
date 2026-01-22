@@ -15,6 +15,7 @@ import {
   ConfigProvider,
   Radio,
   Checkbox,
+  Space,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
@@ -97,7 +98,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               b.status !== "cancel" &&
               dayjs(dateStart).isBefore(dayjs(b.dateEnd)) &&
               dayjs(dateEnd).isAfter(dayjs(b.dateStart)) &&
-              (b.carId === carId || b.createdById === currentUserId)
+              (b.carId === carId || b.createdById === currentUserId),
           )?.carId === carId
             ? "รถคันนี้ถูกจองในช่วงเวลานี้แล้ว"
             : "คุณมีรายการจองอื่นในช่วงเวลานี้แล้ว";
@@ -149,21 +150,96 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
     return `${day} ${month} ${year}`;
   };
 
+  /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
+  // --- Helper Functions สำหรับการสุ่ม (แก้ไข Type แล้ว) ---
+  const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const getRandomElement = (arr: any[]) =>
+    arr[Math.floor(Math.random() * arr.length)];
+
+  // ✅ ฟังก์ชันสุ่มข้อมูลใส่ฟอร์ม (Random Auto-fill)
+  const handleAutoFill = () => {
+    // 1. เตรียมชุดข้อมูลตัวอย่าง
+    const recipients = [
+      "สาธารณสุขอำเภอวังเจ้า",
+      "โรงพยาบาลตากสิน",
+      "สสจ. ตาก",
+      "อบต. เชียงทอง",
+    ];
+    const purposes = [
+      "เข้าร่วมประชุมวิชาการประจำปี",
+      "รับส่งผู้ป่วยส่งต่อ",
+      "รับวัคซีนและเวชภัณฑ์",
+      "ออกหน่วยแพทย์เคลื่อนที่",
+      "ติดต่อประสานงานโครงการส่งเสริมสุขภาพ",
+    ];
+    const destinations = [
+      "อ.เมือง จ.ตาก",
+      "อ.แม่สอด จ.ตาก",
+      "ศาลากลางจังหวัด",
+      "ศูนย์ราชการ",
+    ];
+    const budgets = [
+      "งบกลาง",
+      "งบโครงการ",
+      "งบผู้จัด",
+      "เงินบำรุง",
+      "ไม่ขอเบิก",
+    ];
+    const typeOptions = ["ในจังหวัด", "นอกจังหวัด"];
+    const planOptions = ["แผนปกติ", "แผนด่วน"];
+
+    // 2. สุ่มวันที่ (เริ่มอีก 1-7 วันข้างหน้า, ระยะเวลา 1-3 วัน)
+    const startOffset = getRandomInt(1, 7);
+    const duration = getRandomInt(1, 3);
+    // เซ็ตเวลาให้ดูสมจริง (เช่น เริ่ม 08:30)
+    const randStartDate = dayjs()
+      .add(startOffset, "day")
+      .hour(8)
+      .minute(30)
+      .second(0);
+    const randEndDate = randStartDate
+      .add(duration, "day")
+      .hour(16)
+      .minute(30)
+      .second(0);
+
+    // 3. สุ่มผู้โดยสาร (1-5 คน)
+    const randPassengers = getRandomInt(1, 5);
+    // สุ่มรายชื่อคน (Shuffle array แล้วตัดมาตามจำนวน)
+    // ตรวจสอบว่ามี dataUser หรือไม่ เพื่อป้องกัน error
+    const validUsers = dataUser || [];
+    const shuffledUsers = [...validUsers].sort(() => 0.5 - Math.random());
+    const randPassengerNames = shuffledUsers
+      .slice(0, randPassengers)
+      .map((u) => u.userId);
+
+    // 4. สุ่มรถ (ถ้ามีข้อมูลรถ)
+    let randCarId = undefined;
+    if (cars && cars.length > 0) {
+      randCarId = getRandomElement(cars).id;
+    }
+
+    // ✅ Set ค่าเข้าฟอร์ม
+    form.setFieldsValue({
+      typeName: [getRandomElement(typeOptions), getRandomElement(planOptions)], // สุ่มเลือก Checkbox อย่างละ 1
+      carId: randCarId,
+      recipient: getRandomElement(recipients),
+      purpose: getRandomElement(purposes),
+      destination: getRandomElement(destinations),
+      dateStart: randStartDate,
+      dateEnd: randEndDate,
+      driver: Math.random() > 0.5 ? "yes" : "no", // สุ่ม Yes/No
+      budget: getRandomElement(budgets),
+      passengers: randPassengers,
+      passengerNames: randPassengerNames,
+      note: Math.random() > 0.7 ? "ทดสอบระบบ Auto-fill" : "", // สุ่มใส่หมายเหตุบ้าง
+    });
+  };
+
   return (
-    <Card
-      title={
-        <div
-          style={{
-            textAlign: "center",
-            color: "#0683e9",
-            fontWeight: "bold",
-            fontSize: "20px",
-          }}
-        >
-          ฟอร์มจองรถ
-        </div>
-      }
-    >
+    <Card>
       <ConfigProvider locale={th_TH}>
         <Form
           form={form}
@@ -224,7 +300,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   onChange={(value) => {
                     form.setFieldValue(
                       "recipient",
-                      value === "other" ? "" : value
+                      value === "other" ? "" : value,
                     );
                   }}
                   dropdownRender={(menu) => (
@@ -236,13 +312,13 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "recipient",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                           onBlur={(e) => {
                             form.setFieldValue(
                               "recipient",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                         />
@@ -309,7 +385,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                           if (selectedHour === dayjs().hour()) {
                             return Array.from(
                               { length: dayjs().minute() },
-                              (_, i) => i
+                              (_, i) => i,
                             );
                           }
                           return [];
@@ -371,7 +447,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                                 if (selectedHour === startHour) {
                                   return Array.from(
                                     { length: startMinute },
-                                    (_, i) => i
+                                    (_, i) => i,
                                   );
                                 }
                                 return [];
@@ -412,7 +488,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   onChange={(value) => {
                     form.setFieldValue(
                       "budget",
-                      value === "other" ? "" : value
+                      value === "other" ? "" : value,
                     );
                   }}
                   dropdownRender={(menu) => (
@@ -493,10 +569,38 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
           <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
             <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
           </Form.Item>
-          <Form.Item style={{ textAlign: "center" }}>
-            <Button type="primary" htmlType="submit">
-              จองรถ
-            </Button>
+
+          {/* ✅ แก้ไขส่วนปุ่มกด: ใช้ Space เพื่อจัดเรียงปุ่ม */}
+          <Form.Item style={{ textAlign: "center", marginTop: "20px" }}>
+            <Space size="large" wrap>
+              {/* ปุ่มจองรถ (Submit) */}
+              <Button
+                type="primary"
+                htmlType="submit"
+                size="large"
+                style={{
+                  minWidth: "150px",
+                  height: "50px",
+                  fontSize: "16px",
+                }}
+              >
+                จองรถ
+              </Button>
+
+              {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (เพิ่มใหม่) */}
+              <Button
+                htmlType="button" // สำคัญ! ต้องใส่เป็น button เพื่อกันไม่ให้ Submit form
+                onClick={handleAutoFill}
+                size="large"
+                style={{
+                  minWidth: "150px",
+                  height: "50px",
+                  fontSize: "16px",
+                }}
+              >
+                สุ่มข้อมูลตัวอย่าง
+              </Button>
+            </Space>
           </Form.Item>
         </Form>
       </ConfigProvider>

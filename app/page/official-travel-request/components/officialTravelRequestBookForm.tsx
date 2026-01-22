@@ -14,9 +14,12 @@ import {
   Row,
   Col,
   ConfigProvider,
-  Checkbox,
   Radio,
   Space,
+  Modal,
+  Descriptions,
+  Divider,
+  notification,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { officialTravelRequestService } from "../services/officialTravelRequest.service";
@@ -32,6 +35,12 @@ import "dayjs/locale/th";
 dayjs.locale("th");
 import isBetween from "dayjs/plugin/isBetween";
 dayjs.extend(isBetween);
+
+import {
+  CheckCircleFilled,
+  CloseCircleFilled,
+  ExclamationCircleFilled,
+} from "@ant-design/icons"; /* อันใหม่ */
 
 interface Props {
   dataUser: UserType[];
@@ -52,15 +61,20 @@ export default function OfficialTravelRequestBookForm({
   const { data: session } = useSession();
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
-  const selectedTravelType = Form.useWatch("travelType", form);
-  // console.log("dataOTR:", dataOTR);
 
-  const onFinish = async (values: any) => {
+  // State สำหรับ Modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [confirmData, setConfirmData] = useState<any>(null);
+
+  const selectedTravelType = Form.useWatch("travelType", form);
+
+  // 1. กดปุ่มบันทึก -> ตรวจสอบเงื่อนไข -> เปิด Modal
+const onFinish = async (values: any) => {
     setSubmitting(true);
     try {
       const { carId, startDate, endDate, travelType } = values;
 
-      // เปลี่ยนชื่อจาก maCar หรือ dataOTR ให้ตรงกับตัวแปรที่คุณใช้จริง
+      // ตรวจสอบการจองรถซ้ำ
       const isCarOverlaps =
         dataOTR &&
         dataOTR.some((booking) => {
@@ -70,12 +84,11 @@ export default function OfficialTravelRequestBookForm({
           const start = dayjs(startDate).startOf("day");
           const end = dayjs(endDate).endOf("day");
 
-          // 2. ปรับเวลาของรายการในฐานข้อมูล (ใช้ชื่อฟิลด์ startDate, endDate ตาม Prisma Model)
+          // 2. ปรับเวลาของรายการในฐานข้อมูล
           const bStart = dayjs(booking.startDate).startOf("day");
           const bEnd = dayjs(booking.endDate).endOf("day");
 
           // 3. Logic ตรวจสอบการทับซ้อน (Overlap)
-          // สูตร: (รายการใหม่เริ่มก่อนรายการเก่าจบ) และ (รายการใหม่จบหลังรายการเก่าเริ่ม)
           const isTimeOverlap = start.isBefore(bEnd) && end.isAfter(bStart);
 
           // 4. เงื่อนไขรถคันเดียวกัน
@@ -142,21 +155,94 @@ export default function OfficialTravelRequestBookForm({
     return `${day} ${month} ${year}`;
   };
 
+  /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
+  // --- Helper Functions สำหรับสุ่มข้อมูล (เพิ่มส่วนนี้ไว้ใน Component) ---
+  const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const getRandomElement = (arr: any[]) =>
+    arr[Math.floor(Math.random() * arr.length)];
+
+  // ✅ แก้ไขฟังก์ชันนี้: สุ่มข้อมูลใส่ฟอร์มใหม่ทุกครั้งที่กด
+  const handleAutoFill = () => {
+    // 1. สุ่มเลขที่เอกสาร
+    const randomDocNo = `${getRandomInt(1000, 9999)}.${getRandomInt(1, 9)}.${getRandomInt(1, 9)}/${getRandomInt(10, 99)}`;
+
+    // 2. ชุดข้อมูลตัวอย่างสำหรับสุ่ม
+    const missions = [
+      "ประชุมเชิงปฏิบัติการพัฒนาระบบสารสนเทศ",
+      "นิเทศงานสาธารณสุขประจำปี",
+      "อบรมโครงการพัฒนาศักยภาพบุคลากร",
+      "ศึกษาดูงานการบริหารจัดการขยะ",
+      "ติดต่อราชการเรื่องงบประมาณประจำปี",
+    ];
+    const locations = [
+      "สำนักงานสาธารณสุขจังหวัดตาก",
+      "โรงพยาบาลแม่สอด",
+      "ศูนย์ราชการแจ้งวัฒนะ กทม.",
+      "โรงแรมเซ็นทารา แม่สอด",
+      "ศาลากลางจังหวัดตาก",
+    ];
+    const budgets = [
+      "งบกลาง",
+      "งบโครงการ",
+      "งบผู้จัด",
+      "เงินบำรุง",
+      "ไม่ขอเบิก",
+    ];
+
+    // 3. สุ่มวันที่ (เริ่มอีก 1-10 วันข้างหน้า, ไปนาน 1-3 วัน)
+    const startOffset = getRandomInt(1, 10);
+    const duration = getRandomInt(1, 3);
+    const randStartDate = dayjs().add(startOffset, "day");
+    const randEndDate = randStartDate.add(duration, "day");
+
+    // 4. สุ่มประเภทการเดินทาง
+    const travelTypes = ["official", "private", "bus", "plane", "other"];
+    const randTravelType = getRandomElement(travelTypes);
+
+    // เลือกข้อมูลรถตามประเภทที่สุ่มได้
+    let randCarId = undefined;
+    let randPrivateCarId = undefined;
+    let randOtherTravelType = undefined;
+
+    if (randTravelType === "official" && cars.length > 0) {
+      randCarId = getRandomElement(cars).id; // สุ่มรถราชการที่มีในระบบ
+    } else if (randTravelType === "private") {
+      randPrivateCarId = `กข ${getRandomInt(1000, 9999)} ตาก`;
+    } else if (randTravelType === "other") {
+      randOtherTravelType = "รถตู้เช่าเหมา";
+    }
+
+    // 5. สุ่มผู้โดยสาร (1-5 คน)
+    const randPassengers = getRandomInt(1, 5);
+    // สุ่มรายชื่อคน (Shuffle array แล้วตัดมาตามจำนวน)
+    const shuffledUsers = [...dataUser].sort(() => 0.5 - Math.random());
+    const randPassengerNames = shuffledUsers
+      .slice(0, randPassengers)
+      .map((u) => u.userId);
+
+    // Set ค่าเข้าฟอร์ม
+    form.setFieldsValue({
+      documentNo: randomDocNo,
+      recipient: "สาธารณสุขอำเภอวังเจ้า",
+      missionDetail: getRandomElement(missions),
+      location: getRandomElement(locations),
+      startDate: randStartDate,
+      endDate: randEndDate,
+      travelType: randTravelType,
+      carId: randCarId,
+      privateCarId: randPrivateCarId,
+      otherTravelType: randOtherTravelType,
+      passengers: randPassengers,
+      passengerNames: randPassengerNames,
+      budget: getRandomElement(budgets),
+      note: Math.random() > 0.5 ? "ทดสอบระบบ Auto-fill แบบสุ่ม" : "-",
+    });
+  };
+
   return (
-    <Card
-      title={
-        <div
-          style={{
-            textAlign: "center",
-            color: "#0683e9",
-            fontWeight: "bold",
-            fontSize: "20px",
-          }}
-        >
-          ฟอร์มขอไปราชการ
-        </div>
-      }
-    >
+    <Card>
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Row gutter={16}>
@@ -164,7 +250,6 @@ export default function OfficialTravelRequestBookForm({
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentNo"
-                // ช่วยลบอักขระที่ไม่ต้องการออกทันทีขณะพิมพ์ (คงเหลือแค่ตัวเลข . และ /)
                 normalize={(value) => value.replace(/[^0-9./]/g, "")}
                 rules={[
                   {
@@ -172,19 +257,17 @@ export default function OfficialTravelRequestBookForm({
                     message: "กรุณากรอกเลขที่เอกสาร",
                   },
                   {
-                    // ปรับ Pattern ให้รับเฉพาะ ตัวเลข, จุด และ ทับ เท่านั้น
                     pattern: /^[0-9./]+$/,
                     message: "กรอกได้เฉพาะตัวเลข จุด (.) และทับ (/) เท่านั้น",
                   },
                   {
                     validator: (_, value) => {
-                      // ตรวจสอบความซ้ำซ้อนจาก dataOTR
                       if (
                         value &&
                         dataOTR.some((doc) => doc.documentNo === value)
                       ) {
                         return Promise.reject(
-                          new Error("เลขที่เอกสารนี้ซ้ำกับในระบบ")
+                          new Error("เลขที่เอกสารนี้ซ้ำกับในระบบ"),
                         );
                       }
                       return Promise.resolve();
@@ -206,7 +289,7 @@ export default function OfficialTravelRequestBookForm({
                   onChange={(value) => {
                     form.setFieldValue(
                       "recipient",
-                      value === "other" ? "" : value
+                      value === "other" ? "" : value,
                     );
                   }}
                   dropdownRender={(menu) => (
@@ -218,13 +301,13 @@ export default function OfficialTravelRequestBookForm({
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "recipient",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                           onBlur={(e) => {
                             form.setFieldValue(
                               "recipient",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                         />
@@ -235,7 +318,6 @@ export default function OfficialTravelRequestBookForm({
                   <Select.Option value="สาธารณสุขอำเภอวังเจ้า">
                     สาธารณสุขอำเภอวังเจ้า
                   </Select.Option>
-                  {/* <Select.Option value="other">อื่นๆ...</Select.Option> */}
                 </Select>
               </Form.Item>
             </Col>
@@ -262,7 +344,6 @@ export default function OfficialTravelRequestBookForm({
             </Col>
           </Row>
 
-          {/* ✅ แสดงวันที่แบบ พ.ศ. */}
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -277,21 +358,15 @@ export default function OfficialTravelRequestBookForm({
                   placeholder="เลือกวันที่เริ่มเดินทาง"
                   format={(value) => formatBuddhist(value as dayjs.Dayjs)}
                   onChange={() => {
-                    form.setFieldValue("endDate", null); // reset endDate เมื่อเปลี่ยน startDate
+                    form.setFieldValue("endDate", null);
                   }}
                   disabledDate={(current) => {
                     if (!current) return false;
-                    // ห้ามเลือกวันย้อนหลัง
                     if (current < dayjs().startOf("day")) return true;
-
-                    // ตรวจสอบการทับซ้อนกับรายการใน Database
                     return oTRUser.some((maCar) => {
-                      if (maCar.status === "cancel") return false; // ไม่นับรายการที่ยกเลิก
-
-                      // ใช้ชื่อ Field ให้ตรงกับ Model: startDate และ endDate
+                      if (maCar.status === "cancel") return false;
                       const start = dayjs(maCar.startDate).startOf("day");
                       const end = dayjs(maCar.endDate).endOf("day");
-
                       return current.isBetween(start, end, "day", "[]");
                     });
                   }}
@@ -321,7 +396,7 @@ export default function OfficialTravelRequestBookForm({
                         placeholder={
                           dateStart
                             ? `เลือกตั้งแต่ ${dayjs(dateStart).format(
-                                "DD/MM/YYYY"
+                                "DD/MM/YYYY",
                               )} เป็นต้นไป`
                             : "กรุณาเลือกวันที่เริ่มเดินทางก่อน"
                         }
@@ -329,7 +404,6 @@ export default function OfficialTravelRequestBookForm({
                         disabled={!dateStart}
                         disabledDate={(current) => {
                           if (!current) return false;
-
                           if (
                             dateStart &&
                             current < dayjs(dateStart).startOf("day")
@@ -337,8 +411,6 @@ export default function OfficialTravelRequestBookForm({
                             return true;
                           }
                           if (current < dayjs().startOf("day")) return true;
-
-                          // ห้ามเลือกวันที่ทับกับช่วงจองรถ
                           return oTRUser.some((maCar) => {
                             const start = dayjs(maCar.startDate).startOf("day");
                             const end = dayjs(maCar.endDate).endOf("day");
@@ -346,7 +418,7 @@ export default function OfficialTravelRequestBookForm({
                               start,
                               end,
                               "day",
-                              "[]"
+                              "[]",
                             );
                           });
                         }}
@@ -366,17 +438,14 @@ export default function OfficialTravelRequestBookForm({
             </Col>
 
             <Col span={24}>
-              {/* ใช้ Row ซ้อนข้างในเพื่อแบ่งพื้นที่ซ้าย-ขวาเฉพาะส่วนนี้ */}
               <Row
                 gutter={24}
                 align="middle"
                 style={{
-                  // background: "#fafafa",
                   padding: "16px",
                   borderRadius: "8px",
                 }}
               >
-                {/* ฝั่งซ้าย: รายการตัวเลือก */}
                 <Col span={10}>
                   <Form.Item
                     name="travelType"
@@ -399,7 +468,6 @@ export default function OfficialTravelRequestBookForm({
                   </Form.Item>
                 </Col>
 
-                {/* ฝั่งขวา: ช่องกรอกข้อมูลที่จะโผล่มาตามเงื่อนไข */}
                 <Col span={14}>
                   <div
                     style={{
@@ -451,7 +519,6 @@ export default function OfficialTravelRequestBookForm({
                       </Form.Item>
                     )}
 
-                    {/* ถ้าเลือกข้อ 2 หรือ 3 ที่ไม่มีช่องกรอก ให้แสดงข้อความแนะนำเบาๆ หรือปล่อยว่าง */}
                     {(selectedTravelType === "bus" ||
                       selectedTravelType === "plane") && (
                       <span style={{ color: "#8c8c8c" }}>
@@ -469,6 +536,7 @@ export default function OfficialTravelRequestBookForm({
               </Row>
             </Col>
           </Row>
+
           <Row gutter={16}>
             <Col span={6}>
               <Form.Item
@@ -478,17 +546,15 @@ export default function OfficialTravelRequestBookForm({
               >
                 <InputNumber
                   min={1}
-                  max={10} // จำกัดค่าสูงสุดไม่เกิน 9
-                  maxLength={1} // จำกัดการพิมพ์ได้เพียง 1 ตัวอักษร
+                  max={10}
+                  maxLength={1}
                   precision={0}
                   style={{ width: "100%" }}
                   placeholder="0-9"
-                  // Parser แบบเข้มงวด: รับเฉพาะตัวเลขตัวแรกที่พิมพ์เข้ามา
                   parser={(value) => {
                     const parsed = value?.replace(/\D/g, "").slice(0, 1);
                     return parsed ? parseInt(parsed, 10) : "";
                   }}
-                  // บล็อก Key อื่นๆ ที่ไม่ใช่ 0-9 ทันที
                   onKeyPress={(e) => {
                     if (!/[0-9]/.test(e.key)) {
                       e.preventDefault();
@@ -510,9 +576,10 @@ export default function OfficialTravelRequestBookForm({
                     </Select.Option>
                   ))}
                 </Select>
-              </Form.Item>{" "}
+              </Form.Item>
             </Col>
           </Row>
+
           <Row gutter={16}>
             <Col span={6}>
               <Form.Item
@@ -522,7 +589,7 @@ export default function OfficialTravelRequestBookForm({
               >
                 <Select
                   placeholder="เลือกงบประมาณ"
-                  allowClear // เพิ่มเพื่อให้กดล้างค่าที่เลือกได้
+                  allowClear
                   style={{ width: "100%" }}
                 >
                   <Select.Option value="งบกลาง">งบกลาง</Select.Option>
@@ -540,9 +607,28 @@ export default function OfficialTravelRequestBookForm({
             </Col>
           </Row>
 
-          <Form.Item style={{ textAlign: "center" }}>
-            <Button type="primary" htmlType="submit" loading={submitting}>
+          {/* ปุ่มยืนยัน (ปุ่มเดียวตรงกลาง) */}
+          <Form.Item style={{ textAlign: "center", marginTop: "20px" }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              size="large"
+              style={{
+                minWidth: "150px",
+                height: "45px",
+                fontSize: "16px",
+              }}
+            >
               ยื่นคำขอ
+            </Button>
+
+            <Button
+              onClick={handleAutoFill}
+              size="large"
+              style={{ height: "45px", fontSize: "16px" }}
+            >
+              สุ่มข้อมูลตัวอย่าง
             </Button>
           </Form.Item>
         </Form>

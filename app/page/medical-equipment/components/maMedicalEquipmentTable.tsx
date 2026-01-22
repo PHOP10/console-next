@@ -225,10 +225,10 @@ export default function MaMedicalEquipmentTable({
       align: "center",
     },
     {
-      title: "รายการ/ชื่อเครื่องมือ",
+      title: "รายการ",
       dataIndex: "items",
       key: "items",
-      width: 200,
+      width: 140,
       align: "center",
       render: (items: any[]) => {
         const maxToShow = 2;
@@ -257,7 +257,7 @@ export default function MaMedicalEquipmentTable({
       title: "จำนวน",
       dataIndex: "items",
       key: "items",
-      width: 160,
+      width: 140,
       align: "center",
 
       // width: 160,

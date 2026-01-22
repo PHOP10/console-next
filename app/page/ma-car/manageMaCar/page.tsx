@@ -64,7 +64,7 @@ export default function manageMaCarPage() {
     },
     {
       key: "2",
-      label: "จัดการรรถ",
+      label: "จัดการรถ",
       children: (
         <Card>
           <ManageCarTable

@@ -56,7 +56,14 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
           fontSize: "20px",
           fontWeight: "bold",
           color: "#0683e9",
-          marginBottom: "12px",
+          marginTop: "12px",
+
+          marginBottom: "24px",
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "14px",
+
+          marginLeft: "-24px", 
+          marginRight: "-24px",
         }}
       >
         จัดการข้อมูลผู้ใช้
@@ -67,7 +74,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
         onClick={() => setIsModalOpen(true)}
         style={{ marginBottom: 16 }}
       >
-        เพิ่มผู้ใช้
+        + เพิ่มผู้ใช้
       </Button>
 
       <Modal

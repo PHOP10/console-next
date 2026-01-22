@@ -181,7 +181,7 @@ export default function VisitHomeTable({
       ellipsis: { showTitle: false },
       render: (address) => (
         <Tooltip placement="topLeft" title={decryptData(address)}>
-          {decryptData(address)}
+          <li>{decryptData(address)}</li>
         </Tooltip>
       ),
     },
@@ -265,7 +265,7 @@ export default function VisitHomeTable({
   ];
 
   return (
-    <div style={{ padding: 20, background: "#f0f2f5", minHeight: "100vh" }}>
+    <div style={{ padding: 10, minHeight: "100vh", marginTop: "-9.5px" }}>
       {/* Header Section */}
       <Card bordered={false} style={{ marginBottom: 20, borderRadius: 8 }}>
         <Row justify="space-between" align="middle" gutter={[16, 16]}>
@@ -326,7 +326,7 @@ export default function VisitHomeTable({
             </Space>
           </Col>
         </Row>
-      </Card>
+    </Card>
 
       {/* Table Section */}
       <Card

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Form, Space, Table, Tag, Tooltip, Row } from "antd";
+import { Form, Space, Table, Tag, Tooltip, Row, Col } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import dayjs from "dayjs";
@@ -39,7 +39,7 @@ export default function DataLeaveTable({
   const [formEdit] = Form.useForm();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [currentRecord, setCurrentRecord] = useState<DataLeaveType | null>(
-    null
+    null,
   );
   const [dataLeave, setDataLeave] = useState<DataLeaveType[]>(leaveByUserId);
 
@@ -62,17 +62,23 @@ export default function DataLeaveTable({
   const handleUpdate = (updated: any) => {
     setDataLeave((prev) =>
       prev.map((item: any) =>
-        item.id === updated.id ? { ...item, ...updated } : item
-      )
+        item.id === updated.id ? { ...item, ...updated } : item,
+      ),
     );
   };
 
   const columns: ColumnsType<DataLeaveType> = [
-    { title: "ชื่อผู้ลา", dataIndex: "createdName", key: "createdName" },
+    {
+      title: "ชื่อผู้ลา",
+      dataIndex: "createdName",
+      key: "createdName",
+      align: "center",
+    },
     {
       title: "เหตุผลการลา",
       dataIndex: "reason",
       key: "reason",
+      align: "center",
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -89,6 +95,7 @@ export default function DataLeaveTable({
       title: "ตั้งแต่วันที่",
       dataIndex: "dateStart",
       key: "dateStart",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -102,6 +109,7 @@ export default function DataLeaveTable({
       title: "ถึงวันที่",
       dataIndex: "dateEnd",
       key: "dateEnd",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -115,6 +123,7 @@ export default function DataLeaveTable({
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) => {
         let color = "default";
         let text = "";
@@ -147,6 +156,7 @@ export default function DataLeaveTable({
       title: "หมายเหตุเพิ่มเติม",
       dataIndex: "details",
       key: "details",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -164,6 +174,7 @@ export default function DataLeaveTable({
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_: any, record: any) => (
         <Space>
           {/* <Button
@@ -246,6 +257,25 @@ export default function DataLeaveTable({
 
   return (
     <>
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "20px",
+          fontWeight: "bold",
+          color: "#0683e9",
+          marginTop: "-12px",
+
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+          marginBottom: "24px",
+
+          marginLeft: "-24px",
+          marginRight: "-24px",
+        }}
+      >
+        ข้อมูลการลา
+      </div>
+
       <DataLeaveDetail
         open={detailModalOpen}
         onClose={handleCloseDetail}
@@ -253,14 +283,18 @@ export default function DataLeaveTable({
         user={user}
       />
       <Row gutter={[24, 24]}>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={leaveByUserId}
-          loading={loading}
-          pagination={{ pageSize: 10 }}
-          scroll={{ x: "max-content" }}
-        />
+        <Col span={24}>
+          <Table
+            rowKey="id"
+            columns={columns}
+            dataSource={leaveByUserId}
+            loading={loading}
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: "max-content" }}
+            style={{ width: "100%" }}
+            bordered
+          />
+        </Col>
       </Row>
       <DataLeaveEdit
         open={isEditOpen}

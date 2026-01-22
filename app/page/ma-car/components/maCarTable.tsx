@@ -38,7 +38,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
   const { data: session } = useSession();
 
   const filteredData = data.filter(
-    (item) => item.createdById === session?.user?.userId
+    (item) => item.createdById === session?.user?.userId,
   );
 
   const handleShowDetail = (record: any, dataUser: any) => {
@@ -72,6 +72,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "วัตถุประสงค์",
       dataIndex: "purpose",
       key: "purpose",
+      align: "center",
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -88,6 +89,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "ปลายทาง",
       dataIndex: "destination",
       key: "destination",
+      align: "center",
       render: (text: string) => {
         const maxLength = 20;
         if (!text) return "-";
@@ -104,6 +106,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "ตั้งแต่วันที่",
       dataIndex: "dateStart",
       key: "dateStart",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -117,6 +120,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "ถึงวันที่",
       dataIndex: "dateEnd",
       key: "dateEnd",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -130,6 +134,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "รถที่ใช้",
       dataIndex: "masterCar",
       key: "masterCar",
+      align: "center",
       render: (masterCar) =>
         masterCar ? `${masterCar.carName} (${masterCar.licensePlate})` : "-",
     },
@@ -137,6 +142,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) => {
         let color = "default";
         let text = "";
@@ -169,6 +175,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "หมมายเหตุ",
       dataIndex: "note",
       key: "note",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -185,6 +192,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           {/* <Button
@@ -250,6 +258,25 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
 
   return (
     <>
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "20px",
+          fontWeight: "bold",
+          color: "#0683e9",
+          marginTop: "-12px",
+
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+          marginBottom: "24px",
+
+          marginLeft: "-24px",
+          marginRight: "-24px",
+        }}
+      >
+        ข้อมูลการจองรถ
+      </div>
+
       <Table
         columns={columns}
         dataSource={filteredData}

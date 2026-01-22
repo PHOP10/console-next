@@ -12,6 +12,8 @@ import { useState } from "react";
 import { UserProfileType } from "@/types";
 import { signIn, useSession } from "next-auth/react";
 
+import "./font.css"; 
+
 interface Prop {
   collapsed: boolean;
   setCollapsed: (setCollapsed: boolean) => void;

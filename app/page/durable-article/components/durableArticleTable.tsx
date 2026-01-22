@@ -149,6 +149,7 @@ export default function DurableArticleTable({
       title: "ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ",
       dataIndex: "description",
       key: "description",
+      
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -279,7 +280,7 @@ export default function DurableArticleTable({
             marginBottom: "20px",
             borderBottom: "1px solid #e8e8e8",
             paddingTop: "14px",
-            height: "59px" /* ห่างจากหัวฟอร์ม */,
+            height: "59px" 
           }}
         >
           ข้อมูลครุภัณฑ์
@@ -312,13 +313,12 @@ export default function DurableArticleTable({
           dataSource={filteredData}
           loading={loading}
           bordered
-          scroll={{ x: 800 }}
+          scroll={{ x: "max-content" }}
           style={{
             width: "96%",
             padding: 0,
-            margin: "0 auto", // จัดกึ่งกลาง
-
-            marginBottom: 24, /* ขอบตารางด้านนอก (ข้างหลัง) */
+            margin: "0 auto",
+            marginBottom: 24,
           }}
         />
 

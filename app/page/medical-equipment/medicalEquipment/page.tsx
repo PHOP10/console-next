@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Tabs, Breadcrumb, Row, Col, Divider } from "antd";
+import { Tabs, Breadcrumb, Row, Col, Divider, Card } from "antd";
 import type { TabsProps } from "antd";
 import MedicalEquipmentTable from "../components/medicalEquipmentTable";
 import {
@@ -55,16 +55,31 @@ export default function Page() {
         />
       ),
     },
-    {
+{
       key: "2",
       label: "ส่งเครื่องมือแพทย์",
       children: (
-        <CreateMedicalEquipmentForm
-          setLoading={setLoading}
-          dataEQ={dataEQ}
-          data={data}
-           fetchData={fetchData}
-        />
+        <Card>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "20px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            ส่งเครื่องมือแพทย์
+          </div>
+          
+          <CreateMedicalEquipmentForm
+            setLoading={setLoading}
+            dataEQ={dataEQ}
+            data={data}
+            fetchData={fetchData}
+          />
+        </Card>
       ),
     },
     ...(session?.user?.role === "admin" || session?.user?.role === "pharmacy"

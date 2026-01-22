@@ -28,7 +28,7 @@ export default function MaCarPage() {
       const resUsers = await intraAuthService.getUserQuery();
 
       const resMaCarUser = resMaCar.filter(
-        (car: any) => car.createdById === session?.user?.userId
+        (car: any) => car.createdById === session?.user?.userId,
       );
       setMaCar(resMaCar);
       setCars(resCars);
@@ -52,6 +52,21 @@ export default function MaCarPage() {
       label: "ฟอร์มจองรถ",
       children: (
         <Card>
+          
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "20px",
+              marginTop: "-8px",
+
+              marginBottom: "15px",
+            }}
+          >
+            ฟอร์มจองรถ
+          </div>
+
           <MaCarBookForm
             cars={cars}
             dataUser={dataUser}

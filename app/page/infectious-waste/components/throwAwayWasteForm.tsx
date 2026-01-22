@@ -58,20 +58,7 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
   };
 
   return (
-    <Card
-      title={
-        <div
-          style={{
-            textAlign: "center",
-            color: "#0683e9",
-            fontWeight: "bold",
-            fontSize: "20px",
-          }}
-        >
-          เลือกประเภทขยะติดเชื้อ
-        </div>
-      }
-    >
+    <Card>
       <div style={{ display: "flex", justifyContent: "center" }}>
         <div style={{ width: "100%", maxWidth: 350 }}>
           <Form
@@ -122,7 +109,18 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
             </Form.Item>
 
             <Form.Item style={{ textAlign: "center" }}>
-              <Button type="primary" htmlType="submit" loading={submitting}>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={submitting}
+                size="large"
+                style={{
+                  width: "100%",
+                  maxWidth: "200px",
+                  height: "50px",
+                  fontSize: "16px",
+                }}
+              >
                 บันทึกข้อมูล
               </Button>
             </Form.Item>

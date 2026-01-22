@@ -135,7 +135,7 @@ export default function EquipmentTable({
       },
     },
     {
-      title: "ผู้เพิ่มข้อมมูล",
+      title: "ผู้เพิ่มข้อมูล",
       dataIndex: "createdBy",
       key: "createdBy",
       align: "center",
@@ -209,7 +209,7 @@ export default function EquipmentTable({
       >
         <Space style={{ marginBottom: 16 }}>
           <Button type="primary" onClick={() => setIsModalOpen(true)}>
-            เพิ่มเครื่องมือแพทย์
+            + เพิ่มเครื่องมือแพทย์
           </Button>
         </Space>
 

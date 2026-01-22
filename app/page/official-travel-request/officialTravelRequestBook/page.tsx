@@ -35,7 +35,7 @@ export default function Page() {
       const dataRes = await intraAuthService.getOfficialTravelRequestQuery();
 
       const dataOTRUser = ress.filter(
-        (car: any) => car.createdById === session?.user?.userId
+        (car: any) => car.createdById === session?.user?.userId,
       );
       setdataOTR(dataRes);
       setCars(res);
@@ -59,6 +59,21 @@ export default function Page() {
       label: "ฟอร์มคำขอไปราชการ",
       children: (
         <Card>
+
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "20px",
+              marginTop: "-8px", 
+              
+              marginBottom: "15px",
+            }}
+          >
+            ฟอร์มขอไปราชการ
+          </div>
+          
           <OfficialTravelRequestBookForm
             dataUser={dataUser}
             cars={cars}

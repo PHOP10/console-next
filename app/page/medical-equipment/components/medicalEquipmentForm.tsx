@@ -85,21 +85,7 @@ export default function CreateMedicalEquipmentForm({
   }, [form]);
 
   return (
-    <Card
-      title={
-        <div
-          style={{
-            fontSize: "20px",
-            textAlign: "center",
-            fontWeight: "bold",
-            color: "#0683e9",
-          }}
-        >
-          ส่งเครื่องมือแพทย์
-        </div>
-      }
-      style={{ marginTop: 20 }}
-    >
+    <Card>
       <Form
         preserve={false}
         form={form}
@@ -148,13 +134,13 @@ export default function CreateMedicalEquipmentForm({
                                       (item: any) =>
                                         item.medicalEquipmentId === eq.id &&
                                         ["pending", "approve"].includes(
-                                          item.maMedicalEquipment?.status
-                                        )
+                                          item.maMedicalEquipment?.status,
+                                        ),
                                     )
                                     .reduce(
                                       (sum: number, item: any) =>
                                         sum + item.quantity,
-                                      0
+                                      0,
                                     );
 
                                   const remainingQuantity =
@@ -211,7 +197,7 @@ export default function CreateMedicalEquipmentForm({
                                     if (!equipmentId) return Promise.resolve();
 
                                     const selected = dataEQ.find(
-                                      (eq) => eq.id === equipmentId
+                                      (eq) => eq.id === equipmentId,
                                     );
 
                                     if (selected) {
@@ -223,13 +209,13 @@ export default function CreateMedicalEquipmentForm({
                                             item.medicalEquipmentId ===
                                               selected.id &&
                                             ["pending", "approve"].includes(
-                                              item.maMedicalEquipment?.status
-                                            )
+                                              item.maMedicalEquipment?.status,
+                                            ),
                                         )
                                         .reduce(
                                           (sum: number, item: any) =>
                                             sum + item.quantity,
-                                          0
+                                          0,
                                         );
 
                                       // จำนวนที่เหลือจริง ๆ
@@ -239,8 +225,8 @@ export default function CreateMedicalEquipmentForm({
                                       if (value > actualRemainingQuantity) {
                                         return Promise.reject(
                                           new Error(
-                                            `จำนวนเกินคงเหลือ (${actualRemainingQuantity})`
-                                          )
+                                            `จำนวนเกินคงเหลือ (${actualRemainingQuantity})`,
+                                          ),
                                         );
                                       }
                                     }
@@ -291,7 +277,7 @@ export default function CreateMedicalEquipmentForm({
                         !lastItem.quantity
                       ) {
                         message.warning(
-                          "กรุณากรอกข้อมูลเครื่องมือและจำนวนให้ครบก่อน"
+                          "กรุณากรอกข้อมูลเครื่องมือและจำนวนให้ครบก่อน",
                         );
                         return;
                       }
@@ -344,7 +330,9 @@ export default function CreateMedicalEquipmentForm({
                   // 2️⃣ ตรวจสอบวันซ้ำกับวันที่จองผ่านมา
                   const bookedDates = data
                     .map((item: any) =>
-                      item.sentDate ? dayjs(item.sentDate).startOf("day") : null
+                      item.sentDate
+                        ? dayjs(item.sentDate).startOf("day")
+                        : null,
                     )
                     .filter(Boolean);
 
@@ -361,7 +349,17 @@ export default function CreateMedicalEquipmentForm({
           </Col>
         </Row>
         <Form.Item style={{ textAlign: "center" }}>
-          <Button type="primary" htmlType="submit">
+          <Button
+            type="primary"
+            htmlType="submit"
+            size="large"
+            style={{
+              width: "100%",
+              maxWidth: "200px",
+              height: "50px",
+              fontSize: "16px",
+            }}
+          >
             บันทึกข้อมูล
           </Button>
         </Form.Item>

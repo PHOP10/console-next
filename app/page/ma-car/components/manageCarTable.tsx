@@ -133,15 +133,16 @@ export default function ManageCarPage({
   };
 
   const columns: ColumnsType<MasterCarType> = [
-    { title: "ชื่อรถ", dataIndex: "carName", key: "carName" },
-    { title: "ทะเบียนรถ", dataIndex: "licensePlate", key: "licensePlate" },
-    { title: "ยี่ห้อ", dataIndex: "brand", key: "brand" },
-    { title: "รุ่น", dataIndex: "model", key: "model" },
+    { title: "ชื่อรถ", dataIndex: "carName", key: "carName", align: "center" },
+    { title: "ทะเบียนรถ", dataIndex: "licensePlate", key: "licensePlate", align: "center" },
+    { title: "ยี่ห้อ", dataIndex: "brand", key: "brand", align: "center" },
+    { title: "รุ่น", dataIndex: "model", key: "model", align: "center" },
     // { title: "ปี", dataIndex: "year", key: "year" },
     {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) =>
         status === "available" ? "พร้อมใช้งาน" : "ไม่พร้อมใช้งาน",
     },
@@ -150,6 +151,7 @@ export default function ManageCarPage({
       title: "รายละเอียด",
       dataIndex: "details",
       key: "details",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -166,6 +168,7 @@ export default function ManageCarPage({
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           <Tooltip title="แก้ไข">
@@ -206,9 +209,27 @@ export default function ManageCarPage({
     },
   ];
 
-  return (
-    <Card>
-      <div style={{ display: "flex", justifyContent: "flex-end" }}>
+return (
+    <>
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "20px",
+          fontWeight: "bold",
+          color: "#0683e9",
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+          marginBottom: "24px",
+          marginTop: "-12px",  
+          marginLeft: "-24px", 
+          marginRight: "-24px",
+        }}
+      >
+        ข้อมูลรถทั้งหมด
+      </div>
+
+      {/* 2. ปุ่มเพิ่มรถ */}
+      <div style={{ display: "flex", justifyContent: "flex-start" }}> 
         <Button
           type="primary"
           onClick={() => {
@@ -217,10 +238,11 @@ export default function ManageCarPage({
           }}
           style={{ marginBottom: 16 }}
         >
-          เพิ่มรถ
+         + เพิ่มรถ
         </Button>
       </div>
 
+      {/* 3. ตาราง */}
       <Table
         columns={columns}
         dataSource={data}
@@ -228,19 +250,19 @@ export default function ManageCarPage({
         loading={loading}
         pagination={{ pageSize: 10 }}
         scroll={{ x: "max-content" }}
+        bordered
       />
 
+      {/* ------------------ Modal เพิ่มรถ ------------------ */}
       <Modal
         title="เพิ่มรถใหม่"
         open={isModalOpen}
         footer={null}
         onCancel={() => setIsModalOpen(false)}
         destroyOnClose
-        // width={700} // เพิ่มความกว้างเพื่อให้แสดง 2 คอลัมน์ได้สวยงาม
       >
         <Form form={form} layout="vertical" onFinish={onFinish}>
           <Row gutter={16}>
-            {/* แถวที่ 1 */}
             <Col span={12}>
               <Form.Item
                 name="carName"
@@ -287,7 +309,6 @@ export default function ManageCarPage({
               </Form.Item>
             </Col>
 
-            {/* แถวที่ 2 */}
             <Col span={12}>
               <Form.Item
                 name="licensePlate"
@@ -319,7 +340,6 @@ export default function ManageCarPage({
               </Form.Item>
             </Col>
 
-            {/* แถวที่ 3 */}
             <Col span={12}>
               <Form.Item
                 name="model"
@@ -346,7 +366,6 @@ export default function ManageCarPage({
               </Form.Item>
             </Col>
 
-            {/* แถวที่ 4 - สถานะ (เต็มแถวหรือครึ่งแถวตามความชอบ) */}
             <Col span={12}>
               <Form.Item
                 name="status"
@@ -384,7 +403,7 @@ export default function ManageCarPage({
         </Form>
       </Modal>
 
-      {/* Modal แก้ไขรถ */}
+      {/* ------------------ Modal แก้ไขรถ ------------------ */}
       <Modal
         title="แก้ไขรถ"
         open={isEditModalOpen}
@@ -394,7 +413,6 @@ export default function ManageCarPage({
       >
         <Form form={editForm} layout="vertical" onFinish={onEditFinish}>
           <Row gutter={16}>
-            {/* แถวที่ 1 */}
             <Col span={12}>
               <Form.Item
                 name="carName"
@@ -492,7 +510,6 @@ export default function ManageCarPage({
               </Form.Item>
             </Col>
 
-            {/* แถวที่ 3 */}
             <Col span={12}>
               <Form.Item
                 name="model"
@@ -519,7 +536,6 @@ export default function ManageCarPage({
               </Form.Item>
             </Col>
 
-            {/* แถวที่ 4 - สถานะ (เต็มแถวหรือครึ่งแถวตามความชอบ) */}
             <Col span={12}>
               <Form.Item
                 name="status"
@@ -550,6 +566,6 @@ export default function ManageCarPage({
           </Form.Item>
         </Form>
       </Modal>
-    </Card>
+    </>
   );
 }

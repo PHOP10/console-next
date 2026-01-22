@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Table,
   Button,
@@ -12,6 +12,8 @@ import {
   Space,
   Tooltip,
 } from "antd";
+
+import type { ColumnsType } from "antd/es/table";
 import { MasterLeaveType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
@@ -42,10 +44,9 @@ export default function ManagementMasterLeaveTable({
   const [editForm] = Form.useForm();
 
   const [currentRecord, setCurrentRecord] = useState<MasterLeaveType | null>(
-    null
+    null,
   );
 
-  /** ------------------ ADD ------------------ **/
   const handleAdd = () => {
     form.resetFields();
     setIsAddModalOpen(true);
@@ -69,7 +70,6 @@ export default function ManagementMasterLeaveTable({
     }
   };
 
-  /** ------------------ EDIT ------------------ **/
   const handleEdit = (record: MasterLeaveType) => {
     setCurrentRecord(record);
     editForm.setFieldsValue({
@@ -90,7 +90,7 @@ export default function ManagementMasterLeaveTable({
 
       message.success("แก้ไขประเภทลาสำเร็จ");
       setMasterLeave((prev) =>
-        prev.map((item) => (item.id === updated.id ? updated : item))
+        prev.map((item) => (item.id === updated.id ? updated : item)),
       );
 
       setIsEditModalOpen(false);
@@ -103,17 +103,26 @@ export default function ManagementMasterLeaveTable({
     }
   };
 
-  /** ------------------ TABLE ------------------ **/
-  const columns = [
-    { title: "ID", dataIndex: "id", key: "id" },
-    { title: "ประเภทลา", dataIndex: "leaveType", key: "leaveType" },
-    { title: "คำอธิบาย", dataIndex: "description", key: "description" },
+  const columns: ColumnsType<MasterLeaveType> = [
+    { title: "ID", dataIndex: "id", key: "id", align: "center" },
+    {
+      title: "ประเภทลา",
+      dataIndex: "leaveType",
+      key: "leaveType",
+      align: "center",
+    },
+    {
+      title: "คำอธิบาย",
+      dataIndex: "description",
+      key: "description",
+      align: "center",
+    },
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_: any, record: MasterLeaveType) => (
         <Space>
-          {/* ปุ่มแก้ไข */}
           <Tooltip title="แก้ไข">
             <FormOutlined
               style={{
@@ -135,7 +144,7 @@ export default function ManagementMasterLeaveTable({
                 await intraAuthService.deleteMasterLeave(record.id);
                 message.success("ลบข้อมูลสำเร็จ");
                 setMasterLeave((prev) =>
-                  prev.filter((item) => item.id !== record.id)
+                  prev.filter((item) => item.id !== record.id),
                 );
               } catch (error) {
                 console.error("เกิดข้อผิดพลาดในการลบ:", error);
@@ -164,8 +173,27 @@ export default function ManagementMasterLeaveTable({
 
   return (
     <>
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "20px",
+          fontWeight: "bold",
+          color: "#0683e9",
+          marginTop: "-12px",
+
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+          marginBottom: "24px",
+
+          marginLeft: "-24px",
+          marginRight: "-24px",
+        }}
+      >
+        ข้อมูลประเภทลา
+      </div>
+
       <Button type="primary" style={{ marginBottom: 16 }} onClick={handleAdd}>
-        เพิ่มประเภทลา
+        + เพิ่มประเภทลา
       </Button>
 
       <Table
@@ -175,9 +203,9 @@ export default function ManagementMasterLeaveTable({
         loading={loading}
         pagination={{ pageSize: 10 }}
         scroll={{ x: "max-content" }}
+        bordered
       />
 
-      {/* ------------------ Modal Add ------------------ */}
       <Modal
         title="เพิ่มประเภทลา"
         open={isAddModalOpen}
@@ -202,7 +230,6 @@ export default function ManagementMasterLeaveTable({
         </Form>
       </Modal>
 
-      {/* ------------------ Modal Edit ------------------ */}
       <Modal
         title="แก้ไขประเภทลา"
         open={isEditModalOpen}

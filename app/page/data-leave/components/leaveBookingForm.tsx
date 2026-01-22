@@ -12,6 +12,7 @@ import {
   message,
   Row,
   Select,
+  Space,
   Table,
   Upload,
 } from "antd";
@@ -141,12 +142,12 @@ export default function LeaveBookingForm({
             fiscalYear.start,
             fiscalYear.end,
             "day",
-            "[]"
+            "[]",
           );
         })
         .reduce(
           (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd),
-          0
+          0,
         );
 
       const currentDays =
@@ -238,6 +239,67 @@ export default function LeaveBookingForm({
       setLoading(false);
     }
   };
+
+  /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
+// --- Helper Functions สำหรับการสุ่ม (แก้ไข Type แล้ว) ---
+  const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const getRandomElement = (arr: any[]) =>
+    arr[Math.floor(Math.random() * arr.length)];
+
+  // ✅ ฟังก์ชันสุ่มข้อมูลใส่ฟอร์ม (Auto-fill)
+  const handleAutoFill = () => {
+    // 1. ชุดข้อมูลตัวอย่าง
+    const leaveTypes = masterLeaves.map((l) => l.id); // ดึง ID ประเภทลาทั้งหมดมาสุ่ม
+    const reasons = [
+      "ทำธุระส่วนตัว",
+      "ไม่สบาย ปวดหัว ตัวร้อน",
+      "พาญาติไปหาหมอ",
+      "รถเสีย",
+      "ติดต่อราชการ",
+    ];
+    const locations = ["รพ.สต.บ้านผาผึ้ง", "บ้านพัก", "โรงพยาบาลอำเภอ"];
+    const contactAddresses = [
+      "บ้านเลขที่ 123 หมู่ 1 ต.เชียงทอง",
+      "หอพักแพทย์",
+      "ติดต่อทางไลน์",
+    ];
+
+    // 2. สุ่มวันที่ (ลาล่วงหน้า 1-5 วัน, นาน 1-2 วัน)
+    const startOffset = getRandomInt(1, 5);
+    const duration = getRandomInt(1, 2);
+    const randStartDate = dayjs().add(startOffset, "day");
+    const randEndDate = randStartDate.add(duration, "day");
+
+    // 3. สุ่มเบอร์โทร (สร้างเลขสุ่ม 10 หลัก)
+    const randPhone =
+      "08" +
+      Array(8)
+        .fill(0)
+        .map(() => getRandomInt(0, 9))
+        .join("");
+
+    // 4. สุ่มผู้รับผิดชอบงานแทน (ถ้ามี user)
+    let randBackupUserId = undefined;
+    if (user && user.length > 0) {
+      randBackupUserId = getRandomElement(user).userId;
+    }
+
+    // ✅ Set ค่าเข้าฟอร์ม
+    form.setFieldsValue({
+      writeAt: getRandomElement(locations),
+      typeId: getRandomElement(leaveTypes),
+      reason: getRandomElement(reasons),
+      dateStart: randStartDate,
+      dateEnd: randEndDate,
+      contactAddress: getRandomElement(contactAddresses),
+      contactPhone: randPhone,
+      backupUserId: randBackupUserId,
+      details: Math.random() > 0.5 ? "ทดสอบระบบ Auto-fill ใบลา" : "",
+    });
+  };
+
   return (
     <Row gutter={[24, 24]}>
       {/* ฟอร์ม */}
@@ -273,7 +335,7 @@ export default function LeaveBookingForm({
                   onChange={(value) => {
                     form.setFieldValue(
                       "writeAt",
-                      value === "other" ? "" : value
+                      value === "other" ? "" : value,
                     );
                   }}
                   dropdownRender={(menu) => (
@@ -285,13 +347,13 @@ export default function LeaveBookingForm({
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "writeAt",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                           onBlur={(e) => {
                             form.setFieldValue(
                               "writeAt",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                         />
@@ -362,7 +424,7 @@ export default function LeaveBookingForm({
                             start,
                             end,
                             "day",
-                            "[]"
+                            "[]",
                           );
                         });
                       }}
@@ -408,7 +470,7 @@ export default function LeaveBookingForm({
                             start,
                             end,
                             "day",
-                            "[]"
+                            "[]",
                           );
                         });
                       }}
@@ -488,10 +550,37 @@ export default function LeaveBookingForm({
                 <TextArea rows={3} placeholder="หมายเหตุเพิ่มเติม" />
               </Form.Item>
 
+              {/* ✅ ปรับปรุงส่วนปุ่มกด */}
               <Form.Item style={{ textAlign: "center", marginTop: 20 }}>
-                <Button type="primary" htmlType="submit">
-                  ส่งใบลา
-                </Button>
+                <Space size="large" wrap>
+                  {/* ปุ่มส่งใบลา (Submit) */}
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    size="large"
+                    style={{
+                      minWidth: "150px",
+                      height: "50px",
+                      fontSize: "16px",
+                    }}
+                  >
+                    ส่งใบลา
+                  </Button>
+
+                  {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (เพิ่มใหม่) */}
+                  <Button
+                    htmlType="button" // ต้องใส่ htmlType="button" กัน Submit
+                    onClick={handleAutoFill}
+                    size="large"
+                    style={{
+                      minWidth: "150px",
+                      height: "50px",
+                      fontSize: "16px",
+                    }}
+                  >
+                    สุ่มข้อมูลตัวอย่าง
+                  </Button>
+                </Space>
               </Form.Item>
             </Form>
           </ConfigProvider>

@@ -119,7 +119,22 @@ export default function Page() {
       key: "2",
       label: `ทิ้งขยะติดเชื้อ`,
       children: (
-        <ThrowAwayWaste setLoading={setLoading} fetchData={fetchData} />
+        <Card>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "20px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            เลือกประเภทขยะติดเชื้อ
+          </div>
+
+          <ThrowAwayWaste setLoading={setLoading} fetchData={fetchData} />
+        </Card>
       ),
     },
     {

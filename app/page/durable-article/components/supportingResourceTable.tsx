@@ -110,7 +110,7 @@ export default function SupportingResourceTable({
       ].some((key) => {
         const value = item[key as keyof DurableArticleType];
         return value?.toString().toLowerCase().includes(searchLower);
-      })
+      }),
     );
   }, [data, searchText]);
 
@@ -262,7 +262,7 @@ export default function SupportingResourceTable({
     },
   ];
 
-  return (
+  return ( 
     <>
       <Card>
         <div
@@ -271,9 +271,18 @@ export default function SupportingResourceTable({
             textAlign: "center",
             fontWeight: "bold",
             color: "#0683e9",
+
+            borderBottom: "1px solid #f0f0f0",
+            paddingBottom: "14px",
+            marginBottom: "20px",
+
+            marginLeft: "-24px",
+            marginRight: "-24px",
+            marginTop: "-11px",
+            
           }}
         >
-          ข้อมูลครุภัณฑ์
+          ข้อมูลวัสดุสนับสนุน
         </div>
 
         <div

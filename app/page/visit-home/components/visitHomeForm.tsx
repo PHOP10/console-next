@@ -13,6 +13,7 @@ import {
   InputNumber,
   Divider,
   Card,
+  Space,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { visitHomeServices } from "../services/visitHome.service";
@@ -106,21 +107,157 @@ export default function VisitHomeForm() {
     }
   };
 
+  /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
+  // --- Helper Functions ---
+  const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const getRandomElement = (arr: any[]) =>
+    arr[Math.floor(Math.random() * arr.length)];
+
+  // ✅ ฟังก์ชันสุ่มข้อมูลใส่ฟอร์ม HHC
+  const handleAutoFill = () => {
+    // 1. เตรียมชุดข้อมูลตัวอย่าง
+    const firstNames = [
+      "สมชาย",
+      "วิชัย",
+      "ธนพล",
+      "สมศรี",
+      "มารี",
+      "กานดา",
+      "ประวิทย์",
+    ];
+    const lastNames = [
+      "ใจดี",
+      "รักชาติ",
+      "มีสุข",
+      "มั่นคง",
+      "เจริญพร",
+      "สุขสันต์",
+    ];
+    const symptoms = [
+      "อ่อนเพลีย",
+      "หายใจลำบาก",
+      "ปวดศีรษะ",
+      "แผลกดทับระดับ 1",
+      "ทานอาหารได้น้อย",
+    ];
+    const diagnoses = [
+      "Stroke (โรคหลอดเลือดสมอง)",
+      "DM (เบาหวาน)",
+      "HT (ความดันโลหิตสูง)",
+      "COPD (ปอดอุดกั้นเรื้อรัง)",
+      "Bedridden (ผู้ป่วยติดเตียง)",
+    ];
+    const meds = [
+      "Paracetamol 500mg",
+      "Metformin 500mg",
+      "Amlodipine 5mg",
+      "Omeprazole 20mg",
+      "Simvastatin 20mg",
+    ];
+    const equipments = [
+      "สายสวนปัสสาวะ (Foley Cath)",
+      "สายให้อาหาร (NG Tube)",
+      "เครื่องผลิตออกซิเจน",
+      "ที่นอนลม",
+      "-",
+    ];
+    const needs = [
+      "ทำแผลกดทับ",
+      "เปลี่ยนสายสวนปัสสาวะ",
+      "ติดตามระดับน้ำตาล",
+      "กายภาพบำบัด",
+      "แนะนำโภชนาการ",
+    ];
+    const addresses = [
+      "123 ม.1 ต.วังเจ้า",
+      "45/2 ม.3 ต.เชียงทอง",
+      "88 หมู่บ้านสุขใจ",
+      "หอพักแพทย์ รพ.สต.",
+    ];
+
+    // 2. สุ่มตัวเลขและข้อมูลพื้นฐาน
+    const randAge = getRandomInt(40, 90);
+    const randHN = getRandomInt(100000, 999999).toString();
+    const randCID = Array(13)
+      .fill(0)
+      .map(() => getRandomInt(0, 9))
+      .join(""); // 13 หลัก
+    const randPhone =
+      "08" +
+      Array(8)
+        .fill(0)
+        .map(() => getRandomInt(0, 9))
+        .join(""); // 10 หลัก
+
+    // 3. สุ่มวันที่ (ให้มีความสัมพันธ์กัน: เกิด -> แอดมิท -> ออก -> เยี่ยม)
+    const dobDate = dayjs().subtract(randAge, "year");
+    const admitDate = dayjs().subtract(getRandomInt(5, 10), "day");
+    const dischargeDate = dayjs().subtract(getRandomInt(1, 4), "day"); // ออกจาก รพ. 1-4 วันที่แล้ว
+    const visitDate = dayjs(); // วันนี้
+    const nextAppt = dayjs().add(getRandomInt(7, 30), "day"); // นัดครั้งหน้า
+
+    // 4. สุ่ม Vital Signs
+    const sys = getRandomInt(110, 150);
+    const dia = getRandomInt(70, 90);
+    const bp = `${sys}/${dia}`;
+
+    // 5. สุ่มประเภทผู้ป่วย (เช็คก่อนว่ามี masterPatients ไหม)
+    let randPatientTypeId = undefined;
+    if (masterPatients && masterPatients.length > 0) {
+      randPatientTypeId = getRandomElement(masterPatients).id;
+    }
+
+    // ✅ Set ค่าเข้าฟอร์ม
+    form.setFieldsValue({
+      hhcNo: `HHC-${dayjs().format("YY")}-${getRandomInt(100, 999)}`,
+      referralDate: dayjs(), // วันที่ส่งต่อ (วันนี้)
+      patientTypeId: randPatientTypeId,
+      fullName: `${getRandomElement(firstNames)} ${getRandomElement(lastNames)}`,
+      age: randAge,
+      hn: randHN,
+      dob: dobDate,
+      cid: randCID,
+      phone: randPhone,
+      allergies: Math.random() > 0.8 ? "แพ้กุ้ง, Penicillin" : "-", // มีโอกาสแพ้ 20%
+      address: getRandomElement(addresses),
+
+      // ประวัติ & VS
+      admissionDate: admitDate,
+      dischargeDate: dischargeDate,
+      temperature: parseFloat((36 + Math.random()).toFixed(1)), // 36.0 - 37.0
+      pulseRate: getRandomInt(60, 100),
+      respRate: getRandomInt(16, 24),
+      bloodPressure: bp,
+      oxygenSat: getRandomInt(95, 100),
+      initialHistory:
+        "ผู้ป่วยมีอาการอ่อนแรงซีกซ้าย พูดไม่ชัด เข้ารับการรักษาที่ รพ.จังหวัด",
+
+      // การดูแล
+      symptoms: getRandomElement(symptoms),
+      diagnosis: getRandomElement(diagnoses),
+      medication: getRandomElement(meds) + ", " + getRandomElement(meds),
+      medicalEquipment: getRandomElement(equipments),
+      careNeeds: getRandomElement(needs),
+
+      // นัดหมาย
+      visitDate: visitDate,
+      nextAppointment: nextAppt,
+      notes: Math.random() > 0.5 ? "ทดสอบระบบ Auto-fill HHC" : "",
+    });
+  };
+
   return (
-    <Form
-      layout="vertical"
-      form={form}
-      onFinish={handleFinish}
-      style={{ maxWidth: 1200, margin: "0 auto", padding: "0 10px" }} // เพิ่ม Padding เล็กน้อยกันชิดขอบจอ
-    >
+    <Form layout="vertical" form={form} onFinish={handleFinish}>
       <div
         style={{
           textAlign: "center",
           fontWeight: "bold",
-          fontSize: "clamp(18px, 4vw, 24px)", // ขนาดฟอนต์ยืดหยุ่นตามหน้าจอ
-          marginBottom: 24,
-          color: "#1890ff",
-          marginTop: 16,
+          fontSize: "20px", // ขนาดฟอนต์ยืดหยุ่นตามหน้าจอ
+          marginBottom: 16,
+          color: "#0683e9",
+          marginTop: -8,
         }}
       >
         แบบบันทึกการดูแลต่อเนื่องที่บ้าน
@@ -379,20 +516,37 @@ export default function VisitHomeForm() {
         className="submit-button-item"
         style={{ textAlign: "center", marginTop: 20, paddingBottom: 20 }}
       >
-        <Button
-          type="primary"
-          htmlType="submit"
-          size="large"
-          style={{
-            width: "100%",
-            maxWidth: "300px",
-            height: "50px",
-            fontSize: "16px",
-          }}
-        >
-          บันทึกข้อมูล
-        </Button>
+        <Space size="middle" wrap>
+          {/* ปุ่มบันทึก */}
+          <Button
+            type="primary"
+            htmlType="submit"
+            size="large"
+            style={{
+              minWidth: "150px",
+              height: "50px",
+              fontSize: "16px",
+            }}
+          >
+            บันทึกข้อมูล
+          </Button>
+
+          {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (เพิ่มใหม่) */}
+          <Button
+            htmlType="button" // ต้องใส่ htmlType="button" เพื่อกัน Submit
+            onClick={handleAutoFill}
+            size="large"
+            style={{
+              minWidth: "150px",
+              height: "50px",
+              fontSize: "16px",
+            }}
+          >
+            สุ่มข้อมูลตัวอย่าง
+          </Button>
+        </Space>
       </Form.Item>
+
     </Form>
   );
 }

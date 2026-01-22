@@ -30,7 +30,7 @@ export default function MasterPatientTable({
       setLoading(true);
       await service.deleteMasterPatient(id);
       setDataMasterPatient((prev = []) =>
-        prev.filter((item) => item.id !== id)
+        prev.filter((item) => item.id !== id),
       );
       msgApi.success("ลบข้อมูลสำเร็จ");
     } catch (err) {
@@ -61,11 +61,17 @@ export default function MasterPatientTable({
       <div
         style={{
           textAlign: "center",
+          fontSize: "20px",
           fontWeight: "bold",
-          fontSize: 20,
-          marginBottom: 16,
-          borderRadius: "8px",
-          color: "#1890ff",
+          color: "#0683e9",
+          marginTop: "-12px",
+
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+          marginBottom: "24px",
+
+          marginLeft: "-24px",
+          marginRight: "-24px",
         }}
       >
         จัดการประเภทผู้ป่วย
@@ -85,6 +91,7 @@ export default function MasterPatientTable({
         dataSource={dataMasterPatient}
         loading={false}
         pagination={{ pageSize: 10 }}
+        bordered
         columns={[
           { title: "ลำดับ", dataIndex: "id", key: "id", align: "center" },
           {

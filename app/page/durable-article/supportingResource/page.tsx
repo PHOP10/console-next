@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Breadcrumb, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
+import { Breadcrumb, Card, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
 import DurableArticleTable from "../components/durableArticleTable";
 import DurableArticleForm from "../components/durableArticleForm";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -28,7 +28,7 @@ export default function Page() {
         articles = result.filter((item) => item.type === "supportingResource");
       } else if (Array.isArray(result?.data)) {
         articles = result.data.filter(
-          (item: any) => item.type === "supportingResource"
+          (item: any) => item.type === "supportingResource",
         );
       }
       setData(articles);
@@ -66,11 +66,26 @@ export default function Page() {
       key: "2",
       label: "เพิ่มวัสดุสนับสนุน",
       children: (
-        <DurableArticleForm
-          setLoading={setLoading}
-          loading={loading}
-          fetchData={fetchData}
-        />
+        <Card>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "20px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            เพิ่มวัสดุสนับสนุน
+          </div>
+
+          <DurableArticleForm
+            setLoading={setLoading}
+            loading={loading}
+            fetchData={fetchData}
+          />
+        </Card>
       ),
     });
   }

@@ -36,7 +36,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   const { data: session } = useSession();
 
   const filteredData = data.filter(
-    (item) => item.createdById === session?.user?.userId
+    (item) => item.createdById === session?.user?.userId,
   );
 
   const handleShowDetail = (record: any) => {
@@ -70,11 +70,13 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       title: "เลขที่เอกสาร",
       dataIndex: "documentNo",
       key: "documentNo",
+      align: "center",
     },
     {
       title: "วัตถุประสงค์",
       dataIndex: "missionDetail",
       key: "missionDetail",
+      align: "center",
       // ellipsis: true,
       render: (text: string) => {
         const maxLength = 25;
@@ -92,6 +94,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       title: "สถานที่",
       dataIndex: "location",
       key: "location",
+      align: "center",
       // ellipsis: true,
       render: (text: string) => {
         const maxLength = 25;
@@ -109,6 +112,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       title: "ตั้งแต่วันที่",
       dataIndex: "startDate",
       key: "startDate",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -122,6 +126,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       title: "ถึงวันที่",
       dataIndex: "endDate",
       key: "endDate",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -136,6 +141,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) => {
         let color = "default";
         let text = "";
@@ -167,6 +173,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       title: "หมายเหตุ",
       dataIndex: "note",
       key: "note",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -183,6 +190,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           {/* <Button
@@ -240,6 +248,25 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
 
   return (
     <>
+      <div
+        style={{
+          textAlign: "center",
+          fontSize: "20px",
+          fontWeight: "bold",
+          color: "#0683e9",
+          marginTop: "-12px", 
+
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+          marginBottom: "24px", 
+
+          marginLeft: "-24px", 
+          marginRight: "-24px",
+        }}
+      >
+        ข้อมูลการขอไปราชการ
+      </div>
+
       <Table
         rowKey="id"
         columns={columns}
@@ -247,12 +274,14 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
         loading={loading}
         scroll={{ x: "max-content" }}
       />
+
       <OfficialTravelRequestDetail
         open={detailModalOpen}
         onClose={handleCloseDetail}
         record={selectedRecord}
         dataUser={dataUser}
       />
+
       <OfficialTravelRequestEditModal
         open={editModalOpen}
         onClose={handleCloseEdit}

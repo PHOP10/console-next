@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Breadcrumb, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
+import { Breadcrumb, Card, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
 import DurableArticleTable from "../components/durableArticleTable";
 import DurableArticleForm from "../components/durableArticleForm";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -58,16 +58,32 @@ export default function Page() {
       ),
     },
   ];
-  if (session?.user?.role === "asset" || session?.user?.role === "admin") {
+if (session?.user?.role === "asset" || session?.user?.role === "admin") {
     items.push({
       key: "2",
       label: "เพิ่มครุภัณฑ์",
       children: (
-        <DurableArticleForm
-          setLoading={setLoading}
-          loading={loading}
-          fetchData={fetchData}
-        />
+        <Card>
+          {/* ส่วนหัวข้อสไตล์เดียวกับฟอร์มขอไปราชการ */}
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "20px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            เพิ่มครุภัณฑ์
+          </div>
+
+          <DurableArticleForm
+            setLoading={setLoading}
+            loading={loading}
+            fetchData={fetchData}
+          />
+        </Card>
       ),
     });
   }

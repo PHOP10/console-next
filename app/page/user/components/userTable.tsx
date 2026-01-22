@@ -93,7 +93,12 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   };
 
   const columns: ColumnsType<UserType> = [
-    { title: "รหัสพนักงาน", dataIndex: "employeeId", key: "employeeId" },
+    {
+      title: "รหัสพนักงาน",
+      dataIndex: "employeeId",
+      key: "employeeId",
+      align: "center",
+    },
     {
       title: "ชื่อ",
       dataIndex: "firstName",
@@ -183,48 +188,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   ];
 
   return (
-    <div className="custom-table-container">
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-        /* 1. เคลียร์ Border เดิมของ Ant Design เพื่อป้องกันเส้นซ้อน */
-        .custom-table-container .ant-table-wrapper .ant-table-container,
-        .custom-table-container .ant-table-wrapper .ant-table-content,
-        .custom-table-container .ant-table-wrapper table {
-          border: none !important;
-        }
-
-        /* 2. บังคับให้ยุบเส้นที่ซ้อนกัน (แก้ปัญหาเส้นหนาบางไม่เท่ากัน) */
-        .custom-table-container table {
-          border-collapse: collapse !important;
-          border: 1px solid #000 !important; /* เส้นขอบนอกสุด */
-          width: 100% !important;
-        }
-
-        /* 3. กำหนดเส้นแบ่งคอลัมน์และแถวให้หนา 1px เท่ากันทุกด้าน */
-        .custom-table-container .ant-table-thead > tr > th,
-        .custom-table-container .ant-table-tbody > tr > td {
-          border: 1px solid #000 !important; /* ใส่เส้นให้ทุกช่อง */
-          padding: 12px px !important;
-          border-radius: 0 !important;
-        }
-
-        /* 4. สีหัวตาราง */
-        .custom-table-container .ant-table-thead > tr > th {
-          background-color: #d9fcf4 !important; 
-          color: ${PRIMARY_COLOR} !important;
-          font-weight: bold;
-          text-align: center !important;
-        }
-
-        /* 5. เอามุมโค้งออกเพื่อให้เส้นตารางสีดำเชื่อมกันสนิท */
-        .ant-table-wrapper .ant-table-container {
-          border-radius: 0 !important;
-        } 
-      `,
-        }}
-      />
-
+    <div className="custom-table-container" style={{ paddingInline: "24px" }}>
       <UserForm fetchData={fetchData} />
 
       <Table
@@ -234,6 +198,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
         dataSource={data}
         loading={loading}
         scroll={{ x: "max-content" }}
+        bordered
       />
 
       <Modal

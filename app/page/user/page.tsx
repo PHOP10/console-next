@@ -40,7 +40,7 @@ export default function UserPage() {
             key: "1",
             label: "ข้อมูลผู้ใช้",
             children: (
-                <Card bordered={false} bodyStyle={{ padding: 0 }}>
+                <Card bordered={false} bodyStyle={{ padding: 0 }} >
                     <UserTable
                         data={data}
                         loading={loading}

@@ -162,11 +162,11 @@ export default function MedicalEquipmentTable({
       align: "center",
     },
     {
-      title: "รายการ/ชื่อเครื่องมือ",
+      title: "รายการ",
       dataIndex: "items",
       key: "items",
       align: "center",
-      width: 160,
+      width: 140,
       render: (items: any[]) => {
         const maxToShow = 2; // แสดงสูงสุด 3 รายการ
         const hasMore = items?.length > maxToShow;
@@ -195,7 +195,7 @@ export default function MedicalEquipmentTable({
       dataIndex: "items",
       key: "items",
       align: "center",
-      width: 160,
+      width: 140,
       // width: 160,
       render: (items: any[]) => {
         if (!items || items.length === 0) return null;
@@ -286,7 +286,7 @@ export default function MedicalEquipmentTable({
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
         return (
           <Tooltip title={text}>
-            <span>{shortText}</span>
+            <li>{shortText}</li>
           </Tooltip>
         );
       },

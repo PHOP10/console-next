@@ -20,7 +20,7 @@ export default function MedicalEquipmentTableDetails({
 
   const columnsDetails = [
     {
-      title: "รายการ/ชื่อเครื่องมือ",
+      title: "รายการ",
       dataIndex: ["medicalEquipment", "equipmentName"],
       key: "equipmentName",
       render: (text: string) => <span className="font-medium">{text}</span>,

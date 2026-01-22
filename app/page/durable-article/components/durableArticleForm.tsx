@@ -62,22 +62,12 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
     return `${day} ${month} ${year}`;
   };
 
+
+/*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
+
+
   return (
-    <Card
-      title={
-        <div
-          style={{
-            width: "100%",
-            textAlign: "center",
-            fontWeight: "bold",
-            fontSize: 20,
-            color: "#0683e9",
-          }}
-        >
-          เพิ่มครุภัณฑ์
-        </div>
-      }
-    >
+    <Card>
       <ConfigProvider locale={th_TH}>
         <Form
           form={form}
@@ -181,7 +171,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                   onChange={(value) => {
                     form.setFieldValue(
                       "category",
-                      value === "other" ? "" : value
+                      value === "other" ? "" : value,
                     );
                   }}
                   dropdownRender={(menu) => (
@@ -193,13 +183,13 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "category",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                           onBlur={(e) => {
                             form.setFieldValue(
                               "category",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                         />
@@ -292,7 +282,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                   onChange={(value) => {
                     form.setFieldValue(
                       "acquisitionType",
-                      value === "other" ? "" : value
+                      value === "other" ? "" : value,
                     );
                   }}
                   dropdownRender={(menu) => (
@@ -352,8 +342,18 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
           </Form.Item>
 
           <Form.Item style={{ textAlign: "center" }}>
-            <Button type="primary" htmlType="submit">
-              บันทึก
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              style={{
+                width: "100%",
+                maxWidth: "200px",
+                height: "50px",
+                fontSize: "16px",
+              }}
+            >
+             บันทึก
             </Button>
           </Form.Item>
         </Form>
