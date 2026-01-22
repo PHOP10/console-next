@@ -100,7 +100,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
             };
           })
         : [];
-
+      console.log(record.masterCar);
       // 1. ค้นหา User ที่มีชื่อและนามสกุลตรงกับ record.createdName
       const creator = userData.find((u) => {
         const fullName = `${u.firstName} ${u.lastName}`;
