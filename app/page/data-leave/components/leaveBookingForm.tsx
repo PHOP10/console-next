@@ -26,6 +26,7 @@ import dayjs from "dayjs";
 import "dayjs/locale/th";
 import { DataLeaveService } from "../services/dataLeave.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
+import CustomTable from "../../common/CustomTable";
 dayjs.locale("th");
 
 interface LeaveBookingFormProps {
@@ -68,40 +69,6 @@ export default function LeaveBookingForm({
   const selectedDateStart = Form.useWatch("dateStart", form);
   const selectedDateEnd = Form.useWatch("dateEnd", form);
   dayjs.extend(isBetween);
-
-  // // ✅ คำนวณข้อมูลตาราง
-  // const tableData = useMemo(() => {
-  //   return masterLeaves.map((leave) => {
-  //     // ลามาแล้ว
-  //     const usedDays = leaveByUserId
-  //       .filter((item) => item.typeId === leave.id && item.status === "approve")
-  //       .reduce(
-  //         (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd),
-  //         0
-  //       );
-
-  //     const currentDays =
-  //       selectedTypeId === leave.id && selectedDateStart && selectedDateEnd
-  //         ? calculateDays(selectedDateStart, selectedDateEnd)
-  //         : 0;
-
-  //     const totalDays = usedDays + currentDays;
-
-  //     return {
-  //       key: leave.id,
-  //       leaveType: leave.leaveType,
-  //       usedDays,
-  //       currentDays,
-  //       totalDays,
-  //     };
-  //   });
-  // }, [
-  //   masterLeaves,
-  //   leaveByUserId,
-  //   selectedTypeId,
-  //   selectedDateStart,
-  //   selectedDateEnd,
-  // ]);
 
   // ✅ เพิ่มฟังก์ชันคำนวณปีงบประมาณ (1 ตุลาคม - 30 กันยายน)
   const getCurrentFiscalYear = () => {
@@ -305,21 +272,16 @@ export default function LeaveBookingForm({
       {/* ฟอร์ม */}
       <Col xs={24} md={12}>
         <Card
+          className="shadow-lg rounded-2xl border-gray-100 overflow-hidden h-full"
           title={
-            <div
-              style={{
-                textAlign: "center",
-                color: "#0683e9",
-                fontWeight: "bold",
-                fontSize: "20px",
-              }}
-            >
+            <div className="text-xl font-bold text-[#0683e9] text-center py-2">
               ฟอร์มใบลา
             </div>
           }
         >
           <ConfigProvider locale={th_TH}>
             <Form form={form} layout="vertical" onFinish={onFinish}>
+<<<<<<< HEAD
               <Form.Item
                 label="เขียนที่"
                 name="writeAt"
@@ -425,34 +387,249 @@ export default function LeaveBookingForm({
                             end,
                             "day",
                             "[]",
+=======
+              {/* สไตล์กลางสำหรับ Input ทั้งหมด */}
+              {(() => {
+                const inputStyle =
+                  "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+                const selectStyle =
+                  "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+                const textAreaStyle =
+                  "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+                return (
+                  <>
+                    <Form.Item
+                      label="เขียนที่"
+                      name="writeAt"
+                      rules={[
+                        { required: true, message: "กรุณากรอกเขียนที่..." },
+                      ]}
+                    >
+                      <Select
+                        placeholder="เขียนที่"
+                        className={selectStyle}
+                        onChange={(value) => {
+                          form.setFieldValue(
+                            "writeAt",
+                            value === "other" ? "" : value,
+>>>>>>> acb37c206e06cff9da6310f2bbc54f844b5114d1
                           );
-                        });
-                      }}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label="ถึงวันที่"
-                    name="dateEnd"
-                    rules={[
-                      {
-                        required: true,
-                        message: "กรุณาเลือกวันที่สิ้นสุดการลา",
-                      },
-                    ]}
-                  >
-                    <DatePicker
-                      format="DD/MM/YYYY"
-                      style={{ width: "100%" }}
-                      placeholder={
-                        selectedDateStart
-                          ? // ? `เลือกตั้งแต่ ${dayjs(selectedDateStart).format(
-                            //     "DD/MM/YYYY"
-                            //   )} เป็นต้นไป`
-                            `เลือกวันที่สิ้นสุดการลา`
-                          : "กรุณาเลือกวันที่เริ่มลาก่อน"
+                        }}
+                        dropdownRender={(menu) => (
+                          <>
+                            {menu}
+                            <div style={{ display: "flex", padding: 8 }}>
+                              <Input
+                                placeholder="กรอกอื่น ๆ..."
+                                className="rounded-lg border-gray-300"
+                                onPressEnter={(e) => {
+                                  form.setFieldValue(
+                                    "writeAt",
+                                    e.currentTarget.value,
+                                  );
+                                }}
+                                onBlur={(e) => {
+                                  form.setFieldValue(
+                                    "writeAt",
+                                    e.currentTarget.value,
+                                  );
+                                }}
+                              />
+                            </div>
+                          </>
+                        )}
+                      >
+                        <Select.Option value="รพ.สต.บ้านผาผึ้ง">
+                          รพ.สต.บ้านผาผึ้ง
+                        </Select.Option>
+                        <Select.Option value="other">อื่นๆ...</Select.Option>
+                      </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                      label="ประเภทการลา"
+                      name="typeId"
+                      rules={[
+                        { required: true, message: "กรุณาเลือกประเภทลา" },
+                      ]}
+                    >
+                      <Select
+                        placeholder="เลือกประเภทลา"
+                        className={selectStyle}
+                      >
+                        {masterLeaves.map((item) => (
+                          <Select.Option key={item.id} value={item.id}>
+                            {item.leaveType}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                      label="เหตุผลการลา"
+                      name="reason"
+                      rules={[
+                        { required: true, message: "กรุณากรอกเหตุผลการลา" },
+                      ]}
+                    >
+                      <Input.TextArea
+                        rows={2}
+                        placeholder="กรอกเหตุผลการลา"
+                        maxLength={50}
+                        className={textAreaStyle}
+                      />
+                    </Form.Item>
+
+                    <Row gutter={16}>
+                      <Col span={12}>
+                        <Form.Item
+                          label="ตั้งแต่วันที่"
+                          name="dateStart"
+                          rules={[
+                            {
+                              required: true,
+                              message: "กรุณาเลือกวันที่เริ่มลา",
+                            },
+                          ]}
+                        >
+                          <DatePicker
+                            format="DD/MM/YYYY"
+                            style={{ width: "100%" }}
+                            placeholder="เลือกวันที่"
+                            className={`${inputStyle} pt-2`}
+                            onChange={() => {
+                              form.setFieldValue("dateEnd", null);
+                            }}
+                            disabledDate={(current) => {
+                              if (!current) return false;
+                              if (current < dayjs().startOf("day")) return true;
+                              return leaveByUserId.some((leave) => {
+                                const start = dayjs(leave.dateStart).startOf(
+                                  "day",
+                                );
+                                const end = dayjs(leave.dateEnd).endOf("day");
+                                return dayjs(current).isBetween(
+                                  start,
+                                  end,
+                                  "day",
+                                  "[]",
+                                );
+                              });
+                            }}
+                          />
+                        </Form.Item>
+                      </Col>
+                      <Col span={12}>
+                        <Form.Item
+                          label="ถึงวันที่"
+                          name="dateEnd"
+                          rules={[
+                            {
+                              required: true,
+                              message: "กรุณาเลือกวันที่สิ้นสุด",
+                            },
+                          ]}
+                        >
+                          <DatePicker
+                            format="DD/MM/YYYY"
+                            style={{ width: "100%" }}
+                            className={`${inputStyle} pt-2`}
+                            placeholder={
+                              selectedDateStart
+                                ? "เลือกวันที่"
+                                : "เลือกวันเริ่มก่อน"
+                            }
+                            disabled={!selectedDateStart}
+                            disabledDate={(current) => {
+                              if (!current) return false;
+                              if (
+                                selectedDateStart &&
+                                current <
+                                  dayjs(selectedDateStart).startOf("day")
+                              ) {
+                                return true;
+                              }
+                              if (current < dayjs().startOf("day")) return true;
+                              return leaveByUserId.some((leave) => {
+                                const start = dayjs(leave.dateStart).startOf(
+                                  "day",
+                                );
+                                const end = dayjs(leave.dateEnd).endOf("day");
+                                return dayjs(current).isBetween(
+                                  start,
+                                  end,
+                                  "day",
+                                  "[]",
+                                );
+                              });
+                            }}
+                          />
+                        </Form.Item>
+                      </Col>
+                    </Row>
+
+                    <Form.Item
+                      label="ระหว่างลาติดต่อได้ที่"
+                      name="contactAddress"
+                      rules={[{ required: false }]}
+                    >
+                      <Input.TextArea
+                        rows={2}
+                        placeholder="กรอกที่อยู่ระหว่างลา"
+                        className={textAreaStyle}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label="เบอร์ติดต่อระหว่างลา"
+                      name="contactPhone"
+                      rules={[
+                        { required: true, message: "กรุณากรอก เบอร์โทรศัพท์" },
+                      ]}
+                    >
+                      <Input
+                        placeholder="กรอกเบอร์โทรศัพท์"
+                        maxLength={10}
+                        className={inputStyle}
+                        onKeyPress={(e) => {
+                          if (!/[0-9]/.test(e.key)) {
+                            e.preventDefault();
+                          }
+                        }}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      label="ผู้รับผิดชอบงานระหว่างลา"
+                      name="backupUserId"
+                      rules={[
+                        {
+                          required: true,
+                          message: "กรุณาเลือกผู้รับผิดชอบงาน",
+                        },
+                      ]}
+                    >
+                      <Select
+                        placeholder="เลือกผู้รับผิดชอบงาน"
+                        className={selectStyle}
+                      >
+                        {user.map((user) => (
+                          <Select.Option key={user.userId} value={user.userId}>
+                            {user.firstName} {user.lastName}
+                          </Select.Option>
+                        ))}
+                      </Select>
+                    </Form.Item>
+
+                    <Form.Item
+                      label="แนบไฟล์ใบรับรองแพทย์ (ถ้ามี)"
+                      name="fileName"
+                      valuePropName="fileList"
+                      getValueFromEvent={(e) =>
+                        Array.isArray(e) ? e : e?.fileList
                       }
+<<<<<<< HEAD
                       disabled={!selectedDateStart}
                       disabledDate={(current) => {
                         if (!current) return false;
@@ -582,6 +759,52 @@ export default function LeaveBookingForm({
                   </Button>
                 </Space>
               </Form.Item>
+=======
+                    >
+                      <Upload
+                        name="file"
+                        maxCount={1}
+                        fileList={fileList}
+                        beforeUpload={() => false}
+                        onChange={handleUploadChange}
+                        accept=".pdf,.jpg,.jpeg,.png"
+                      >
+                        <Button
+                          icon={<UploadOutlined />}
+                          className="h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 hover:text-blue-500"
+                        >
+                          เลือกไฟล์
+                        </Button>
+                      </Upload>
+                    </Form.Item>
+
+                    <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
+                      <Input.TextArea
+                        rows={3}
+                        placeholder="หมายเหตุเพิ่มเติม"
+                        className={textAreaStyle}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
+                      style={{
+                        textAlign: "center",
+                        marginTop: 24,
+                        marginBottom: 8,
+                      }}
+                    >
+                      <Button
+                        type="primary"
+                        htmlType="submit"
+                        className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] border-0"
+                      >
+                        ส่งใบลา
+                      </Button>
+                    </Form.Item>
+                  </>
+                );
+              })()}
+>>>>>>> acb37c206e06cff9da6310f2bbc54f844b5114d1
             </Form>
           </ConfigProvider>
         </Card>
@@ -603,7 +826,7 @@ export default function LeaveBookingForm({
             </div>
           }
         >
-          <Table
+          <CustomTable
             columns={columns}
             dataSource={tableData}
             pagination={false}

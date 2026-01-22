@@ -9,7 +9,6 @@ import {
   Select,
   InputNumber,
   message,
-  Spin,
   ConfigProvider,
   Row,
   Col,
@@ -66,6 +65,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
       const payload = {
         ...values,
         id: record?.id,
+        status: "pending",
         startDate: values.startDate?.toISOString() || null,
         endDate: values.endDate?.toISOString() || null,
       };
@@ -85,29 +85,53 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
   const formatBuddhist = (date: dayjs.Dayjs | null) => {
     if (!date) return "";
     const day = date.date();
-    const month = date.locale("th").format("MMMM"); // เดือนภาษาไทย
-    const year = date.year() + 543; // แปลงเป็น พ.ศ.
+    const month = date.locale("th").format("MMMM");
+    const year = date.year() + 543;
     return `${day} ${month} ${year}`;
   };
 
+  // --- Style Constants (Master Template) ---
+  const inputStyle =
+    "w-full h-10 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const selectStyle =
+    "h-10 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+
   return (
     <Modal
-      title="แก้ไขคำขอไปราชการ"
+      title={
+        <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+          แก้ไขคำขอไปราชการ
+        </div>
+      }
       open={open}
       onCancel={onClose}
       footer={null}
-      width={700}
+      width={800}
+      centered
+      styles={{
+        content: { borderRadius: "20px", padding: "24px" },
+        header: {
+          marginBottom: "16px",
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+        },
+      }}
     >
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
-          <Row gutter={16}>
+          {/* Section 1: ข้อมูลเอกสาร */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="เรียน"
                 name="recipient"
                 rules={[{ required: true, message: "กรุณากรอกเรียน..." }]}
               >
-                <Input placeholder="กรอกเรียน..." />
+                <Input placeholder="กรอกเรียน..." className={inputStyle} />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -119,19 +143,27 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                   { max: 15, message: "กรอกได้สูงสุด 15 ตัวอักษร" },
                 ]}
               >
-                <Input placeholder="เช่น 0933.1/85" maxLength={15} />
+                <Input
+                  placeholder="เช่น 0933.1/85"
+                  maxLength={15}
+                  className={inputStyle}
+                />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="วัตถุประสงค์"
                 name="missionDetail"
                 rules={[{ required: true, message: "กรุณากรอกวัตถุประสงค์" }]}
               >
-                <Input.TextArea placeholder="กรอกรายวัตถุประสงค์" rows={2} />
+                <Input.TextArea
+                  placeholder="กรอกรายวัตถุประสงค์"
+                  rows={2}
+                  className={textAreaStyle}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -140,78 +172,69 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                 name="location"
                 rules={[{ required: true, message: "กรุณากรอกสถานที่" }]}
               >
-                <Input.TextArea placeholder="กรอกสถานที่" rows={2} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="ตั้งแต่วันที่"
-                name="startDate"
-                rules={[
-                  { required: true, message: "กรุณาเลือกวันที่เริ่มเดินทาง" },
-                ]}
-              >
-                <DatePicker
-                  style={{ width: "100%" }}
-                  format={(value) =>
-                    value ? formatBuddhist(dayjs(value)) : ""
-                  }
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
-                label="ถึงวันที่"
-                name="endDate"
-                rules={[
-                  { required: true, message: "กรุณาเลือกวันที่สิ้นสุดเดินทาง" },
-                ]}
-              >
-                <DatePicker
-                  style={{ width: "100%" }}
-                  format={(value) =>
-                    value ? formatBuddhist(dayjs(value)) : ""
-                  }
+                <Input.TextArea
+                  placeholder="กรอกสถานที่"
+                  rows={2}
+                  className={textAreaStyle}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          {/* Section 2: วันเวลาเดินทาง */}
+          <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100 mb-4 mt-2">
+            <Row gutter={24}>
+              <Col span={12}>
+                <Form.Item
+                  label="ตั้งแต่วันที่"
+                  name="startDate"
+                  rules={[
+                    { required: true, message: "กรุณาเลือกวันที่เริ่มเดินทาง" },
+                  ]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    format={(value) =>
+                      value ? formatBuddhist(dayjs(value)) : ""
+                    }
+                    className={`${inputStyle} pt-1`}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label="ถึงวันที่"
+                  name="endDate"
+                  rules={[
+                    {
+                      required: true,
+                      message: "กรุณาเลือกวันที่สิ้นสุดเดินทาง",
+                    },
+                  ]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    format={(value) =>
+                      value ? formatBuddhist(dayjs(value)) : ""
+                    }
+                    className={`${inputStyle} pt-1`}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          {/* Section 3: ข้อมูลเพิ่มเติม */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 name="budget"
                 label="งบประมาณ"
                 rules={[{ required: true, message: "กรุณากรอกงบประมาณ" }]}
               >
-                <Select
-                  placeholder="เลือกงบประมาณ"
-                  onChange={(value) => {
-                    form.setFieldValue(
-                      "budget",
-                      value === "other" ? "" : value
-                    );
-                  }}
-                  dropdownRender={(menu) => (
-                    <>
-                      {menu}
-                      <div style={{ display: "flex", padding: 8 }}>
-                        <Input
-                          placeholder="กรอกงบประมาณอื่นๆ"
-                          onPressEnter={(e) => {
-                            form.setFieldValue("budget", e.currentTarget.value);
-                          }}
-                          onBlur={(e) => {
-                            form.setFieldValue("budget", e.currentTarget.value);
-                          }}
-                        />
-                      </div>
-                    </>
-                  )}
-                >
+                <Select placeholder="เลือกงบประมาณ" className={selectStyle}>
                   <Select.Option value="งบกลาง">งบกลาง</Select.Option>
                   <Select.Option value="งบโครงการ">งบโครงการ</Select.Option>
                   <Select.Option value="งบผู้จัด">งบผู้จัด</Select.Option>
@@ -222,7 +245,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
             </Col>
             <Col span={12}>
               <Form.Item label="เลือกรถ" name="carId">
-                <Select placeholder="เลือกรถ">
+                <Select placeholder="เลือกรถ" className={selectStyle}>
                   {cars.map((car) => (
                     <Select.Option key={car.id} value={car.id}>
                       {car.licensePlate} ({car.brand} {car.model})
@@ -232,10 +255,15 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={16}>
+
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
-                <InputNumber min={1} style={{ width: "100%" }} />
+                <InputNumber
+                  min={1}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1`}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -244,6 +272,8 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                   mode="multiple"
                   placeholder="เลือกผู้โดยสาร"
                   optionFilterProp="children"
+                  className={selectStyle} // Antd Select mode multiple จะจัดการ style เองบางส่วน
+                  maxTagCount="responsive"
                 >
                   {dataUser.map((user) => (
                     <Select.Option key={user.userId} value={user.userId}>
@@ -256,17 +286,29 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
           </Row>
 
           <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
-            <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
+            <Input.TextArea
+              placeholder="หมายเหตุเพิ่มเติม"
+              rows={2}
+              className={textAreaStyle}
+            />
           </Form.Item>
 
-          <Form.Item style={{ textAlign: "center" }}>
-            <Button type="primary" htmlType="submit">
-              บันทึก
-            </Button>
-            <Button onClick={onClose} style={{ marginLeft: 8 }}>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+            <Button
+              onClick={onClose}
+              className="h-10 px-6 rounded-lg text-gray-600 hover:bg-gray-100 border-gray-300"
+            >
               ยกเลิก
             </Button>
-          </Form.Item>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
+            >
+              บันทึกการแก้ไข
+            </Button>
+          </div>
         </Form>
       </ConfigProvider>
     </Modal>

@@ -1,22 +1,23 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Form, Input, DatePicker, Collapse, Tag } from "antd";
 import {
   Calendar,
   momentLocalizer,
   Event as RbcEvent,
 } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { CaretRightOutlined } from "@ant-design/icons";
 import { OfficialTravelRequestType, UserType } from "../../common";
-import { useForm } from "antd/es/form/Form";
-import dayjs from "dayjs";
 import moment from "moment";
 import "moment/locale/th";
 
+// 🔹 Import Component รายละเอียดที่ทำไว้
+import OfficialTravelRequestDetail from "./officialTravelRequestDetail";
+
+// Setup Localizer
 const localizer = momentLocalizer(moment);
 
+// --- Custom Interfaces ---
 interface CustomEvent extends RbcEvent {
   id: number;
   status: string;
@@ -28,6 +29,7 @@ interface CustomEvent extends RbcEvent {
     model: string;
   };
   masterCar: string;
+  originalRecord: OfficialTravelRequestType;
 }
 
 interface Props {
@@ -38,298 +40,106 @@ interface Props {
 }
 
 const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
-  const [form] = useForm();
   const [selected, setSelected] = useState<OfficialTravelRequestType | null>(
-    null
+    null,
   );
   const [modalOpen, setModalOpen] = useState(false);
-  const { TextArea } = Input;
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "approve":
-        return "green";
-      case "cancel":
-        return "red";
-      case "pending":
-        return "blue";
-      case "edit":
-        return "orange";
-      default:
-        return "blue";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "approve":
-        return "อนุมัติ";
-      case "pending":
-        return "รอดำเนินการ";
-      case "cancel":
-        return "ยกเลิก";
-      case "edit":
-        return "orange";
-      default:
-        return status;
-    }
-  };
-
+  // --- Event Handling ---
   const onSelectEvent = (event: CustomEvent) => {
+    // หาข้อมูล record จริงจาก data
     const item = data.find((d) => d.id === event.id);
     if (item) {
       setSelected(item);
-      form.setFieldsValue({
-        ...item,
-        startDate: dayjs(item.startDate),
-        endDate: dayjs(item.endDate),
-      });
       setModalOpen(true);
     }
   };
 
-  const thaiMonths = [
-    "มกราคม",
-    "กุมภาพันธ์",
-    "มีนาคม",
-    "เมษายน",
-    "พฤษภาคม",
-    "มิถุนายน",
-    "กรกฎาคม",
-    "สิงหาคม",
-    "กันยายน",
-    "ตุลาคม",
-    "พฤศจิกายน",
-    "ธันวาคม",
-  ];
-
-  const formatBuddhist = (date?: string | Date) => {
-    if (!date) return "-";
-    const d = dayjs(date);
-    const day = d.date();
-    const month = thaiMonths[d.month()]; // month() คืน 0-11
-    const year = d.year() + 543; // แปลงเป็น พ.ศ.
-    return `${day} ${month} ${year}`;
+  const handleCloseModal = () => {
+    setModalOpen(false);
+    // setTimeout(() => setSelected(null), 300); // ถ้าต้องการเคลียร์ data หลังปิด Animation
   };
 
   return (
     <>
-      <Calendar<CustomEvent>
-        localizer={localizer}
-        events={data.map(
-          (item): CustomEvent => ({
-            id: item.id,
-            title: item.createdName,
-            start: new Date(item.startDate),
-            end: new Date(item.endDate),
-            status: item.status,
-            location: `${item.location}`,
-            masterCar: item.MasterCar?.licensePlate || "",
-            allDay: false,
-          })
-        )}
-        style={{ height: 500 }}
-        onSelectEvent={onSelectEvent}
-        eventPropGetter={(event: CustomEvent) => ({
-          style: {
-            backgroundColor: getStatusColor(event.status),
-            color: "#fff",
-            fontSize: 12,
-            borderRadius: 4,
-          },
-        })}
-        messages={{
-          next: "ถัดไป",
-          previous: "ก่อนหน้า",
-          today: "วันนี้",
-          month: "เดือน",
-          week: "สัปดาห์",
-          day: "วัน",
-          agenda: "กำหนดการ",
-          date: "วันที่",
-          time: "เวลา",
-          event: "เหตุการณ์",
-          showMore: (total) => `+ ดูอีก ${total}`,
-        }}
-      />
+      {/* 🔹 ส่วนปฏิทิน */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <h2 className="text-lg font-bold text-slate-700 mb-4 border-l-4 border-blue-500 pl-3">
+          ปฏิทินการเดินทาง
+        </h2>
 
-      <Modal
-        title="รายละเอียดการเดินทางไปราชการ"
+        <Calendar<CustomEvent>
+          localizer={localizer}
+          events={data.map(
+            (item): CustomEvent => ({
+              id: item.id,
+              title: item.createdName || "ไม่ระบุชื่อ",
+              start: new Date(item.startDate),
+              end: new Date(item.endDate),
+              status: item.status,
+              location: `${item.location}`,
+              masterCar: item.MasterCar?.licensePlate || "",
+              allDay: false,
+              originalRecord: item,
+            }),
+          )}
+          style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
+          onSelectEvent={onSelectEvent}
+          // Custom Event Style (Soft Pill Look) - คงไว้เพื่อให้ปฏิทินสวยเหมือนเดิม
+          eventPropGetter={(event: CustomEvent) => {
+            let bgColor = "#eff6ff"; // blue-50
+            let textColor = "#1d4ed8"; // blue-700
+            let borderColor = "#bfdbfe"; // blue-200
+
+            if (event.status === "approve") {
+              bgColor = "#f0fdf4"; // green-50
+              textColor = "#15803d"; // green-700
+              borderColor = "#bbf7d0"; // green-200
+            } else if (event.status === "cancel") {
+              bgColor = "#fef2f2"; // red-50
+              textColor = "#b91c1c"; // red-700
+              borderColor = "#fecaca"; // red-200
+            } else if (event.status === "edit") {
+              bgColor = "#fff7ed"; // orange-50
+              textColor = "#c2410c"; // orange-700
+              borderColor = "#fed7aa"; // orange-200
+            }
+
+            return {
+              style: {
+                backgroundColor: bgColor,
+                color: textColor,
+                border: `1px solid ${borderColor}`,
+                fontSize: 12,
+                borderRadius: 6,
+                fontWeight: 500,
+                padding: "2px 5px",
+              },
+            };
+          }}
+          messages={{
+            next: "ถัดไป",
+            previous: "ก่อนหน้า",
+            today: "วันนี้",
+            month: "เดือน",
+            week: "สัปดาห์",
+            day: "วัน",
+            agenda: "กำหนดการ",
+            date: "วันที่",
+            time: "เวลา",
+            event: "ภารกิจ",
+            showMore: (total) => `+ ดูอีก ${total} รายการ`,
+          }}
+        />
+      </div>
+
+      {/* 🔹 เรียกใช้ Component Detail แทนการเขียน Modal ซ้ำ */}
+      <OfficialTravelRequestDetail
         open={modalOpen}
-        width={700}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-      >
-        {selected && (
-          <Form form={form} labelCol={{ span: 6 }} wrapperCol={{ span: 18 }}>
-            <Collapse
-              bordered={false}
-              defaultActiveKey={["1", "2"]}
-              expandIcon={({ isActive }) => (
-                <CaretRightOutlined rotate={isActive ? 90 : 0} />
-              )}
-            >
-              <Collapse.Panel header="ข้อมูลคำขอ" key="1">
-                <Form.Item label="ผู้ยื่นคำขอ" name="createdName">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="เรียน" name="recipient">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="เลขที่เอกสาร" name="documentNo">
-                  <Input disabled />
-                </Form.Item>
-                {/* <Form.Item label="เรื่อง" name="title">
-                  <Input disabled />
-                </Form.Item> */}
-                <Form.Item label="วัตถุประสงค์" name="missionDetail">
-                  <TextArea disabled />
-                </Form.Item>
-                <Form.Item label="สถานที่" name="location">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="ตั้งแต่วันที่">
-                  <Input value={formatBuddhist(selected.startDate)} disabled />
-                </Form.Item>
-                <Form.Item label="ถึงวันที่">
-                  <Input value={formatBuddhist(selected.endDate)} disabled />
-                </Form.Item>
-                <Form.Item label="งบประมาณ" name="budget">
-                  <Input disabled />
-                </Form.Item>
-                {/* 1. แสดงประเภทการเดินทาง (แปลงจาก Key เป็นข้อความภาษาไทย) */}
-                <Form.Item label="ประเภทการเดินทาง">
-                  <Input
-                    disabled
-                    value={(() => {
-                      // 1. ดึงค่าแรก และระบุว่าเป็น string เพื่อให้ Type แม่นยำ
-                      const type = form.getFieldValue(
-                        "travelType"
-                      )?.[0] as string;
-                      const otherDetail = form.getFieldValue("otherTravelType");
-
-                      // 2. ระบุ Type ให้ Map (ใช้อักษรภาษาอังกฤษตาม Prisma Model)
-                      const typeMap: Record<string, string> = {
-                        official: "โดยรถยนต์ราชการ",
-                        bus: "รถยนต์โดยสารประจำทาง",
-                        plane: "เครื่องบินโดยสาร",
-                        private: "รถยนต์ส่วนบุคคล",
-                        other: "อื่น ๆ",
-                      };
-
-                      // 3. ตรวจสอบว่ามี Key นี้ใน Map หรือไม่
-                      const label = typeMap[type] || "ไม่ระบุ";
-
-                      // 4. เงื่อนไขรวมรายละเอียด "อื่นๆ" หรือ "รถส่วนตัว" ไว้ในบรรทัดเดียว
-                      if (type === "other" && otherDetail) {
-                        return `${label} (${otherDetail})`;
-                      }
-
-                      if (type === "private") {
-                        const privateCarId = form.getFieldValue("privateCarId");
-                        return `${label}${
-                          privateCarId ? ` (ทะเบียน: ${privateCarId})` : ""
-                        }`;
-                      }
-
-                      return label;
-                    })()}
-                  />
-                </Form.Item>
-
-                {/* กรณีเป็นรถยนต์ราชการ ยังคงแสดงข้อมูลรถแยกออกมาเพื่อให้เห็นทะเบียนชัดเจน */}
-                {form.getFieldValue("travelType")?.[0] === "official" &&
-                  selected?.MasterCar && (
-                    <Form.Item label="รถที่ใช้">
-                      <Input
-                        disabled
-                        value={`${selected.MasterCar.licensePlate} (${selected.MasterCar.brand} ${selected.MasterCar.model})`}
-                      />
-                    </Form.Item>
-                  )}
-
-                {/* กรณีเป็นรถส่วนตัว ให้แสดงทะเบียนต่อท้าย
-                {form.getFieldValue("travelType")?.[0] === "private" && (
-                  <Form.Item label="ทะเบียนรถส่วนบุคคล">
-                    <Input
-                      disabled
-                      value={
-                        form.getFieldValue("privateCarId") || "ไม่ระบุทะเบียน"
-                      }
-                    />
-                  </Form.Item>
-                )} */}
-
-                <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="รายชื่อผู้โดยสาร">
-                  {Array.isArray(selected.passengerNames) &&
-                  selected.passengerNames.length > 0 ? (
-                    selected.passengerNames.map((uid: string) => {
-                      const user = dataUser.find((u) => u.userId === uid);
-                      return (
-                        <Tag key={uid} color="blue">
-                          {user ? `${user.firstName} ${user.lastName}` : uid}
-                        </Tag>
-                      );
-                    })
-                  ) : (
-                    <span>-</span>
-                  )}
-                </Form.Item>
-                <Form.Item label="เหตุผลเพิ่มเติม" name="note">
-                  <TextArea disabled />
-                </Form.Item>
-              </Collapse.Panel>
-
-              <Collapse.Panel header="สถานะ" key="2">
-                <Form.Item label="สถานะ">
-                  <Tag color={getStatusColor(selected.status)}>
-                    {getStatusLabel(selected.status)}
-                  </Tag>
-                </Form.Item>
-
-                {selected.approvedByName ? (
-                  <>
-                    <Form.Item label="ผู้อนุมัติ" name="approvedByName">
-                      <Input disabled />
-                    </Form.Item>
-
-                    <Form.Item label="วันที่อนุมัติ">
-                      <Input
-                        value={formatBuddhist(selected.approvedDate)}
-                        disabled
-                      />
-                    </Form.Item>
-                  </>
-                ) : selected.cancelName ? (
-                  <>
-                    <Form.Item label="ผู้ยกเลิก" name="cancelName">
-                      <Input disabled />
-                    </Form.Item>
-
-                    <Form.Item label="วันที่ยกเลิก">
-                      <Input
-                        value={formatBuddhist(selected.cancelAt)}
-                        disabled
-                      />
-                    </Form.Item>
-                  </>
-                ) : null}
-
-                {selected.cancelReason ? (
-                  <>
-                    <Form.Item label="เหตุผลการยกเลิก" name="cancelReason">
-                      <Input disabled />
-                    </Form.Item>
-                  </>
-                ) : null}
-              </Collapse.Panel>
-            </Collapse>
-          </Form>
-        )}
-      </Modal>
+        onClose={handleCloseModal}
+        record={selected}
+        dataUser={dataUser}
+      />
     </>
   );
 };

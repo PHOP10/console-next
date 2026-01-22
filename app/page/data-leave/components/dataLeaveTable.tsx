@@ -9,9 +9,14 @@ import DataLeaveDetail from "./dataLeaveDetail";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveWord from "./dataLeaveWord";
-import { FileSearchOutlined, FormOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  FileSearchOutlined,
+  FormOutlined,
+} from "@ant-design/icons";
 import { User } from "next-auth";
 import DataLeaveEdit from "./dataLeaveEdit";
+import CustomTable from "../../common/CustomTable";
 
 interface DataLeaveTableProps {
   data: DataLeaveType[];
@@ -56,7 +61,6 @@ export default function DataLeaveTable({
   const openEditModal = (record: DataLeaveType) => {
     setCurrentRecord(record);
     setIsEditOpen(true);
-    // formEdit.setFieldsValue(record);
   };
 
   const handleUpdate = (updated: any) => {
@@ -131,7 +135,7 @@ export default function DataLeaveTable({
         switch (status) {
           case "pending":
             color = "blue";
-            text = "รอดำเนินการ";
+            text = "รออนุมัติ";
             break;
           case "edit":
             color = "orange";
@@ -177,48 +181,8 @@ export default function DataLeaveTable({
       align: "center",
       render: (_: any, record: any) => (
         <Space>
-          {/* <Button
-            type="primary"
-            size="small"
-            onClick={() => openEditModal(record)}
-            disabled={record.status !== "pending"}
-            style={{
-              backgroundColor:
-                record.status === "pending" ? "#faad14" : "#d9d9d9",
-              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
-              color: record.status === "pending" ? "white" : "#888",
-              cursor: record.status === "pending" ? "pointer" : "not-allowed",
-            }}
-          >
-            แก้ไข
-          </Button> */}
-          {/* <Tooltip title="แก้ไข">
-            <FormOutlined
-              style={{
-                fontSize: 22,
-                color:
-                  record.status === "pending" || record.status === "edit"
-                    ? "#faad14"
-                    : "#d9d9d9",
-                cursor:
-                  record.status === "pending" || record.status === "edit"
-                    ? "pointer"
-                    : "not-allowed",
-                opacity:
-                  record.status === "pending" || record.status === "edit"
-                    ? 1
-                    : 0.6,
-              }}
-              onClick={() => {
-                if (record.status === "pending" || record.status === "edit") {
-                  openEditModal(record);
-                }
-              }}
-            />
-          </Tooltip> */}
-
           <Tooltip title="แก้ไข">
-            <FormOutlined
+            <EditOutlined
               style={{
                 fontSize: 22,
                 color:
@@ -283,18 +247,14 @@ export default function DataLeaveTable({
         user={user}
       />
       <Row gutter={[24, 24]}>
-        <Col span={24}>
-          <Table
-            rowKey="id"
-            columns={columns}
-            dataSource={leaveByUserId}
-            loading={loading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: "max-content" }}
-            style={{ width: "100%" }}
-            bordered
-          />
-        </Col>
+        <CustomTable
+          rowKey="id"
+          columns={columns}
+          dataSource={leaveByUserId}
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: "800" }}
+        />
       </Row>
       <DataLeaveEdit
         open={isEditOpen}
@@ -302,7 +262,6 @@ export default function DataLeaveTable({
         masterLeaves={masterLeaves}
         onClose={() => {
           setIsEditOpen(false);
-          // formEdit.resetFields();
         }}
         onUpdate={handleUpdate}
         fetchData={fetchData}

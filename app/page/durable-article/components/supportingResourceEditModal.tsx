@@ -1,61 +1,77 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
-  Button,
-  DatePicker,
+  Modal,
   Form,
   Input,
   InputNumber,
+  DatePicker,
   Select,
   message,
-  Card,
+  Button,
   Row,
   Col,
   ConfigProvider,
 } from "antd";
 import dayjs from "dayjs";
+import th_TH from "antd/locale/th_TH";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
-import th_TH from "antd/locale/th_TH";
+import { DurableArticleType } from "../../common";
 
-type Props = {
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  loading: boolean;
-  fetchData: () => Promise<void>;
-};
+interface SupportingResourceEditModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  record: DurableArticleType | null;
+}
 
-export default function SupportingResourceForm({ setLoading, loading }: Props) {
+export default function SupportingResourceEditModal({
+  open,
+  onClose,
+  onSuccess,
+  record,
+}: SupportingResourceEditModalProps) {
   const [form] = Form.useForm();
+  const [loading, setLoading] = useState(false);
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
 
-  const onFinish = async (values: any) => {
+  useEffect(() => {
+    if (open && record) {
+      form.setFieldsValue({
+        ...record,
+        acquiredDate: record.acquiredDate ? dayjs(record.acquiredDate) : null,
+        // แปลง category ถ้าจำเป็น (เช่นถ้าใน db เก็บเป็นค่าอื่น)
+      });
+    } else {
+      form.resetFields();
+    }
+  }, [open, record, form]);
+
+  const handleUpdate = async (values: any) => {
+    if (!record) return;
     try {
+      setLoading(true);
       const payload = {
         ...values,
+        id: record.id,
         acquiredDate: values.acquiredDate
           ? values.acquiredDate.toISOString()
           : null,
-        type: "supportingResource",
       };
-      await intraAuthService.createDurableArticle(payload);
-      setLoading(true);
-      message.success("บันทึกข้อมูลครุภัณฑ์สำเร็จ");
-      form.resetFields();
-    } catch (error) {
-      console.error(error);
-      message.error("บันทึกข้อมูลไม่สำเร็จ");
-    }
-  };
 
-  const formatBuddhist = (value: dayjs.Dayjs | null) => {
-    if (!value) return "";
-    const date = dayjs(value).locale("th");
-    const day = date.date();
-    const month = date.format("MMMM");
-    const year = date.year() + 543;
-    return `${day} ${month} ${year}`;
+      await intraAuthService.updateDurableArticle(payload);
+      message.success("แก้ไขข้อมูลสำเร็จ");
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error("Error updating:", error);
+      message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // --- Style Constants (Master Template) ---
@@ -65,31 +81,34 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
   const textAreaStyle =
     "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
-  // Class สำหรับ Select ของ Antd
   const selectStyle =
     "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
 
   return (
-    <Card
-      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
+    <Modal
       title={
-        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-          เพิ่มวัสดุสนับสนุน
+        <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+          แก้ไขข้อมูลวัสดุสนับสนุน
         </div>
       }
+      open={open}
+      onCancel={onClose}
+      footer={null}
+      width={900}
+      centered
+      destroyOnClose
+      styles={{
+        content: { borderRadius: "20px", padding: "24px" },
+        header: {
+          marginBottom: "16px",
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+        },
+      }}
     >
       <ConfigProvider locale={th_TH}>
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onFinish}
-          initialValues={{
-            usageLifespanYears: 1,
-            unitPrice: 0,
-            monthlyDepreciation: 0,
-          }}
-        >
-          {/* Row 1: รหัส, วันที่ได้มา */}
+        <Form form={form} layout="vertical" onFinish={handleUpdate}>
+          {/* Row 1: รหัส, วันที่ */}
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
@@ -108,15 +127,11 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                   maxLength={17}
                   className={inputStyle}
                   onKeyPress={(e) => {
-                    const allowed = /[0-9/-]/;
-                    if (!allowed.test(e.key)) {
-                      e.preventDefault();
-                    }
+                    if (!/[0-9/-]/.test(e.key)) e.preventDefault();
                   }}
                 />
               </Form.Item>
             </Col>
-
             <Col span={12}>
               <Form.Item
                 label="วันที่ได้มา"
@@ -124,26 +139,23 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                 rules={[{ required: true, message: "กรุณาเลือกวันที่ได้มา" }]}
               >
                 <DatePicker
+                  format="DD/MM/YYYY"
                   style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
-                  format={(value) => formatBuddhist(value as dayjs.Dayjs)}
                   className={`${inputStyle} pt-2`}
+                  placeholder="เลือกวันที่"
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* Row 2: เลขที่เอกสาร, รายละเอียด */}
+          {/* Row 2: เอกสาร, รายละเอียด */}
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentId"
                 rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอกเลขที่เอกสาร",
-                  },
+                  { required: true, message: "กรุณากรอกเลขที่เอกสาร" },
                   {
                     pattern: /^[ก-ฮA-Za-z0-9./\s]+$/,
                     message: "กรอกได้เฉพาะตัวอักษร ตัวเลข จุด และ /",
@@ -163,26 +175,17 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                 name="description"
                 rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
               >
-                <Input.TextArea rows={2} className={textAreaStyle} />
+                <Input.TextArea
+                  rows={2}
+                  className={textAreaStyle}
+                  placeholder="รายละเอียด..."
+                />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* Row 3: หมายเลขทะเบียน, ประเภท */}
+          {/* Row 3: ประเภท (วัสดุอาจไม่มีทะเบียนรถ) */}
           <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                label="หมายเลขและทะเบียน"
-                name="registrationNumber"
-                rules={[{ required: true, message: "กรุณาหมายเลขและทะเบียน" }]}
-              >
-                <Input
-                  placeholder="กรอกหมายเลขและทะเบียน"
-                  className={inputStyle}
-                />
-              </Form.Item>
-            </Col>
-
             <Col span={12}>
               <Form.Item
                 label="ประเภท"
@@ -253,10 +256,7 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                 </Select>
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* Row 4: คุณสมบัติ, ชื่อผู้ขาย */}
-          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="ลักษณะ/คุณสมบัติ"
@@ -270,7 +270,10 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                 />
               </Form.Item>
             </Col>
+          </Row>
 
+          {/* Row 4: ผู้ขาย, ราคา */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
@@ -289,10 +292,6 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                 />
               </Form.Item>
             </Col>
-          </Row>
-
-          {/* Row 5: ราคา, วิธีการได้มา */}
-          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="ราคาต่อหน่วย"
@@ -307,7 +306,10 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                 />
               </Form.Item>
             </Col>
+          </Row>
 
+          {/* Row 5: วิธีได้มา, อายุงาน */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 name="acquisitionType"
@@ -331,10 +333,16 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                           placeholder="กรอกงบประมาณอื่นๆ"
                           className="rounded-lg"
                           onPressEnter={(e) => {
-                            form.setFieldValue("budget", e.currentTarget.value);
+                            form.setFieldValue(
+                              "acquisitionType",
+                              e.currentTarget.value,
+                            );
                           }}
                           onBlur={(e) => {
-                            form.setFieldValue("budget", e.currentTarget.value);
+                            form.setFieldValue(
+                              "acquisitionType",
+                              e.currentTarget.value,
+                            );
                           }}
                         />
                       </div>
@@ -350,10 +358,6 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                 </Select>
               </Form.Item>
             </Col>
-          </Row>
-
-          {/* Row 6: อายุการใช้งาน, ค่าเสื่อม */}
-          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="อายุการใช้งาน (ปี)"
@@ -367,7 +371,10 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
                 />
               </Form.Item>
             </Col>
+          </Row>
 
+          {/* Row 6: ค่าเสื่อม */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="ค่าเสื่อมราคาต่อเดือน"
@@ -389,23 +396,28 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
             </Col>
           </Row>
 
-          {/* หมายเหตุ */}
           <Form.Item label="หมายเหตุ" name="note">
             <Input.TextArea rows={2} className={textAreaStyle} />
           </Form.Item>
 
-          {/* ปุ่มบันทึก */}
-          <Form.Item style={{ textAlign: "center" }}>
+          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+            <Button
+              onClick={onClose}
+              className="h-10 px-6 rounded-lg text-gray-600 hover:bg-gray-100 border-gray-300"
+            >
+              ยกเลิก
+            </Button>
             <Button
               type="primary"
               htmlType="submit"
-              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+              loading={loading}
+              className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
             >
               บันทึก
             </Button>
-          </Form.Item>
+          </div>
         </Form>
       </ConfigProvider>
-    </Card>
+    </Modal>
   );
 }

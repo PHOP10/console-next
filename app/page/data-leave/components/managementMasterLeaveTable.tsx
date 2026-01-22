@@ -18,6 +18,7 @@ import { MasterLeaveType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import { DeleteOutlined, FormOutlined } from "@ant-design/icons";
+import CustomTable from "../../common/CustomTable";
 
 interface ManagementMasterLeaveTableProps {
   data: MasterLeaveType[];
@@ -126,7 +127,7 @@ export default function ManagementMasterLeaveTable({
           <Tooltip title="แก้ไข">
             <FormOutlined
               style={{
-                fontSize: 20,
+                fontSize: 22,
                 color: "#faad14",
                 cursor: "pointer",
               }}
@@ -159,7 +160,7 @@ export default function ManagementMasterLeaveTable({
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 20,
+                  fontSize: 22,
                   color: "#ff4d4f",
                   cursor: "pointer",
                 }}
@@ -196,7 +197,7 @@ export default function ManagementMasterLeaveTable({
         + เพิ่มประเภทลา
       </Button>
 
-      <Table
+      <CustomTable
         rowKey="id"
         dataSource={data}
         columns={columns}

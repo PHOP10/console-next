@@ -25,7 +25,7 @@ export default function DataLeavePage() {
       const dataMasterLeaves = await intraAuthService.getMasterLeaveQuery();
       const userId = session?.user?.userId;
       const byUserId = await intraAuthService.getDataLeaveByUserId(
-        userId || ""
+        userId || "",
       );
       const userAll = await intraAuthService.getUserQuery();
       setUser(userAll);
@@ -53,6 +53,7 @@ export default function DataLeavePage() {
             data={data}
             loading={loading}
             fetchData={fetchData}
+            dataUser={user}
           />
         </Card>
       ),

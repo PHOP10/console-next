@@ -9,7 +9,6 @@ import {
   InputNumber,
   Select,
   message,
-  Space,
   Card,
   Row,
   Col,
@@ -62,12 +61,26 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
     return `${day} ${month} ${year}`;
   };
 
+  // --- Style Constants (Master Template) ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
-/*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
+  // Class สำหรับ Select ของ Antd ที่ปรับแต่งยากกว่าปกติ
+  const selectStyle =
+    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
 
   return (
-    <Card>
+    <Card
+      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
+      title={
+        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
+          เพิ่มครุภัณฑ์
+        </div>
+      }
+    >
       <ConfigProvider locale={th_TH}>
         <Form
           form={form}
@@ -79,7 +92,8 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
             monthlyDepreciation: 0,
           }}
         >
-          <Row gutter={16}>
+          {/* Row 1: รหัส, วันที่ได้มา */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="รหัส"
@@ -95,6 +109,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                 <Input
                   placeholder="เช่น xxxx-xxx-xxxx"
                   maxLength={17}
+                  className={inputStyle}
                   onKeyPress={(e) => {
                     const allowed = /[0-9/-]/;
                     if (!allowed.test(e.key)) {
@@ -115,11 +130,14 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                   style={{ width: "100%" }}
                   placeholder="เลือกวันที่"
                   format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                  className={`${inputStyle} pt-2`} // pt-2 ปรับตำแหน่ง text ของ datepicker ให้กลาง
                 />
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={16}>
+
+          {/* Row 2: เลขที่เอกสาร, ชื่อ/ยี่ห้อ */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="เลขที่เอกสาร"
@@ -135,7 +153,11 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                   },
                 ]}
               >
-                <Input placeholder="กรอกเลขที่เอกสาร" maxLength={14} />
+                <Input
+                  placeholder="กรอกเลขที่เอกสาร"
+                  maxLength={14}
+                  className={inputStyle}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -144,19 +166,23 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                 name="description"
                 rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
               >
-                <Input.TextArea rows={2} />
+                <Input.TextArea rows={2} className={textAreaStyle} />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          {/* Row 3: หมายเลขทะเบียน, ประเภท */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="หมายเลขและทะเบียน"
                 name="registrationNumber"
                 rules={[{ required: true, message: "กรุณาหมายเลขและทะเบียน" }]}
               >
-                <Input placeholder="กรอกหมายเลขและทะเบียน" />
+                <Input
+                  placeholder="กรอกหมายเลขและทะเบียน"
+                  className={inputStyle}
+                />
               </Form.Item>
             </Col>
 
@@ -168,6 +194,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
               >
                 <Select
                   placeholder="เลือกประเภท"
+                  className={selectStyle}
                   onChange={(value) => {
                     form.setFieldValue(
                       "category",
@@ -180,6 +207,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
                           placeholder="กรอกประเภทอื่นๆ"
+                          className="rounded-lg"
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "category",
@@ -230,14 +258,19 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          {/* Row 4: ลักษณะ, ชื่อผู้ขาย */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="ลักษณะ/คุณสมบัติ"
                 name="attributes"
                 rules={[{ required: true, message: "กรุณากรอกคุณสมบัติ" }]}
               >
-                <Input.TextArea rows={2} placeholder="กรอกลักษณะ/คุณสมบัติ " />
+                <Input.TextArea
+                  rows={2}
+                  placeholder="กรอกลักษณะ/คุณสมบัติ "
+                  className={textAreaStyle}
+                />
               </Form.Item>
             </Col>
 
@@ -255,19 +288,26 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                 <Input.TextArea
                   rows={2}
                   placeholder="กรอกชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+                  className={textAreaStyle}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          {/* Row 5: ราคา, วิธีการได้มา */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="ราคาต่อหน่วย"
                 name="unitPrice"
                 rules={[{ required: true, message: "กรุณากรอกราคาต่อหน่วย" }]}
               >
-                <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
+                <InputNumber
+                  min={0}
+                  step={0.01}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1`}
+                />
               </Form.Item>
             </Col>
 
@@ -279,6 +319,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
               >
                 <Select
                   placeholder="เลือกงบประมาณ"
+                  className={selectStyle}
                   onChange={(value) => {
                     form.setFieldValue(
                       "acquisitionType",
@@ -291,6 +332,7 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
                           placeholder="กรอกงบประมาณอื่นๆ"
+                          className="rounded-lg"
                           onPressEnter={(e) => {
                             form.setFieldValue("budget", e.currentTarget.value);
                           }}
@@ -313,14 +355,19 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          {/* Row 6: อายุการใช้งาน, ค่าเสื่อม */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="อายุการใช้งาน (ปี)"
                 name="usageLifespanYears"
                 rules={[{ required: true, message: "กรุณากรอกอายุการใช้งาน" }]}
               >
-                <InputNumber min={1} style={{ width: "100%" }} />
+                <InputNumber
+                  min={1}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1`}
+                />
               </Form.Item>
             </Col>
 
@@ -329,31 +376,33 @@ export default function DurableArticleForm({ setLoading, loading }: Props) {
                 label="ค่าเสื่อมราคาต่อเดือน"
                 name="monthlyDepreciation"
                 rules={[
-                  { required: true, message: "กรุณากรอกค่าเสื่อมราคาต่อเดือน" },
+                  {
+                    required: true,
+                    message: "กรุณากรอกค่าเสื่อมราคาต่อเดือน",
+                  },
                 ]}
               >
-                <InputNumber min={0} step={0.01} style={{ width: "100%" }} />
+                <InputNumber
+                  min={0}
+                  step={0.01}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1`}
+                />
               </Form.Item>
             </Col>
           </Row>
 
           <Form.Item label="หมายเหตุ" name="note">
-            <Input.TextArea rows={2} />
+            <Input.TextArea rows={2} className={textAreaStyle} />
           </Form.Item>
 
           <Form.Item style={{ textAlign: "center" }}>
             <Button
               type="primary"
               htmlType="submit"
-              size="large"
-              style={{
-                width: "100%",
-                maxWidth: "200px",
-                height: "50px",
-                fontSize: "16px",
-              }}
+              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
             >
-             บันทึก
+              บันทึก
             </Button>
           </Form.Item>
         </Form>

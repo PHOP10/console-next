@@ -17,6 +17,8 @@ export interface UserType {
   position?: string;
   startDate?: string;
   gender?: string;
+  phoneNumber?: string;
+  employeeId?: string;
 }
 
 export interface OfficialTravelRequestType {
@@ -45,6 +47,10 @@ export interface OfficialTravelRequestType {
   createdName: string;
   note?: string;
   budget?: number;
+  recipient?: string;
+  privateCarId?: number;
+  otherTravelType?: string;
+  travelType: string[];
 }
 
 export interface MaCarType {
@@ -186,7 +192,9 @@ export interface MaDrugType {
   status: string;
   createdAt: string;
   updatedAt: string;
-
+  quantityUsed?: string;
+  totalPrice?: number;
+  createdName: string;
   // ความสัมพันธ์
   maDrugItems?: MaDrugItemType[];
 }

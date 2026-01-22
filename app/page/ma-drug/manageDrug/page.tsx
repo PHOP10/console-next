@@ -1,33 +1,63 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Breadcrumb, Col, Divider, Row, Tabs, TabsProps } from "antd";
+import { Breadcrumb, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
 import MaDrugDaisbursementTable from "../components/manageDrugTable";
+import { useSession } from "next-auth/react";
+import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
+import { MaDrug } from "../services/maDrug.service";
+import { MaDrugType } from "../../common";
 
 export default function Page() {
+  const intraAuth = useAxiosAuth();
+  const intraAuthService = MaDrug(intraAuth);
   const [loading, setLoading] = useState<boolean>(true);
+  const { data: session } = useSession();
+  const [data, setData] = useState<MaDrugType[]>([]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const result = await intraAuthService.getMaDrugQuery();
+      setData(Array.isArray(result) ? result : result?.data || []);
+    } catch (error) {
+      console.error("โหลดข้อมูลไม่สำเร็จ:", error);
+      message.error("ไม่สามารถดึงข้อมูลได้");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // ตัวอย่างการโหลดข้อมูล
-    setLoading(false);
+    fetchData();
   }, []);
 
-  const items: TabsProps["items"] = [
-    {
+  // ❌ ลบ useEffect ที่ซ้ำซ้อนออก (fetchData จัดการ loading ใน finally แล้ว)
+  // useEffect(() => {
+  //   setLoading(false);
+  // }, []);
+
+  // ✅ วิธีแก้ไข: สร้าง Array ว่างก่อน แล้วใช้ if push ข้อมูลเข้าไป
+  const items: TabsProps["items"] = [];
+
+  if (session?.user?.role === "admin") {
+    items.push({
       key: "1",
       label: "จัดการข้อมูลการเบิกจ่ายยา",
       children: (
         <MaDrugDaisbursementTable
-        // setLoading={setLoading} loading={loading}
+          data={data}
+          fetchData={fetchData}
+          setData={setData}
         />
       ),
-    },
-  ];
+    });
+  }
 
   return (
     <div>
       <Breadcrumb
-        items={[{ title: "หน้าหลัก" }, { title: "จัดการบิกจ่ายยา" }]}
+        items={[{ title: "หน้าหลัก" }, { title: "จัดการเบิกจ่ายยา" }]}
       />
       <Divider />
       <Row gutter={[16, 16]}>

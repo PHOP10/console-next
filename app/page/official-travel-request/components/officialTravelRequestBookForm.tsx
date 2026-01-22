@@ -16,10 +16,7 @@ import {
   ConfigProvider,
   Radio,
   Space,
-  Modal,
-  Descriptions,
   Divider,
-  notification,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { officialTravelRequestService } from "../services/officialTravelRequest.service";
@@ -32,8 +29,10 @@ import { useSession } from "next-auth/react";
 import th_TH from "antd/locale/th_TH";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
-dayjs.locale("th");
 import isBetween from "dayjs/plugin/isBetween";
+import { SaveOutlined } from "@ant-design/icons";
+
+dayjs.locale("th");
 dayjs.extend(isBetween);
 
 import {
@@ -61,6 +60,7 @@ export default function OfficialTravelRequestBookForm({
   const { data: session } = useSession();
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
+  // const selectedTravelType = Form.useWatch("travelType", form);
 
   // State สำหรับ Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -74,24 +74,18 @@ const onFinish = async (values: any) => {
     try {
       const { carId, startDate, endDate, travelType } = values;
 
-      // ตรวจสอบการจองรถซ้ำ
       const isCarOverlaps =
         dataOTR &&
         dataOTR.some((booking) => {
           if (booking.status === "cancel") return false;
 
-          // 1. ปรับเวลาของรายการใหม่ให้ครอบคลุมทั้งวัน
           const start = dayjs(startDate).startOf("day");
           const end = dayjs(endDate).endOf("day");
-
-          // 2. ปรับเวลาของรายการในฐานข้อมูล
           const bStart = dayjs(booking.startDate).startOf("day");
           const bEnd = dayjs(booking.endDate).endOf("day");
 
-          // 3. Logic ตรวจสอบการทับซ้อน (Overlap)
           const isTimeOverlap = start.isBefore(bEnd) && end.isAfter(bStart);
 
-          // 4. เงื่อนไขรถคันเดียวกัน
           const isSameCarOverlap =
             travelType === "official" &&
             carId &&
@@ -102,23 +96,15 @@ const onFinish = async (values: any) => {
 
       if (isCarOverlaps) {
         message.warning(
-          "ไม่สามารถดำเนินรายการได้: รถหมายเลขทะเบียนนี้มีการจองไว้แล้วในวันที่เลือก"
+          "ไม่สามารถดำเนินรายการได้: รถหมายเลขทะเบียนนี้มีการจองไว้แล้วในวันที่เลือก",
         );
         return;
       }
-
-      // if (conflictBooking) {
-      //   message.warning(
-      //     `ไม่สามารถดำเนินรายการได้: รถหมายเลขทะเบียนนี้ถูกจองแล้วในช่วงเวลาดังกล่าว`
-      //   );
-      //   return; // หยุดการทำงานทันที
-      // }
 
       const payload = {
         ...values,
         recipient: values.recipient || null,
         documentNo: values.documentNo,
-        // title: values.title,
         missionDetail: values.missionDetail,
         location: values.location,
         startDate: values.startDate ? values.startDate.toISOString() : null,
@@ -155,107 +141,38 @@ const onFinish = async (values: any) => {
     return `${day} ${month} ${year}`;
   };
 
-  /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
-  // --- Helper Functions สำหรับสุ่มข้อมูล (เพิ่มส่วนนี้ไว้ใน Component) ---
-  const getRandomInt = (min: number, max: number) =>
-    Math.floor(Math.random() * (max - min + 1)) + min;
+  // --- Master Template Styles ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
-  const getRandomElement = (arr: any[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
-  // ✅ แก้ไขฟังก์ชันนี้: สุ่มข้อมูลใส่ฟอร์มใหม่ทุกครั้งที่กด
-  const handleAutoFill = () => {
-    // 1. สุ่มเลขที่เอกสาร
-    const randomDocNo = `${getRandomInt(1000, 9999)}.${getRandomInt(1, 9)}.${getRandomInt(1, 9)}/${getRandomInt(10, 99)}`;
+  const selectStyle =
+    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
 
-    // 2. ชุดข้อมูลตัวอย่างสำหรับสุ่ม
-    const missions = [
-      "ประชุมเชิงปฏิบัติการพัฒนาระบบสารสนเทศ",
-      "นิเทศงานสาธารณสุขประจำปี",
-      "อบรมโครงการพัฒนาศักยภาพบุคลากร",
-      "ศึกษาดูงานการบริหารจัดการขยะ",
-      "ติดต่อราชการเรื่องงบประมาณประจำปี",
-    ];
-    const locations = [
-      "สำนักงานสาธารณสุขจังหวัดตาก",
-      "โรงพยาบาลแม่สอด",
-      "ศูนย์ราชการแจ้งวัฒนะ กทม.",
-      "โรงแรมเซ็นทารา แม่สอด",
-      "ศาลากลางจังหวัดตาก",
-    ];
-    const budgets = [
-      "งบกลาง",
-      "งบโครงการ",
-      "งบผู้จัด",
-      "เงินบำรุง",
-      "ไม่ขอเบิก",
-    ];
-
-    // 3. สุ่มวันที่ (เริ่มอีก 1-10 วันข้างหน้า, ไปนาน 1-3 วัน)
-    const startOffset = getRandomInt(1, 10);
-    const duration = getRandomInt(1, 3);
-    const randStartDate = dayjs().add(startOffset, "day");
-    const randEndDate = randStartDate.add(duration, "day");
-
-    // 4. สุ่มประเภทการเดินทาง
-    const travelTypes = ["official", "private", "bus", "plane", "other"];
-    const randTravelType = getRandomElement(travelTypes);
-
-    // เลือกข้อมูลรถตามประเภทที่สุ่มได้
-    let randCarId = undefined;
-    let randPrivateCarId = undefined;
-    let randOtherTravelType = undefined;
-
-    if (randTravelType === "official" && cars.length > 0) {
-      randCarId = getRandomElement(cars).id; // สุ่มรถราชการที่มีในระบบ
-    } else if (randTravelType === "private") {
-      randPrivateCarId = `กข ${getRandomInt(1000, 9999)} ตาก`;
-    } else if (randTravelType === "other") {
-      randOtherTravelType = "รถตู้เช่าเหมา";
-    }
-
-    // 5. สุ่มผู้โดยสาร (1-5 คน)
-    const randPassengers = getRandomInt(1, 5);
-    // สุ่มรายชื่อคน (Shuffle array แล้วตัดมาตามจำนวน)
-    const shuffledUsers = [...dataUser].sort(() => 0.5 - Math.random());
-    const randPassengerNames = shuffledUsers
-      .slice(0, randPassengers)
-      .map((u) => u.userId);
-
-    // Set ค่าเข้าฟอร์ม
-    form.setFieldsValue({
-      documentNo: randomDocNo,
-      recipient: "สาธารณสุขอำเภอวังเจ้า",
-      missionDetail: getRandomElement(missions),
-      location: getRandomElement(locations),
-      startDate: randStartDate,
-      endDate: randEndDate,
-      travelType: randTravelType,
-      carId: randCarId,
-      privateCarId: randPrivateCarId,
-      otherTravelType: randOtherTravelType,
-      passengers: randPassengers,
-      passengerNames: randPassengerNames,
-      budget: getRandomElement(budgets),
-      note: Math.random() > 0.5 ? "ทดสอบระบบ Auto-fill แบบสุ่ม" : "-",
-    });
-  };
+  const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
 
   return (
-    <Card>
+    <Card
+      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
+      title={
+        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
+          ฟอร์มขอไปราชการ
+        </div>
+      }
+    >
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={onFinish}>
-          <Row gutter={16}>
+          {/* Section 1: ข้อมูลเอกสาร */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentNo"
                 normalize={(value) => value.replace(/[^0-9./]/g, "")}
                 rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอกเลขที่เอกสาร",
-                  },
+                  { required: true, message: "กรุณากรอกเลขที่เอกสาร" },
                   {
                     pattern: /^[0-9./]+$/,
                     message: "กรอกได้เฉพาะตัวเลข จุด (.) และทับ (/) เท่านั้น",
@@ -275,7 +192,11 @@ const onFinish = async (values: any) => {
                   },
                 ]}
               >
-                <Input placeholder="เช่น 0999.9.9/99" maxLength={12} />
+                <Input
+                  placeholder="เช่น 0999.9.9/99"
+                  maxLength={12}
+                  className={inputStyle}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -286,6 +207,7 @@ const onFinish = async (values: any) => {
               >
                 <Select
                   placeholder="กรอกเรียน"
+                  className={selectStyle}
                   onChange={(value) => {
                     form.setFieldValue(
                       "recipient",
@@ -298,6 +220,7 @@ const onFinish = async (values: any) => {
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
                           placeholder="กรอกอื่น ๆ ..."
+                          className="rounded-lg"
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "recipient",
@@ -323,14 +246,18 @@ const onFinish = async (values: any) => {
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="วัตถุประสงค์"
                 name="missionDetail"
                 rules={[{ required: true, message: "กรุณากรอกวัตถุประสงค์" }]}
               >
-                <Input.TextArea placeholder="กรอกวัตถุประสงค์" rows={2} />
+                <Input.TextArea
+                  placeholder="กรอกวัตถุประสงค์"
+                  rows={2}
+                  className={textAreaStyle}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -339,118 +266,113 @@ const onFinish = async (values: any) => {
                 name="location"
                 rules={[{ required: true, message: "กรุณากรอกสถานที่" }]}
               >
-                <Input.TextArea placeholder="กรอกสถานที่" rows={2} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="ตั้งแต่วันที่"
-                name="startDate"
-                rules={[
-                  { required: true, message: "กรุณาเลือกวันที่เริ่มเดินทาง" },
-                ]}
-              >
-                <DatePicker
-                  style={{ width: "100%" }}
-                  placeholder="เลือกวันที่เริ่มเดินทาง"
-                  format={(value) => formatBuddhist(value as dayjs.Dayjs)}
-                  onChange={() => {
-                    form.setFieldValue("endDate", null);
-                  }}
-                  disabledDate={(current) => {
-                    if (!current) return false;
-                    if (current < dayjs().startOf("day")) return true;
-                    return oTRUser.some((maCar) => {
-                      if (maCar.status === "cancel") return false;
-                      const start = dayjs(maCar.startDate).startOf("day");
-                      const end = dayjs(maCar.endDate).endOf("day");
-                      return current.isBetween(start, end, "day", "[]");
-                    });
-                  }}
+                <Input.TextArea
+                  placeholder="กรอกสถานที่"
+                  rows={2}
+                  className={textAreaStyle}
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item
-                noStyle
-                shouldUpdate={(prev, cur) => prev.startDate !== cur.startDate}
-              >
-                {({ getFieldValue }) => {
-                  const dateStart = getFieldValue("startDate");
-                  return (
-                    <Form.Item
-                      name="endDate"
-                      label="ถึงวันที่"
-                      rules={[
-                        {
-                          required: true,
-                          message: "กรุณาเลือกวันที่สิ้นสุดการเดินทาง",
-                        },
-                      ]}
-                    >
-                      <DatePicker
-                        style={{ width: "100%" }}
-                        placeholder={
-                          dateStart
-                            ? `เลือกตั้งแต่ ${dayjs(dateStart).format(
-                                "DD/MM/YYYY",
-                              )} เป็นต้นไป`
-                            : "กรุณาเลือกวันที่เริ่มเดินทางก่อน"
-                        }
-                        format={(value) => formatBuddhist(value as dayjs.Dayjs)}
-                        disabled={!dateStart}
-                        disabledDate={(current) => {
-                          if (!current) return false;
-                          if (
-                            dateStart &&
-                            current < dayjs(dateStart).startOf("day")
-                          ) {
-                            return true;
-                          }
-                          if (current < dayjs().startOf("day")) return true;
-                          return oTRUser.some((maCar) => {
-                            const start = dayjs(maCar.startDate).startOf("day");
-                            const end = dayjs(maCar.endDate).endOf("day");
-                            return dayjs(current).isBetween(
-                              start,
-                              end,
-                              "day",
-                              "[]",
-                            );
-                          });
-                        }}
-                      />
-                    </Form.Item>
-                  );
-                }}
-              </Form.Item>
-            </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={24}>
-              <div style={{ marginBottom: 8, fontWeight: "bold" }}>
-                <span style={{ color: "#ff4d4f" }}>*</span> ลักษณะการเดินทาง
-              </div>
-            </Col>
+          {/* Section 2: วันเวลาเดินทาง */}
+          <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100 mb-6 mt-2">
+            <Row gutter={24}>
+              <Col span={12}>
+                <Form.Item
+                  label="ตั้งแต่วันที่"
+                  name="startDate"
+                  rules={[
+                    { required: true, message: "กรุณาเลือกวันที่เริ่มเดินทาง" },
+                  ]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    placeholder="เลือกวันที่เริ่ม"
+                    format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                    className={`${inputStyle} pt-2`}
+                    onChange={() => form.setFieldValue("endDate", null)}
+                    disabledDate={(current) => {
+                      if (!current) return false;
+                      if (current < dayjs().startOf("day")) return true;
+                      return oTRUser.some((maCar) => {
+                        if (maCar.status === "cancel") return false;
+                        const start = dayjs(maCar.startDate).startOf("day");
+                        const end = dayjs(maCar.endDate).endOf("day");
+                        return current.isBetween(start, end, "day", "[]");
+                      });
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  noStyle
+                  shouldUpdate={(prev, cur) => prev.startDate !== cur.startDate}
+                >
+                  {({ getFieldValue }) => {
+                    const dateStart = getFieldValue("startDate");
+                    return (
+                      <Form.Item
+                        name="endDate"
+                        label="ถึงวันที่"
+                        rules={[
+                          {
+                            required: true,
+                            message: "กรุณาเลือกวันที่สิ้นสุด",
+                          },
+                        ]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <DatePicker
+                          style={{ width: "100%" }}
+                          placeholder={
+                            dateStart ? `เลือกถึงวันที่` : "เลือกวันเริ่มก่อน"
+                          }
+                          format={(value) =>
+                            formatBuddhist(value as dayjs.Dayjs)
+                          }
+                          className={`${inputStyle} pt-2`}
+                          disabled={!dateStart}
+                          disabledDate={(current) => {
+                            if (!current) return false;
+                            if (
+                              dateStart &&
+                              current < dayjs(dateStart).startOf("day")
+                            )
+                              return true;
+                            if (current < dayjs().startOf("day")) return true;
+                            return oTRUser.some((maCar) => {
+                              if (maCar.status === "cancel") return false;
+                              const start = dayjs(maCar.startDate).startOf(
+                                "day",
+                              );
+                              const end = dayjs(maCar.endDate).endOf("day");
+                              return current.isBetween(start, end, "day", "[]");
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    );
+                  }}
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
 
-            <Col span={24}>
-              <Row
-                gutter={24}
-                align="middle"
-                style={{
-                  padding: "16px",
-                  borderRadius: "8px",
-                }}
-              >
-                <Col span={10}>
+          {/* Section 3: ลักษณะการเดินทาง */}
+          <div className="mb-6">
+            <div className="mb-2 font-bold text-gray-700">
+              <span className="text-red-500 mr-1">*</span> ลักษณะการเดินทาง
+            </div>
+            <div className={optionGroupStyle}>
+              <Row gutter={24} align="top">
+                <Col span={12}>
                   <Form.Item
                     name="travelType"
                     noStyle
-                    rules={[{ required: true }]}
+                    rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
                   >
                     <Radio.Group style={{ width: "100%" }}>
                       <Space direction="vertical" size={12}>
@@ -459,90 +381,91 @@ const onFinish = async (values: any) => {
                           2. รถยนต์โดยสารปรับอากาศประจำทาง
                         </Radio>
                         <Radio value="plane">3. เครื่องบินโดยสาร</Radio>
-                        <Radio value="private">
-                          4. รถยนต์ส่วนบุคคลหมายเลขทะเบียน
-                        </Radio>
-                        <Radio value="other">5. อื่น ๆ (ระบุ)</Radio>
+                        <Radio value="private">4. รถยนต์ส่วนบุคคล</Radio>
+                        <Radio value="other">5. อื่น ๆ</Radio>
                       </Space>
                     </Radio.Group>
                   </Form.Item>
                 </Col>
 
-                <Col span={14}>
-                  <div
-                    style={{
-                      minHeight: "80px",
-                      display: "flex",
-                      alignItems: "center",
-                      borderLeft: "1px solid #f0f0f0",
-                      paddingLeft: "24px",
-                    }}
-                  >
-                    {selectedTravelType === "official" && (
-                      <Form.Item
-                        label="เลือกรถราชการ"
-                        name="carId"
-                        style={{ width: "100%", margin: 0 }}
-                        rules={[{ required: true, message: "กรุณาเลือกรถ" }]}
-                      >
-                        <Select placeholder="เลือกรายชื่อรถในระบบ" showSearch>
-                          {cars.map((car) => (
-                            <Select.Option key={car.id} value={car.id}>
-                              {car.licensePlate} ({car.brand})
-                            </Select.Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
-                    )}
+                {/* Dynamic Inputs based on Selection */}
+                <Col span={12}>
+                  <div className="flex items-center h-full pl-6 border-l border-gray-200 min-h-[150px]">
+                    <div className="w-full">
+                      {selectedTravelType === "official" && (
+                        <Form.Item
+                          label="เลือกรถราชการ"
+                          name="carId"
+                          rules={[{ required: true, message: "กรุณาเลือกรถ" }]}
+                        >
+                          <Select
+                            placeholder="เลือกรายชื่อรถในระบบ"
+                            showSearch
+                            className={selectStyle}
+                          >
+                            {cars.map((car) => (
+                              <Select.Option key={car.id} value={car.id}>
+                                {car.licensePlate} ({car.brand})
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      )}
 
-                    {selectedTravelType === "private" && (
-                      <Form.Item
-                        label="ทะเบียนรถ"
-                        name="privateCarId"
-                        style={{ width: "100%", margin: 0 }}
-                        rules={[
-                          { required: true, message: "กรุณากรอกทะเบียน" },
-                        ]}
-                      >
-                        <Input placeholder="เช่น กข 1234 ตาก" />
-                      </Form.Item>
-                    )}
+                      {selectedTravelType === "private" && (
+                        <Form.Item
+                          label="ทะเบียนรถ"
+                          name="privateCarId"
+                          rules={[
+                            { required: true, message: "กรุณากรอกทะเบียน" },
+                          ]}
+                        >
+                          <Input
+                            placeholder="เช่น กข 1234 ตาก"
+                            className={inputStyle}
+                          />
+                        </Form.Item>
+                      )}
 
-                    {selectedTravelType === "other" && (
-                      <Form.Item
-                        label="ระบุรายละเอียด"
-                        name="otherTravelType"
-                        style={{ width: "100%", margin: 0 }}
-                        rules={[{ required: true, message: "กรุณาระบุ" }]}
-                      >
-                        <Input placeholder="เช่น รถไฟ, เรือ" />
-                      </Form.Item>
-                    )}
+                      {selectedTravelType === "other" && (
+                        <Form.Item
+                          label="ระบุรายละเอียด"
+                          name="otherTravelType"
+                          rules={[{ required: true, message: "กรุณาระบุ" }]}
+                        >
+                          <Input
+                            placeholder="เช่น รถไฟ, เรือ"
+                            className={inputStyle}
+                          />
+                        </Form.Item>
+                      )}
 
-                    {(selectedTravelType === "bus" ||
-                      selectedTravelType === "plane") && (
-                      <span style={{ color: "#8c8c8c" }}>
-                        ไม่ต้องกรอกข้อมูลเพิ่มเติม
-                      </span>
-                    )}
+                      {(selectedTravelType === "bus" ||
+                        selectedTravelType === "plane") && (
+                        <div className="text-gray-400 text-center italic">
+                          ไม่ต้องกรอกข้อมูลเพิ่มเติม
+                        </div>
+                      )}
 
-                    {!selectedTravelType && (
-                      <span style={{ color: "#bfbfbf" }}>
-                        กรุณาเลือกประเภทด้านซ้าย
-                      </span>
-                    )}
+                      {!selectedTravelType && (
+                        <div className="text-gray-400 text-center">
+                          กรุณาเลือกประเภทการเดินทางด้านซ้าย
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </Col>
               </Row>
-            </Col>
-          </Row>
+            </div>
+          </div>
 
-          <Row gutter={16}>
+          {/* Section 4: ผู้โดยสารและงบประมาณ */}
+          <Row gutter={24}>
             <Col span={6}>
               <Form.Item
                 label="จำนวนผู้โดยสาร"
                 name="passengers"
-                rules={[{ required: true, message: "กรุณากรอกจำนวนผู้โดยสาร" }]}
+                rules={[{ required: true, message: "ระบุจำนวน" }]}
               >
                 <InputNumber
                   min={1}
@@ -551,14 +474,13 @@ const onFinish = async (values: any) => {
                   precision={0}
                   style={{ width: "100%" }}
                   placeholder="0-9"
+                  className={`${inputStyle} pt-1`}
                   parser={(value) => {
                     const parsed = value?.replace(/\D/g, "").slice(0, 1);
                     return parsed ? parseInt(parsed, 10) : "";
                   }}
                   onKeyPress={(e) => {
-                    if (!/[0-9]/.test(e.key)) {
-                      e.preventDefault();
-                    }
+                    if (!/[0-9]/.test(e.key)) e.preventDefault();
                   }}
                 />
               </Form.Item>
@@ -569,6 +491,8 @@ const onFinish = async (values: any) => {
                   mode="multiple"
                   placeholder="เลือกผู้โดยสาร"
                   optionFilterProp="children"
+                  className={selectStyle}
+                  maxTagCount="responsive"
                 >
                   {dataUser.map((user) => (
                     <Select.Option key={user.userId} value={user.userId}>
@@ -580,17 +504,17 @@ const onFinish = async (values: any) => {
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          <Row gutter={24}>
             <Col span={6}>
               <Form.Item
                 name="budget"
                 label="งบประมาณ"
-                rules={[{ required: true, message: "กรุณาเลือกงบประมาณ" }]}
+                rules={[{ required: true, message: "เลือกงบประมาณ" }]}
               >
                 <Select
                   placeholder="เลือกงบประมาณ"
                   allowClear
-                  style={{ width: "100%" }}
+                  className={selectStyle}
                 >
                   <Select.Option value="งบกลาง">งบกลาง</Select.Option>
                   <Select.Option value="งบโครงการ">งบโครงการ</Select.Option>
@@ -602,34 +526,33 @@ const onFinish = async (values: any) => {
             </Col>
             <Col span={18}>
               <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
-                <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
+                <Input.TextArea
+                  placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
+                  rows={2}
+                  className={textAreaStyle}
+                />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* ปุ่มยืนยัน (ปุ่มเดียวตรงกลาง) */}
-          <Form.Item style={{ textAlign: "center", marginTop: "20px" }}>
+          <Form.Item style={{ textAlign: "center", marginTop: 16 }}>
             <Button
               type="primary"
               htmlType="submit"
               loading={submitting}
-              size="large"
-              style={{
-                minWidth: "150px",
-                height: "45px",
-                fontSize: "16px",
-              }}
+              icon={<SaveOutlined />}
+              className="h-9 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9]"
             >
               ยื่นคำขอ
             </Button>
 
-            <Button
+            {/* <Button
               onClick={handleAutoFill}
               size="large"
               style={{ height: "45px", fontSize: "16px" }}
             >
               สุ่มข้อมูลตัวอย่าง
-            </Button>
+            </Button> */}
           </Form.Item>
         </Form>
       </ConfigProvider>

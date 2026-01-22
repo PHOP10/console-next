@@ -10,7 +10,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../../user/services/user.service";
 import { useEffect, useState } from "react";
 import { UserType } from "../../common";
-import { ExportOutlined } from "@ant-design/icons";
+import { ExportOutlined, FileWordOutlined } from "@ant-design/icons";
 dayjs.locale("th");
 
 interface MaCarExportWordProps {
@@ -77,7 +77,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
       const userPosition =
         record.createdName && userData.length > 0
           ? userData.find(
-              (u) => `${u.firstName} ${u.lastName}` === record.createdName
+              (u) => `${u.firstName} ${u.lastName}` === record.createdName,
             )?.position || "ไม่ระบุตำแหน่ง"
           : "ไม่ระบุตำแหน่ง";
 
@@ -100,7 +100,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
             };
           })
         : [];
-
+      console.log(record.masterCar);
       // 1. ค้นหา User ที่มีชื่อและนามสกุลตรงกับ record.createdName
       const creator = userData.find((u) => {
         const fullName = `${u.firstName} ${u.lastName}`;
@@ -112,10 +112,10 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
         ? creator.gender === "male"
           ? "นาย"
           : creator.gender === "female"
-          ? "นาง"
-          : creator.gender === "miss"
-          ? "นางสาว"
-          : creator.gender ?? "-"
+            ? "นาง"
+            : creator.gender === "miss"
+              ? "นางสาว"
+              : (creator.gender ?? "-")
         : "-";
 
       // const checked = "☑"; // \u2611
@@ -142,7 +142,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
               record.budget.toLocaleString("th-TH", {
                 style: "currency",
                 currency: "THB",
-              })
+              }),
             )
           : "-",
         status: record.status ?? "-",
@@ -202,9 +202,9 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
           : "..........",
         namedriver:
           record.driver === "no"
-            ? record.createdName ?? "-"
+            ? (record.createdName ?? "-")
             : ".......................",
-        gds: record.driver === "no" ? genderPrefix ?? "-" : "",
+        gds: record.driver === "no" ? (genderPrefix ?? "-") : "",
       };
 
       doc.render(data);
@@ -217,9 +217,9 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
 
   return (
     <Tooltip title="Export">
-      <ExportOutlined
+      <FileWordOutlined
         style={{
-          fontSize: 20,
+          fontSize: 22,
           color: record.status === "pending" ? "#1677ff" : "#d9d9d9",
           cursor: record.status === "pending" ? "pointer" : "not-allowed",
           transition: "color 0.2s",

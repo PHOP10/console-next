@@ -12,6 +12,7 @@ import {
   Popconfirm,
   InputNumber,
   Card,
+  Tooltip,
 } from "antd";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
@@ -24,6 +25,8 @@ import dayjs from "dayjs";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import "dayjs/locale/th";
 import th_TH from "antd/es/date-picker/locale/th_TH";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import CustomTable from "../../common/CustomTable";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -46,7 +49,7 @@ export default function EquipmentTable({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [editingItem, setEditingItem] = useState<MedicalEquipmentType | null>(
-    null
+    null,
   );
 
   const handleCreate = async (values: any) => {
@@ -151,7 +154,21 @@ export default function EquipmentTable({
       key: "action",
       align: "center",
       render: (_, record) => (
-        <Space>
+        <Space size="middle">
+          {/* ส่วนแก้ไข (ดินสอสีส้ม) */}
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              onClick={() => handleEdit(record)}
+              style={{
+                fontSize: 20,
+                color: "#faad14", // สีส้ม (ตามโค้ดเดิม)
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+            />
+          </Tooltip>
+
+          {/* ส่วนลบ (ถังขยะสีแดง) */}
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -168,22 +185,17 @@ export default function EquipmentTable({
             okText="ใช่"
             cancelText="ยกเลิก"
           >
-            <Button danger size="small">
-              ลบ
-            </Button>
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 20,
+                  color: "#ff4d4f",
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
           </Popconfirm>
-
-          <Button
-            size="small"
-            onClick={() => handleEdit(record)}
-            style={{
-              backgroundColor: "#faad14",
-              borderColor: "#faad14",
-              color: "white",
-            }}
-          >
-            แก้ไข
-          </Button>
         </Space>
       ),
     },
@@ -213,7 +225,7 @@ export default function EquipmentTable({
           </Button>
         </Space>
 
-        <Table
+        <CustomTable
           columns={columns}
           dataSource={dataEQ}
           rowKey="id"
@@ -222,9 +234,14 @@ export default function EquipmentTable({
           pagination={{ pageSize: 10 }}
         />
       </Card>
-      
+
       <Modal
-        title={editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}
+        // 1. ปรับหัวข้อเป็นสีฟ้า ตัวหนา จัดกึ่งกลาง
+        title={
+          <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+            {editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}
+          </div>
+        }
         open={isModalOpen}
         onCancel={() => {
           setIsModalOpen(false);
@@ -234,28 +251,44 @@ export default function EquipmentTable({
         onOk={() => form.submit()}
         okText="บันทึก"
         cancelText="ยกเลิก"
+        centered // จัดให้อยู่กลางจอเสมอ
+        // 2. ปรับตัว Modal ให้โค้งมนและโปร่งขึ้น
+        styles={{
+          content: { borderRadius: "20px", padding: "30px" },
+          header: { marginBottom: "20px" },
+        }}
       >
         <Form
           form={form}
           layout="vertical"
           onFinish={editingItem ? handleSubmit : handleCreate}
         >
+          {/* 3. Input: ชื่อเครื่องมือ */}
           <Form.Item
             label="ชื่อเครื่องมือ"
             name="equipmentName"
             rules={[{ required: true, message: "กรุณากรอกชื่อเครื่องมือ" }]}
           >
-            <Input />
+            <Input
+              placeholder="ระบุชื่อเครื่องมือ"
+              className="w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300"
+            />
           </Form.Item>
 
+          {/* 4. InputNumber: จำนวน */}
           <Form.Item
             label="จำนวนเครื่องมือ"
             name="quantity"
             rules={[{ required: true, message: "กรุณากรอกจำนวนเครื่องมือ" }]}
           >
-            <InputNumber style={{ width: "100%" }} min={1} />
+            <InputNumber
+              placeholder="0"
+              min={1}
+              className="w-full h-11 rounded-xl border-gray-300 shadow-sm pt-1 hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300"
+            />
           </Form.Item>
 
+          {/* 5. DatePicker: วันที่ */}
           <Form.Item
             label="วันที่ได้รับ"
             name="acquiredDate"
@@ -264,12 +297,18 @@ export default function EquipmentTable({
             <DatePicker
               locale={th_TH}
               format="D MMMM BBBB"
-              style={{ width: "100%" }}
+              placeholder="เลือกวันที่"
+              className="w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300"
             />
           </Form.Item>
 
+          {/* 6. TextArea: รายละเอียด (ไม่ fix ความสูง แต่ใส่ style ขอบมน) */}
           <Form.Item label="รายละเอียดเพิ่มเติม" name="description">
-            <Input.TextArea rows={3} />
+            <Input.TextArea
+              rows={3}
+              placeholder="รายละเอียดอื่นๆ (ถ้ามี)"
+              className="rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300"
+            />
           </Form.Item>
         </Form>
       </Modal>

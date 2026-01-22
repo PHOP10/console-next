@@ -1,10 +1,21 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Button, Popconfirm, message, Modal, Form, Input } from "antd";
+import {
+  Table,
+  Button,
+  Popconfirm,
+  message,
+  Modal,
+  Form,
+  Input,
+  Tooltip,
+} from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MasterPatientType } from "../../common";
 import { visitHomeServices } from "../services/visitHome.service";
+import { DeleteOutlined } from "@ant-design/icons";
+import CustomTable from "../../common/CustomTable";
 
 interface MasterPatientTableProps {
   dataMasterPatient: MasterPatientType[];
@@ -86,7 +97,7 @@ export default function MasterPatientTable({
         + เพิ่มประเภทผู้ป่วย
       </Button>
 
-      <Table
+      <CustomTable
         rowKey="id"
         dataSource={dataMasterPatient}
         loading={false}
@@ -118,9 +129,22 @@ export default function MasterPatientTable({
                 okText="ใช่"
                 cancelText="ยกเลิก"
               >
-                <Button danger size="small">
-                  ลบ
-                </Button>
+                <Tooltip title="ลบ">
+                  <DeleteOutlined
+                    style={{
+                      fontSize: 22,
+                      color: "#ff4d4f", // สีแดง Danger
+                      cursor: "pointer",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "#cf1322")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "#ff4d4f")
+                    }
+                  />
+                </Tooltip>
               </Popconfirm>
             ),
           },

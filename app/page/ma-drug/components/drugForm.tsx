@@ -12,9 +12,9 @@ import {
   Row,
   Col,
   Space,
-  Divider,
+  AutoComplete,
 } from "antd";
-import { SaveOutlined, ClearOutlined } from "@ant-design/icons"; // เพิ่ม Icon เพื่อความสวยงาม
+import { SaveOutlined, ClearOutlined } from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { DrugType, MasterDrugType } from "../../common";
@@ -47,9 +47,9 @@ export default function DrugForm({
         if (Array.isArray(res)) {
           setMasterDrugOptions(
             res.map((item) => ({
-              label: item.drugType, // หรือ item.description ถ้าต้องการรายละเอียดเพิ่ม
-              value: item.id,
-            }))
+              label: item.drugType,
+              value: item.drugTypeId,
+            })),
           );
         }
       } catch (error) {
@@ -83,43 +83,72 @@ export default function DrugForm({
     }
   };
 
+  const packingOptions = [
+    { value: "10's" },
+    { value: "50's" },
+    { value: "100's" },
+    { value: "500's" },
+    { value: "1000's" },
+    { value: "แผง" },
+    { value: "กล่อง" },
+    { value: "ขวด" },
+    { value: "กระปุก" },
+    { value: "ซอง" },
+    { value: "ถุง" },
+    { value: "ห่อ" },
+    { value: "แพ็ค" },
+    { value: "ชิ้น" },
+    { value: "คู่" },
+    { value: "ชุด" },
+    { value: "ม้วน" },
+    { value: "หลอด" },
+    { value: "Vial" },
+    { value: "Amp" },
+    { value: "5 g." },
+    { value: "10 g." },
+    { value: "lb." },
+  ];
+
+  // --- Style Constants (Master Template) ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  // Class สำหรับ Select ของ Antd
+  const selectStyle =
+    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+
+  // Class สำหรับ AutoComplete (ใช้คล้าย Select/Input)
+  const autoCompleteStyle =
+    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400 focus-within:[&>.ant-select-selector]:!border-blue-500 focus-within:[&>.ant-select-selector]:!ring-4 focus-within:[&>.ant-select-selector]:!ring-blue-50 focus-within:[&>.ant-select-selector]:!shadow-md";
+
   return (
     <Card
+      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
+      style={{ maxWidth: 800, margin: "0 auto" }}
       title={
-        <div
-          style={{
-            color: "#0683e9",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-          }}
-        >
-          <span>💊 เพิ่มข้อมูลยาใหม่</span>
+        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
+          เพิ่มข้อมูลยาใหม่
         </div>
       }
-      bordered={false}
-      className="shadow-md" // ถ้าใช้ Tailwind หรือ CSS global
-      style={{ maxWidth: 800, margin: "0 auto", borderRadius: "8px" }}
     >
       <Form
         form={form}
         layout="vertical"
         onFinish={onFinish}
-        initialValues={{ quantity: 0, price: 0 }} // กำหนดค่าเริ่มต้น
+        initialValues={{ quantity: 0, price: 0 }}
       >
-        {/* ส่วนข้อมูลหลัก */}
-        <Divider orientation="left" style={{ marginTop: 0 }}>
-          ข้อมูลทั่วไป
-        </Divider>
-
-        <Row gutter={16}>
+        {/* Row 1: รหัสยา, ประเภทยา */}
+        <Row gutter={24}>
           <Col xs={24} md={12}>
             <Form.Item
               label="Working Code (รหัสยา)"
               name="workingCode"
               rules={[{ required: true, message: "กรุณากรอก Working Code" }]}
             >
-              <Input placeholder="เช่น W-001" />
+              <Input placeholder="เช่น W-001" className={inputStyle} />
             </Form.Item>
           </Col>
           <Col xs={24} md={12}>
@@ -134,32 +163,46 @@ export default function DrugForm({
                 loading={masterDrugOptions.length === 0}
                 showSearch
                 optionFilterProp="label"
+                className={selectStyle}
               />
             </Form.Item>
           </Col>
         </Row>
 
+        {/* Row 2: ชื่อยา */}
         <Form.Item
-          label="ชื่อยา (Generic / Trade Name)"
+          label="ชื่อยา"
           name="name"
           rules={[{ required: true, message: "กรุณากรอกชื่อยา" }]}
         >
-          <Input placeholder="ระบุชื่อยาภาษาไทย หรือ อังกฤษ" />
+          <Input
+            placeholder="ระบุชื่อยาภาษาไทย หรือ อังกฤษ"
+            className={inputStyle}
+          />
         </Form.Item>
 
-        {/* ส่วนข้อมูลคลังและราคา */}
-        <Divider orientation="left">รายละเอียดคลังและราคา</Divider>
-
-        <Row gutter={16}>
+        {/* Row 3: ขนาดบรรจุ, ราคา, คงเหลือ */}
+        <Row gutter={24}>
           <Col xs={24} md={8}>
             <Form.Item
-              label="ขนาดบรรจุ (Packaging Size)"
+              label="ขนาดบรรจุ"
               name="packagingSize"
               rules={[{ required: true, message: "ระบุขนาดบรรจุ" }]}
             >
-              <Input placeholder="เช่น แผง/กล่อง" />
+              <AutoComplete
+                options={packingOptions}
+                placeholder="เช่น แผง/กล่อง หรือพิมพ์ระบุเอง"
+                filterOption={(inputValue, option) =>
+                  option!.value
+                    .toUpperCase()
+                    .indexOf(inputValue.toUpperCase()) !== -1
+                }
+                allowClear
+                className={autoCompleteStyle}
+              />
             </Form.Item>
           </Col>
+
           <Col xs={24} md={8}>
             <Form.Item
               label="ราคาต่อหน่วย (บาท)"
@@ -173,8 +216,8 @@ export default function DrugForm({
                 formatter={(value) =>
                   `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                 }
-                // แก้ไขบรรทัดนี้: ลบ as unknown as number ออก
                 parser={(value: any) => value?.replace(/\฿\s?|(,*)/g, "") || ""}
+                className={`${inputStyle} pt-1`}
               />
             </Form.Item>
           </Col>
@@ -190,23 +233,29 @@ export default function DrugForm({
                 formatter={(value) =>
                   `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                 }
+                className={`${inputStyle} pt-1`}
               />
             </Form.Item>
           </Col>
         </Row>
 
+        {/* หมายเหตุ */}
         <Form.Item label="หมายเหตุ" name="note">
-          <Input.TextArea rows={3} placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)" />
+          <Input.TextArea
+            rows={3}
+            placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
+            className={textAreaStyle}
+          />
         </Form.Item>
 
-        <Divider />
-
-        <Form.Item style={{ textAlign: "right" }}>
-          <Space>
+        {/* ปุ่มกด (จัดกึ่งกลาง) */}
+        <Form.Item style={{ textAlign: "center", marginBottom: 0 }}>
+          <Space size="middle">
             <Button
               icon={<ClearOutlined />}
               onClick={() => form.resetFields()}
               disabled={loading}
+              className="h-9 px-6 rounded-lg text-sm border-gray-300 text-gray-600 hover:text-red-500 hover:border-red-400 shadow-sm transition-all"
             >
               ล้างค่า
             </Button>
@@ -215,6 +264,7 @@ export default function DrugForm({
               htmlType="submit"
               loading={loading}
               icon={<SaveOutlined />}
+              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
             >
               บันทึกข้อมูลยา
             </Button>

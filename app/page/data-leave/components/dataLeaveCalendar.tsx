@@ -1,19 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Form, Input, DatePicker, Collapse, Tag } from "antd";
-import dayjs from "dayjs";
-import moment from "moment";
-import "moment/locale/th";
 import {
   Calendar,
   momentLocalizer,
   Event as RbcEvent,
 } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { CaretRightOutlined } from "@ant-design/icons";
-import { DataLeaveType } from "../../common";
-import { useForm } from "antd/es/form/Form";
+import { DataLeaveType, UserType } from "../../common";
+import moment from "moment";
+import "moment/locale/th";
+
+// 🔹 Import Component รายละเอียด
+import DataLeaveDetail from "./dataLeaveDetail";
+
+const localizer = momentLocalizer(moment);
 
 interface CustomEvent extends RbcEvent {
   id: number;
@@ -26,47 +27,39 @@ interface CustomEvent extends RbcEvent {
   leaveType?: string;
   cancelName?: string;
   cancelReason?: string;
+  originalRecord: DataLeaveType;
 }
 
 interface Props {
   data: DataLeaveType[];
   loading: boolean;
   fetchData: () => void;
+  dataUser: UserType[]; // ✅ เพิ่ม dataUser เพื่อใช้ map ชื่อ
 }
 
-const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
-  const [form] = useForm();
+const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
   const [selected, setSelected] = useState<DataLeaveType | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const localizer = momentLocalizer(moment);
+
+  // 🔹 Helper Function: แปลง ID เป็นชื่อ (สำหรับแสดงในปฏิทิน)
+  const getUserName = (idOrName?: string) => {
+    if (!idOrName) return "-";
+    const user = dataUser?.find((u) => u.userId === idOrName);
+    return user ? `${user.firstName} ${user.lastName}` : idOrName;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "approve":
-        return "green";
+        return "#10b981"; // green
       case "cancel":
-        return "red";
+        return "#ef4444"; // red
       case "pending":
-        return "blue";
+        return "#f97316"; // orange (การลาปกติใช้สีส้มสำหรับ pending)
       case "edit":
-        return "orange";
+        return "#f59e0b"; // amber
       default:
-        return "blue";
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "approve":
-        return "อนุมัติ";
-      case "cancel":
-        return "ยกเลิก";
-      case "pending":
-        return "รอดำเนินการ";
-      case "edit":
-        return "รอแก้ไข";
-      default:
-        return status;
+        return "#3b82f6"; // blue
     }
   };
 
@@ -74,148 +67,81 @@ const DataLeaveCalendar: React.FC<Props> = ({ data }) => {
     const item = data.find((d) => d.id === event.id);
     if (item) {
       setSelected(item);
-      form.setFieldsValue({
-        reason: item.reason,
-        details: item.details,
-        approvedByName: item.approvedByName || "-",
-        dateStart: dayjs(item.dateStart),
-        dateEnd: dayjs(item.dateEnd),
-        createdName: item.createdName || "-",
-        leaveType: item.masterLeave?.leaveType || "-",
-        cancelName: item.cancelName || "-",
-        cancelReason: item.cancelReason || "-",
-      });
       setModalOpen(true);
     }
   };
 
-  const thaiMonths = [
-    "มกราคม",
-    "กุมภาพันธ์",
-    "มีนาคม",
-    "เมษายน",
-    "พฤษภาคม",
-    "มิถุนายน",
-    "กรกฎาคม",
-    "สิงหาคม",
-    "กันยายน",
-    "ตุลาคม",
-    "พฤศจิกายน",
-    "ธันวาคม",
-  ];
-
-  const formatBuddhist = (date?: string | Date) => {
-    if (!date) return "-";
-    const d = dayjs(date);
-    const day = d.date();
-    const month = thaiMonths[d.month()]; // month() คืน 0-11
-    const year = d.year() + 543; // แปลงเป็น พ.ศ.
-    return `${day} ${month} ${year}`;
+  const handleCloseModal = () => {
+    setModalOpen(false);
   };
 
   return (
     <>
-      <Calendar<CustomEvent>
-        localizer={localizer}
-        events={data.map(
-          (item): CustomEvent => ({
-            id: item.id,
-            title: item.createdName,
-            start: new Date(item.dateStart),
-            end: new Date(item.dateEnd),
-            status: item.status,
-            reason: item.reason,
-            details: item.details,
-            approvedByName: item.approvedByName,
-            leaveType: item.masterLeave?.leaveType,
-            cancelName: item.cancelName,
-            cancelReason: item.cancelReason,
-          })
-        )}
-        style={{ height: 500 }}
-        onSelectEvent={onSelectEvent}
-        eventPropGetter={(event: CustomEvent) => ({
-          style: {
-            backgroundColor: getStatusColor(event.status),
-            color: "#fff",
-            fontSize: 12,
-            borderRadius: 4,
-          },
-        })}
-        messages={{
-          next: "ถัดไป",
-          previous: "ก่อนหน้า",
-          today: "วันนี้",
-          month: "เดือน",
-          week: "สัปดาห์",
-          day: "วัน",
-          agenda: "กำหนดการ",
-          date: "วันที่",
-          time: "เวลา",
-          event: "เหตุการณ์",
-          showMore: (total) => `+ ดูอีก ${total}`,
-        }}
-      />
+      {/* 🔹 ส่วนปฏิทิน (Wrapper Card) */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <h2 className="text-lg font-bold text-slate-700 mb-4 border-l-4 border-blue-500 pl-3">
+          ปฏิทินการลา
+        </h2>
 
-      <Modal
-        title="รายละเอียดการลา"
+        <Calendar<CustomEvent>
+          localizer={localizer}
+          events={data.map(
+            (item): CustomEvent => ({
+              id: item.id,
+              title: getUserName(item.createdName), // แปลงชื่อตรงนี้
+              start: new Date(item.dateStart),
+              end: new Date(item.dateEnd),
+              status: item.status,
+              reason: item.reason,
+              details: item.details,
+              approvedByName: item.approvedByName,
+              createdName: item.createdName,
+              leaveType: item.masterLeave?.leaveType,
+              cancelName: item.cancelName,
+              cancelReason: item.cancelReason,
+              originalRecord: item,
+            }),
+          )}
+          style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
+          onSelectEvent={onSelectEvent}
+          // Custom Event Style (Soft Pill)
+          eventPropGetter={(event: CustomEvent) => {
+            const color = getStatusColor(event.status);
+            return {
+              style: {
+                backgroundColor: `${color}1A`, // Opacity 10%
+                color: color,
+                border: `1px solid ${color}4D`,
+                fontSize: 12,
+                borderRadius: 6,
+                fontWeight: 500,
+                padding: "2px 5px",
+              },
+            };
+          }}
+          messages={{
+            next: "ถัดไป",
+            previous: "ก่อนหน้า",
+            today: "วันนี้",
+            month: "เดือน",
+            week: "สัปดาห์",
+            day: "วัน",
+            agenda: "กำหนดการ",
+            date: "วันที่",
+            time: "เวลา",
+            event: "การลา",
+            showMore: (total) => `+ ดูอีก ${total} รายการ`,
+          }}
+        />
+      </div>
+
+      {/* 🔹 เรียกใช้ DataLeaveDetail Component */}
+      <DataLeaveDetail
         open={modalOpen}
-        width={600}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-      >
-        {selected && (
-          <Form form={form} labelCol={{ span: 6 }} wrapperCol={{ span: 18 }}>
-            <Collapse
-              bordered={false}
-              defaultActiveKey={["1", "2"]}
-              expandIcon={({ isActive }) => (
-                <CaretRightOutlined rotate={isActive ? 90 : 0} />
-              )}
-            >
-              <Collapse.Panel header="ข้อมูลการลา" key="1">
-                <Form.Item label="ผู้ลา" name="createdName">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="ประเภทการลา" name="leaveType">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="เหตุผลการลา" name="reason">
-                  <Input.TextArea rows={2} disabled />
-                </Form.Item>
-                <Form.Item label="ตั้งแต่วันที่">
-                  <Input value={formatBuddhist(selected.dateStart)} disabled />
-                </Form.Item>
-                <Form.Item label="ถึงวันที่">
-                  <Input value={formatBuddhist(selected.dateEnd)} disabled />
-                </Form.Item>
-                <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
-                  <Input.TextArea rows={2} disabled />
-                </Form.Item>
-                <Form.Item label="สถานะ">
-                  <Tag color={getStatusColor(selected.status)}>
-                    {getStatusLabel(selected.status)}
-                  </Tag>
-                </Form.Item>
-                {selected.approvedByName ? (
-                  <Form.Item label="ผู้อนุมัติ" name="approvedByName">
-                    <Input disabled value={selected.approvedByName} />
-                  </Form.Item>
-                ) : selected.cancelName ? (
-                  <Form.Item label="ผู้ยกเลิก" name="cancelName">
-                    <Input disabled value={selected.cancelName} />
-                  </Form.Item>
-                ) : null}
-                {selected.cancelReason ? (
-                  <Form.Item label="เหตุผลการยกเลิก" name="cancelReason">
-                    <Input disabled value={selected.cancelReason} />
-                  </Form.Item>
-                ) : null}
-              </Collapse.Panel>
-            </Collapse>
-          </Form>
-        )}
-      </Modal>
+        onClose={handleCloseModal}
+        record={selected}
+        user={dataUser} // ส่ง dataUser ไปเป็น prop 'user'
+      />
     </>
   );
 };

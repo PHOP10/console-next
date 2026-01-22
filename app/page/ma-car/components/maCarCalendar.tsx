@@ -1,20 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Form, Input, DatePicker, Collapse, Tag, Select } from "antd";
-import dayjs from "dayjs";
-import moment from "moment";
-import "moment/locale/th";
 import {
   Calendar,
   momentLocalizer,
   Event as RbcEvent,
 } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
-import { CaretRightOutlined } from "@ant-design/icons";
 import { MaCarType, MasterCarType, UserType } from "../../common";
-import { useForm } from "antd/es/form/Form";
-import TextArea from "antd/es/input/TextArea";
+import moment from "moment";
+import "moment/locale/th";
+import MaCarDetail from "./maCarDetail";
+
 const localizer = momentLocalizer(moment);
 
 interface CustomEvent extends RbcEvent {
@@ -25,6 +22,7 @@ interface CustomEvent extends RbcEvent {
   masterCar: string;
   passengers: number;
   budget?: number;
+  originalRecord: MaCarType;
 }
 
 interface Props {
@@ -36,271 +34,106 @@ interface Props {
 }
 
 const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
-  const [form] = useForm();
-  const [selected, setSelected] = useState<MaCarType | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  // Helper Function
+  const getUserName = (idOrName: string) => {
+    if (!idOrName) return "-";
+    const user = dataUser.find((u) => u.userId === idOrName);
+    return user ? `${user.firstName} ${user.lastName}` : idOrName;
+  };
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "approve":
-        return "green";
+        return "#10b981";
       case "cancel":
-        return "red";
+        return "#ef4444";
       case "pending":
-        return "blue";
+        return "#3b82f6";
       case "edit":
-        return "orange";
+        return "#f97316";
       default:
-        return "blue";
+        return "#3b82f6";
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "approve":
-        return "อนุมัติ";
-      case "cancel":
-        return "ยกเลิก";
-      case "pending":
-        return "รอดำเนินการ";
-      case "edit":
-        return "รอแก้ไข";
-      default:
-        return status;
-    }
-  };
-
+  // ✅ แก้ไขตรงนี้: รับแค่ event และ setSelected แค่ item
   const onSelectEvent = (event: CustomEvent) => {
     const item = data.find((d) => d.id === event.id);
     if (item) {
-      setSelected(item);
-      form.setFieldsValue({
-        ...item,
-        departureDate: dayjs(item.dateStart),
-        returnDate: dayjs(item.dateEnd),
-      });
+      setSelectedRecord({ ...item, dataUser });
+
       setModalOpen(true);
     }
   };
 
-  const thaiMonths = [
-    "มกราคม",
-    "กุมภาพันธ์",
-    "มีนาคม",
-    "เมษายน",
-    "พฤษภาคม",
-    "มิถุนายน",
-    "กรกฎาคม",
-    "สิงหาคม",
-    "กันยายน",
-    "ตุลาคม",
-    "พฤศจิกายน",
-    "ธันวาคม",
-  ];
-
-  const formatBuddhist = (date?: string | Date) => {
-    if (!date) return "-";
-    const d = dayjs(date);
-    const day = d.date();
-    const month = thaiMonths[d.month()];
-    const year = d.year() + 543;
-    return `${day} ${month} ${year}`;
+  const handleCloseModal = () => {
+    setModalOpen(false);
   };
 
   return (
     <>
-      <Calendar<CustomEvent>
-        localizer={localizer}
-        events={data.map(
-          (item): CustomEvent => ({
-            id: item.id,
-            title: item.createdName,
-            start: new Date(item.dateStart),
-            end: new Date(item.dateEnd),
-            status: item.status,
-            location: item.destination,
-            masterCar: `ID: ${item.carId}`,
-            passengers: item.passengers,
-            budget: item.budget,
-          })
-        )}
-        style={{ height: 500 }}
-        onSelectEvent={onSelectEvent}
-        eventPropGetter={(event: CustomEvent) => ({
-          style: {
-            backgroundColor: getStatusColor(event.status),
-            color: "#fff",
-            fontSize: 12,
-            borderRadius: 4,
-          },
-        })}
-        messages={{
-          next: "ถัดไป",
-          previous: "ก่อนหน้า",
-          today: "วันนี้",
-          month: "เดือน",
-          week: "สัปดาห์",
-          day: "วัน",
-          agenda: "กำหนดการ",
-          date: "วันที่",
-          time: "เวลา",
-          event: "เหตุการณ์",
-          showMore: (total) => `+ ดูอีก ${total}`,
-        }}
-      />
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <h2 className="text-lg font-bold text-slate-700 mb-4 border-l-4 border-blue-500 pl-3">
+          ปฏิทินการจองรถ
+        </h2>
 
-      <Modal
-        title="รายละเอียดการจองรถ"
+        <Calendar<CustomEvent>
+          localizer={localizer}
+          events={data.map(
+            (item): CustomEvent => ({
+              id: item.id,
+              title: getUserName(item.createdName),
+              start: new Date(item.dateStart),
+              end: new Date(item.dateEnd),
+              status: item.status,
+              location: item.destination,
+              masterCar: `ID: ${item.carId}`,
+              passengers: item.passengers,
+              budget: item.budget,
+              originalRecord: item,
+            }),
+          )}
+          style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
+          onSelectEvent={onSelectEvent}
+          eventPropGetter={(event: CustomEvent) => {
+            const color = getStatusColor(event.status);
+            return {
+              style: {
+                backgroundColor: `${color}1A`,
+                color: color,
+                border: `1px solid ${color}4D`,
+                fontSize: 12,
+                borderRadius: 6,
+                fontWeight: 500,
+                padding: "2px 5px",
+              },
+            };
+          }}
+          messages={{
+            next: "ถัดไป",
+            previous: "ก่อนหน้า",
+            today: "วันนี้",
+            month: "เดือน",
+            week: "สัปดาห์",
+            day: "วัน",
+            agenda: "กำหนดการ",
+            date: "วันที่",
+            time: "เวลา",
+            event: "การจอง",
+            showMore: (total) => `+ ดูอีก ${total} รายการ`,
+          }}
+        />
+      </div>
+
+      {/* ✅ dataUser ถูกส่งไปที่ MaCarDetail ตรงนี้อยู่แล้วครับ */}
+      <MaCarDetail
         open={modalOpen}
-        width={600}
-        onCancel={() => setModalOpen(false)}
-        footer={null}
-      >
-        {selected && (
-          <Form form={form} labelCol={{ span: 6 }} wrapperCol={{ span: 18 }}>
-            <Collapse
-              bordered={false}
-              defaultActiveKey={["1", "2"]}
-              expandIcon={({ isActive }) => (
-                <CaretRightOutlined rotate={isActive ? 90 : 0} />
-              )}
-            >
-              <Collapse.Panel header="ข้อมูลการจอง" key="1">
-                <Form.Item label="ผู้ขอใช้รถ" name="createdName">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="วัตถุประสงค์" name="purpose">
-                  <TextArea disabled />
-                </Form.Item>
-                <Form.Item label="สถานที่" name="destination">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="รถที่ใช้">
-                  <Input disabled value={selected?.masterCar?.carName || ""} />
-                </Form.Item>
-                {/* <Form.Item label="ตั้งแต่วันที่">
-                  <Input value={formatBuddhist(selected.dateStart)} disabled />
-                </Form.Item>
-                <Form.Item label="ถึงวันที่">
-                  <Input value={formatBuddhist(selected.dateEnd)} disabled />
-                </Form.Item> */}
-                <Form.Item label="ตั้งแต่วันที่">
-                  <Input
-                    value={
-                      selected.dateStart
-                        ? `${dayjs(selected.dateStart)
-                            .add(543, "year")
-                            .locale("th")
-                            .format("D MMM YYYY")} เวลา ${dayjs(
-                            selected.dateStart
-                          ).format("HH:mm")} น.`
-                        : "-"
-                    }
-                    disabled
-                  />
-                </Form.Item>
-
-                <Form.Item label="ถึงวันที่">
-                  <Input
-                    value={
-                      selected.dateEnd
-                        ? `${dayjs(selected.dateEnd)
-                            .add(543, "year")
-                            .locale("th")
-                            .format("D MMM YYYY")} เวลา ${dayjs(
-                            selected.dateEnd
-                          ).format("HH:mm")} น.`
-                        : "-"
-                    }
-                    disabled
-                  />
-                </Form.Item>
-                {/* <Form.Item label="งบประมาณ" name="budget">
-                  <Input disabled />
-                </Form.Item> */}
-
-                {/* <Form.Item label="ขอคนขับรถ">
-                  <Input
-                    value={
-                      selected?.driver === "yes"
-                        ? "ขอพนักงานขับรถส่วนกลาง"
-                        : selected?.driver === "no"
-                        ? "ไม่ขอพนักงานขับรถส่วนกลาง"
-                        : ""
-                    }
-                    disabled
-                  />
-                </Form.Item> */}
-                <Form.Item label="เหตุผลเพิ่มเติม" name="note">
-                  <TextArea disabled />
-                </Form.Item>
-
-                <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
-                  <Input disabled />
-                </Form.Item>
-                <Form.Item label="รายชื่อผู้โดยสาร">
-                  {Array.isArray(selected.passengerNames) &&
-                  selected.passengerNames.length > 0 ? (
-                    selected.passengerNames.map((uid: string) => {
-                      const user = dataUser.find((u) => u.userId === uid);
-                      return (
-                        <Tag key={uid} color="blue">
-                          {user ? `${user.firstName} ${user.lastName}` : uid}
-                        </Tag>
-                      );
-                    })
-                  ) : (
-                    <span>-</span>
-                  )}
-                </Form.Item>
-              </Collapse.Panel>
-              <Collapse.Panel header="สถานะ" key="2">
-                <Form.Item label="สถานะ">
-                  <Tag color={getStatusColor(selected.status)}>
-                    {getStatusLabel(selected.status)}
-                  </Tag>
-                </Form.Item>
-
-                {selected.approvedByName ? (
-                  <>
-                    <Form.Item label="ผู้อนุมัติ" name="approvedByName">
-                      <Input disabled />
-                    </Form.Item>
-
-                    <Form.Item label="วันที่อนุมัติ">
-                      <Input
-                        value={formatBuddhist(selected.approvedAt)}
-                        disabled
-                      />
-                    </Form.Item>
-                  </>
-                ) : selected.cancelName ? (
-                  <>
-                    <Form.Item label="ผู้ยกเลิก" name="cancelName">
-                      <Input disabled />
-                    </Form.Item>
-
-                    <Form.Item label="วันที่ยกเลิก">
-                      <Input
-                        value={formatBuddhist(selected.cancelAt)}
-                        disabled
-                      />
-                    </Form.Item>
-                  </>
-                ) : null}
-
-                {selected.cancelReason ? (
-                  <>
-                    <Form.Item label="เหตุผลการยกเลิก" name="cancelReason">
-                      <Input disabled />
-                    </Form.Item>
-                  </>
-                ) : null}
-              </Collapse.Panel>
-            </Collapse>
-          </Form>
-        )}
-      </Modal>
+        onClose={handleCloseModal}
+        record={selectedRecord}
+        dataUser={dataUser}
+      />
     </>
   );
 };

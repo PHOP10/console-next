@@ -10,7 +10,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../../user/services/user.service";
 import { useEffect, useState } from "react";
 import { UserType } from "../../common";
-import { ExportOutlined } from "@ant-design/icons";
+import { ExportOutlined, FileWordOutlined } from "@ant-design/icons";
 
 dayjs.locale("th");
 
@@ -84,7 +84,7 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
       const userPosition =
         record.createdName && userData.length > 0
           ? userData.find(
-              (u) => `${u.firstName} ${u.lastName}` === record.createdName
+              (u) => `${u.firstName} ${u.lastName}` === record.createdName,
             )?.position || "ไม่ระบุตำแหน่ง"
           : "ไม่ระบุตำแหน่ง";
 
@@ -119,10 +119,10 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
         ? creator.gender === "male"
           ? "นาย"
           : creator.gender === "female"
-          ? "นาง"
-          : creator.gender === "miss"
-          ? "นางสาว"
-          : creator.gender ?? "-"
+            ? "นาง"
+            : creator.gender === "miss"
+              ? "นางสาว"
+              : (creator.gender ?? "-")
         : "-";
 
       const checkeds = "(/)";
@@ -131,7 +131,6 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
       const unchecked = "☐"; // \u2610
       const standardBudgets = ["งบกลาง", "งบโครงการ", "งบผู้จัด", "เงินบำรุง"];
 
-      // ✅ เตรียมข้อมูลส่งเข้า template (Mapping ใหม่)
       const data = {
         // --- ข้อมูลเอกสารทั่วไป ---
         id: toThaiNumber(record.id),
@@ -149,12 +148,6 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
         // ใช้ startDate / endDate แทน dateStart / dateEnd
         dateStart: record.startDate ? formatThaiDate(record.startDate) : "-",
         dateEnd: record.endDate ? formatThaiDate(record.endDate) : "-",
-        // timeStart: record.startDate
-        //   ? toThaiNumber(dayjs(record.startDate).format("HH:mm"))
-        //   : "-",
-        // timeEnd: record.endDate
-        //   ? toThaiNumber(dayjs(record.endDate).format("HH:mm"))
-        //   : "-",
         EndDate: formatThaiDate(new Date()),
         wd: toThaiNumber(now.format("D")), // วันที่ (เลขไทย)
         wm: now.format("MMMM"), // เดือน (ชื่อเต็มภาษาไทย)
@@ -178,16 +171,16 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
           ? toThaiNumber(
               // ถ้า budget เก็บเป็น string ตัวเลข หรือ number ให้แปลงก่อน
               // สมมติถ้าเก็บเป็น Text ชื่องบเฉยๆ ก็แสดงเลย แต่ถ้าเป็นตัวเงินต้องแปลง
-              record.budget
+              record.budget,
             )
           : "-",
 
         // Checkbox งบประมาณ (ถ้า logic เดิมยังใช้อยู่)
-        kl: record.budget === "งบกลาง" ? checked : unchecked,
-        k: record.budget === "งบโครงการ" ? checked : unchecked,
-        j: record.budget === "งบผู้จัด" ? checked : unchecked,
-        br: record.budget === "เงินบำรุง" ? checked : unchecked,
-        no: record.budget === "ไม่ขอเบิก" ? checked : unchecked,
+        kl: record.budget === "งบกลาง" ? checkeds : uncheckeds,
+        k: record.budget === "งบโครงการ" ? checkeds : uncheckeds,
+        j: record.budget === "งบผู้จัด" ? checkeds : uncheckeds,
+        br: record.budget === "เงินบำรุง" ? checkeds : uncheckeds,
+        no: record.budget === "ไม่ขอเบิก" ? checkeds : uncheckeds,
 
         // o:
         //   record.budget && !standardBudgets.includes(record.budget)
@@ -215,24 +208,15 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
         // ใน Schema ใหม่เป็น MasterCar (ตัวพิมพ์ใหญ่ M) และเป็น Optional
         carName: record.MasterCar?.carName ?? "-",
         licensePlate: toThaiNumber(
-          record.MasterCar?.licensePlate ?? "................"
+          record.MasterCar?.licensePlate ?? "................",
         ),
         brand: record.MasterCar?.brand ?? "-",
         model: record.MasterCar?.model ?? "-",
-
-        // Checkbox ประเภทเชื้อเพลิง (ถ้ามีข้อมูลรถ)
-        // fN: record.MasterCar?.fuelType === "เบนซิน 95" ? checkeds : uncheckeds,
-        // fD: record.MasterCar?.fuelType === "ดีเซล" ? checkeds : uncheckeds,
-        // fO: record.MasterCar?.fuelType === "เบนซิน 91" ? checkeds : uncheckeds,
-
-        // --- ประเภทการเดินทาง (Travel Type) ---
-        // Schema เป็น String[] (Array)
-        // ตัวอย่างการเช็ค (ต้องดูว่าใน DB เก็บค่าอะไร แต่ใส่ logic ดักไว้ก่อน)
-        OC: record.travelType?.includes("official") ? checked : unchecked,
-        AC: record.travelType?.includes("bus") ? checked : unchecked,
-        AP: record.travelType?.includes("plane") ? checked : unchecked,
-        PC: record.travelType?.includes("private") ? checked : unchecked,
-        OT: record.travelType?.includes("other") ? checked : unchecked,
+        OC: record.travelType?.includes("official") ? checkeds : uncheckeds,
+        AC: record.travelType?.includes("bus") ? checkeds : uncheckeds,
+        AP: record.travelType?.includes("plane") ? checkeds : uncheckeds,
+        PC: record.travelType?.includes("private") ? checkeds : uncheckeds,
+        OT: record.travelType?.includes("other") ? checkeds : uncheckeds,
 
         // รถส่วนตัว (ถ้ามี)
         privateCarId: record.privateCarId ?? ".................",
@@ -253,14 +237,15 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
   };
 
   return (
-    <Tooltip title="Export Official Travel Request">
-      <ExportOutlined
+    <Tooltip title="พิมพ์ใบขอไปราชการ">
+      <FileWordOutlined
         style={{
-          fontSize: 20,
+          fontSize: 22,
+          // ถ้าสถานะเป็น pending หรือ approved ให้ใช้สีฟ้า (หรือสีน้ำเงินเข้มเพื่อให้ดูเหมือน Word)
           color:
             record.status === "pending" || record.status === "approved"
-              ? "#1677ff"
-              : "#d9d9d9", // ปรับเงื่อนไขสีปุ่มตามต้องการ
+              ? "#1890ff" // สีฟ้าแบบ Word หรือ #2b579a (Official Word Blue)
+              : "#d9d9d9",
           cursor: "pointer",
           transition: "color 0.2s",
         }}

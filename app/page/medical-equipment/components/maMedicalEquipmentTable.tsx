@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState } from "react";
 import {
-  Table,
   Button,
   Space,
   Tag,
   Modal,
   Form,
   Input,
-  InputNumber,
   DatePicker,
   message,
   Popconfirm,
@@ -29,9 +27,18 @@ import {
   MaMedicalEquipmentType,
   MedicalEquipmentType,
 } from "../../common/index";
-import { ExclamationCircleOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
+  FileSearchOutlined,
+  RollbackOutlined,
+} from "@ant-design/icons";
 import { useSession } from "next-auth/react";
 import MedicalEquipmentTableDetails from "./medicalEquipmentTableDetails";
+import CustomTable from "../../common/CustomTable";
+import MaMedicalEquipmentEditModal from "./maMedicalEquipmentEditModal"; // Import Component ใหม่
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -48,72 +55,38 @@ export default function MaMedicalEquipmentTable({
 }: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maMedicalEquipmentServices(intraAuth);
-  // const [data, setData] = useState<MaMedicalEquipmentType[]>([]);
-  // const [loading, setLoading] = useState(true);
+  const { data: session } = useSession();
+
+  // State
   const [editingItem, setEditingItem] = useState<MaMedicalEquipmentType | null>(
-    null
+    null,
   );
   const [editModalVisible, setEditModalVisible] = useState(false);
+
+  // States อื่นๆ (Cancel, Approve, Return, Detail)
   const [form] = Form.useForm();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [cancelReason, setCancelReason] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false); // ใช้ร่วมกัน Cancel/Return (ควรแยกถ้าทำได้ แต่ตามโค้ดเดิมใช้ร่วมกัน)
   const [selectedRecord, setSelectedRecord] =
     useState<MaMedicalEquipmentType | null>(null);
-  const [formCancel] = Form.useForm();
-  const { data: session } = useSession();
   const [openDetails, setOpenDetails] = useState(false);
   const [recordDetails, setRecordDetails] = useState<any>(null);
-  const { TextArea } = Input;
-  const { Option } = Select;
-  const [popoverOpen, setPopoverOpen] = useState(false);
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
   const [recordReturn, setRecordReturn] = useState<any>(null);
   const [formReturn] = Form.useForm();
 
+  // --- Edit Handler ---
   const handleEdit = (item: MaMedicalEquipmentType) => {
     setEditingItem(item);
-
-    const equipmentInfo =
-      item.items?.map((i: any) => ({
-        medicalEquipmentId: i.medicalEquipmentId,
-        quantity: i.quantity,
-      })) || [];
-
-    form.setFieldsValue({
-      equipmentInfo,
-      sentDate: item.sentDate ? dayjs(item.sentDate) : null,
-      note: item.note || "",
-    });
-
     setEditModalVisible(true);
   };
 
-  const onEditFinish = async (values: any) => {
-    if (!editingItem) return;
-
-    try {
-      const payload = {
-        id: editingItem.id,
-        sentDate: values.sentDate?.toISOString(),
-        note: values.note,
-        items: values.equipmentInfo.map((eq: any) => ({
-          medicalEquipmentId: eq.medicalEquipmentId,
-          quantity: eq.quantity,
-        })),
-      };
-
-      await intraAuthService.updateMedicalEquipmentEdit(payload);
-
-      message.success("บันทึกการแก้ไขเรียบร้อย");
-      setEditModalVisible(false);
-      setEditingItem(null);
-      setLoading(true);
-    } catch (error) {
-      console.error("อัปเดตข้อมูลไม่สำเร็จ:", error);
-      message.error("ไม่สามารถอัปเดตข้อมูลได้");
-    }
+  const handleEditSuccess = () => {
+    setLoading(true); // Refresh Data
+    setEditModalVisible(false);
+    setEditingItem(null);
   };
 
+  // --- Other Handlers (Cancel, Approve, Return) ---
   const handleCancel = async (values: any) => {
     if (!selectedRecord) return;
     try {
@@ -127,7 +100,6 @@ export default function MaMedicalEquipmentTable({
 
       message.success("ยกเลิกรายการแล้ว");
       setIsModalOpen(false);
-      setCancelReason("");
       setSelectedRecord(null);
       setLoading(true);
     } catch (error) {
@@ -161,24 +133,22 @@ export default function MaMedicalEquipmentTable({
 
   const handleOpenModalReturn = (record: any) => {
     setRecordReturn(record);
-
     formReturn.setFieldsValue({
       id: record.id,
       sentDate: record.sentDate ? dayjs(record.sentDate) : null,
       status:
         record.status === "pending"
-          ? "รอดำเนินการ"
+          ? "รออนุมัติ"
           : record.status === "approve"
-          ? "อนุมัติ"
-          : record.status === "cancel"
-          ? "ยกเลิก"
-          : record.status === "return"
-          ? "รับคืนแล้ว"
-          : "",
+            ? "อนุมัติ"
+            : record.status === "cancel"
+              ? "ยกเลิก"
+              : record.status === "return"
+                ? "รับคืนแล้ว"
+                : "",
       note: record.note,
       returnName: record.returnName,
     });
-
     setIsModalOpen(true);
   };
 
@@ -259,20 +229,15 @@ export default function MaMedicalEquipmentTable({
       key: "items",
       width: 140,
       align: "center",
-
-      // width: 160,
       render: (items: any[]) => {
         if (!items || items.length === 0) return null;
-
         const firstThree = items.slice(0, 2);
         const rest = items.slice(2);
-
         return (
           <ul style={{ paddingLeft: 20, margin: 0 }}>
             {firstThree.map((item, index) => (
               <li key={index}>{item.quantity}</li>
             ))}
-
             {rest.length > 0 && (
               <Tooltip
                 title={items.map((item) => item.quantity).join(", ")}
@@ -309,11 +274,10 @@ export default function MaMedicalEquipmentTable({
       render: (status) => {
         let color = "default";
         let text = "";
-
         switch (status) {
           case "pending":
             color = "gold";
-            text = "รอดำเนินการ";
+            text = "รออนุมัติ";
             break;
           case "approve":
             color = "green";
@@ -325,16 +289,15 @@ export default function MaMedicalEquipmentTable({
             break;
           case "return":
             color = "purple";
-            text = "คืนแล้ว"; // 👈 ผู้ใช้คืนเครื่องมือ
+            text = "คืนแล้ว";
             break;
           case "verified":
-            color = "grey"; // 👈 เลือกสีใหม่ (แนะนำฟ้า)
-            text = "ตรวจรับคืนแล้ว"; // 👈 หัวหน้ายืนยัน
-            break;
+            color = "cyan";
+            text = "ตรวจรับคืนแล้ว";
+            break; // ปรับสีให้ชัดขึ้น
           default:
             text = status;
         }
-
         return <Tag color={color}>{text}</Tag>;
       },
     },
@@ -343,7 +306,6 @@ export default function MaMedicalEquipmentTable({
       dataIndex: "note",
       key: "note",
       align: "center",
-
       render: (text: string) => {
         const shortText =
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
@@ -359,7 +321,8 @@ export default function MaMedicalEquipmentTable({
       key: "action",
       align: "center",
       render: (_, record) => (
-        <Space>
+        <Space size="middle">
+          {/* Delete */}
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -369,48 +332,56 @@ export default function MaMedicalEquipmentTable({
                 message.success("ลบข้อมูลสำเร็จ");
                 setLoading(true);
               } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการลบ:", error);
                 message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
               }
             }}
             okText="ใช่"
             cancelText="ยกเลิก"
           >
-            <Button danger size="small">
-              ลบ
-            </Button>
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{ fontSize: 20, color: "#ff4d4f", cursor: "pointer" }}
+              />
+            </Tooltip>
           </Popconfirm>
 
-          <Button
-            size="small"
-            onClick={() => handleEdit(record)}
-            style={{
-              backgroundColor:
-                record.status === "pending" ? "#faad14" : "#d9d9d9",
-              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
-              color: record.status === "pending" ? "white" : "#888",
-              cursor: record.status === "pending" ? "pointer" : "not-allowed",
-            }}
-            disabled={record.status !== "pending"}
-          >
-            แก้ไข
-          </Button>
-          <Button
-            size="small"
-            onClick={() => handleOpenModalReturn(record)}
-            style={{
-              backgroundColor:
-                record.status === "return" ? "#722ed1" : "#d9d9d9",
-              borderColor: record.status === "return" ? "#722ed1" : "#d9d9d9",
-              color: record.status === "return" ? "white" : "#888",
-              cursor: record.status === "return" ? "pointer" : "not-allowed",
-            }}
-            disabled={record.status !== "return"}
-          >
-            ยืนยันรับคืน
-          </Button>
+          {/* Edit */}
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              style={{
+                fontSize: 20,
+                color: record.status === "pending" ? "#faad14" : "#d9d9d9",
+                cursor: record.status === "pending" ? "pointer" : "not-allowed",
+              }}
+              onClick={() => {
+                if (record.status === "pending") handleEdit(record);
+              }}
+            />
+          </Tooltip>
+
+          {/* Verify Return */}
+          <Tooltip title="ยืนยันรับคืน">
+            <RollbackOutlined
+              style={{
+                fontSize: 20,
+                color: record.status === "return" ? "#722ed1" : "#d9d9d9",
+                cursor: record.status === "return" ? "pointer" : "not-allowed",
+              }}
+              onClick={() => {
+                if (record.status === "return") handleOpenModalReturn(record);
+              }}
+            />
+          </Tooltip>
+
+          {/* Approve Popover */}
           <Popover
             trigger="click"
+            open={openPopoverId === record.id}
+            onOpenChange={(open) => {
+              if (open && record.status === "pending")
+                setOpenPopoverId(record.id);
+              else if (!open) setOpenPopoverId(null);
+            }}
             title={
               <Space>
                 <ExclamationCircleOutlined style={{ color: "#faad14" }} />
@@ -423,11 +394,7 @@ export default function MaMedicalEquipmentTable({
                   type="primary"
                   size="small"
                   onClick={() => handleApprove(record)}
-                  style={{
-                    backgroundColor: "#52c41a",
-                    borderColor: "#52c41a",
-                    color: "white",
-                  }}
+                  style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
                 >
                   อนุมัติ
                 </Button>
@@ -437,7 +404,6 @@ export default function MaMedicalEquipmentTable({
                   onClick={() => {
                     setSelectedRecord(record);
                     setIsModalOpen(true);
-                    setPopoverOpen(false);
                     setOpenPopoverId(null);
                   }}
                 >
@@ -445,36 +411,32 @@ export default function MaMedicalEquipmentTable({
                 </Button>
               </Space>
             }
-            open={openPopoverId === record.id}
-            onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
-            <Button
-              size="small"
-              style={{
-                backgroundColor:
-                  record.status === "pending" ? "#52c41a" : "#d9d9d9",
-                borderColor:
-                  record.status === "pending" ? "#52c41a" : "#d9d9d9",
-                color: record.status === "pending" ? "white" : "#888",
-                cursor: record.status === "pending" ? "pointer" : "not-allowed",
-              }}
-              disabled={record.status !== "pending"}
+            <Tooltip
+              title={record.status === "pending" ? "อนุมัติ" : "ดำเนินการแล้ว"}
             >
-              อนุมัติ
-            </Button>
+              <CheckCircleOutlined
+                style={{
+                  fontSize: 20,
+                  color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
+                  cursor:
+                    record.status === "pending" ? "pointer" : "not-allowed",
+                  opacity: record.status === "pending" ? 1 : 0.5,
+                }}
+                onClick={(e) => {
+                  if (record.status !== "pending") e.stopPropagation();
+                }}
+              />
+            </Tooltip>
           </Popover>
 
-          <Button
-            type="primary"
-            size="small"
-            style={{
-              borderColor: "#d9d9d9",
-            }}
-            onClick={() => handleOpenModalDetails(record)}
-            className="hover-blue"
-          >
-            รายละเอียด
-          </Button>
+          {/* Details */}
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              onClick={() => handleOpenModalDetails(record)}
+              style={{ fontSize: 20, color: "#1677ff", cursor: "pointer" }}
+            />
+          </Tooltip>
         </Space>
       ),
     },
@@ -488,7 +450,7 @@ export default function MaMedicalEquipmentTable({
             textAlign: "center",
             fontSize: "20px",
             fontWeight: "bold",
-            color: "#0683e9ff",
+            color: "#0683e9",
           }}
         >
           ข้อมูลเครื่องมือแพทย์
@@ -501,8 +463,7 @@ export default function MaMedicalEquipmentTable({
         boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
       }}
     >
-      {/* ตาราง */}
-      <Table
+      <CustomTable
         rowKey="id"
         columns={columns}
         dataSource={data}
@@ -512,182 +473,28 @@ export default function MaMedicalEquipmentTable({
         scroll={{ x: "max-content" }}
       />
 
-      {/* Modal แก้ไขข้อมูล */}
-      <Modal
-        title="แก้ไขข้อมูล"
+      {/* เรียกใช้ Edit Modal ตัวใหม่ */}
+      <MaMedicalEquipmentEditModal
         open={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
-        onOk={() => form.submit()}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-      >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={onEditFinish}
-          initialValues={{ equipmentInfo: [] }}
-        >
-          <Form.List name="equipmentInfo">
-            {(fields, { add, remove }) => (
-              <>
-                {fields.map(({ key, name, ...restField }) => (
-                  <Space
-                    key={key}
-                    align="baseline"
-                    style={{ display: "flex", marginBottom: 8 }}
-                  >
-                    <Form.Item
-                      {...restField}
-                      name={[name, "medicalEquipmentId"]}
-                      rules={[
-                        { required: true, message: "กรุณาเลือกเครื่องมือ" },
-                      ]}
-                    >
-                      <Select
-                        placeholder="เลือกเครื่องมือ"
-                        style={{ width: 200 }}
-                        showSearch
-                        optionFilterProp="children"
-                      >
-                        {dataEQ.map((eq) => {
-                          const reservedQuantity = dataEQ
-                            .flatMap((ma) => ma.items || [])
-                            .filter(
-                              (item: any) =>
-                                item.medicalEquipmentId === eq.id &&
-                                ["pending", "approve"].includes(
-                                  item.maMedicalEquipment?.status
-                                )
-                            )
-                            .reduce(
-                              (sum: number, item: any) => sum + item.quantity,
-                              0
-                            );
+        onClose={() => setEditModalVisible(false)}
+        onSuccess={handleEditSuccess}
+        record={editingItem}
+        dataEQ={dataEQ}
+      />
 
-                          const remainingQuantity =
-                            eq.quantity - reservedQuantity;
-                          const selectedIds = (
-                            form.getFieldValue("equipmentInfo") ?? []
-                          )
-                            .filter((i: any) => i)
-                            .map((i: any) => i.medicalEquipmentId)
-                            .filter((id: any) => id !== undefined);
-
-                          const isSelected =
-                            selectedIds.includes(eq.id) &&
-                            eq.id !==
-                              form.getFieldValue([
-                                "equipmentInfo",
-                                name,
-                                "medicalEquipmentId",
-                              ]);
-
-                          return (
-                            <Option
-                              key={eq.id}
-                              value={eq.id}
-                              disabled={isSelected || remainingQuantity <= 0}
-                            >
-                              {eq.equipmentName} (คงเหลือ {remainingQuantity})
-                            </Option>
-                          );
-                        })}
-                      </Select>
-                    </Form.Item>
-
-                    <Form.Item
-                      {...restField}
-                      name={[name, "quantity"]}
-                      rules={[
-                        { required: true, message: "กรุณากรอกจำนวน" },
-                        ({ getFieldValue }) => ({
-                          validator(_, value) {
-                            const equipmentId = getFieldValue([
-                              "equipmentInfo",
-                              name,
-                              "medicalEquipmentId",
-                            ]);
-                            if (!equipmentId) return Promise.resolve();
-                            const selected = dataEQ.find(
-                              (eq) => eq.id === equipmentId
-                            );
-                            if (value > (selected?.quantity || 0)) {
-                              return Promise.reject(
-                                new Error(
-                                  `จำนวนเกินคงเหลือ (${selected?.quantity})`
-                                )
-                              );
-                            }
-                            return Promise.resolve();
-                          },
-                        }),
-                      ]}
-                    >
-                      <InputNumber min={1} placeholder="จำนวน" />
-                    </Form.Item>
-
-                    <Button danger onClick={() => remove(name)}>
-                      ลบ
-                    </Button>
-                  </Space>
-                ))}
-                <Form.Item>
-                  <Button type="dashed" onClick={() => add()} block>
-                    + เพิ่มรายการเครื่องมือ
-                  </Button>
-                </Form.Item>
-              </>
-            )}
-          </Form.List>
-
-          <Form.Item
-            label="วันที่ส่ง"
-            name="sentDate"
-            rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
-          >
-            <DatePicker
-              format="DD/MM/YYYY"
-              style={{ width: "100%" }}
-              disabledDate={(current) => {
-                if (!current) return false;
-                const today = dayjs().startOf("day");
-                if (current < today) return true;
-
-                const bookedDates = data
-                  .map((item: any) =>
-                    item.sentDate ? dayjs(item.sentDate).startOf("day") : null
-                  )
-                  .filter(Boolean);
-
-                return bookedDates.some((d: any) => d.isSame(current, "day"));
-              }}
-            />
-          </Form.Item>
-
-          <Form.Item label="หมายเหตุ" name="note">
-            <TextArea rows={3} />
-          </Form.Item>
-        </Form>
-      </Modal>
-
-      {/* Modal ยกเลิก */}
+      {/* Modal ยกเลิก (ถ้าจะแยกอีกก็ทำได้ในอนาคต) */}
       <Modal
         title="กรอกเหตุผลการยกเลิกรายการนี้"
-        open={isModalOpen}
+        open={isModalOpen && !recordReturn} // เช็คว่าไม่ใช่ Modal Return
         onOk={() => form.submit()}
         onCancel={() => {
           setIsModalOpen(false);
           setSelectedRecord(null);
-          formCancel.resetFields();
         }}
         okText="ยืนยัน"
         cancelText="ยกเลิก"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={(values) => handleCancel(values)}
-        >
+        <Form form={form} layout="vertical" onFinish={handleCancel}>
           <Form.Item
             name="cancelReason"
             rules={[{ required: true, message: "กรุณาระบุเหตุผลการยกเลิก" }]}
@@ -697,24 +504,22 @@ export default function MaMedicalEquipmentTable({
         </Form>
       </Modal>
 
-      {/* รายละเอียดเพิ่มเติม */}
-      <MedicalEquipmentTableDetails
-        record={recordDetails}
-        open={openDetails}
-        onClose={() => setOpenDetails(false)}
-      />
+      {/* Modal Return Confirmation */}
       <Modal
         title="รายละเอียดการรับคืนอุปกรณ์"
-        open={isModalOpen}
+        open={isModalOpen && !!recordReturn}
         onOk={handleConfirmReturn}
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => {
+          setIsModalOpen(false);
+          setRecordReturn(null);
+        }}
         okText="ยืนยันรับคืน"
         cancelText="ยกเลิก"
         width={700}
       >
         <Form form={formReturn} layout="vertical">
           <Form.Item label="รายการอุปกรณ์ที่ส่ง">
-            <Table
+            <CustomTable
               dataSource={recordReturn?.items || []}
               columns={columnsReturn}
               rowKey="id"
@@ -724,11 +529,7 @@ export default function MaMedicalEquipmentTable({
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item
-                label="วันที่ส่ง"
-                name="sentDate"
-                rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
-              >
+              <Form.Item label="วันที่ส่ง" name="sentDate">
                 <DatePicker
                   disabled
                   format="DD/MM/YYYY"
@@ -738,23 +539,7 @@ export default function MaMedicalEquipmentTable({
             </Col>
             <Col span={12}>
               <Form.Item label="สถานะ" name="status">
-                <div>
-                  {recordReturn?.status === "pending" && (
-                    <Tag color="gold">รอดำเนินการ</Tag>
-                  )}
-                  {recordReturn?.status === "approve" && (
-                    <Tag color="green">อนุมัติ</Tag>
-                  )}
-                  {recordReturn?.status === "cancel" && (
-                    <Tag color="red">ยกเลิก</Tag>
-                  )}
-                  {recordReturn?.status === "return" && (
-                    <Tag color="blue">รับคืนแล้ว</Tag>
-                  )}
-                  {recordReturn?.status === "verified" && (
-                    <Tag color="purple">ตรวจรับคืนแล้ว</Tag>
-                  )}
-                </div>
+                <Input disabled />
               </Form.Item>
             </Col>
           </Row>
@@ -772,6 +557,12 @@ export default function MaMedicalEquipmentTable({
           </Row>
         </Form>
       </Modal>
+
+      <MedicalEquipmentTableDetails
+        record={recordDetails}
+        open={openDetails}
+        onClose={() => setOpenDetails(false)}
+      />
     </Card>
   );
 }

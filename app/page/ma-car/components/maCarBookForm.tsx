@@ -28,11 +28,11 @@ import { useRouter } from "next/navigation";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { MaCarType } from "../../common";
-import TextArea from "antd/es/input/TextArea";
+
 dayjs.locale("th");
 dayjs.extend(isBetween);
-dayjs.extend(isSameOrBefore); // ลงทะเบียน plugin
-dayjs.extend(isSameOrAfter); // ลงทะเบียน plugin
+dayjs.extend(isSameOrBefore);
+dayjs.extend(isSameOrAfter);
 
 interface MaCarBookFormProps {
   cars: any[];
@@ -55,16 +55,9 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
   const { data: session } = useSession();
-  const selectedCarId = form.getFieldValue("carId");
   const router = useRouter();
 
-  console.log("user:", session?.user?.userId);
-  console.log("maCarUser:", maCarUser);
-
   const onFinish = async (values: any) => {
-    // เริ่ม Loading (ถ้าคุณมี state นี้)
-    // setSubmitting(true);
-
     try {
       const { carId, dateStart, dateEnd } = values;
       const currentUserId = session?.user?.userId;
@@ -74,16 +67,10 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         maCar &&
         maCar.some((booking) => {
           const isNotCancel = booking.status !== "cancel";
-
-          // ตรวจสอบช่วงเวลาที่ทับซ้อนกัน (เช็คละเอียดระดับนาที)
           const isTimeOverlap =
             dayjs(dateStart).isBefore(dayjs(booking.dateEnd)) &&
             dayjs(dateEnd).isAfter(dayjs(booking.dateStart));
-
-          // เงื่อนไขที่ 1: รถคันนี้ถูกจองไปแล้วในช่วงเวลานั้น
           const isSameCarOverlap = booking.carId === carId;
-
-          // เงื่อนไขที่ 2: ผู้ใช้งานคนนี้ (ตัวเอง) มีรายการจองอื่นอยู่แล้วในช่วงเวลานั้น
           const isUserOverlap = booking.createdById === currentUserId;
           return (
             isNotCancel && isTimeOverlap && (isSameCarOverlap || isUserOverlap)
@@ -91,7 +78,6 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         });
 
       if (isOverlaps) {
-        // เช็คว่าซ้ำเพราะอะไรเพื่อแจ้งเตือนให้ถูกต้อง
         const conflictType =
           maCar.find(
             (b) =>
@@ -107,7 +93,6 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         return;
       }
 
-      // 2. เตรียม Payload
       const payload = {
         ...values,
         status: "pending",
@@ -117,38 +102,35 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         dateEnd: dayjs(dateEnd).toISOString(),
       };
 
-      // 3. เรียก API
       await intraAuthService.createMaCar(payload);
-
-      // 4. สำเร็จ
       message.success("จองรถสำเร็จ");
       form.resetFields();
 
-      // ดึงข้อมูลใหม่เพื่อให้ maCarUser ตัวล่าสุดมาใช้ในการเช็คครั้งต่อไป
       if (typeof fetchData === "function") {
         await fetchData();
       }
 
       setTimeout(() => {
-        router.push("/page/ma-car/maCar"); // เปลี่ยนเป็น Path ของหน้าที่คุณต้องการให้ไป
+        router.push("/page/ma-car/maCar");
       }, 1000);
     } catch (err) {
       console.error("Booking Error:", err);
       message.error("เกิดข้อผิดพลาดจากระบบ ไม่สามารถดำเนินการได้");
-    } finally {
-      // ไม่ว่าจะสำเร็จหรือ error ให้ปลดล็อก loading ตรงนี้
-      // setSubmitting(false);
     }
   };
 
-  const formatBuddhist = (value: dayjs.Dayjs | null) => {
-    if (!value) return "";
-    const date = dayjs(value).locale("th");
-    const day = date.date();
-    const month = date.format("MMMM");
-    const year = date.year() + 543;
-    return `${day} ${month} ${year}`;
-  };
+  // --- Style Constants (Master Template) ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const selectStyle =
+    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+
+  // Checkbox & Radio Style (Optional: ทำให้ดู Modern ขึ้น)
+  const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
 
   /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
   // --- Helper Functions สำหรับการสุ่ม (แก้ไข Type แล้ว) ---
@@ -239,7 +221,14 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
   };
 
   return (
-    <Card>
+    <Card
+      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
+      title={
+        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
+          ฟอร์มจองรถ
+        </div>
+      }
+    >
       <ConfigProvider locale={th_TH}>
         <Form
           form={form}
@@ -249,38 +238,49 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             requesterName: session?.user?.fullName,
           }}
         >
-          <Form.Item
-            name="typeName"
-            label="ประเภทการเดินทางและแผนงาน"
-            rules={[
-              { required: true, message: "กรุณาเลือกอย่างน้อย 1 รายการ" },
-            ]}
-          >
-            <Checkbox.Group style={{ width: "100%" }}>
-              <Row gutter={[16, 16]}>
-                <Col span={6}>
-                  <Checkbox value="ในจังหวัด">ในจังหวัด</Checkbox>
-                </Col>
-                <Col span={6}>
-                  <Checkbox value="นอกจังหวัด">นอกจังหวัด</Checkbox>
-                </Col>
-                <Col span={6}>
-                  <Checkbox value="แผนปกติ">แผนปกติ</Checkbox>
-                </Col>
-                <Col span={6}>
-                  <Checkbox value="แผนด่วน">แผนด่วน</Checkbox>
-                </Col>
-              </Row>
-            </Checkbox.Group>
-          </Form.Item>
-          <Row gutter={16}>
+          {/* Section 1: ประเภทการเดินทาง */}
+          <div className="mb-6">
+            <Form.Item
+              name="typeName"
+              label="ประเภทการเดินทางและแผนงาน"
+              rules={[
+                { required: true, message: "กรุณาเลือกอย่างน้อย 1 รายการ" },
+              ]}
+            >
+              <div className={optionGroupStyle}>
+                <Checkbox.Group style={{ width: "100%" }}>
+                  <Row gutter={[16, 16]}>
+                    <Col xs={12} sm={6}>
+                      <Checkbox value="ในจังหวัด">ในจังหวัด</Checkbox>
+                    </Col>
+                    <Col xs={12} sm={6}>
+                      <Checkbox value="นอกจังหวัด">นอกจังหวัด</Checkbox>
+                    </Col>
+                    <Col xs={12} sm={6}>
+                      <Checkbox value="แผนปกติ">แผนปกติ</Checkbox>
+                    </Col>
+                    <Col xs={12} sm={6}>
+                      <Checkbox value="แผนด่วน">แผนด่วน</Checkbox>
+                    </Col>
+                  </Row>
+                </Checkbox.Group>
+              </div>
+            </Form.Item>
+          </div>
+
+          {/* Section 2: ข้อมูลรถและการใช้งาน */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 name="carId"
                 label="เลือกรถ"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "กรุณาเลือกรถ" }]}
               >
-                <Select placeholder="เลือกรถ" loading={loading}>
+                <Select
+                  placeholder="เลือกรถ"
+                  loading={loading}
+                  className={selectStyle}
+                >
                   {cars.map((car) => (
                     <Select.Option key={car.id} value={car.id}>
                       {car.carName} ({car.licensePlate})
@@ -297,6 +297,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               >
                 <Select
                   placeholder="กรอกเรียน"
+                  className={selectStyle}
                   onChange={(value) => {
                     form.setFieldValue(
                       "recipient",
@@ -309,6 +310,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
                           placeholder="กรอกอื่น ๆ ..."
+                          className="rounded-lg"
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "recipient",
@@ -334,66 +336,55 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 name="purpose"
                 label="วัตถุประสงค์"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "กรุณากรอกวัตถุประสงค์" }]}
               >
-                <TextArea placeholder="กรอกวัตถุประสงค์" />
+                <Input.TextArea
+                  placeholder="กรอกวัตถุประสงค์"
+                  rows={1} // เริ่มต้น 1 บรรทัด จะขยายเอง
+                  className={textAreaStyle}
+                  style={{ minHeight: "44px" }}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
               <Form.Item
                 name="destination"
                 label="สถานที่"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "กรุณากรอกสถานที่" }]}
               >
-                <TextArea placeholder="กรอกสถานที่" />
+                <Input.TextArea
+                  placeholder="กรอกสถานที่"
+                  rows={1}
+                  className={textAreaStyle}
+                  style={{ minHeight: "44px" }}
+                />
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={16}>
+
+          {/* Section 3: วันเวลา */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 name="dateStart"
                 label="ตั้งแต่วันที่"
-                rules={[
-                  {
-                    required: true,
-                    message: "กรุณาเลือกวันที่และเวลาเริ่มจอง",
-                  },
-                ]}
+                rules={[{ required: true, message: "กรุณาเลือกวันเวลาเริ่ม" }]}
               >
                 <DatePicker
                   showTime={{ format: "HH:mm" }}
                   style={{ width: "100%" }}
                   format="DD/MM/YYYY HH:mm"
+                  placeholder="เลือกวันเวลาเริ่ม"
+                  className={`${inputStyle} pt-2`}
                   onChange={() => form.setFieldValue("dateEnd", null)}
-                  // 1. ป้องกันการเลือก "วันที่" ย้อนหลัง
-                  disabledDate={(current) => {
-                    return current && current < dayjs().startOf("day");
-                  }}
-                  // 2. ป้องกันการเลือก "เวลา" ย้อนหลัง (เฉพาะกรณีเลือกวันปัจจุบัน)
-                  disabledTime={(current) => {
-                    if (current && current.isSame(dayjs(), "day")) {
-                      return {
-                        disabledHours: () =>
-                          Array.from({ length: dayjs().hour() }, (_, i) => i),
-                        disabledMinutes: (selectedHour) => {
-                          if (selectedHour === dayjs().hour()) {
-                            return Array.from(
-                              { length: dayjs().minute() },
-                              (_, i) => i,
-                            );
-                          }
-                          return [];
-                        },
-                      };
-                    }
-                    return {};
-                  }}
+                  disabledDate={(current) =>
+                    current && current < dayjs().startOf("day")
+                  }
                 />
               </Form.Item>
             </Col>
@@ -410,18 +401,16 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                       name="dateEnd"
                       label="ถึงวันที่"
                       rules={[
-                        {
-                          required: true,
-                          message: "กรุณาเลือกวันที่และเวลาสิ้นสุด",
-                        },
+                        { required: true, message: "กรุณาเลือกวันเวลาสิ้นสุด" },
                       ]}
                     >
                       <DatePicker
                         showTime={{ format: "HH:mm" }}
                         style={{ width: "100%" }}
                         format="DD/MM/YYYY HH:mm"
+                        placeholder="เลือกวันเวลาสิ้นสุด"
+                        className={`${inputStyle} pt-2`}
                         disabled={!dateStart}
-                        // ป้องกันวันที่ย้อนหลัง และห้ามเลือกก่อนวันเริ่ม (dateStart)
                         disabledDate={(current) => {
                           const today = dayjs().startOf("day");
                           const startDay = dateStart
@@ -431,31 +420,6 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                             current && (current < today || current < startDay)
                           );
                         }}
-                        // ป้องกันเวลาสิ้นสุดย้อนหลัง (ถ้าเลือกวันเดียวกับวันเริ่ม ห้ามเลือกเวลาที่น้อยกว่าวันเริ่ม)
-                        disabledTime={(current) => {
-                          if (
-                            current &&
-                            dateStart &&
-                            current.isSame(dayjs(dateStart), "day")
-                          ) {
-                            const startHour = dayjs(dateStart).hour();
-                            const startMinute = dayjs(dateStart).minute();
-                            return {
-                              disabledHours: () =>
-                                Array.from({ length: startHour }, (_, i) => i),
-                              disabledMinutes: (selectedHour) => {
-                                if (selectedHour === startHour) {
-                                  return Array.from(
-                                    { length: startMinute },
-                                    (_, i) => i,
-                                  );
-                                }
-                                return [];
-                              },
-                            };
-                          }
-                          return {};
-                        }}
                       />
                     </Form.Item>
                   );
@@ -464,17 +428,20 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          {/* Section 4: ข้อมูลเพิ่มเติม */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="พนักงานขับรถ"
                 name="driver"
                 rules={[{ required: true, message: "กรุณาเลือกตัวเลือก" }]}
               >
-                <Radio.Group>
-                  <Radio value="yes">ขอพนักงานขับรถส่วนกลาง</Radio>
-                  <Radio value="no">ไม่ขอพนักงานขับรถส่วนกลาง</Radio>
-                </Radio.Group>
+                <div className={`${optionGroupStyle} py-2`}>
+                  <Radio.Group>
+                    <Radio value="yes">ขอพนักงานขับรถ</Radio>
+                    <Radio value="no">ไม่ขอพนักงานขับรถ</Radio>
+                  </Radio.Group>
+                </div>
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -485,6 +452,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               >
                 <Select
                   placeholder="เลือกงบประมาณ"
+                  className={selectStyle}
                   onChange={(value) => {
                     form.setFieldValue(
                       "budget",
@@ -497,6 +465,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
                           placeholder="กรอกงบประมาณอื่นๆ"
+                          className="rounded-lg"
                           onPressEnter={(e) => {
                             form.setFieldValue("budget", e.currentTarget.value);
                           }}
@@ -512,34 +481,34 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   <Select.Option value="งบโครงการ">งบโครงการ</Select.Option>
                   <Select.Option value="งบผู้จัด">งบผู้จัด</Select.Option>
                   <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
-                  {/* <Select.Option value="other">อื่นๆ...</Select.Option> */}
                 </Select>
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          <Row gutter={24}>
             <Col span={8}>
               <Form.Item
                 name="passengers"
                 label="จำนวนผู้โดยสาร"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "กรุณากรอกจำนวน" }]}
               >
                 <InputNumber
                   min={1}
                   max={10}
                   style={{ width: "100%" }}
-                  placeholder="กรอกจำนวนผู้โดยสาร"
-                  // ดักจับการกดปุ่ม (Keyboard Event)
+                  placeholder="ระบุจำนวน"
+                  className={`${inputStyle} pt-1`}
                   onKeyDown={(e) => {
-                    // อนุญาตให้กดได้แค่ ตัวเลข, Backspace, Delete, Tab, และลูกศร
                     if (
                       !/[0-9]/.test(e.key) &&
-                      e.key !== "Backspace" &&
-                      e.key !== "Delete" &&
-                      e.key !== "Tab" &&
-                      e.key !== "ArrowLeft" &&
-                      e.key !== "ArrowRight"
+                      ![
+                        "Backspace",
+                        "Delete",
+                        "Tab",
+                        "ArrowLeft",
+                        "ArrowRight",
+                      ].includes(e.key)
                     ) {
                       e.preventDefault();
                     }
@@ -557,6 +526,8 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   mode="multiple"
                   placeholder="เลือกผู้ใช้รถ"
                   loading={loading}
+                  className={selectStyle} // ใช้ Class เดิมแต่ Antd จะจัดการ multiple ให้เอง
+                  maxTagCount="responsive"
                   options={dataUser.map((u) => ({
                     label: `${u.firstName} ${u.lastName}`,
                     value: u.userId,
@@ -567,40 +538,21 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
           </Row>
 
           <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
-            <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
+            <Input.TextArea
+              placeholder="หมายเหตุเพิ่มเติม"
+              rows={2}
+              className={textAreaStyle}
+            />
           </Form.Item>
 
-          {/* ✅ แก้ไขส่วนปุ่มกด: ใช้ Space เพื่อจัดเรียงปุ่ม */}
-          <Form.Item style={{ textAlign: "center", marginTop: "20px" }}>
-            <Space size="large" wrap>
-              {/* ปุ่มจองรถ (Submit) */}
-              <Button
-                type="primary"
-                htmlType="submit"
-                size="large"
-                style={{
-                  minWidth: "150px",
-                  height: "50px",
-                  fontSize: "16px",
-                }}
-              >
-                จองรถ
-              </Button>
-
-              {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (เพิ่มใหม่) */}
-              <Button
-                htmlType="button" // สำคัญ! ต้องใส่เป็น button เพื่อกันไม่ให้ Submit form
-                onClick={handleAutoFill}
-                size="large"
-                style={{
-                  minWidth: "150px",
-                  height: "50px",
-                  fontSize: "16px",
-                }}
-              >
-                สุ่มข้อมูลตัวอย่าง
-              </Button>
-            </Space>
+          <Form.Item style={{ textAlign: "center" }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+            >
+              จองรถ
+            </Button>
           </Form.Item>
         </Form>
       </ConfigProvider>

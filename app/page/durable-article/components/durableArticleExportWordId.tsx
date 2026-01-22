@@ -3,9 +3,10 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import { FileExcelOutlined, FileWordOutlined } from "@ant-design/icons";
 
 dayjs.locale("th");
 
@@ -81,9 +82,17 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
   };
 
   return (
-    <Button size="small" type="primary" onClick={handleExport}>
-      Export
-    </Button>
+    <Tooltip title="Export">
+      <FileWordOutlined
+        style={{
+          fontSize: 22,
+          color: "#217346", // สีเขียว Excel
+          cursor: "pointer",
+          transition: "color 0.2s",
+        }}
+        onClick={handleExport}
+      />
+    </Tooltip>
   );
 };
 

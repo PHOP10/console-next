@@ -1,9 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Breadcrumb, Card, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
-import DurableArticleTable from "../components/durableArticleTable";
-import DurableArticleForm from "../components/durableArticleForm";
+import { Breadcrumb, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
@@ -66,26 +64,11 @@ export default function Page() {
       key: "2",
       label: "เพิ่มวัสดุสนับสนุน",
       children: (
-        <Card>
-          <div
-            style={{
-              textAlign: "center",
-              color: "#0683e9",
-              fontWeight: "bold",
-              fontSize: "20px",
-              marginTop: "-8px",
-              marginBottom: "15px",
-            }}
-          >
-            เพิ่มวัสดุสนับสนุน
-          </div>
-
-          <DurableArticleForm
-            setLoading={setLoading}
-            loading={loading}
-            fetchData={fetchData}
-          />
-        </Card>
+        <SupportingResourceForm
+          setLoading={setLoading}
+          loading={loading}
+          fetchData={fetchData}
+        />
       ),
     });
   }
