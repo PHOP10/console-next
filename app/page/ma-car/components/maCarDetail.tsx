@@ -1,6 +1,7 @@
 // MaCarDetail.tsx
 
-import { Modal, Form, Row, Col, Input, Space, Tag } from "antd";
+import React from "react";
+import { Modal, Row, Col, Tag, Divider } from "antd";
 import { MaCarType, UserType } from "../../common";
 
 interface MaCarDetailProps {
@@ -11,304 +12,344 @@ interface MaCarDetailProps {
 }
 
 const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
-  const { TextArea } = Input;
+  const formatDateTime = (dateString: string | null | undefined) => {
+    if (!dateString) return "-";
+    const date = new Date(dateString);
+    const datePart = date.toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const timePart = date.toLocaleTimeString("th-TH", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    return `${datePart} เวลา ${timePart} น.`;
+  };
+
+  const formatDateOnly = (dateString: string | null | undefined) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleDateString("th-TH", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   const getStatusTag = (status: string) => {
+    const baseStyle = "px-3 py-1 rounded-full text-sm font-medium border-0";
     switch (status) {
       case "pending":
-        return <Tag color="blue">รอดำเนินการ</Tag>;
+        return (
+          <Tag color="blue" className={baseStyle}>
+            รออนุมัติ
+          </Tag>
+        );
       case "approve":
-        return <Tag color="green">อนุมัติ</Tag>;
+        return (
+          <Tag color="green" className={baseStyle}>
+            อนุมัติ
+          </Tag>
+        );
       case "cancel":
-        return <Tag color="red">ยกเลิก</Tag>;
+        return (
+          <Tag color="red" className={baseStyle}>
+            ยกเลิก
+          </Tag>
+        );
       case "edit":
-        return <Tag color="orange">รอแก้ไข</Tag>;
+        return (
+          <Tag color="orange" className={baseStyle}>
+            รอแก้ไข
+          </Tag>
+        );
       default:
-        return <Tag>{status}</Tag>;
+        return <Tag className={baseStyle}>{status}</Tag>;
     }
+  };
+
+  // --- 2. Styled Components (Reusable) ---
+
+  const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+    <div className="text-slate-500 text-xs sm:text-sm font-medium mb-1">
+      {children}
+    </div>
+  );
+
+  const Value: React.FC<{ children: React.ReactNode; isBold?: boolean }> = ({
+    children,
+    isBold,
+  }) => (
+    <div
+      className={`text-slate-800 text-sm sm:text-base break-words ${isBold ? "font-semibold" : ""}`}
+    >
+      {children}
+    </div>
+  );
+
+  const InfoBox: React.FC<{ text: string }> = ({ text }) => {
+    if (!text) return <Value>-</Value>;
+    return (
+      <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">
+        {text}
+      </div>
+    );
   };
 
   return (
     <Modal
-      title="รายละเอียดการจองรถ"
+      title={null}
       open={open}
       onCancel={onClose}
       footer={null}
       width={800}
+      centered
+      style={{ maxWidth: "100%", paddingBottom: 0 }}
+      modalRender={(modal) => (
+        <div className="bg-slate-100/50 rounded-2xl overflow-hidden shadow-2xl font-sans">
+          {modal}
+        </div>
+      )}
+      styles={{
+        body: { padding: 0, backgroundColor: "transparent" },
+        header: { display: "none" },
+      }}
     >
       {record && (
-        <Form layout="vertical">
-          <Row gutter={18}>
-            <Col span={12}>
-              <Form.Item label="เรียน :">
-                <span>{record.recipient || "-"}</span>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="วัตถุประสงค์ :">
-                <TextArea
-                  value={record.purpose}
-                  rows={2}
-                  readOnly
-                  bordered={false}
-                  style={{ resize: "none" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
+        <div className="flex flex-col">
+          {/* 🔹 Header */}
+          <div className="bg-white px-6 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10">
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 m-0">
+                รายละเอียดการจองรถ
+              </h2>
+              {/* ถ้ามีเลขเอกสารให้แสดงตรงนี้ ถ้าไม่มีก็เว้นไว้ */}
+              <div className="text-slate-500 text-sm mt-1">
+                ตรวจสอบข้อมูลรายละเอียดคำขอใช้รถ
+              </div>
+            </div>
+            <div className="text-right">{getStatusTag(record.status)}</div>
+          </div>
 
-          <Row gutter={18}>
-            <Col span={12}>
-              <Form.Item label="ตั้งแต่วันที่ :">
-                <span>
-                  {record.dateStart ? (
-                    <>
-                      {new Date(record.dateStart).toLocaleDateString("th-TH", {
-                        day: "numeric",
-                        month: "short", // ใช้ "short" สำหรับ ม.ค. หรือ "long" สำหรับ มกราคม
-                        year: "numeric",
-                      })}
-                      {" เวลา "}
-                      {new Date(record.dateStart).toLocaleTimeString("th-TH", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                      })}
-                      {" น."}
-                    </>
-                  ) : (
-                    "-"
-                  )}
-                </span>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="ถึงวันที่ :">
-                <span>
-                  {record.dateEnd ? (
-                    <>
-                      {new Date(record.dateEnd).toLocaleDateString("th-TH", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                      {" เวลา "}
-                      {new Date(record.dateEnd).toLocaleTimeString("th-TH", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                      })}
-                      {" น."}
-                    </>
-                  ) : (
-                    "-"
-                  )}
-                </span>
-              </Form.Item>
-            </Col>
-          </Row>
+          <div className="p-2 overflow-y-auto max-h-[75vh]">
+            {/* 🔹 Card 1: ภารกิจ (Recipient, Purpose, Destination) */}
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+              <Row gutter={[24, 20]}>
+                <Col span={24}>
+                  <Label>เรียน :</Label>
+                  <Value isBold>{record.recipient || "-"}</Value>
+                </Col>
 
-          <Row gutter={18}>
-            <Col span={12}>
-              <Form.Item label="สถานที่ :">
-                <TextArea
-                  value={record.destination}
-                  rows={2}
-                  readOnly
-                  bordered={false}
-                  style={{ resize: "none" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="งบประมาณ :">
-                <span>{record.budget}</span>
-              </Form.Item>
-            </Col>
-          </Row>
+                <Divider className="my-0" dashed />
 
-          <Row gutter={18}>
-            <Col span={12}>
-              <Form.Item label="จำนวนผู้โดยสาร :">
-                <span>{record.passengers || 0}</span>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="รายชื่อผู้โดยสาร :">
-                <Space wrap>
-                  {record.dataUser
-                    ? record.dataUser
-                        .filter((u: any) =>
-                          record.passengerNames?.includes(u.userId)
-                        )
-                        .map((u: any) => (
-                          <Tag key={u.userId} color="blue">
-                            {u.firstName} {u.lastName}
-                          </Tag>
-                        ))
-                    : record.passengerNames?.map(
-                        (name: string, index: number) => (
-                          <Tag key={index} color="blue">
-                            {name}
-                          </Tag>
-                        )
-                      )}
-                </Space>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={18}>
-            <Col span={12}>
-              <Form.Item label="ขอคนขับรถ :">
-                <span>
-                  {record?.driver === "yes"
-                    ? "ขอพนักงานขับรถส่วนกลาง"
-                    : record?.driver === "no"
-                    ? "ไม่ขอพนักงานขับรถส่วนกลาง"
-                    : "-"}
-                </span>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="รถที่ใช้ :">
-                <span>
-                  {record.masterCar
-                    ? `${record.masterCar.carName} (${record.masterCar.licensePlate})`
-                    : "-"}
-                </span>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={18}>
-            <Col span={12}>
-              <Form.Item label="สถานะ :">
-                {getStatusTag(record.status)}
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="เหตุผลเพิ่มเติม">
-                <TextArea
-                  value={record.note}
-                  rows={2}
-                  readOnly
-                  bordered={false}
-                  style={{ resize: "none" }}
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={18}>
-            <Col span={24}>
-              <Form.Item
-                label="ประเภทการเดินทางและแผนงาน :"
-                style={{ marginBottom: 0 }}
-              >
-                <Space wrap size={[16, 8]}>
-                  {record.typeName && record.typeName.length > 0 ? (
-                    record.typeName.map((name: string, index: number) => (
-                      <span
-                        key={index}
-                        style={{ fontSize: "14px", fontWeight: 500 }}
-                      >
-                        (x) {name}
+                <Col span={24}>
+                  <Label>วัตถุประสงค์ :</Label>
+                  <InfoBox text={record.purpose} />
+                </Col>
+                <Col span={24}>
+                  <Label>สถานที่ :</Label>
+                  <InfoBox text={record.destination} />
+                </Col>
+              </Row>
+            </div>
+
+            {/* 🔹 Card 2: วันเวลา & รถ (Time, Driver, Car, Budget) */}
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4 relative overflow-hidden">
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+              <h3 className="text-slate-800 font-semibold mb-4 text-base pl-2">
+                ข้อมูลการใช้รถ
+              </h3>
+
+              <Row gutter={[24, 20]}>
+                <Col xs={24} sm={12}>
+                  <Label>ตั้งแต่วันที่ :</Label>
+                  <Value isBold>{formatDateTime(record.dateStart)}</Value>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Label>ถึงวันที่ :</Label>
+                  <Value isBold>{formatDateTime(record.dateEnd)}</Value>
+                </Col>
+
+                <Col xs={24} sm={12}>
+                  <Label>ขอคนขับรถ :</Label>
+                  <Value>
+                    {record?.driver === "yes" ? (
+                      <span className="text-green-600 flex items-center gap-1">
+                        ✅ ขอพนักงานขับรถส่วนกลาง
                       </span>
-                    ))
-                  ) : (
-                    <span style={{ color: "blue" }}>- ไม่ได้ระบุ -</span>
-                  )}
-                </Space>
-              </Form.Item>
-            </Col>
-          </Row>
-          <br></br>
-          <Row gutter={18}>
-            {record.approvedByName && record.approvedAt ? (
-              <>
-                <Col span={12}>
-                  <Form.Item label="ผู้อนุมัติ :">
-                    <span>{record.approvedByName}</span>
-                  </Form.Item>
+                    ) : record?.driver === "no" ? (
+                      <span className="text-slate-500">
+                        ไม่ขอพนักงานขับรถส่วนกลาง
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </Value>
                 </Col>
-                <Col span={12}>
-                  <Form.Item label="วันที่อนุมัติ :">
-                    <span>
-                      {record.approvedAt
-                        ? new Date(record.approvedAt).toLocaleDateString(
-                            "th-TH",
-                            {
-                              day: "numeric",
-                              month: "long",
-                              year: "numeric",
-                            }
+                <Col xs={24} sm={12}>
+                  <Label>รถที่ใช้ :</Label>
+                  <Value>
+                    {record.masterCar ? (
+                      <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200 text-sm">
+                        {record.masterCar.carName} (
+                        {record.masterCar.licensePlate})
+                      </span>
+                    ) : (
+                      "-"
+                    )}
+                  </Value>
+                </Col>
+                <Col xs={24} sm={12}>
+                  <Label>งบประมาณ :</Label>
+                  {/* สีฟ้าตาม Theme */}
+                  <div className="text-blue-500 font-bold text-lg">
+                    {record.budget || 0}
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
+            {/* 🔹 Card 3: ผู้โดยสาร & แผนงาน */}
+            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+              <Row gutter={[24, 20]}>
+                <Col span={24}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Label>จำนวนผู้โดยสาร :</Label>
+                    <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs">
+                      {record.passengers || 0} คน
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {record.dataUser
+                      ? record.dataUser
+                          .filter((u: any) =>
+                            record.passengerNames?.includes(u.userId),
                           )
-                        : "-"}
-                    </span>
-                  </Form.Item>
+                          .map((u: any) => (
+                            <div
+                              key={u.userId}
+                              className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-lg text-sm"
+                            >
+                              {u.firstName} {u.lastName}
+                            </div>
+                          ))
+                      : record.passengerNames?.map(
+                          (name: string, index: number) => (
+                            <div
+                              key={index}
+                              className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-lg text-sm"
+                            >
+                              {name}
+                            </div>
+                          ),
+                        )}
+                    {(!record.passengerNames ||
+                      record.passengerNames.length === 0) && (
+                      <span className="text-slate-400 text-sm">-</span>
+                    )}
+                  </div>
                 </Col>
-              </>
-            ) : record.cancelName && record.cancelAt ? (
-              <>
-                <Col span={12}>
-                  <Form.Item label="ผู้ยกเลิก :">
-                    <span>{record.cancelName}</span>
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label="วันที่ยกเลิก :">
-                    <span>
-                      {new Date(record.cancelAt).toLocaleDateString("th-TH")}
-                    </span>
-                  </Form.Item>
-                </Col>
-              </>
-            ) : null}
-          </Row>
 
-          {record.cancelReason && record.cancelAt ? (
-            <Row gutter={18}>
-              <Col span={24}>
-                <Form.Item label="เหตุผลการยกเลิก :">
-                  <TextArea
-                    value={record.cancelReason}
-                    rows={2}
-                    readOnly
-                    bordered={false}
-                    style={{ resize: "none" }}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-          ) : null}
+                <Divider className="my-0" dashed />
 
-          <Row gutter={18}>
-            <Col span={12}>
-              <Form.Item label="ยื่นคำขอเมื่อวันที่ :">
-                <span>
-                  {record.createdAt
-                    ? new Date(record.createdAt).toLocaleDateString("th-TH", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
-                    : "-"}
-                </span>
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="อัปเดตล่าสุดวันที่ :">
-                <span>
-                  {record.updatedAt
-                    ? new Date(record.updatedAt).toLocaleDateString("th-TH", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                      })
-                    : "-"}
-                </span>
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
+                <Col span={24}>
+                  <Label>ประเภทการเดินทางและแผนงาน :</Label>
+                  <div className="mt-2 flex flex-col gap-1">
+                    {record.typeName && record.typeName.length > 0 ? (
+                      record.typeName.map((name: string, index: number) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-2 text-slate-700 text-sm"
+                        >
+                          <span className="text-blue-500 mt-0.5">•</span>
+                          <span>{name}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-slate-400 italic text-sm">
+                        - ไม่ได้ระบุ -
+                      </span>
+                    )}
+                  </div>
+                </Col>
+              </Row>
+            </div>
+
+            {/* 🔹 Notes (ถ้ามี) */}
+            {record.note && (
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl mb-4">
+                <Label>เหตุผลเพิ่มเติม :</Label>
+                <div className="text-amber-900 mt-1 text-sm whitespace-pre-wrap">
+                  {record.note}
+                </div>
+              </div>
+            )}
+
+            {/* 🔹 Footer: System Info */}
+            <div className="bg-slate-200/50 p-4 rounded-xl text-sm border border-slate-200">
+              <Row gutter={[16, 12]}>
+                {record.approvedByName && record.approvedAt ? (
+                  <>
+                    <Col xs={24} sm={12}>
+                      <span className="text-slate-500 block text-xs">
+                        ผู้ดำเนินการ
+                      </span>
+                      <span className="text-slate-700 font-medium">
+                        {record.approvedByName}
+                      </span>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <span className="text-slate-500 block text-xs">
+                        วันที่ดำเนินการ
+                      </span>
+                      <span className="text-slate-700 font-medium">
+                        {formatDateOnly(record.approvedAt)}
+                      </span>
+                    </Col>
+                  </>
+                ) : record.cancelName && record.cancelAt ? (
+                  <>
+                    <Col xs={24} sm={12}>
+                      <span className="text-red-500 block text-xs">
+                        ผู้ยกเลิก
+                      </span>
+                      <span className="text-red-700 font-medium">
+                        {record.cancelName}
+                      </span>
+                    </Col>
+                    <Col xs={24} sm={12}>
+                      <span className="text-red-500 block text-xs">
+                        วันที่ยกเลิก
+                      </span>
+                      <span className="text-red-700 font-medium">
+                        {formatDateOnly(record.cancelAt)}
+                      </span>
+                    </Col>
+                    {record.cancelReason && (
+                      <Col span={24} className="mt-1">
+                        <div className="bg-white p-2 rounded border border-red-100 text-red-600 text-xs">
+                          เหตุผล: {record.cancelReason}
+                        </div>
+                      </Col>
+                    )}
+                  </>
+                ) : (
+                  <Col span={24} className="text-center text-slate-400 italic">
+                    - อยู่ระหว่างดำเนินการ -
+                  </Col>
+                )}
+              </Row>
+
+              <Divider className="my-3 bg-slate-300" />
+
+              <div className="flex justify-between text-xs text-slate-400">
+                <span>ยื่นคำขอ: {formatDateOnly(record.createdAt)}</span>
+                <span>อัปเดต: {formatDateOnly(record.updatedAt)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </Modal>
   );

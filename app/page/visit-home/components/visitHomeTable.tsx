@@ -34,6 +34,7 @@ import { visitHomeServices } from "../services/visitHome.service";
 
 // Import Component แก้ไขที่แยกออกไป
 import VisitHomeEdit from "./visitHomeEdit";
+import CustomTable from "../../common/CustomTable";
 
 const { Option } = Select;
 
@@ -60,14 +61,14 @@ export default function VisitHomeTable({
 
   // State สำหรับ Modal แก้ไข
   const [editingRecord, setEditingRecord] = useState<VisitHomeType | null>(
-    null
+    null,
   );
   const [modalVisible, setModalVisible] = useState(false);
 
   // Search State
   const [searchText, setSearchText] = useState("");
   const [filterPatientType, setFilterPatientType] = useState<number | null>(
-    null
+    null,
   );
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");
   // ฟังก์ชันถอดรหัส (สำหรับแสดงในตาราง)
@@ -224,26 +225,24 @@ export default function VisitHomeTable({
           <Tooltip title="ดูรายละเอียด">
             <FileSearchOutlined
               type="default"
-              // icon={<EyeOutlined />}
-              // size="small"
-              style={{ color: "#1890ff", borderColor: "#1890ff" }}
+              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
               onClick={() => openModal(record, "view")} // เปิดแบบ view
             />
           </Tooltip>
 
-          {/* ปุ่มแก้ไข (สีส้ม) */}
           <Tooltip title="แก้ไข">
-            <Button
-              type="primary"
-              icon={<EditOutlined />}
-              size="small"
-              ghost
-              style={{ color: "#faad14", borderColor: "#faad14" }}
-              onClick={() => openModal(record, "edit")} // เปิดแบบ edit
+            <EditOutlined
+              style={{
+                fontSize: 22,
+                color: "#faad14", // สีส้ม
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+              onClick={() => openModal(record, "edit")}
             />
           </Tooltip>
 
-          {/* ปุ่มลบ (สีแดง) */}
+          {/* ปุ่มลบ (ไอคอนถังขยะสีแดง) */}
           <Popconfirm
             title="ยืนยันการลบ?"
             description="ข้อมูลนี้จะหายไปจากระบบ"
@@ -252,12 +251,16 @@ export default function VisitHomeTable({
             cancelText="ยกเลิก"
             okButtonProps={{ danger: true }}
           >
-            <Button
-              type="primary"
-              icon={<DeleteOutlined />}
-              size="small"
-              danger
-            />
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 22,
+                  color: "#ff4d4f", // สีแดง
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
@@ -334,7 +337,7 @@ export default function VisitHomeTable({
         style={{ borderRadius: 8, overflow: "hidden" }}
         bodyStyle={{ padding: 0 }}
       >
-        <Table
+        <CustomTable
           columns={columns}
           dataSource={filteredData}
           loading={loading}
@@ -347,23 +350,6 @@ export default function VisitHomeTable({
           scroll={{ x: 1300 }}
         />
       </Card>
-
-      {/* เรียกใช้ Component แก้ไขที่นี่ */}
-      {/* <VisitHomeEdit
-        visible={modalVisible}
-        onCancel={() => {
-          setModalVisible(false);
-          setEditingRecord(null);
-        }}
-        onSuccess={() => {
-          setModalVisible(false);
-          setEditingRecord(null);
-          setLoading(true);
-          fetchData();
-        }}
-        record={editingRecord}
-        masterPatients={masterPatients}
-      /> */}
 
       <VisitHomeEdit
         visible={modalVisible}

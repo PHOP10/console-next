@@ -16,6 +16,7 @@ import { MasterLeaveType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import { DeleteOutlined, FormOutlined } from "@ant-design/icons";
+import CustomTable from "../../common/CustomTable";
 
 interface ManagementMasterLeaveTableProps {
   data: MasterLeaveType[];
@@ -42,7 +43,7 @@ export default function ManagementMasterLeaveTable({
   const [editForm] = Form.useForm();
 
   const [currentRecord, setCurrentRecord] = useState<MasterLeaveType | null>(
-    null
+    null,
   );
 
   /** ------------------ ADD ------------------ **/
@@ -90,7 +91,7 @@ export default function ManagementMasterLeaveTable({
 
       message.success("แก้ไขประเภทลาสำเร็จ");
       setMasterLeave((prev) =>
-        prev.map((item) => (item.id === updated.id ? updated : item))
+        prev.map((item) => (item.id === updated.id ? updated : item)),
       );
 
       setIsEditModalOpen(false);
@@ -117,7 +118,7 @@ export default function ManagementMasterLeaveTable({
           <Tooltip title="แก้ไข">
             <FormOutlined
               style={{
-                fontSize: 20,
+                fontSize: 22,
                 color: "#faad14",
                 cursor: "pointer",
               }}
@@ -135,7 +136,7 @@ export default function ManagementMasterLeaveTable({
                 await intraAuthService.deleteMasterLeave(record.id);
                 message.success("ลบข้อมูลสำเร็จ");
                 setMasterLeave((prev) =>
-                  prev.filter((item) => item.id !== record.id)
+                  prev.filter((item) => item.id !== record.id),
                 );
               } catch (error) {
                 console.error("เกิดข้อผิดพลาดในการลบ:", error);
@@ -150,7 +151,7 @@ export default function ManagementMasterLeaveTable({
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 20,
+                  fontSize: 22,
                   color: "#ff4d4f",
                   cursor: "pointer",
                 }}
@@ -168,7 +169,7 @@ export default function ManagementMasterLeaveTable({
         เพิ่มประเภทลา
       </Button>
 
-      <Table
+      <CustomTable
         rowKey="id"
         dataSource={data}
         columns={columns}

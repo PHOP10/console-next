@@ -3,9 +3,10 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { Button } from "antd";
+import { Button, Tooltip } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import { FileWordOutlined } from "@ant-design/icons";
 
 dayjs.locale("th");
 
@@ -53,14 +54,24 @@ const ExportMedicalEquipmentWord: React.FC<ExportMedicalEquipmentWordProps> = ({
   };
 
   return (
-    <Button
-      size="small"
-      type="primary"
-      onClick={handleExport}
-      disabled={record.status !== "pending"}
-    >
-      Export
-    </Button>
+    <Tooltip title="พิมพ์ใบส่งเครื่องมือ">
+      <FileWordOutlined
+        style={{
+          fontSize: 22,
+          // ถ้าสถานะเป็น pending ให้เป็นสีฟ้า (Theme Word) ถ้าไม่ใช่ให้เป็นสีเทา
+          color: record.status === "pending" ? "#1677ff" : "#d9d9d9",
+          // ถ้าไม่ใช่ pending ให้ขึ้นเมาส์ห้ามกด
+          cursor: record.status === "pending" ? "pointer" : "not-allowed",
+          transition: "color 0.2s",
+        }}
+        onClick={() => {
+          // เช็คเงื่อนไขก่อนทำงาน (แทน prop disabled)
+          if (record.status === "pending") {
+            handleExport();
+          }
+        }}
+      />
+    </Tooltip>
   );
 };
 

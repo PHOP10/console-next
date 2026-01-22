@@ -14,9 +14,9 @@ import {
   Row,
   Col,
   ConfigProvider,
-  Checkbox,
   Radio,
   Space,
+  Divider,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { officialTravelRequestService } from "../services/officialTravelRequest.service";
@@ -29,8 +29,10 @@ import { useSession } from "next-auth/react";
 import th_TH from "antd/locale/th_TH";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
-dayjs.locale("th");
 import isBetween from "dayjs/plugin/isBetween";
+import { SaveOutlined } from "@ant-design/icons";
+
+dayjs.locale("th");
 dayjs.extend(isBetween);
 
 interface Props {
@@ -53,32 +55,24 @@ export default function OfficialTravelRequestBookForm({
   const [loading, setLoading] = useState<boolean>(false);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const selectedTravelType = Form.useWatch("travelType", form);
-  // console.log("dataOTR:", dataOTR);
 
   const onFinish = async (values: any) => {
     setSubmitting(true);
     try {
       const { carId, startDate, endDate, travelType } = values;
 
-      // เปลี่ยนชื่อจาก maCar หรือ dataOTR ให้ตรงกับตัวแปรที่คุณใช้จริง
       const isCarOverlaps =
         dataOTR &&
         dataOTR.some((booking) => {
           if (booking.status === "cancel") return false;
 
-          // 1. ปรับเวลาของรายการใหม่ให้ครอบคลุมทั้งวัน
           const start = dayjs(startDate).startOf("day");
           const end = dayjs(endDate).endOf("day");
-
-          // 2. ปรับเวลาของรายการในฐานข้อมูล (ใช้ชื่อฟิลด์ startDate, endDate ตาม Prisma Model)
           const bStart = dayjs(booking.startDate).startOf("day");
           const bEnd = dayjs(booking.endDate).endOf("day");
 
-          // 3. Logic ตรวจสอบการทับซ้อน (Overlap)
-          // สูตร: (รายการใหม่เริ่มก่อนรายการเก่าจบ) และ (รายการใหม่จบหลังรายการเก่าเริ่ม)
           const isTimeOverlap = start.isBefore(bEnd) && end.isAfter(bStart);
 
-          // 4. เงื่อนไขรถคันเดียวกัน
           const isSameCarOverlap =
             travelType === "official" &&
             carId &&
@@ -89,23 +83,15 @@ export default function OfficialTravelRequestBookForm({
 
       if (isCarOverlaps) {
         message.warning(
-          "ไม่สามารถดำเนินรายการได้: รถหมายเลขทะเบียนนี้มีการจองไว้แล้วในวันที่เลือก"
+          "ไม่สามารถดำเนินรายการได้: รถหมายเลขทะเบียนนี้มีการจองไว้แล้วในวันที่เลือก",
         );
         return;
       }
-
-      // if (conflictBooking) {
-      //   message.warning(
-      //     `ไม่สามารถดำเนินรายการได้: รถหมายเลขทะเบียนนี้ถูกจองแล้วในช่วงเวลาดังกล่าว`
-      //   );
-      //   return; // หยุดการทำงานทันที
-      // }
 
       const payload = {
         ...values,
         recipient: values.recipient || null,
         documentNo: values.documentNo,
-        // title: values.title,
         missionDetail: values.missionDetail,
         location: values.location,
         startDate: values.startDate ? values.startDate.toISOString() : null,
@@ -142,49 +128,50 @@ export default function OfficialTravelRequestBookForm({
     return `${day} ${month} ${year}`;
   };
 
+  // --- Master Template Styles ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const selectStyle =
+    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+
+  const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
+
   return (
     <Card
+      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
       title={
-        <div
-          style={{
-            textAlign: "center",
-            color: "#0683e9",
-            fontWeight: "bold",
-            fontSize: "20px",
-          }}
-        >
+        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
           ฟอร์มขอไปราชการ
         </div>
       }
     >
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={onFinish}>
-          <Row gutter={16}>
+          {/* Section 1: ข้อมูลเอกสาร */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentNo"
-                // ช่วยลบอักขระที่ไม่ต้องการออกทันทีขณะพิมพ์ (คงเหลือแค่ตัวเลข . และ /)
                 normalize={(value) => value.replace(/[^0-9./]/g, "")}
                 rules={[
+                  { required: true, message: "กรุณากรอกเลขที่เอกสาร" },
                   {
-                    required: true,
-                    message: "กรุณากรอกเลขที่เอกสาร",
-                  },
-                  {
-                    // ปรับ Pattern ให้รับเฉพาะ ตัวเลข, จุด และ ทับ เท่านั้น
                     pattern: /^[0-9./]+$/,
                     message: "กรอกได้เฉพาะตัวเลข จุด (.) และทับ (/) เท่านั้น",
                   },
                   {
                     validator: (_, value) => {
-                      // ตรวจสอบความซ้ำซ้อนจาก dataOTR
                       if (
                         value &&
                         dataOTR.some((doc) => doc.documentNo === value)
                       ) {
                         return Promise.reject(
-                          new Error("เลขที่เอกสารนี้ซ้ำกับในระบบ")
+                          new Error("เลขที่เอกสารนี้ซ้ำกับในระบบ"),
                         );
                       }
                       return Promise.resolve();
@@ -192,7 +179,11 @@ export default function OfficialTravelRequestBookForm({
                   },
                 ]}
               >
-                <Input placeholder="เช่น 0999.9.9/99" maxLength={12} />
+                <Input
+                  placeholder="เช่น 0999.9.9/99"
+                  maxLength={12}
+                  className={inputStyle}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -203,10 +194,11 @@ export default function OfficialTravelRequestBookForm({
               >
                 <Select
                   placeholder="กรอกเรียน"
+                  className={selectStyle}
                   onChange={(value) => {
                     form.setFieldValue(
                       "recipient",
-                      value === "other" ? "" : value
+                      value === "other" ? "" : value,
                     );
                   }}
                   dropdownRender={(menu) => (
@@ -215,16 +207,17 @@ export default function OfficialTravelRequestBookForm({
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
                           placeholder="กรอกอื่น ๆ ..."
+                          className="rounded-lg"
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "recipient",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                           onBlur={(e) => {
                             form.setFieldValue(
                               "recipient",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
                           }}
                         />
@@ -235,20 +228,23 @@ export default function OfficialTravelRequestBookForm({
                   <Select.Option value="สาธารณสุขอำเภอวังเจ้า">
                     สาธารณสุขอำเภอวังเจ้า
                   </Select.Option>
-                  {/* <Select.Option value="other">อื่นๆ...</Select.Option> */}
                 </Select>
               </Form.Item>
             </Col>
           </Row>
 
-          <Row gutter={16}>
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="วัตถุประสงค์"
                 name="missionDetail"
                 rules={[{ required: true, message: "กรุณากรอกวัตถุประสงค์" }]}
               >
-                <Input.TextArea placeholder="กรอกวัตถุประสงค์" rows={2} />
+                <Input.TextArea
+                  placeholder="กรอกวัตถุประสงค์"
+                  rows={2}
+                  className={textAreaStyle}
+                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -257,131 +253,113 @@ export default function OfficialTravelRequestBookForm({
                 name="location"
                 rules={[{ required: true, message: "กรุณากรอกสถานที่" }]}
               >
-                <Input.TextArea placeholder="กรอกสถานที่" rows={2} />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* ✅ แสดงวันที่แบบ พ.ศ. */}
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="ตั้งแต่วันที่"
-                name="startDate"
-                rules={[
-                  { required: true, message: "กรุณาเลือกวันที่เริ่มเดินทาง" },
-                ]}
-              >
-                <DatePicker
-                  style={{ width: "100%" }}
-                  placeholder="เลือกวันที่เริ่มเดินทาง"
-                  format={(value) => formatBuddhist(value as dayjs.Dayjs)}
-                  onChange={() => {
-                    form.setFieldValue("endDate", null); // reset endDate เมื่อเปลี่ยน startDate
-                  }}
-                  disabledDate={(current) => {
-                    if (!current) return false;
-                    // ห้ามเลือกวันย้อนหลัง
-                    if (current < dayjs().startOf("day")) return true;
-
-                    // ตรวจสอบการทับซ้อนกับรายการใน Database
-                    return oTRUser.some((maCar) => {
-                      if (maCar.status === "cancel") return false; // ไม่นับรายการที่ยกเลิก
-
-                      // ใช้ชื่อ Field ให้ตรงกับ Model: startDate และ endDate
-                      const start = dayjs(maCar.startDate).startOf("day");
-                      const end = dayjs(maCar.endDate).endOf("day");
-
-                      return current.isBetween(start, end, "day", "[]");
-                    });
-                  }}
+                <Input.TextArea
+                  placeholder="กรอกสถานที่"
+                  rows={2}
+                  className={textAreaStyle}
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item
-                noStyle
-                shouldUpdate={(prev, cur) => prev.startDate !== cur.startDate}
-              >
-                {({ getFieldValue }) => {
-                  const dateStart = getFieldValue("startDate");
-                  return (
-                    <Form.Item
-                      name="endDate"
-                      label="ถึงวันที่"
-                      rules={[
-                        {
-                          required: true,
-                          message: "กรุณาเลือกวันที่สิ้นสุดการเดินทาง",
-                        },
-                      ]}
-                    >
-                      <DatePicker
-                        style={{ width: "100%" }}
-                        placeholder={
-                          dateStart
-                            ? `เลือกตั้งแต่ ${dayjs(dateStart).format(
-                                "DD/MM/YYYY"
-                              )} เป็นต้นไป`
-                            : "กรุณาเลือกวันที่เริ่มเดินทางก่อน"
-                        }
-                        format={(value) => formatBuddhist(value as dayjs.Dayjs)}
-                        disabled={!dateStart}
-                        disabledDate={(current) => {
-                          if (!current) return false;
-
-                          if (
-                            dateStart &&
-                            current < dayjs(dateStart).startOf("day")
-                          ) {
-                            return true;
-                          }
-                          if (current < dayjs().startOf("day")) return true;
-
-                          // ห้ามเลือกวันที่ทับกับช่วงจองรถ
-                          return oTRUser.some((maCar) => {
-                            const start = dayjs(maCar.startDate).startOf("day");
-                            const end = dayjs(maCar.endDate).endOf("day");
-                            return dayjs(current).isBetween(
-                              start,
-                              end,
-                              "day",
-                              "[]"
-                            );
-                          });
-                        }}
-                      />
-                    </Form.Item>
-                  );
-                }}
-              </Form.Item>
-            </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={24}>
-              <div style={{ marginBottom: 8, fontWeight: "bold" }}>
-                <span style={{ color: "#ff4d4f" }}>*</span> ลักษณะการเดินทาง
-              </div>
-            </Col>
+          {/* Section 2: วันเวลาเดินทาง */}
+          <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100 mb-6 mt-2">
+            <Row gutter={24}>
+              <Col span={12}>
+                <Form.Item
+                  label="ตั้งแต่วันที่"
+                  name="startDate"
+                  rules={[
+                    { required: true, message: "กรุณาเลือกวันที่เริ่มเดินทาง" },
+                  ]}
+                  style={{ marginBottom: 0 }}
+                >
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    placeholder="เลือกวันที่เริ่ม"
+                    format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                    className={`${inputStyle} pt-2`}
+                    onChange={() => form.setFieldValue("endDate", null)}
+                    disabledDate={(current) => {
+                      if (!current) return false;
+                      if (current < dayjs().startOf("day")) return true;
+                      return oTRUser.some((maCar) => {
+                        if (maCar.status === "cancel") return false;
+                        const start = dayjs(maCar.startDate).startOf("day");
+                        const end = dayjs(maCar.endDate).endOf("day");
+                        return current.isBetween(start, end, "day", "[]");
+                      });
+                    }}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  noStyle
+                  shouldUpdate={(prev, cur) => prev.startDate !== cur.startDate}
+                >
+                  {({ getFieldValue }) => {
+                    const dateStart = getFieldValue("startDate");
+                    return (
+                      <Form.Item
+                        name="endDate"
+                        label="ถึงวันที่"
+                        rules={[
+                          {
+                            required: true,
+                            message: "กรุณาเลือกวันที่สิ้นสุด",
+                          },
+                        ]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <DatePicker
+                          style={{ width: "100%" }}
+                          placeholder={
+                            dateStart ? `เลือกถึงวันที่` : "เลือกวันเริ่มก่อน"
+                          }
+                          format={(value) =>
+                            formatBuddhist(value as dayjs.Dayjs)
+                          }
+                          className={`${inputStyle} pt-2`}
+                          disabled={!dateStart}
+                          disabledDate={(current) => {
+                            if (!current) return false;
+                            if (
+                              dateStart &&
+                              current < dayjs(dateStart).startOf("day")
+                            )
+                              return true;
+                            if (current < dayjs().startOf("day")) return true;
+                            return oTRUser.some((maCar) => {
+                              if (maCar.status === "cancel") return false;
+                              const start = dayjs(maCar.startDate).startOf(
+                                "day",
+                              );
+                              const end = dayjs(maCar.endDate).endOf("day");
+                              return current.isBetween(start, end, "day", "[]");
+                            });
+                          }}
+                        />
+                      </Form.Item>
+                    );
+                  }}
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
 
-            <Col span={24}>
-              {/* ใช้ Row ซ้อนข้างในเพื่อแบ่งพื้นที่ซ้าย-ขวาเฉพาะส่วนนี้ */}
-              <Row
-                gutter={24}
-                align="middle"
-                style={{
-                  // background: "#fafafa",
-                  padding: "16px",
-                  borderRadius: "8px",
-                }}
-              >
-                {/* ฝั่งซ้าย: รายการตัวเลือก */}
-                <Col span={10}>
+          {/* Section 3: ลักษณะการเดินทาง */}
+          <div className="mb-6">
+            <div className="mb-2 font-bold text-gray-700">
+              <span className="text-red-500 mr-1">*</span> ลักษณะการเดินทาง
+            </div>
+            <div className={optionGroupStyle}>
+              <Row gutter={24} align="top">
+                <Col span={12}>
                   <Form.Item
                     name="travelType"
                     noStyle
-                    rules={[{ required: true }]}
+                    rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
                   >
                     <Radio.Group style={{ width: "100%" }}>
                       <Space direction="vertical" size={12}>
@@ -390,109 +368,106 @@ export default function OfficialTravelRequestBookForm({
                           2. รถยนต์โดยสารปรับอากาศประจำทาง
                         </Radio>
                         <Radio value="plane">3. เครื่องบินโดยสาร</Radio>
-                        <Radio value="private">
-                          4. รถยนต์ส่วนบุคคลหมายเลขทะเบียน
-                        </Radio>
-                        <Radio value="other">5. อื่น ๆ (ระบุ)</Radio>
+                        <Radio value="private">4. รถยนต์ส่วนบุคคล</Radio>
+                        <Radio value="other">5. อื่น ๆ</Radio>
                       </Space>
                     </Radio.Group>
                   </Form.Item>
                 </Col>
 
-                {/* ฝั่งขวา: ช่องกรอกข้อมูลที่จะโผล่มาตามเงื่อนไข */}
-                <Col span={14}>
-                  <div
-                    style={{
-                      minHeight: "80px",
-                      display: "flex",
-                      alignItems: "center",
-                      borderLeft: "1px solid #f0f0f0",
-                      paddingLeft: "24px",
-                    }}
-                  >
-                    {selectedTravelType === "official" && (
-                      <Form.Item
-                        label="เลือกรถราชการ"
-                        name="carId"
-                        style={{ width: "100%", margin: 0 }}
-                        rules={[{ required: true, message: "กรุณาเลือกรถ" }]}
-                      >
-                        <Select placeholder="เลือกรายชื่อรถในระบบ" showSearch>
-                          {cars.map((car) => (
-                            <Select.Option key={car.id} value={car.id}>
-                              {car.licensePlate} ({car.brand})
-                            </Select.Option>
-                          ))}
-                        </Select>
-                      </Form.Item>
-                    )}
+                {/* Dynamic Inputs based on Selection */}
+                <Col span={12}>
+                  <div className="flex items-center h-full pl-6 border-l border-gray-200 min-h-[150px]">
+                    <div className="w-full">
+                      {selectedTravelType === "official" && (
+                        <Form.Item
+                          label="เลือกรถราชการ"
+                          name="carId"
+                          rules={[{ required: true, message: "กรุณาเลือกรถ" }]}
+                        >
+                          <Select
+                            placeholder="เลือกรายชื่อรถในระบบ"
+                            showSearch
+                            className={selectStyle}
+                          >
+                            {cars.map((car) => (
+                              <Select.Option key={car.id} value={car.id}>
+                                {car.licensePlate} ({car.brand})
+                              </Select.Option>
+                            ))}
+                          </Select>
+                        </Form.Item>
+                      )}
 
-                    {selectedTravelType === "private" && (
-                      <Form.Item
-                        label="ทะเบียนรถ"
-                        name="privateCarId"
-                        style={{ width: "100%", margin: 0 }}
-                        rules={[
-                          { required: true, message: "กรุณากรอกทะเบียน" },
-                        ]}
-                      >
-                        <Input placeholder="เช่น กข 1234 ตาก" />
-                      </Form.Item>
-                    )}
+                      {selectedTravelType === "private" && (
+                        <Form.Item
+                          label="ทะเบียนรถ"
+                          name="privateCarId"
+                          rules={[
+                            { required: true, message: "กรุณากรอกทะเบียน" },
+                          ]}
+                        >
+                          <Input
+                            placeholder="เช่น กข 1234 ตาก"
+                            className={inputStyle}
+                          />
+                        </Form.Item>
+                      )}
 
-                    {selectedTravelType === "other" && (
-                      <Form.Item
-                        label="ระบุรายละเอียด"
-                        name="otherTravelType"
-                        style={{ width: "100%", margin: 0 }}
-                        rules={[{ required: true, message: "กรุณาระบุ" }]}
-                      >
-                        <Input placeholder="เช่น รถไฟ, เรือ" />
-                      </Form.Item>
-                    )}
+                      {selectedTravelType === "other" && (
+                        <Form.Item
+                          label="ระบุรายละเอียด"
+                          name="otherTravelType"
+                          rules={[{ required: true, message: "กรุณาระบุ" }]}
+                        >
+                          <Input
+                            placeholder="เช่น รถไฟ, เรือ"
+                            className={inputStyle}
+                          />
+                        </Form.Item>
+                      )}
 
-                    {/* ถ้าเลือกข้อ 2 หรือ 3 ที่ไม่มีช่องกรอก ให้แสดงข้อความแนะนำเบาๆ หรือปล่อยว่าง */}
-                    {(selectedTravelType === "bus" ||
-                      selectedTravelType === "plane") && (
-                      <span style={{ color: "#8c8c8c" }}>
-                        ไม่ต้องกรอกข้อมูลเพิ่มเติม
-                      </span>
-                    )}
+                      {(selectedTravelType === "bus" ||
+                        selectedTravelType === "plane") && (
+                        <div className="text-gray-400 text-center italic">
+                          ไม่ต้องกรอกข้อมูลเพิ่มเติม
+                        </div>
+                      )}
 
-                    {!selectedTravelType && (
-                      <span style={{ color: "#bfbfbf" }}>
-                        กรุณาเลือกประเภทด้านซ้าย
-                      </span>
-                    )}
+                      {!selectedTravelType && (
+                        <div className="text-gray-400 text-center">
+                          กรุณาเลือกประเภทการเดินทางด้านซ้าย
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </Col>
               </Row>
-            </Col>
-          </Row>
-          <Row gutter={16}>
+            </div>
+          </div>
+
+          {/* Section 4: ผู้โดยสารและงบประมาณ */}
+          <Row gutter={24}>
             <Col span={6}>
               <Form.Item
                 label="จำนวนผู้โดยสาร"
                 name="passengers"
-                rules={[{ required: true, message: "กรุณากรอกจำนวนผู้โดยสาร" }]}
+                rules={[{ required: true, message: "ระบุจำนวน" }]}
               >
                 <InputNumber
                   min={1}
-                  max={10} // จำกัดค่าสูงสุดไม่เกิน 9
-                  maxLength={1} // จำกัดการพิมพ์ได้เพียง 1 ตัวอักษร
+                  max={10}
+                  maxLength={1}
                   precision={0}
                   style={{ width: "100%" }}
                   placeholder="0-9"
-                  // Parser แบบเข้มงวด: รับเฉพาะตัวเลขตัวแรกที่พิมพ์เข้ามา
+                  className={`${inputStyle} pt-1`}
                   parser={(value) => {
                     const parsed = value?.replace(/\D/g, "").slice(0, 1);
                     return parsed ? parseInt(parsed, 10) : "";
                   }}
-                  // บล็อก Key อื่นๆ ที่ไม่ใช่ 0-9 ทันที
                   onKeyPress={(e) => {
-                    if (!/[0-9]/.test(e.key)) {
-                      e.preventDefault();
-                    }
+                    if (!/[0-9]/.test(e.key)) e.preventDefault();
                   }}
                 />
               </Form.Item>
@@ -503,6 +478,8 @@ export default function OfficialTravelRequestBookForm({
                   mode="multiple"
                   placeholder="เลือกผู้โดยสาร"
                   optionFilterProp="children"
+                  className={selectStyle}
+                  maxTagCount="responsive"
                 >
                   {dataUser.map((user) => (
                     <Select.Option key={user.userId} value={user.userId}>
@@ -510,20 +487,21 @@ export default function OfficialTravelRequestBookForm({
                     </Select.Option>
                   ))}
                 </Select>
-              </Form.Item>{" "}
+              </Form.Item>
             </Col>
           </Row>
-          <Row gutter={16}>
+
+          <Row gutter={24}>
             <Col span={6}>
               <Form.Item
                 name="budget"
                 label="งบประมาณ"
-                rules={[{ required: true, message: "กรุณาเลือกงบประมาณ" }]}
+                rules={[{ required: true, message: "เลือกงบประมาณ" }]}
               >
                 <Select
                   placeholder="เลือกงบประมาณ"
-                  allowClear // เพิ่มเพื่อให้กดล้างค่าที่เลือกได้
-                  style={{ width: "100%" }}
+                  allowClear
+                  className={selectStyle}
                 >
                   <Select.Option value="งบกลาง">งบกลาง</Select.Option>
                   <Select.Option value="งบโครงการ">งบโครงการ</Select.Option>
@@ -535,13 +513,23 @@ export default function OfficialTravelRequestBookForm({
             </Col>
             <Col span={18}>
               <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
-                <Input.TextArea placeholder="หมายเหตุเพิ่มเติม" rows={3} />
+                <Input.TextArea
+                  placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
+                  rows={2}
+                  className={textAreaStyle}
+                />
               </Form.Item>
             </Col>
           </Row>
 
-          <Form.Item style={{ textAlign: "center" }}>
-            <Button type="primary" htmlType="submit" loading={submitting}>
+          <Form.Item style={{ textAlign: "center", marginTop: 16 }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              icon={<SaveOutlined />}
+              className="h-9 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9]"
+            >
               ยื่นคำขอ
             </Button>
           </Form.Item>

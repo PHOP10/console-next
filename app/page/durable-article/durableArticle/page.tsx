@@ -21,12 +21,11 @@ export default function Page() {
       const result = await intraAuthService.getDurableArticleQuery();
 
       let articles: any[] = [];
-
       if (Array.isArray(result)) {
         articles = result.filter((item) => item.type === "durableArticles");
       } else if (Array.isArray(result?.data)) {
         articles = result.data.filter(
-          (item: any) => item.type === "durableArticles"
+          (item: any) => item.type === "durableArticles",
         );
       }
 

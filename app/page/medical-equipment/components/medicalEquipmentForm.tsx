@@ -1,18 +1,17 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Button,
   Form,
-  Input,
   InputNumber,
   DatePicker,
   Select,
-  Space,
   message,
   Card,
   Row,
   Col,
+  Input,
   FormListFieldData,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -68,7 +67,7 @@ export default function CreateMedicalEquipmentForm({
       const res = await maService.createMaMedicalEquipment(payload);
       if (res) {
         setLoading(true);
-        fetchData;
+        fetchData(); // แก้ไข Syntax เรียกใช้ function
         message.success("บันทึกข้อมูลสำเร็จ");
         form.resetFields();
       } else {
@@ -84,21 +83,22 @@ export default function CreateMedicalEquipmentForm({
     form.resetFields();
   }, [form]);
 
+  // --- Styles Constants ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  // สไตล์เฉพาะสำหรับ Select ของ Ant Design ให้มนและมีเงา
+  const selectStyle =
+    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+
   return (
     <Card
+      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden mt-5"
       title={
-        <div
-          style={{
-            fontSize: "20px",
-            textAlign: "center",
-            fontWeight: "bold",
-            color: "#0683e9",
-          }}
-        >
+        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
           ส่งเครื่องมือแพทย์
         </div>
       }
-      style={{ marginTop: 20 }}
     >
       <Form
         preserve={false}
@@ -116,161 +116,179 @@ export default function CreateMedicalEquipmentForm({
 
             return (
               <>
-                <label>เลือกเครื่องมือ</label>
+                <div className="mb-4 text-base font-semibold text-gray-700">
+                  รายการเครื่องมือที่ส่งซ่อม
+                </div>
 
                 {groupedFields.map((pair, rowIndex) => (
-                  <Row gutter={16} key={rowIndex} style={{ marginBottom: 8 }}>
+                  <Row gutter={24} key={rowIndex} className="mb-2">
                     {pair.map(({ key, name, ...restField }) => (
                       <Col span={12} key={key}>
-                        <Row gutter={8} align="top">
-                          <Col flex="auto">
-                            <Form.Item
-                              {...restField}
-                              name={[name, "medicalEquipmentId"]}
-                              rules={[
-                                {
-                                  required: true,
-                                  message: "กรุณาเลือกเครื่องมือ",
-                                },
-                              ]}
-                              style={{ marginBottom: 0 }}
-                            >
-                              <Select
-                                placeholder="เลือกเครื่องมือ"
-                                showSearch
-                                optionFilterProp="children"
-                                style={{ width: "100%" }}
+                        {/* กรอบของแต่ละ Item เพื่อให้ดูเป็นกลุ่มก้อน */}
+                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4 relative hover:shadow-md transition-shadow">
+                          <Row gutter={12} align="bottom">
+                            {/* 1. เลือกเครื่องมือ */}
+                            <Col flex="auto">
+                              <Form.Item
+                                {...restField}
+                                label={
+                                  <span className="text-gray-600">
+                                    ชื่อเครื่องมือ
+                                  </span>
+                                }
+                                name={[name, "medicalEquipmentId"]}
+                                rules={[
+                                  {
+                                    required: true,
+                                    message: "กรุณาเลือกเครื่องมือ",
+                                  },
+                                ]}
+                                style={{ marginBottom: 0 }}
                               >
-                                {dataEQ.map((eq) => {
-                                  const reservedQuantity = dataEQ
-                                    .flatMap((ma) => ma.items || [])
-                                    .filter(
-                                      (item: any) =>
-                                        item.medicalEquipmentId === eq.id &&
-                                        ["pending", "approve"].includes(
-                                          item.maMedicalEquipment?.status
-                                        )
+                                <Select
+                                  placeholder="เลือกเครื่องมือ"
+                                  showSearch
+                                  optionFilterProp="children"
+                                  className={selectStyle}
+                                >
+                                  {dataEQ.map((eq) => {
+                                    // --- Logic คำนวณ Stock คงเดิม ---
+                                    const reservedQuantity = dataEQ
+                                      .flatMap((ma) => ma.items || [])
+                                      .filter(
+                                        (item: any) =>
+                                          item.medicalEquipmentId === eq.id &&
+                                          ["pending", "approve"].includes(
+                                            item.maMedicalEquipment?.status,
+                                          ),
+                                      )
+                                      .reduce(
+                                        (sum: number, item: any) =>
+                                          sum + item.quantity,
+                                        0,
+                                      );
+
+                                    const remainingQuantity =
+                                      eq.quantity - reservedQuantity;
+
+                                    const selectedIds = (
+                                      form.getFieldValue("equipmentInfo") ?? []
                                     )
-                                    .reduce(
-                                      (sum: number, item: any) =>
-                                        sum + item.quantity,
-                                      0
+                                      .filter((i: any) => i)
+                                      .map((i: any) => i.medicalEquipmentId)
+                                      .filter((id: any) => id !== undefined);
+
+                                    const isSelected =
+                                      selectedIds.includes(eq.id) &&
+                                      eq.id !==
+                                        form.getFieldValue([
+                                          "equipmentInfo",
+                                          name,
+                                          "medicalEquipmentId",
+                                        ]);
+
+                                    return (
+                                      <Option
+                                        key={eq.id}
+                                        value={eq.id}
+                                        disabled={
+                                          isSelected || remainingQuantity <= 0
+                                        }
+                                      >
+                                        {eq.equipmentName} (คงเหลือ{" "}
+                                        {remainingQuantity})
+                                      </Option>
                                     );
+                                  })}
+                                </Select>
+                              </Form.Item>
+                            </Col>
 
-                                  const remainingQuantity =
-                                    eq.quantity - reservedQuantity;
-
-                                  const selectedIds = (
-                                    form.getFieldValue("equipmentInfo") ?? []
-                                  )
-                                    .filter((i: any) => i)
-                                    .map((i: any) => i.medicalEquipmentId)
-                                    .filter((id: any) => id !== undefined);
-
-                                  const isSelected =
-                                    selectedIds.includes(eq.id) &&
-                                    eq.id !==
-                                      form.getFieldValue([
+                            {/* 2. จำนวน */}
+                            <Col flex="100px">
+                              <Form.Item
+                                {...restField}
+                                label={
+                                  <span className="text-gray-600">จำนวน</span>
+                                }
+                                name={[name, "quantity"]}
+                                style={{ marginBottom: 0 }}
+                                rules={[
+                                  { required: true, message: "ระบุจำนวน" },
+                                  ({ getFieldValue }) => ({
+                                    validator(_, value) {
+                                      const equipmentId = getFieldValue([
                                         "equipmentInfo",
                                         name,
                                         "medicalEquipmentId",
                                       ]);
+                                      if (!equipmentId)
+                                        return Promise.resolve();
 
-                                  return (
-                                    <Option
-                                      key={eq.id}
-                                      value={eq.id}
-                                      disabled={
-                                        isSelected || remainingQuantity <= 0
-                                      }
-                                    >
-                                      {eq.equipmentName} (คงเหลือ{" "}
-                                      {remainingQuantity})
-                                    </Option>
-                                  );
-                                })}
-                              </Select>
-                            </Form.Item>
-                          </Col>
+                                      const selected = dataEQ.find(
+                                        (eq) => eq.id === equipmentId,
+                                      );
 
-                          {/* Quantity */}
-                          <Col flex="100px">
-                            <Form.Item
-                              {...restField}
-                              name={[name, "quantity"]}
-                              style={{ marginBottom: 0 }}
-                              rules={[
-                                { required: true, message: "กรุณากรอกจำนวน" },
-                                ({ getFieldValue }) => ({
-                                  validator(_, value) {
-                                    const equipmentId = getFieldValue([
-                                      "equipmentInfo",
-                                      name,
-                                      "medicalEquipmentId",
-                                    ]);
-                                    if (!equipmentId) return Promise.resolve();
-
-                                    const selected = dataEQ.find(
-                                      (eq) => eq.id === equipmentId
-                                    );
-
-                                    if (selected) {
-                                      // คำนวณจำนวนที่จองแล้ว
-                                      const reservedQuantity = dataEQ
-                                        .flatMap((ma) => ma.items || [])
-                                        .filter(
-                                          (item: any) =>
-                                            item.medicalEquipmentId ===
-                                              selected.id &&
-                                            ["pending", "approve"].includes(
-                                              item.maMedicalEquipment?.status
-                                            )
-                                        )
-                                        .reduce(
-                                          (sum: number, item: any) =>
-                                            sum + item.quantity,
-                                          0
-                                        );
-
-                                      // จำนวนที่เหลือจริง ๆ
-                                      const actualRemainingQuantity =
-                                        selected.quantity - reservedQuantity;
-
-                                      if (value > actualRemainingQuantity) {
-                                        return Promise.reject(
-                                          new Error(
-                                            `จำนวนเกินคงเหลือ (${actualRemainingQuantity})`
+                                      if (selected) {
+                                        const reservedQuantity = dataEQ
+                                          .flatMap((ma) => ma.items || [])
+                                          .filter(
+                                            (item: any) =>
+                                              item.medicalEquipmentId ===
+                                                selected.id &&
+                                              ["pending", "approve"].includes(
+                                                item.maMedicalEquipment?.status,
+                                              ),
                                           )
-                                        );
+                                          .reduce(
+                                            (sum: number, item: any) =>
+                                              sum + item.quantity,
+                                            0,
+                                          );
+
+                                        const actualRemainingQuantity =
+                                          selected.quantity - reservedQuantity;
+
+                                        if (value > actualRemainingQuantity) {
+                                          return Promise.reject(
+                                            new Error(
+                                              `เกินสต็อก (${actualRemainingQuantity})`,
+                                            ),
+                                          );
+                                        }
                                       }
-                                    }
+                                      return Promise.resolve();
+                                    },
+                                  }),
+                                ]}
+                              >
+                                <InputNumber
+                                  min={1}
+                                  placeholder="0"
+                                  className="w-full h-11 rounded-xl border-gray-300 shadow-sm pt-1" // pt-1 เพื่อจัด text ให้กลางเพราะ InputNumber มี padding แปลกๆ
+                                />
+                              </Form.Item>
+                            </Col>
 
-                                    return Promise.resolve();
-                                  },
-                                }),
-                              ]}
-                            >
-                              <InputNumber
-                                min={1}
-                                placeholder="จำนวน"
-                                style={{ width: "100%" }}
-                              />
-                            </Form.Item>
-                          </Col>
-
-                          {/* Remove button */}
-                          <Col>
-                            <Button danger onClick={() => remove(name)}>
-                              ลบ
-                            </Button>
-                          </Col>
-                        </Row>
+                            {/* 3. ปุ่มลบ */}
+                            <Col>
+                              <Button
+                                danger
+                                type="text"
+                                onClick={() => remove(name)}
+                                className="h-11 w-11 flex items-center justify-center rounded-xl hover:bg-red-50"
+                              >
+                                ลบ
+                              </Button>
+                            </Col>
+                          </Row>
+                        </div>
                       </Col>
                     ))}
                   </Row>
                 ))}
 
-                {/* ปุ่มเพิ่ม */}
+                {/* ปุ่มเพิ่มรายการ */}
                 <Form.Item>
                   <Button
                     type="dashed"
@@ -284,20 +302,19 @@ export default function CreateMedicalEquipmentForm({
                         return;
                       }
 
-                      // ✅ ต้องกรอกให้ครบก่อนเพิ่มใหม่
                       if (
                         !lastItem ||
                         !lastItem.medicalEquipmentId ||
                         !lastItem.quantity
                       ) {
                         message.warning(
-                          "กรุณากรอกข้อมูลเครื่องมือและจำนวนให้ครบก่อน"
+                          "กรุณากรอกข้อมูลเครื่องมือและจำนวนให้ครบก่อน",
                         );
                         return;
                       }
-
                       add();
                     }}
+                    className="h-11 rounded-xl border-blue-300 text-blue-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-400 shadow-sm transition-all"
                   >
                     + เพิ่มรายการเครื่องมือ
                   </Button>
@@ -307,47 +324,31 @@ export default function CreateMedicalEquipmentForm({
           }}
         </Form.List>
 
-        <Row gutter={18}>
-          {/* <Col span={12}>
-            <Form.Item
-              label="วันที่ส่ง"
-              name="sentDate"
-              rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
-            >
-              <DatePicker
-                format="DD/MM/YYYY"
-                style={{ width: "100%" }}
-                disabledDate={(current) =>
-                  current && current < dayjs().startOf("day")
-                }
-              />
-            </Form.Item>
-          </Col> */}
+        <div className="border-t border-gray-100 my-6 pt-6"></div>
+
+        <Row gutter={24}>
           <Col span={12}>
             <Form.Item
-              label="วันที่ส่ง"
+              label="วันที่ส่งซ่อม"
               name="sentDate"
               rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
             >
               <DatePicker
                 locale={th_TH}
                 format="D MMMM BBBB"
-                style={{ width: "100%" }}
+                placeholder="เลือกวันที่"
+                className={`${inputStyle} w-full`} // ใช้ inputStyle ร่วมกับ w-full
                 disabledDate={(current) => {
                   if (!current) return false;
-
                   const today = dayjs().startOf("day");
-
-                  // 1️⃣ ไม่ให้เลือกวันก่อนวันนี้
                   if (current < today) return true;
-
-                  // 2️⃣ ตรวจสอบวันซ้ำกับวันที่จองผ่านมา
                   const bookedDates = data
                     .map((item: any) =>
-                      item.sentDate ? dayjs(item.sentDate).startOf("day") : null
+                      item.sentDate
+                        ? dayjs(item.sentDate).startOf("day")
+                        : null,
                     )
                     .filter(Boolean);
-
                   return bookedDates.some((d: any) => d.isSame(current, "day"));
                 }}
               />
@@ -356,12 +357,22 @@ export default function CreateMedicalEquipmentForm({
 
           <Col span={12}>
             <Form.Item label="หมายเหตุ" name="note">
-              <TextArea rows={1} placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)" />
+              <TextArea
+                rows={1} // เริ่มต้น 1 บรรทัด แต่จะขยายถ้ามีข้อความ (หรือปรับเป็น 2 ก็ได้)
+                placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"
+                className="rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md"
+                style={{ minHeight: "44px" }} // ให้สูงเท่า Input ปกติ
+              />
             </Form.Item>
           </Col>
         </Row>
-        <Form.Item style={{ textAlign: "center" }}>
-          <Button type="primary" htmlType="submit">
+
+        <Form.Item className="text-center mt-4 mb-0">
+          <Button
+            type="primary"
+            htmlType="submit"
+            className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+          >
             บันทึกข้อมูล
           </Button>
         </Form.Item>

@@ -10,7 +10,12 @@ import MaCarDetail from "./maCarDetail";
 import MaCarExportWord from "./maCarExport";
 import MaCarEditModal from "./MaCarEditModal";
 import { useSession } from "next-auth/react";
-import { FileSearchOutlined, FormOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  FileSearchOutlined,
+  FormOutlined,
+} from "@ant-design/icons";
+import CustomTable from "../../common/CustomTable";
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -38,7 +43,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
   const { data: session } = useSession();
 
   const filteredData = data.filter(
-    (item) => item.createdById === session?.user?.userId
+    (item) => item.createdById === session?.user?.userId,
   );
 
   const handleShowDetail = (record: any, dataUser: any) => {
@@ -144,7 +149,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
         switch (status) {
           case "pending":
             color = "blue";
-            text = "รอดำเนินการ";
+            text = "รออนุมัติ";
             break;
           case "approve":
             color = "green";
@@ -187,24 +192,8 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       key: "action",
       render: (_, record) => (
         <Space>
-          {/* <Button
-            size="small"
-            type="primary"
-            style={{
-              backgroundColor:
-                record.status === "pending" ? "#faad14" : "#d9d9d9",
-              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
-              color: record.status === "pending" ? "white" : "#888",
-              cursor: record.status === "pending" ? "pointer" : "not-allowed",
-            }}
-            disabled={record.status !== "pending"}
-            onClick={() => handleEdit(record)}
-          >
-            แก้ไข
-          </Button> */}
-
           <Tooltip title="แก้ไข">
-            <FormOutlined
+            <EditOutlined
               style={{
                 fontSize: 22,
                 color:
@@ -228,14 +217,6 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
             />
           </Tooltip>
 
-          {/* <Button
-            size="small"
-            type="primary"
-            onClick={() => handleShowDetail(record, dataUser)}
-          >
-            รายละเอียด
-          </Button> */}
-
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
               style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
@@ -250,7 +231,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
 
   return (
     <>
-      <Table
+      <CustomTable
         columns={columns}
         dataSource={filteredData}
         rowKey="id"

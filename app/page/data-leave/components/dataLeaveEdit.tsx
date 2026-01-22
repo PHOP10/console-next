@@ -7,7 +7,6 @@ import {
   Input,
   DatePicker,
   message,
-  Card,
   ConfigProvider,
   Row,
   Col,
@@ -17,12 +16,9 @@ import { DataLeaveService } from "../services/dataLeave.service";
 import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import th_TH from "antd/locale/th_TH";
-import { User } from "next-auth";
 import isBetween from "dayjs/plugin/isBetween";
-dayjs.extend(isBetween);
 
-const { RangePicker } = DatePicker;
-const { TextArea } = Input;
+dayjs.extend(isBetween);
 
 interface DataLeaveEditProps {
   open: boolean;
@@ -47,29 +43,11 @@ export default function DataLeaveEdit({
   user,
   formEdit,
 }: DataLeaveEditProps) {
-  // const [formEdit] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const service = DataLeaveService(intraAuth);
 
-  // React.useEffect(() => {
-  //   if (record) {
-  //     formEdit.setFieldsValue({
-  //       typeId: record.typeId,
-  //       reason: record.reason,
-  //       details: record.details,
-  //       writeAt: record.writeAt,
-  //       dateStart: dayjs(record.dateStart),
-  //       dateEnd: dayjs(record.dateEnd),
-  //       contactAddress: record.contactAddress,
-  //       contactPhone: record.contactPhone,
-  //       backupUserId: record.backupUserId,
-  //     });
-  //   }
-  // }, [record]);
-
   React.useEffect(() => {
     if (open && record) {
-      // จังหวะเปิด Modal: เซตค่าจาก record เข้าไปในฟอร์ม
       formEdit.setFieldsValue({
         typeId: record.typeId,
         reason: record.reason,
@@ -82,21 +60,17 @@ export default function DataLeaveEdit({
         backupUserId: record.backupUserId,
       });
     } else if (!open) {
-      // จังหวะปิด Modal (open === false): รีเซ็ตค่าที่ค้างในฟอร์มทั้งหมด
       formEdit.resetFields();
     }
   }, [open, record, formEdit]);
 
-  const selectedTypeId = Form.useWatch("typeId", formEdit);
   const selectedDateStart = Form.useWatch("dateStart", formEdit);
-  const selectedDateEnd = Form.useWatch("dateEnd", formEdit);
 
   const handleOk = async () => {
     try {
       const values = await formEdit.validateFields();
       if (!record) return;
 
-      // ส่งเฉพาะข้อมูลที่ต้องการแก้ไข
       const updateData = {
         typeId: values.typeId,
         dateStart: values.dateStart.startOf("day").toISOString(),
@@ -117,7 +91,6 @@ export default function DataLeaveEdit({
       await service.updateDataLeave(payload);
       message.success("แก้ไขข้อมูลเรียบร้อย");
       fetchData();
-      // update ตารางด้วยข้อมูลที่ merge กับ record เดิม
       onUpdate({ ...record, ...updateData });
       onClose();
     } catch (err) {
@@ -126,107 +99,134 @@ export default function DataLeaveEdit({
     }
   };
 
+  // --- Style Constants ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const selectStyle =
+    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+
   return (
     <Modal
       title={
-        <div
-          style={{
-            textAlign: "center",
-            color: "#0683e9",
-            fontWeight: "bold",
-            fontSize: "20px",
-          }}
-        >
+        <div className="text-xl font-bold text-[#0683e9] text-center w-full">
           แก้ไขข้อมูลการลา
         </div>
       }
       open={open}
       onOk={handleOk}
       onCancel={() => {
-        onClose(); // 1. เรียกฟังก์ชันปิดที่ส่งมาจากตัวแม่ (เพื่อให้ open กลายเป็น false)
-        // formEdit.resetFields(); // 2. รีเซ็ตค่าในฟอร์มกลับเป็นค่าเดิม
+        onClose();
       }}
       okText="บันทึก"
       cancelText="ยกเลิก"
+      width={800}
+      centered
+      okButtonProps={{
+        className:
+          "h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0",
+      }}
+      cancelButtonProps={{
+        className:
+          "h-10 px-6 rounded-lg text-gray-600 hover:bg-gray-100 border-gray-300",
+      }}
+      styles={{
+        content: { borderRadius: "20px", padding: "24px" },
+        header: {
+          marginBottom: "16px",
+          borderBottom: "1px solid #f0f0f0",
+          paddingBottom: "12px",
+        },
+      }}
     >
-      <Card>
-        <ConfigProvider locale={th_TH}>
-          <Form form={formEdit} layout="vertical" preserve={false}>
-            <Form.Item
-              label="เขียนที่"
-              name="writeAt"
-              rules={[
-                {
-                  required: true,
-                  message: "กรุณากรอกเขียนที่...",
-                },
-              ]}
-            >
-              <Select
-                placeholder="เขียนที่"
-                onChange={(value) => {
-                  formEdit.setFieldValue(
-                    "writeAt",
-                    value === "other" ? "" : value
-                  );
-                }}
-                dropdownRender={(menu) => (
-                  <>
-                    {menu}
-                    <div style={{ display: "flex", padding: 8 }}>
-                      <Input
-                        placeholder="กรอกอื่น ๆ..."
-                        onPressEnter={(e) => {
-                          formEdit.setFieldValue(
-                            "writeAt",
-                            e.currentTarget.value
-                          );
-                        }}
-                        onBlur={(e) => {
-                          formEdit.setFieldValue(
-                            "writeAt",
-                            e.currentTarget.value
-                          );
-                        }}
-                      />
-                    </div>
-                  </>
-                )}
+      <ConfigProvider locale={th_TH}>
+        <Form form={formEdit} layout="vertical" preserve={false}>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="เขียนที่"
+                name="writeAt"
+                rules={[
+                  {
+                    required: true,
+                    message: "กรุณากรอกเขียนที่...",
+                  },
+                ]}
               >
-                <Select.Option value="รพ.สต.บ้านผาผึ้ง">
-                  รพ.สต.บ้านผาผึ้ง
-                </Select.Option>
-                {/* <Select.Option value="other">อื่นๆ...</Select.Option> */}
-              </Select>
-            </Form.Item>
-
-            <Form.Item
-              label="ประเภทการลา"
-              name="typeId"
-              rules={[{ required: true, message: "กรุณาเลือกประเภทลา" }]}
-            >
-              <Select placeholder="เลือกประเภทลา">
-                {masterLeaves.map((item) => (
-                  <Select.Option key={item.id} value={item.id}>
-                    {item.leaveType}
+                <Select
+                  placeholder="เขียนที่"
+                  className={selectStyle}
+                  onChange={(value) => {
+                    formEdit.setFieldValue(
+                      "writeAt",
+                      value === "other" ? "" : value,
+                    );
+                  }}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <div style={{ display: "flex", padding: 8 }}>
+                        <Input
+                          placeholder="กรอกอื่น ๆ..."
+                          className="rounded-lg"
+                          onPressEnter={(e) => {
+                            formEdit.setFieldValue(
+                              "writeAt",
+                              e.currentTarget.value,
+                            );
+                          }}
+                          onBlur={(e) => {
+                            formEdit.setFieldValue(
+                              "writeAt",
+                              e.currentTarget.value,
+                            );
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                >
+                  <Select.Option value="รพ.สต.บ้านผาผึ้ง">
+                    รพ.สต.บ้านผาผึ้ง
                   </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="ประเภทการลา"
+                name="typeId"
+                rules={[{ required: true, message: "กรุณาเลือกประเภทลา" }]}
+              >
+                <Select placeholder="เลือกประเภทลา" className={selectStyle}>
+                  {masterLeaves.map((item) => (
+                    <Select.Option key={item.id} value={item.id}>
+                      {item.leaveType}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
 
-            <Form.Item
-              label="เหตุผล"
-              name="reason"
-              rules={[{ required: true, message: "กรุณากรอกเหตุผล" }]}
-            >
-              <Input.TextArea
-                rows={2}
-                placeholder="กรอกเหตุผลการลา"
-                maxLength={50}
-              />
-            </Form.Item>
+          <Form.Item
+            label="เหตุผล"
+            name="reason"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผล" }]}
+          >
+            <Input.TextArea
+              rows={2}
+              placeholder="กรอกเหตุผลการลา"
+              maxLength={50}
+              className={textAreaStyle}
+            />
+          </Form.Item>
 
-            <Row gutter={8}>
+          <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100 mb-4">
+            <Row gutter={24}>
               <Col span={12}>
                 <Form.Item
                   label="ตั้งแต่วันที่"
@@ -234,33 +234,32 @@ export default function DataLeaveEdit({
                   rules={[
                     { required: true, message: "กรุณาเลือกวันที่เริ่มลา" },
                   ]}
+                  style={{ marginBottom: 0 }}
                 >
                   <DatePicker
-                    format={(value) =>
-                      value
-                        ? `${value.format("DD / MMMM")} / ${value.year() + 543}`
-                        : ""
-                    }
+                    format="DD/MM/YYYY"
                     style={{ width: "100%" }}
                     placeholder="เลือกวันที่เริ่มลา"
+                    className={`${inputStyle} pt-2`}
                     onChange={() => {
-                      // ล้างค่า dateEnd เมื่อเปลี่ยน dateStart
                       formEdit.setFieldValue("dateEnd", null);
                     }}
                     disabledDate={(current) => {
                       if (!current) return false;
-                      // ห้ามเลือกวันในอดีต
                       if (current < dayjs().startOf("day")) return true;
-
-                      // ตรวจสอบว่าทับกับการลาที่มีอยู่แล้วหรือไม่
                       return leaveByUserId.some((leave) => {
+                        // ต้องไม่เช็คซ้ำกับรายการตัวเอง (กรณีนี้ record.id มีอยู่แล้ว แต่อาจต้องกรองเพิ่มถ้า backend ไม่กรองให้)
+                        // สมมติว่า leaveByUserId รวม record ปัจจุบันด้วย การเช็คตรงนี้อาจทำให้เลือกวันเดิมไม่ได้
+                        // หากต้องการแก้ให้เลือกวันเดิมได้ ต้องกรอง leave.id !== record.id ออกก่อน (ถ้ามี id)
+                        if (leave.id === record?.id) return false;
+
                         const start = dayjs(leave.dateStart).startOf("day");
                         const end = dayjs(leave.dateEnd).endOf("day");
                         return dayjs(current).isBetween(
                           start,
                           end,
                           "day",
-                          "[]"
+                          "[]",
                         );
                       });
                     }}
@@ -277,21 +276,16 @@ export default function DataLeaveEdit({
                       message: "กรุณาเลือกวันที่สิ้นสุดการลา",
                     },
                   ]}
+                  style={{ marginBottom: 0 }}
                 >
                   <DatePicker
-                    format={(value) =>
-                      value
-                        ? `${value.format("DD / MMMM")} / ${value.year() + 543}`
-                        : ""
-                    }
+                    format="DD/MM/YYYY"
                     style={{ width: "100%" }}
+                    className={`${inputStyle} pt-2`}
                     placeholder={
                       selectedDateStart
-                        ? // ? `เลือกตั้งแต่ ${dayjs(selectedDateStart).format(
-                          //     "DD/MM/YYYY"
-                          //   )} เป็นต้นไป`
-                          `เลือกวันที่สิ้นสุดการลา`
-                        : "กรุณาเลือกวันที่เริ่มลาก่อน"
+                        ? "เลือกวันที่สิ้นสุด"
+                        : "เลือกวันเริ่มก่อน"
                     }
                     disabled={!selectedDateStart}
                     disabledDate={(current) => {
@@ -304,13 +298,14 @@ export default function DataLeaveEdit({
                       }
                       if (current < dayjs().startOf("day")) return true;
                       return leaveByUserId.some((leave) => {
+                        if (leave.id === record?.id) return false;
                         const start = dayjs(leave.dateStart).startOf("day");
                         const end = dayjs(leave.dateEnd).endOf("day");
                         return dayjs(current).isBetween(
                           start,
                           end,
                           "day",
-                          "[]"
+                          "[]",
                         );
                       });
                     }}
@@ -318,65 +313,72 @@ export default function DataLeaveEdit({
                 </Form.Item>
               </Col>
             </Row>
+          </div>
 
-            <Form.Item
-              label="ระหว่างลาติดต่อได้ที่"
-              name="contactAddress"
-              rules={[{ required: false }]}
-            >
-              <TextArea
-                rows={2}
-                maxLength={50}
-                placeholder="กรอกระหว่างลาติดต่อได้ที่"
-              />
-            </Form.Item>
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="ระหว่างลาติดต่อได้ที่"
+                name="contactAddress"
+                rules={[{ required: false }]}
+              >
+                <Input.TextArea
+                  rows={2}
+                  maxLength={50}
+                  placeholder="กรอกที่อยู่ติดต่อ"
+                  className={textAreaStyle}
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="เบอร์ติดต่อระหว่างลา"
+                name="contactPhone"
+                rules={[
+                  {
+                    required: true,
+                    message: "กรุณากรอก เบอร์โทรศัพท์",
+                  },
+                ]}
+              >
+                <Input
+                  placeholder="กรอกเบอร์โทรศัพท์"
+                  maxLength={10}
+                  className={inputStyle}
+                  onKeyPress={(e) => {
+                    if (!/[0-9]/.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-            {/* เบอร์โทรศัพท์ */}
-            <Form.Item
-              label="เบอร์ติดต่อระหว่างลา"
-              name="contactPhone"
-              rules={[
-                {
-                  required: true,
-                  message: "กรุณากรอก เบอร์โทรศัพท์",
-                },
-              ]}
-            >
-              <Input
-                placeholder="กรอกเบอร์โทรศัพท์"
-                maxLength={10}
-                onKeyPress={(e) => {
-                  if (!/[0-9]/.test(e.key)) {
-                    e.preventDefault();
-                  }
-                }}
-              />
-            </Form.Item>
-            <Form.Item
-              label="ผู้รับผิดชอบงานระหว่างลา"
-              name="backupUserId"
-              rules={[
-                {
-                  required: true,
-                  message: "กรุณาเลือกผู้รับผิดชอบงานระหว่างลา",
-                },
-              ]}
-            >
-              <Select placeholder="เลือกผู้รับผิดชอบงาน">
-                {user.map((user) => (
-                  <Select.Option key={user.userId} value={user.userId}>
-                    {user.firstName} {user.lastName}
-                  </Select.Option>
-                ))}
-              </Select>
-            </Form.Item>
+          <Form.Item
+            label="ผู้รับผิดชอบงานระหว่างลา"
+            name="backupUserId"
+            rules={[
+              {
+                required: true,
+                message: "กรุณาเลือกผู้รับผิดชอบงานระหว่างลา",
+              },
+            ]}
+          >
+            <Select placeholder="เลือกผู้รับผิดชอบงาน" className={selectStyle}>
+              {user.map((user) => (
+                <Select.Option key={user.userId} value={user.userId}>
+                  {user.firstName} {user.lastName}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
 
-            <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
-              <Input.TextArea rows={3} />
-            </Form.Item>
-          </Form>
-        </ConfigProvider>
-      </Card>
+          <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
+            <Input.TextArea rows={3} className={textAreaStyle} />
+          </Form.Item>
+        </Form>
+      </ConfigProvider>
     </Modal>
   );
 }

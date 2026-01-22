@@ -52,6 +52,20 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
           return [];
         });
     },
+
+    receiveMaDrug: async (id: any) => {
+      return await axiosInstance
+        .patch(`${baseUrlApimaDrug}/${id}/receive`)
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          // อาจจะ throw error เพื่อให้หน้าบ้านรู้ว่าทำรายการไม่สำเร็จ
+          throw err;
+        });
+    },
+
     getDrugQuery: async () => {
       return await axiosInstance
         .get(`${baseUrlApiDrug}`)

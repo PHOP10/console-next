@@ -14,12 +14,17 @@ import {
   InputNumber,
   Select, // ✅ เพิ่ม Select
   Tag,
+  AutoComplete,
+  Row,
+  Col,
+  Tooltip,
 } from "antd";
 import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { DrugType, MasterDrugType } from "../../common"; // ✅ import MasterDrugType
+import CustomTable from "../../common/CustomTable";
 
 interface DrugTableProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -36,13 +41,9 @@ export default function DrugTable({
 }: DrugTableProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
-
-  // --- State ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<DrugType | null>(null);
   const [form] = Form.useForm();
-
-  // ✅ State สำหรับเก็บรายชื่อประเภทยา เพื่อนำมาเทียบชื่อแสดงในตาราง
   const [masterDrugs, setMasterDrugs] = useState<MasterDrugType[]>([]);
 
   // ✅ โหลดข้อมูล MasterDrug เมื่อ Component เริ่มทำงาน
@@ -96,7 +97,7 @@ export default function DrugTable({
       message.success("แก้ไขข้อมูลสำเร็จ");
 
       setData((prev) =>
-        prev.map((item) => (item.id === editingRecord.id ? updatedData : item))
+        prev.map((item) => (item.id === editingRecord.id ? updatedData : item)),
       );
 
       setIsModalOpen(false);
@@ -135,7 +136,7 @@ export default function DrugTable({
       render: (id) => {
         // หา object ใน masterDrugs ที่มี drugTypeId ตรงกับ id ของแถวนี้
         const match = masterDrugs.find(
-          (m) => m.drugTypeId === id || m.id === id
+          (m) => m.drugTypeId === id || m.id === id,
         );
         return match ? (
           <Tag color="blue">{match.drugType}</Tag> // เจอ: แสดงชื่อ (ใส่ Tag สวยๆ)
@@ -183,16 +184,21 @@ export default function DrugTable({
       align: "center",
       width: 150,
       render: (_, record) => (
-        <Space>
-          <Button
-            type="primary"
-            ghost
-            size="small"
-            icon={<EditOutlined />}
-            onClick={() => handleEditClick(record)}
-          >
-            แก้ไข
-          </Button>
+        <Space size="middle">
+          {/* ส่วนแก้ไข */}
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              style={{
+                fontSize: 22,
+                color: "#faad14", // สีส้ม (หรือใช้ #1677ff สีฟ้าก็ได้)
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+              onClick={() => handleEditClick(record)}
+            />
+          </Tooltip>
+
+          {/* ส่วนลบ */}
           <Popconfirm
             title="ลบข้อมูล"
             description="ต้องการลบยานี้หรือไม่?"
@@ -201,13 +207,46 @@ export default function DrugTable({
             cancelText="ยกเลิก"
             okButtonProps={{ danger: true }}
           >
-            <Button danger size="small" icon={<DeleteOutlined />}>
-              ลบ
-            </Button>
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 22,
+                  color: "#ff4d4f", // สีแดง Danger
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
     },
+  ];
+
+  const packingOptions = [
+    { value: "10's" },
+    { value: "50's" },
+    { value: "100's" },
+    { value: "500's" },
+    { value: "1000's" },
+    { value: "แผง" },
+    { value: "กล่อง" },
+    { value: "ขวด" },
+    { value: "กระปุก" },
+    { value: "ซอง" },
+    { value: "ถุง" },
+    { value: "ห่อ" },
+    { value: "แพ็ค" },
+    { value: "ชิ้น" },
+    { value: "คู่" },
+    { value: "ชุด" },
+    { value: "ม้วน" },
+    { value: "หลอด" },
+    { value: "Vial" },
+    { value: "Amp" },
+    { value: "5 g." },
+    { value: "10 g." },
+    { value: "lb." },
   ];
 
   return (
@@ -228,7 +267,7 @@ export default function DrugTable({
         bordered={false}
         className="shadow-sm"
       >
-        <Table
+        <CustomTable
           rowKey="id"
           columns={columns}
           dataSource={data}
@@ -240,53 +279,122 @@ export default function DrugTable({
       </Card>
 
       <Modal
-        title="แก้ไขข้อมูลยา"
+        title="✏️ แก้ไขข้อมูลยา"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
-        okText="บันทึก"
+        okText="บันทึกการแก้ไข"
         cancelText="ยกเลิก"
         destroyOnClose
+        width={700} // เพิ่มความกว้าง Modal นิดหน่อยเพื่อให้จัด Layout สวย
       >
-        <Form form={form} layout="vertical" onFinish={handleUpdate}>
-          <Form.Item label="ชื่อยา" name="name" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={handleUpdate}
+          style={{ marginTop: 16 }}
+        >
+          {/* แถวที่ 1: รหัสยา และ ประเภทยา */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item
+                label="Working Code (รหัสยา)"
+                name="workingCode"
+                rules={[{ required: true, message: "กรุณาระบุรหัสยา" }]}
+              >
+                <Input placeholder="เช่น W-001" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="ประเภทยา"
+                name="drugTypeId"
+                rules={[{ required: true, message: "กรุณาเลือกประเภทยา" }]}
+              >
+                <Select
+                  placeholder="เลือกประเภทยา"
+                  options={masterDrugs.map((d) => ({
+                    label: d.drugType,
+                    value: d.drugTypeId, // ✅ ใช้ drugTypeId ตามที่แก้ไปก่อนหน้า
+                  }))}
+                  showSearch
+                  optionFilterProp="label"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          {/* ✅ เปลี่ยน Input เป็น Select ให้เลือกประเภทยาได้เลยตอนแก้ไข */}
+          {/* แถวที่ 2: ชื่อยา (ยาวเต็มบรรทัด) */}
           <Form.Item
-            label="ประเภทยา"
-            name="drugTypeId"
-            rules={[{ required: true }]}
+            label="ชื่อยา"
+            name="name"
+            rules={[{ required: true, message: "กรุณาระบุชื่อยา" }]}
           >
-            <Select
-              placeholder="เลือกประเภทยา"
-              options={masterDrugs.map((d) => ({
-                label: d.drugType,
-                value: d.drugTypeId,
-              }))}
-            />
+            <Input placeholder="ระบุชื่อยา" />
           </Form.Item>
 
-          <Space style={{ display: "flex", width: "100%" }}>
-            <Form.Item
-              label="ขนาดบรรจุ"
-              name="packagingSize"
-              style={{ flex: 1 }}
-            >
-              <Input />
-            </Form.Item>
-            <Form.Item label="ราคา" name="price" style={{ flex: 1 }}>
-              <InputNumber style={{ width: "100%" }} min={0} step={0.01} />
-            </Form.Item>
-          </Space>
+          {/* แถวที่ 3: ขนาดบรรจุ, ราคา, คงเหลือ (แบ่ง 3 ส่วนเท่ากัน) */}
+          <Row gutter={16}>
+            <Col span={8}>
+              <Form.Item
+                label="ขนาดบรรจุ"
+                name="packagingSize"
+                rules={[{ required: true, message: "ระบุขนาด" }]}
+              >
+                <AutoComplete
+                  options={packingOptions}
+                  placeholder="เช่น แผง/กล่อง"
+                  filterOption={(inputValue, option) =>
+                    option!.value
+                      .toUpperCase()
+                      .indexOf(inputValue.toUpperCase()) !== -1
+                  }
+                  allowClear
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                label="ราคาต่อหน่วย"
+                name="price"
+                rules={[{ required: true }]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  min={0}
+                  step={0.01}
+                  formatter={(value) =>
+                    `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value: any) =>
+                    value?.replace(/\฿\s?|(,*)/g, "") || ""
+                  }
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                label="จำนวนคงเหลือ"
+                name="quantity"
+                rules={[{ required: true }]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  min={0}
+                  formatter={(value) =>
+                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-          <Form.Item label="จำนวนคงเหลือ" name="quantity">
-            <InputNumber style={{ width: "100%" }} min={0} />
-          </Form.Item>
-
+          {/* แถวสุดท้าย: หมายเหตุ */}
           <Form.Item label="หมายเหตุ" name="note">
-            <Input.TextArea rows={2} />
+            <Input.TextArea
+              rows={2}
+              placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
+            />
           </Form.Item>
         </Form>
       </Modal>

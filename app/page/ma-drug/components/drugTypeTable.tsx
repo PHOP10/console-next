@@ -12,6 +12,7 @@ import {
   Modal,
   Card,
   Divider,
+  Tooltip,
 } from "antd";
 import {
   PlusOutlined,
@@ -23,6 +24,7 @@ import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import type { MasterDrugType } from "../../common";
+import CustomTable from "../../common/CustomTable";
 
 export default function DrugTypeTable() {
   const [form] = Form.useForm();
@@ -36,7 +38,7 @@ export default function DrugTypeTable() {
   // Modal State (ใช้ร่วมกันทั้ง เพิ่ม และ แก้ไข)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MasterDrugType | null>(
-    null
+    null,
   );
   const [submitLoading, setSubmitLoading] = useState(false);
 
@@ -50,8 +52,8 @@ export default function DrugTypeTable() {
       const drugData = Array.isArray(result)
         ? result
         : Array.isArray((result as any)?.data)
-        ? (result as any).data
-        : [];
+          ? (result as any).data
+          : [];
       setData(drugData);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -152,15 +154,20 @@ export default function DrugTypeTable() {
       width: 200,
       render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            ghost
-            icon={<EditOutlined />}
-            size="small"
-            onClick={() => handleOpenEdit(record)}
-          >
-            แก้ไข
-          </Button>
+          {/* ส่วนแก้ไข */}
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              style={{
+                fontSize: 22,
+                color: "#faad14", // สีส้ม
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+              onClick={() => handleOpenEdit(record)}
+            />
+          </Tooltip>
+
+          {/* ส่วนลบ */}
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -169,9 +176,16 @@ export default function DrugTypeTable() {
             cancelText="ยกเลิก"
             okButtonProps={{ danger: true }}
           >
-            <Button danger icon={<DeleteOutlined />} size="small">
-              ลบ
-            </Button>
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 22,
+                  color: "#ff4d4f", // สีแดง
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
           </Popconfirm>
         </Space>
       ),
@@ -213,7 +227,7 @@ export default function DrugTypeTable() {
         </Button>
       </div>
 
-      <Table
+      <CustomTable
         rowKey="id"
         columns={columns}
         dataSource={data}
@@ -223,40 +237,51 @@ export default function DrugTypeTable() {
         size="middle"
       />
 
-      {/* Modal สำหรับทั้ง เพิ่ม และ แก้ไข */}
       <Modal
         title={
-          editingRecord ? (
-            <span>
-              <EditOutlined /> แก้ไขประเภทยา
-            </span>
-          ) : (
-            <span>
-              <PlusOutlined /> เพิ่มประเภทยาใหม่
-            </span>
-          )
+          <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+            {editingRecord ? (
+              <span>
+                <EditOutlined className="mr-2" />
+                แก้ไขประเภทยา
+              </span>
+            ) : (
+              <span>
+                <PlusOutlined className="mr-2" />
+                เพิ่มประเภทยาใหม่
+              </span>
+            )}
+          </div>
         }
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        onOk={() => form.submit()} // สั่ง submit form เมื่อกดปุ่ม OK ของ Modal
+        onOk={() => form.submit()}
         confirmLoading={submitLoading}
         okText="บันทึก"
         cancelText="ยกเลิก"
         destroyOnClose
+        centered
+        styles={{
+          content: { borderRadius: "20px", padding: "30px" },
+          header: { marginBottom: "20px" },
+        }}
       >
-        <Divider style={{ margin: "12px 0" }} />
         <Form
           form={form}
           layout="vertical"
           onFinish={handleSave}
-          preserve={false} // รีเซ็ตค่าเมื่อปิด Modal
+          preserve={false}
         >
           <Form.Item
             label="รหัสประเภทยา (ID)"
             name="drugTypeId"
             rules={[{ required: true, message: "กรุณากรอกรหัสประเภทยา" }]}
           >
-            <Input type="number" placeholder="เช่น 101" />
+            <Input
+              type="number"
+              placeholder="เช่น 101"
+              className="w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300"
+            />
           </Form.Item>
 
           <Form.Item
@@ -264,11 +289,18 @@ export default function DrugTypeTable() {
             name="drugType"
             rules={[{ required: true, message: "กรุณากรอกชื่อประเภทยา" }]}
           >
-            <Input placeholder="เช่น ยาเม็ด, ยาน้ำ" />
+            <Input
+              placeholder="เช่น ยาเม็ด, ยาน้ำ"
+              className="w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300"
+            />
           </Form.Item>
 
           <Form.Item label="คำอธิบายเพิ่มเติม" name="description">
-            <Input.TextArea rows={3} placeholder="รายละเอียด (ถ้ามี)" />
+            <Input.TextArea
+              rows={3}
+              placeholder="รายละเอียด (ถ้ามี)"
+              className="w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300"
+            />
           </Form.Item>
         </Form>
       </Modal>

@@ -25,13 +25,17 @@ import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveDetail from "./dataLeaveDetail";
 import { useSession } from "next-auth/react";
 import isBetween from "dayjs/plugin/isBetween";
+import DataLeaveEdit from "./dataLeaveEdit";
 import {
   CheckCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
   ExclamationCircleOutlined,
   FileSearchOutlined,
   RollbackOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
+import CustomTable from "../../common/CustomTable";
 
 interface Props {
   dataLeave: DataLeaveType[];
@@ -40,7 +44,7 @@ interface Props {
   setDataLeave: React.Dispatch<React.SetStateAction<DataLeaveType[]>>;
   masterLeave: MasterLeaveType[];
   fetchData: () => Promise<void>;
-  leaveByUserId?: DataLeaveType[];
+  leaveByUserId: DataLeaveType[];
   user: UserType[];
 }
 
@@ -57,7 +61,7 @@ export default function ManagementDataLeaveTable({
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
   const [currentRecord, setCurrentRecord] = useState<DataLeaveType | null>(
-    null
+    null,
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
@@ -72,42 +76,20 @@ export default function ManagementDataLeaveTable({
     useState<DataLeaveType | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
+  const [formEdit] = Form.useForm();
+  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const openEditModal = (record: DataLeaveType) => {
     setCurrentRecord(record);
-    form.setFieldsValue({
-      typeId: record.typeId,
-      leaveDates: [dayjs(record.dateStart), dayjs(record.dateEnd)],
-      reason: record.reason,
-      details: record.details,
-    });
-    setIsModalOpen(true);
+    setIsEditOpen(true);
   };
 
-  const handleUpdate = async () => {
-    try {
-      const values = await form.validateFields();
-      if (!currentRecord) return;
-
-      const { leaveDates, ...rest } = values;
-
-      const payload = {
-        id: currentRecord.id,
-        ...rest,
-        dateStart: leaveDates[0].startOf("day").toISOString(),
-        dateEnd: leaveDates[1].endOf("day").toISOString(),
-      };
-
-      await intraAuthService.updateDataLeave(payload);
-
-      fetchData();
-      message.success("แก้ไขข้อมูลเรียบร้อย");
-      setIsModalOpen(false);
-      form.resetFields();
-    } catch (err) {
-      console.error(err);
-      message.error("ไม่สามารถแก้ไขข้อมูลได้");
-    }
+  const handleUpdate = (updated: any) => {
+    setDataLeave((prev) =>
+      prev.map((item: any) =>
+        item.id === updated.id ? { ...item, ...updated } : item,
+      ),
+    );
   };
 
   const handleDelete = async (record: DataLeaveType) => {
@@ -172,8 +154,8 @@ export default function ManagementDataLeaveTable({
 
       setDataLeave((prev) =>
         prev.map((item) =>
-          item.id === selectedCancelRecord.id ? updated : item
-        )
+          item.id === selectedCancelRecord.id ? updated : item,
+        ),
       );
 
       message.success("ยกเลิกเรียบร้อย");
@@ -250,7 +232,7 @@ export default function ManagementDataLeaveTable({
         switch (status) {
           case "pending":
             color = "blue";
-            text = "รอดำเนินการ";
+            text = "รออนุมัติ";
             break;
           case "edit":
             color = "orange";
@@ -271,12 +253,7 @@ export default function ManagementDataLeaveTable({
         return <Tag color={color}>{text}</Tag>;
       },
     },
-    // {
-    //   title: "ผู้อนุมัติ",
-    //   dataIndex: "approvedByName",
-    //   key: "approvedByName",
-    //   render: (value) => value || "-",
-    // },
+
     {
       title: "หมายเหตุเพิ่มเติม",
       dataIndex: "details",
@@ -299,31 +276,44 @@ export default function ManagementDataLeaveTable({
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button
-            type="primary"
-            size="small"
-            onClick={() => openEditModal(record)}
-            disabled={record.status !== "pending"}
-            style={{
-              backgroundColor:
-                record.status === "pending" ? "#faad14" : "#d9d9d9",
-              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
-              color: record.status === "pending" ? "white" : "#888",
-              cursor: record.status === "pending" ? "pointer" : "not-allowed",
-            }}
-          >
-            แก้ไข
-          </Button>
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              style={{
+                fontSize: 22,
+                // ใช้สีส้ม (#faad14) เมื่อสถานะเป็น pending, นอกนั้นสีเทา
+                color: record.status === "pending" ? "#faad14" : "#d9d9d9",
+                cursor: record.status === "pending" ? "pointer" : "not-allowed",
+                transition: "color 0.2s",
+              }}
+              onClick={() => {
+                // ต้องเช็คสถานะก่อนเปิด Modal เพราะ Icon ไม่มี prop disabled เหมือน Button
+                if (record.status === "pending") {
+                  openEditModal(record);
+                }
+              }}
+            />
+          </Tooltip>
 
           <Popconfirm
             title="ยืนยันการลบ"
+            // description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?" // ควรใส่ description เพิ่มเพื่อความชัดเจน (ถ้าต้องการ)
             okText="ใช่"
             cancelText="ยกเลิก"
             onConfirm={() => handleDelete(record)}
           >
-            <Button danger size="small">
-              ลบ
-            </Button>
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 22,
+                  color: "#ff4d4f", // สีแดง Danger
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+                // (Optional) เพิ่มลูกเล่นให้สีเข้มขึ้นตอนเอาเมาส์ชี้
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
+              />
+            </Tooltip>
           </Popconfirm>
 
           <Popconfirm
@@ -334,7 +324,7 @@ export default function ManagementDataLeaveTable({
             disabled={record.status !== "approve"}
           >
             <Tooltip title="ส่งคืนเพื่อแก้ไข">
-              <UndoOutlined
+              <RollbackOutlined
                 style={{
                   fontSize: 22,
                   color: record.status === "approve" ? "orange" : "#d9d9d9",
@@ -417,7 +407,7 @@ export default function ManagementDataLeaveTable({
         record={selectedRecord}
         user={user}
       />
-      <Table
+      <CustomTable
         rowKey="id"
         columns={columns}
         dataSource={dataLeave}
@@ -426,50 +416,19 @@ export default function ManagementDataLeaveTable({
         scroll={{ x: "max-content" }}
       />
 
-      <Modal
-        title="แก้ไขข้อมูลการลา"
-        open={isModalOpen}
-        onOk={handleUpdate}
-        onCancel={() => setIsModalOpen(false)}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item
-            label="ประเภทการลา"
-            name="typeId"
-            rules={[{ required: true, message: "กรุณาเลือกประเภทลา" }]}
-          >
-            <Select placeholder="เลือกประเภทลา">
-              {masterLeave.map((item) => (
-                <Select.Option key={item.id} value={item.id}>
-                  {item.leaveType}
-                </Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
-
-          <Form.Item
-            label="ช่วงวันที่ลา"
-            name="leaveDates"
-            rules={[{ required: true, message: "กรุณาเลือกช่วงวันที่ลา" }]}
-          >
-            <RangePicker format="DD/MM/YYYY" style={{ width: "100%" }} />
-          </Form.Item>
-
-          <Form.Item
-            label="เหตุผล"
-            name="reason"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผล" }]}
-          >
-            <Input />
-          </Form.Item>
-
-          <Form.Item label="รายละเอียด" name="details">
-            <Input.TextArea rows={3} />
-          </Form.Item>
-        </Form>
-      </Modal>
+      <DataLeaveEdit
+        open={isEditOpen}
+        record={currentRecord}
+        masterLeaves={masterLeave}
+        onClose={() => {
+          setIsEditOpen(false);
+        }}
+        onUpdate={handleUpdate}
+        fetchData={fetchData}
+        leaveByUserId={leaveByUserId}
+        user={user}
+        formEdit={formEdit}
+      />
 
       <Modal
         title="ยกเลิกการลา"

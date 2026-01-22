@@ -2,8 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { Breadcrumb, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
-import DurableArticleTable from "../components/durableArticleTable";
-import DurableArticleForm from "../components/durableArticleForm";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
@@ -28,7 +26,7 @@ export default function Page() {
         articles = result.filter((item) => item.type === "supportingResource");
       } else if (Array.isArray(result?.data)) {
         articles = result.data.filter(
-          (item: any) => item.type === "supportingResource"
+          (item: any) => item.type === "supportingResource",
         );
       }
       setData(articles);
@@ -66,7 +64,7 @@ export default function Page() {
       key: "2",
       label: "เพิ่มวัสดุสนับสนุน",
       children: (
-        <DurableArticleForm
+        <SupportingResourceForm
           setLoading={setLoading}
           loading={loading}
           fetchData={fetchData}

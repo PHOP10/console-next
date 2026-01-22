@@ -1,261 +1,3 @@
-// import {
-//   ContainerOutlined,
-//   LogoutOutlined,
-//   UserOutlined,
-// } from "@ant-design/icons";
-// import { MenuProps } from "antd";
-// import { signOut } from "next-auth/react";
-// import Link from "next/link";
-// import React from "react";
-
-// const MenuNav: MenuProps["items"] = [
-//   {
-//     key: "1",
-//     label: <Link href={`/page/profile`}>Profile</Link>,
-//     icon: <UserOutlined />,
-//   },
-//   {
-//     key: "2",
-//     label: (
-//       <Link href={"#"} onClick={() => signOut()}>
-//         Logout
-//       </Link>
-//     ),
-//     icon: <LogoutOutlined />,
-//   },
-// ];
-
-// export default MenuNav;
-
-// export interface IMenuChild {
-//   key: string;
-//   icon: React.ReactElement;
-//   label: string;
-//   roles: string[];
-// }
-
-// export interface IMenu {
-//   key: string;
-//   icon: React.ReactElement;
-//   label: string;
-//   roles: string[];
-//   children?: IMenuChild[];
-// }
-
-// export const groupRolesConfig = {
-//   admin: "admin",
-// };
-
-// export const MenuSider = [
-//   {
-//     key: `dashboard`,
-//     icon: <ContainerOutlined />,
-//     label: `Dashbaord`,
-//     roles: [groupRolesConfig.admin],
-//   },
-//   {
-//     key: "official-travel-request",
-//     label: `ระบบขอไปราชการ`,
-//     children: [
-//       {
-//         key: `officialTravelRequest`,
-//         label: `ข้อมูลขอไปราชการ`,
-//       },
-//       {
-//         key: `officialTravelRequestBook`,
-//         label: `ขอไปราชการ`,
-//       },
-//       {
-//         key: `manageOfficialTravelRequest`,
-//         label: `จัดการการขอไปราชการ`,
-//       },
-//     ],
-//   },
-//   {
-//     key: "ma-car",
-//     label: `ระบบจองรถ`,
-//     children: [
-//       {
-//         key: `maCar`,
-//         label: `ข้อมูลการจองรถ`,
-//       },
-//       {
-//         key: `maCarBook`,
-//         label: `จองรถ`,
-//       },
-//       {
-//         key: `manageMaCar`,
-//         label: `จัดการการจองรถ`,
-//       },
-//     ],
-//   },
-//   {
-//     key: "data-leave",
-//     label: `ระบบการลา`,
-//     children: [
-//       {
-//         key: `dataLeave`,
-//         label: `ข้อมูลการลา`,
-//       },
-//       {
-//         key: `dataLeaveBook`,
-//         label: `ยื่นใบลา`,
-//       },
-//       {
-//         key: `manageDataLeave`,
-//         label: `จัดการการลา`,
-//       },
-//     ],
-//   },
-//   {
-//     key: "visit-home",
-//     label: `ระบบเยี่ยมบ้าน`,
-//     children: [
-//       {
-//         key: "visitHome",
-//         label: "การเยี่ยบ้าน",
-//       },
-//       {
-//         key: "dataVisitHome",
-//         label: "ข้อมูลการเยี่ยบ้าน",
-//       },
-//     ],
-//   },
-//   {
-//     key: "ma-drug",
-//     label: `ระบบยา`,
-//     children: [
-//       {
-//         key: "maDrug",
-//         label: "เบิกจ่ายยา",
-//       },
-//       {
-//         key: "drug",
-//         label: "ข้อมูลยา",
-//       },
-//       {
-//         key: "manageDrug",
-//         label: "จัดการเบิกจ่ายยา",
-//       },
-//     ],
-//   },
-//   {
-//     key: "durable-article",
-//     label: `ระบบครุภัณฑ์`,
-//     children: [
-//       {
-//         key: "durableArticle",
-//         label: "ข้อมูลครุภัณฑ์`",
-//       },
-//       {
-//         key: "supportingResource",
-//         label: "วัสดุสนับสนุน",
-//       },
-//     ],
-//   },
-//   {
-//     key: "medical-equipment",
-//     label: `เครื่องมือแพทย์`,
-//     children: [
-//       {
-//         key: "medicalEquipment",
-//         label: "ข้อมมูลเครื่องมือแพทย์",
-//       },
-//       {
-//         key: "maMedicalEquipment",
-//         label: "จัดการข้อมมูลเครื่องมือแพทย์",
-//       },
-//     ],
-//   },
-//   // {
-//   //   key: "infectious-waste",
-//   //   label: `ทิ้งขยะ`,
-//   //   children: [
-//   //     {
-//   //       key: "infectiousWaste",
-//   //       label: "ข้อมมูลขะยะติดเชื้อ",
-//   //     },
-//   //   ],
-//   // },
-//   {
-//     key: "infectious-waste",
-//     label: `ทิ้งขยะ`,
-//   },
-//   {
-//     key: "user",
-//     label: `ผู้ใช้`,
-//   },
-// ];
-
-// export const menuSider = (user: any) => {
-//   const mapMenu = MenuSider.map((item: any) => {
-//     if (!item.children) {
-//       return {
-//         ...item,
-//         label: (
-//           <>
-//             <Link href={`/page/${item.key}`}>{item.label}</Link>
-//           </>
-//         ),
-//       };
-//     }
-//     return {
-//       ...item,
-//       children: item.children.map((itemChild: IMenuChild) => ({
-//         ...itemChild,
-//         label: (
-//           <>
-//             <Link href={`/page/${item.key}/${itemChild.key}`}>
-//               {itemChild.label}
-//             </Link>
-//           </>
-//         ),
-//       })),
-//     };
-//   });
-
-//   // if (user.groupRoles?.includes(groupRolesConfig.admin)) {
-//   //   return mapMenu;
-//   // }
-
-//   // return mapMenu.filter((item) => {
-//   //   if (user.module) {
-//   //     return item.roles.some((role: any) => user.module?.includes(role));
-//   //   }
-//   // });
-//   return mapMenu;
-// };
-
-// function replaceSpecialCharactersWithSpace(input: string): string {
-//   return input.replace(/[^a-zA-Z0-9]/g, " ");
-// }
-
-// export const itemBreadcrumbMenu = (pathname: string) => {
-//   const currentPath = pathname.split("/")[2] ?? pathname.split("/")[1];
-//   return MenuSider?.filter((menu: any) => menu.key === currentPath).map(
-//     (item: any) => {
-//       if (item.children && item.children.length > 1) {
-//         const currentPath = pathname.split("/")[3];
-
-//         const childPath = item?.children.find(
-//           (x: any) =>
-//             x.label.toLowerCase() ===
-//             replaceSpecialCharactersWithSpace(currentPath.toLocaleLowerCase())
-//         );
-//         return [
-//           { title: <Link href={"/page"}>Home</Link> },
-//           { title: item.label },
-//           { title: childPath?.label },
-//         ];
-//       }
-//       return [
-//         { title: <Link href={"/page"}>Home</Link> },
-//         { title: item.label },
-//       ];
-//     }
-//   )[0];
-// };
-
 import {
   ContainerOutlined,
   LogoutOutlined,
@@ -529,7 +271,7 @@ export const MenuSider: IMenu[] = [
   {
     key: "user",
     label: `ผู้ใช้`,
-    roles: [group.admin],
+    roles: [group.admin, group.user, group.pharmacy, group.asset, group.home],
     icon: <TeamOutlined />,
   },
 ];
@@ -579,7 +321,7 @@ export const itemBreadcrumbMenu = (pathname: string) => {
         const childMenu = item?.children.find(
           (x: any) =>
             x.label.toLowerCase() ===
-            replaceSpecialCharactersWithSpace(childPath.toLowerCase())
+            replaceSpecialCharactersWithSpace(childPath.toLowerCase()),
         );
         return [
           { title: <Link href={"/page"}></Link> },
@@ -588,15 +330,17 @@ export const itemBreadcrumbMenu = (pathname: string) => {
         ];
       }
       return [{ title: <Link href={"/page"}></Link> }, { title: item.label }];
-    }
+    },
   )[0];
 };
 
 // เมนู user dropdown
-const MenuNav: MenuProps["items"] = [     
+const MenuNav: MenuProps["items"] = [
   {
     key: "1",
-    label: <Link href={`/page/user`}>โปรไฟล์</Link>,  /* app/page/user/components/ProfileDetails.tsx */
+    label: (
+      <Link href={`/page/user`}>โปรไฟล์</Link>
+    ) /* app/page/user/components/ProfileDetails.tsx */,
     icon: <UserOutlined />,
   },
   {

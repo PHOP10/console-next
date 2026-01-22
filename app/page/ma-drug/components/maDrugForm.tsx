@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Form,
   Input,
@@ -13,17 +13,19 @@ import {
   Row,
   Col,
   Modal,
-  Tag,
-  Space,
+  Statistic,
 } from "antd";
 import {
   PlusOutlined,
   DeleteOutlined,
   SearchOutlined,
+  SaveOutlined,
 } from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { DrugType } from "../../common";
+import { useSession } from "next-auth/react";
+import CustomTable from "../../common/CustomTable";
 
 interface MaDrugFormProps {
   drugs: DrugType[];
@@ -33,7 +35,7 @@ interface MaDrugFormProps {
 interface DrugItemRow {
   key: string;
   drugId: number;
-  drugName: string; // เก็บชื่อไว้โชว์
+  drugName: string;
   packagingSize: string;
   quantity: number;
   note: string;
@@ -44,16 +46,31 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
-
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState<DrugItemRow[]>([]);
 
   // --- States สำหรับ Modal เลือกยา ---
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]); // เก็บ ID ที่ติ๊กใน Modal
-  const [searchText, setSearchText] = useState(""); // คำค้นหาใน Modal
+  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
+  const [searchText, setSearchText] = useState("");
 
-  // --- Logic การจัดการ Form ---
+  const summary = useMemo(() => {
+    const totalItems = dataSource.length;
+    const totalPrice = dataSource.reduce((sum, item) => {
+      return sum + item.quantity * item.price;
+    }, 0);
+
+    return { totalItems, totalPrice };
+  }, [dataSource]);
+
+  useEffect(() => {
+    form.setFieldsValue({
+      quantityUsed: summary.totalItems,
+      totalPrice: summary.totalPrice,
+    });
+  }, [summary, form]);
+
   const onFinish = async (values: any) => {
     if (dataSource.length === 0) {
       message.error("กรุณาเลือกรายการยาอย่างน้อย 1 รายการ");
@@ -66,17 +83,17 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
         requestNumber: values.requestNumber,
         requestUnit: values.requestUnit,
         roundNumber: values.roundNumber,
-        requesterName: values.requesterName,
-        dispenserName: values.dispenserName,
+        requesterName: session?.user?.fullName || values.requesterName,
         requestDate: values.requestDate.toISOString(),
         note: values.note,
         status: "pending",
-        // ✅ แก้ไขตรงนี้: เพิ่ม { create: ... } ครอบ Array ไว้
+        totalPrice: summary.totalPrice || 0,
+        quantityUsed: summary.totalItems,
+
         maDrugItems: {
           create: dataSource.map((item) => ({
-            drugId: item.drugId, // ตรวจสอบให้แน่ใจว่า drugId เป็น Int (ไม่ใช่ null)
+            drugId: item.drugId,
             quantity: item.quantity,
-            // note: item.note,
           })),
         },
       };
@@ -84,7 +101,6 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
       await intraAuthService.createMaDrug(payload);
       message.success("บันทึกการเบิกยาสำเร็จ");
 
-      // Reset Form
       form.resetFields();
       setDataSource([]);
       refreshData();
@@ -96,34 +112,28 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
     }
   };
 
-  // --- Logic สำหรับ Modal (เลือกยาแบบ Hybrid) ---
-
-  // กรองรายการยาตามคำค้นหา
   const filteredDrugs = useMemo(() => {
     return drugs.filter(
       (d) =>
         d.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        d.workingCode.toLowerCase().includes(searchText.toLowerCase())
+        d.workingCode.toLowerCase().includes(searchText.toLowerCase()),
     );
   }, [drugs, searchText]);
 
-  // เมื่อกดตกลงใน Modal
   const handleModalOk = () => {
     const newItems: DrugItemRow[] = [];
-
     selectedRowKeys.forEach((key) => {
-      // เช็คก่อนว่ายานี้มีในตารางหลักหรือยัง? ถ้ามีแล้วจะไม่เพิ่มซ้ำ
       const isExist = dataSource.find((item) => item.drugId === Number(key));
       if (!isExist) {
         const drug = drugs.find((d) => d.id === Number(key));
         if (drug) {
           newItems.push({
-            key: `${drug.id}_${Date.now()}`, // Unique Key
+            key: `${drug.id}_${Date.now()}`,
             drugId: drug.id,
             drugName: drug.name,
             packagingSize: drug.packagingSize,
             price: drug.price,
-            quantity: 1, // ค่าเริ่มต้น
+            quantity: 1,
             note: "",
           });
         }
@@ -132,27 +142,31 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
 
     if (newItems.length > 0) {
       setDataSource([...dataSource, ...newItems]);
-      message.success(`เพิ่มยา ${newItems.length} รายการลงในแบบฟอร์มแล้ว`);
-    } else if (selectedRowKeys.length > 0) {
-      message.info("รายการที่เลือกมีอยู่ในแบบฟอร์มแล้ว");
+      message.success(`เพิ่มยา ${newItems.length} รายการ`);
     }
-
     setIsModalOpen(false);
-    setSelectedRowKeys([]); // เคลียร์การเลือก
-    setSearchText(""); // เคลียร์คำค้น
+    setSelectedRowKeys([]);
+    setSearchText("");
   };
 
-  // Columns ของตารางหลัก (The Basket)
+  // --- Style Constants (Master Template) ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  const tableInputStyle =
+    "w-full h-9 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:shadow-sm"; // เล็กกว่าปกตินิดหน่อยสำหรับใส่ในตาราง
+
   const mainColumns = [
     {
       title: "รายการยา",
       dataIndex: "drugName",
       key: "drugName",
       render: (text: string, record: DrugItemRow) => (
-        <div>
-          <div style={{ fontWeight: "bold" }}>{text}</div>
-          <div style={{ fontSize: "0.8em", color: "gray" }}>
-            ขนาด: {record.packagingSize}
+        <div className="py-1">
+          <div className="font-bold text-gray-700">{text}</div>
+          <div className="text-xs text-gray-500 mt-1">
+            ขนาด: {record.packagingSize} | ราคา: {record.price.toLocaleString()}{" "}
+            บ.
           </div>
         </div>
       ),
@@ -161,12 +175,12 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
       title: "จำนวนเบิก",
       dataIndex: "quantity",
       key: "quantity",
-      width: 150,
+      width: 140,
       render: (value: number, record: DrugItemRow) => (
         <InputNumber
           min={1}
           value={value}
-          style={{ width: "100%" }}
+          className={tableInputStyle}
           onChange={(val) => {
             const newData = [...dataSource];
             const index = newData.findIndex((item) => item.key === record.key);
@@ -176,23 +190,17 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
         />
       ),
     },
-    // {
-    //   title: "หมายเหตุ",
-    //   dataIndex: "note",
-    //   key: "note",
-    //   render: (value: string, record: DrugItemRow) => (
-    //     <Input
-    //       value={value}
-    //       placeholder="ระบุเหตุผล (ถ้ามี)"
-    //       onChange={(e) => {
-    //         const newData = [...dataSource];
-    //         const index = newData.findIndex((item) => item.key === record.key);
-    //         newData[index].note = e.target.value;
-    //         setDataSource(newData);
-    //       }}
-    //     />
-    //   ),
-    // },
+    {
+      title: "รวม (บาท)",
+      key: "subtotal",
+      width: 120,
+      align: "right" as const,
+      render: (_: any, record: DrugItemRow) => (
+        <span className="font-semibold text-blue-600">
+          {(record.quantity * record.price).toLocaleString()}
+        </span>
+      ),
+    },
     {
       title: "",
       key: "action",
@@ -202,6 +210,7 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
           type="text"
           danger
           icon={<DeleteOutlined />}
+          className="hover:bg-red-50 rounded-lg"
           onClick={() => {
             setDataSource(dataSource.filter((item) => item.key !== record.key));
           }}
@@ -210,40 +219,39 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
     },
   ];
 
-  // Columns ของตารางใน Modal (Master List)
   const modalColumns = [
     { title: "รหัสยา", dataIndex: "workingCode", width: 100 },
     {
       title: "ชื่อยา",
       dataIndex: "name",
-      render: (text: string, record: DrugType) => (
-        <span>
-          {text} <Tag color="blue">{record.packagingSize}</Tag>
-        </span>
-      ),
+      render: (text: string) => <span className="font-medium">{text}</span>,
+    },
+    {
+      title: "ราคา",
+      dataIndex: "price",
+      width: 100,
+      render: (val: number) => val.toLocaleString(),
     },
     {
       title: "คงเหลือ",
       dataIndex: "quantity",
       width: 100,
       render: (val: number) => (
-        <span style={{ color: val === 0 ? "red" : "green" }}>{val}</span>
+        <span
+          className={`font-bold ${val === 0 ? "text-red-500" : "text-green-600"}`}
+        >
+          {val}
+        </span>
       ),
     },
   ];
 
   return (
     <Card
+      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
       title={
-        <div
-          style={{
-            fontSize: "20px",
-            textAlign: "center",
-            fontWeight: "bold",
-            color: "#0683e9",
-          }}
-        >
-          📝 ใบเบิกจ่ายเวชภัณฑ์ (Hybrid Form)
+        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
+          ใบเบิกจ่ายเวชภัณฑ์
         </div>
       }
     >
@@ -251,127 +259,149 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
         form={form}
         layout="vertical"
         onFinish={onFinish}
-        initialValues={{ roundNumber: 1, requestDate: null }}
+        initialValues={{ requestDate: null }}
       >
-        {/* ส่วน Header จัดเป็น 2 คอลัมน์ให้สวยงาม */}
-        <Row gutter={16}>
+        {/* Row 1: เลขที่, วันที่ */}
+        <Row gutter={24}>
           <Col span={12}>
             <Form.Item
               label="เลขที่เบิก"
               name="requestNumber"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "กรุณากรอกเลขที่เบิก" }]}
             >
-              <Input placeholder="เช่น REQ-2023-001" />
+              <Input placeholder="กรอกเลขที่เบิก" className={inputStyle} />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
               label="วันที่ขอเบิก"
               name="requestDate"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}
             >
-              <DatePicker format="YYYY-MM-DD" style={{ width: "100%" }} />
+              <DatePicker
+                format="YYYY-MM-DD"
+                placeholder="เลือกวันที่"
+                style={{ width: "100%" }}
+                className={`${inputStyle} pt-2`}
+              />
             </Form.Item>
           </Col>
         </Row>
 
-        <Row gutter={16}>
+        {/* Row 2: หน่วยงาน, ครั้งที่ */}
+        <Row gutter={24}>
           <Col span={12}>
             <Form.Item
               label="หน่วยงานที่เบิก"
               name="requestUnit"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "กรุณากรอกหน่วยงาน" }]}
             >
-              <Input />
+              <Input placeholder="กรอกหน่วยงานที่เบิก" className={inputStyle} />
             </Form.Item>
           </Col>
           <Col span={12}>
             <Form.Item
               label="เบิกครั้งที่"
               name="roundNumber"
-              rules={[{ required: true }]}
+              rules={[{ required: true, message: "กรุณาระบุครั้งที่เบิก" }]}
             >
-              <InputNumber min={1} style={{ width: "100%" }} />
+              <InputNumber
+                min={1}
+                style={{ width: "100%" }}
+                className={`${inputStyle} pt-1`}
+              />
             </Form.Item>
           </Col>
         </Row>
 
-        <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item
-              label="ผู้ขอเบิก"
-              name="requesterName"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-          <Col span={12}>
-            <Form.Item
-              label="ผู้จัดยา"
-              name="dispenserName"
-              rules={[{ required: true }]}
-            >
-              <Input />
-            </Form.Item>
-          </Col>
-        </Row>
+        {/* Summary Box (The Blue Box Refined) */}
+        <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 mb-6 shadow-inner">
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="จำนวนรายการ (รายการ)"
+                name="quantityUsed"
+                style={{ marginBottom: 0 }}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  className="w-full h-11 rounded-xl border-blue-200 bg-white shadow-sm text-gray-700 font-bold pt-1"
+                  readOnly
+                  disabled
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="รวมเป็นเงิน (บาท)"
+                name="totalPrice"
+                style={{ marginBottom: 0 }}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  className="w-full h-11 rounded-xl border-blue-200 bg-white shadow-sm text-red-600 font-bold text-lg pt-1"
+                  formatter={(value) =>
+                    `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value) => value!.replace(/\฿\s?|(,*)/g, "")}
+                  readOnly
+                  disabled
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+        </div>
 
-        <Form.Item label="หมายเหตุรวม" name="note">
-          <Input.TextArea rows={2} />
+        <Form.Item label="หมายเหตุ" name="note">
+          <Input.TextArea
+            rows={2}
+            placeholder="กรอกหมายเหตุ (ถ้ามี)"
+            className="w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300"
+          />
         </Form.Item>
 
-        {/* --- ส่วนตารางรายการยา (The Basket) --- */}
-        <div
-          style={{
-            background: "#f5f5f5",
-            padding: "16px",
-            borderRadius: "8px",
-            marginBottom: "16px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "8px",
-            }}
-          >
-            <span style={{ fontWeight: "bold", fontSize: "16px" }}>
-              รายการยาที่ต้องการเบิก ({dataSource.length})
+        {/* Drug Selection Area */}
+        <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-6">
+          <div className="flex justify-between items-center mb-4 px-2">
+            <span className="font-bold text-lg text-gray-700 flex items-center gap-2">
+              รายการยาที่ต้องการเบิก
+              <span className="bg-blue-100 text-blue-600 text-xs px-2 py-1 rounded-full">
+                {summary.totalItems}
+              </span>
             </span>
             <Button
               type="dashed"
               icon={<PlusOutlined />}
               onClick={() => setIsModalOpen(true)}
-              style={{ borderColor: "#1890ff", color: "#1890ff" }}
+              className="border-blue-400 text-blue-600 hover:text-blue-700 hover:bg-blue-50 hover:border-blue-500 rounded-xl h-10 px-4 shadow-sm"
             >
-              + เลือกรายการยาจากคลัง
+              เลือกรายการยาจากคลัง
             </Button>
           </div>
 
-          <Table
+          <CustomTable
             dataSource={dataSource}
             columns={mainColumns}
-            pagination={{
-              pageSize: 10, // แสดงหน้าละ 10 รายการ
-              showSizeChanger: true, // ให้ user เลือกเปลี่ยนจำนวนต่อหน้าได้เอง
-              pageSizeOptions: ["10", "20", "50"], // ตัวเลือกจำนวนต่อหน้า
-            }}
+            pagination={false}
             rowKey="key"
             locale={{
               emptyText: "ยังไม่มีรายการยา กดปุ่ม '+ เลือกรายการยา' เพื่อเพิ่ม",
             }}
-            summary={(pageData) => {
-              if (pageData.length > 0) {
+            // คง Class Table เดิมของคุณไว้แต่จัด Format ให้อ่านง่ายขึ้น
+
+            summary={() => {
+              if (dataSource.length > 0) {
                 return (
-                  <Table.Summary.Row>
-                    <Table.Summary.Cell index={0} colSpan={4} align="right">
-                      <span style={{ color: "gray" }}>
-                        รวมทั้งสิ้น {pageData.length} รายการ
+                  <Table.Summary.Row className="bg-blue-50/50 font-bold">
+                    <Table.Summary.Cell index={0} colSpan={2} align="right">
+                      รวมทั้งสิ้น
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={1} align="right">
+                      <span className="text-red-600 text-base">
+                        {summary.totalPrice.toLocaleString()}
                       </span>
                     </Table.Summary.Cell>
+                    <Table.Summary.Cell index={2} />
                   </Table.Summary.Row>
                 );
               }
@@ -380,38 +410,49 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
           />
         </div>
 
-        <Form.Item style={{ textAlign: "center", marginTop: 24 }}>
+        {/* Submit Button */}
+        <Form.Item className="text-center mt-8 mb-2">
           <Button
             type="primary"
             htmlType="submit"
             loading={loading}
-            size="large"
-            style={{ width: "200px" }}
+            icon={<SaveOutlined />}
+            className="h-11 px-8 rounded-xl text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9]"
+            style={{ width: "220px" }}
           >
             บันทึกการเบิกจ่าย
           </Button>
         </Form.Item>
       </Form>
 
-      {/* --- Modal เลือกยา (The Master List) --- */}
+      {/* Modal เลือกยา */}
       <Modal
-        title="คลังรายการยา (Master List)"
+        title={
+          <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+            คลังรายการยา (Master List)
+          </div>
+        }
         open={isModalOpen}
         onOk={handleModalOk}
         onCancel={() => setIsModalOpen(false)}
         width={800}
         okText={`เพิ่มรายการที่เลือก (${selectedRowKeys.length})`}
         cancelText="ยกเลิก"
+        centered
+        styles={{
+          content: { borderRadius: "20px", padding: "24px" },
+          header: { marginBottom: "16px" },
+        }}
       >
         <Input
-          placeholder="ค้นหาชื่อยา หรือ รหัสยา..."
-          prefix={<SearchOutlined />}
-          style={{ marginBottom: 16 }}
+          placeholder="ค้นหาชื่อยา หรือรหัสยา..."
+          prefix={<SearchOutlined className="text-gray-400" />}
+          className="w-full h-11 rounded-xl border-gray-300 shadow-sm mb-4 hover:border-blue-400 focus:border-blue-500 focus:shadow-md"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           allowClear
         />
-        <Table
+        <CustomTable
           rowSelection={{
             type: "checkbox",
             selectedRowKeys,
@@ -420,9 +461,9 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
           columns={modalColumns}
           dataSource={filteredDrugs}
           rowKey="id"
-          pagination={{ pageSize: 20 }}
+          pagination={{ pageSize: 5 }} // ลด pageSize ลงนิดนึงเพื่อให้ Modal ไม่ยาวเกินไป
           size="small"
-          scroll={{ y: 300 }} // Fix ความสูงตาราง ถ้ามี 100 รายการจะได้เลื่อนดูได้
+          scroll={{ y: 300 }}
         />
       </Modal>
     </Card>

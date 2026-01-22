@@ -11,6 +11,8 @@ import {
   Form,
   Input,
   DatePicker,
+  Tooltip,
+  ConfigProvider,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { InfectiousWasteType } from "../../common/index";
@@ -19,6 +21,8 @@ import { infectiousWasteServices } from "../services/infectiouswaste.service";
 import { useState } from "react";
 import dayjs from "dayjs";
 import { useSession } from "next-auth/react";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import CustomTable from "../../common/CustomTable";
 
 interface ThrowAwayWasteTableProps {
   data: InfectiousWasteType[];
@@ -106,6 +110,19 @@ export default function ThrowAwayWasteTable({
         <Space>
           {session?.user.role === "admin" && (
             <>
+              {/* ปุ่มแก้ไข (ดินสอสีส้ม) */}
+              <Tooltip title="แก้ไข">
+                <EditOutlined
+                  onClick={() => handleEdit(record)}
+                  style={{
+                    fontSize: 22,
+                    color: "#faad14", // สีส้ม (ตรงกับสีเดิมที่คุณใช้)
+                    cursor: "pointer",
+                    transition: "color 0.2s",
+                  }}
+                />
+              </Tooltip>
+
               <Popconfirm
                 title="ยืนยันการลบ"
                 description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -122,24 +139,17 @@ export default function ThrowAwayWasteTable({
                 okText="ใช่"
                 cancelText="ยกเลิก"
               >
-                <Button danger size="small">
-                  ลบ
-                </Button>
+                <Tooltip title="ลบ">
+                  <DeleteOutlined
+                    style={{
+                      fontSize: 22,
+                      color: "#ff4d4f", // สีแดง Danger
+                      cursor: "pointer",
+                      transition: "color 0.2s",
+                    }}
+                  />
+                </Tooltip>
               </Popconfirm>
-
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => handleEdit(record)}
-                style={{
-                  marginRight: 8,
-                  backgroundColor: "#faad14", // สีเหลือง
-                  borderColor: "#faad14", // เส้นกรอบเป็นสีเดียวกัน
-                  color: "#ffffff", // ตัวอักษรสีขาว
-                }}
-              >
-                แก้ไข
-              </Button>
             </>
           )}
         </Space>
@@ -162,65 +172,97 @@ export default function ThrowAwayWasteTable({
         </div>
       }
     >
-      <Table
+      <CustomTable
         dataSource={data}
         columns={columns}
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10 }}
-        scroll={{ x: 800 }}
-        bordered
       />
 
       {/* Modal สำหรับแก้ไข */}
       <Modal
-        title="แก้ไขข้อมูลขยะติดเชื้อ"
+        title={
+          <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+            แก้ไขข้อมูลขยะติดเชื้อ
+          </div>
+        }
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         centered
-        footer={[
-          <div style={{ width: "100%", textAlign: "center" }} key="footer">
-            <Button onClick={() => setIsModalOpen(false)}>ยกเลิก</Button>
-            <Button
-              type="primary"
-              onClick={handleUpdate}
-              style={{ marginLeft: 8 }}
-            >
-              บันทึก
-            </Button>
-          </div>,
-        ]}
+        footer={null}
+        width={600}
+        styles={{
+          content: { borderRadius: "20px", padding: "24px" },
+          header: {
+            marginBottom: "16px",
+            borderBottom: "1px solid #f0f0f0",
+            paddingBottom: "12px",
+          },
+        }}
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            name="wasteType"
-            label="ประเภทขยะ"
-            rules={[{ required: true, message: "กรุณากรอกประเภทขยะ" }]}
-          >
-            <Input />
-          </Form.Item>
+          {/* Style Constants */}
+          {(() => {
+            const inputStyle =
+              "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
-          <Form.Item
-            label="น้ำหนักขยะติดเชื้อ (กิโลกรัม)"
-            name="wasteWeight"
-            rules={[
-              { required: true, message: "กรุณาระบุน้ำหนักขยะ" },
-              {
-                pattern: /^\d+(\.\d{1,2})?$/,
-                message: "กรุณากรอกตัวเลข เช่น 1.25",
-              },
-            ]}
-          >
-            <Input placeholder="เช่น 1.25" />
-          </Form.Item>
+            return (
+              <>
+                <Form.Item
+                  name="wasteType"
+                  label="ประเภทขยะ"
+                  rules={[{ required: true, message: "กรุณากรอกประเภทขยะ" }]}
+                >
+                  <Input placeholder="ระบุประเภทขยะ" className={inputStyle} />
+                </Form.Item>
 
-          <Form.Item
-            name="discardedDate"
-            label="วันที่ส่งกำจัด"
-            rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}
-          >
-            <DatePicker style={{ width: "100%" }} format="YYYY-MM-DD" />
-          </Form.Item>
+                <Form.Item
+                  label="น้ำหนักขยะติดเชื้อ (กิโลกรัม)"
+                  name="wasteWeight"
+                  rules={[
+                    { required: true, message: "กรุณาระบุน้ำหนักขยะ" },
+                    {
+                      pattern: /^\d+(\.\d{1,2})?$/,
+                      message: "กรุณากรอกตัวเลข เช่น 1.25",
+                    },
+                  ]}
+                >
+                  <Input placeholder="เช่น 1.25" className={inputStyle} />
+                </Form.Item>
+
+                <Form.Item
+                  name="discardedDate"
+                  label="วันที่ส่งกำจัด"
+                  rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}
+                >
+                  <DatePicker
+                    style={{ width: "100%" }}
+                    format="YYYY-MM-DD"
+                    placeholder="เลือกวันที่"
+                    className={`${inputStyle} pt-2`}
+                  />
+                </Form.Item>
+
+                {/* Buttons Section */}
+                <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+                  <Button
+                    onClick={() => setIsModalOpen(false)}
+                    className="h-10 px-6 rounded-lg text-gray-600 hover:bg-gray-100 border-gray-300"
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button
+                    type="primary"
+                    onClick={handleUpdate}
+                    className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
+                  >
+                    บันทึก
+                  </Button>
+                </div>
+              </>
+            );
+          })()}
         </Form>
       </Modal>
     </Card>

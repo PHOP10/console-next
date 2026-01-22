@@ -26,11 +26,16 @@ import OfficialTravelRequestDetail from "./officialTravelRequestDetail";
 import OfficialTravelRequestEditModal from "./OfficialTravelRequestEditModal";
 import {
   CheckCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
   ExclamationCircleOutlined,
   FileSearchOutlined,
+  FormOutlined,
+  RollbackOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
 import { useSession } from "next-auth/react";
+import CustomTable from "../../common/CustomTable";
 
 interface Props {
   data: OfficialTravelRequestType[];
@@ -259,28 +264,30 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
-      render: (status) => {
+      render: (status: string) => {
         let color = "default";
-        let text = "";
+        let text = status;
 
         switch (status) {
           case "pending":
             color = "blue";
-            text = "รอดำเนินการ";
+            text = "รออนุมัติ";
             break;
           case "approve":
             color = "green";
             text = "อนุมัติ";
             break;
+          case "edit":
+            color = "purple";
+            text = "รอแก้ไข";
+            break;
           case "cancel":
             color = "red";
             text = "ยกเลิก";
-          case "edit":
-            color = "orange";
-            text = "รอแก้ไข";
             break;
           default:
             text = status;
+            break;
         }
 
         return <Tag color={color}>{text}</Tag>;
@@ -308,6 +315,23 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       key: "action",
       render: (_, record) => (
         <Space>
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              style={{
+                fontSize: 22, // ปรับขนาดตามความเหมาะสม
+                color: record.status === "pending" ? "#faad14" : "#d9d9d9",
+                cursor: record.status === "pending" ? "pointer" : "not-allowed",
+                transition: "color 0.2s",
+              }}
+              onClick={() => {
+                // ต้องเช็คเงื่อนไขตรงนี้ เพราะ Icon กดได้ตลอดเวลาถ้าไม่กันไว้
+                if (record.status === "pending") {
+                  handleEdit(record);
+                }
+              }}
+            />
+          </Tooltip>
+
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -324,25 +348,20 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             okText="ใช่"
             cancelText="ยกเลิก"
           >
-            <Button danger size="small">
-              ลบ
-            </Button>
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 22,
+                  color: "#ff4d4f", // สีแดงตาม Theme ของ Ant Design (Danger)
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+                // เพิ่ม effect ตอนเอาเมาส์ชี้ให้สีเข้มขึ้นเล็กน้อย (Option เสริม)
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
+              />
+            </Tooltip>
           </Popconfirm>
-          <Button
-            size="small"
-            type="primary"
-            style={{
-              backgroundColor:
-                record.status === "pending" ? "#faad14" : "#d9d9d9",
-              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
-              color: record.status === "pending" ? "white" : "#888",
-              cursor: record.status === "pending" ? "pointer" : "not-allowed",
-            }}
-            disabled={record.status !== "pending"}
-            onClick={() => handleEdit(record)}
-          >
-            แก้ไข
-          </Button>
 
           <Popconfirm
             title="ยืนยันการส่งคืนเพื่อแก้ไข"
@@ -352,7 +371,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             disabled={record.status !== "approve"}
           >
             <Tooltip title="ส่งคืนเพื่อแก้ไข">
-              <UndoOutlined
+              <RollbackOutlined
                 style={{
                   fontSize: 22,
                   color: record.status === "approve" ? "orange" : "#d9d9d9",
@@ -364,97 +383,79 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             </Tooltip>
           </Popconfirm>
 
-          {/* <Popover
-            trigger="click"
-            title={
-              <Space>
-                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
-              </Space>
-            }
-            content={
-              <Space style={{ display: "flex", marginTop: 13 }}>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => handleApprove(record)}
-                >
-                  อนุมัติ
-                </Button>
-                <Button
-                  danger
-                  size="small"
-                  onClick={() => {
-                    setSelectedCancelRecord(record);
-                    setModalCancelOpen(true);
-                    // setPopoverOpen(false);
-                    setOpenPopoverId(null);
-                  }}
-                >
-                  ยกเลิก
-                </Button>
-              </Space>
-            }
-            open={openPopoverId === record.id}
-            onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
-          >
-            <Button
-              type="primary"
-              size="small"
-              disabled={record.status !== "pending"}
-              onClick={() => setOpenPopoverId(record.id)}
-            >
-              อนุมัติ
-            </Button>
-          </Popover> */}
-
           <Popover
             trigger="click"
+            open={openPopoverId === record.id}
+            // สั่งปิด Popover เมื่อคลิกที่อื่น หรือเมื่อสถานะเปลี่ยน
+            onOpenChange={(newOpen) => {
+              if (newOpen && record.status === "pending") {
+                setOpenPopoverId(record.id);
+              } else {
+                setOpenPopoverId(null);
+              }
+            }}
             title={
               <Space>
                 <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
+                <Typography.Text strong>ยืนยันผลการพิจารณา ?</Typography.Text>
               </Space>
             }
             content={
-              <Space style={{ display: "flex", marginTop: 13 }}>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => handleApprove(record)}
-                >
-                  อนุมัติ
-                </Button>
+              <Space
+                style={{
+                  display: "flex",
+                  marginTop: 13,
+                  justifyContent: "flex-end",
+                }}
+              >
                 <Button
                   danger
                   size="small"
                   onClick={() => {
                     setSelectedCancelRecord(record);
                     setModalCancelOpen(true);
-                    // setPopoverOpen(false);
                     setOpenPopoverId(null);
                   }}
                 >
-                  ยกเลิก
+                  ยกเลิกคำขอ
+                </Button>
+
+                {/* ปุ่มอนุมัติ (Approve) */}
+                <Button
+                  type="primary"
+                  size="small"
+                  style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }} // สีเขียว
+                  onClick={() => {
+                    handleApprove(record);
+                    setOpenPopoverId(null); // ปิด Popover หลังกด
+                  }}
+                >
+                  อนุมัติ
                 </Button>
               </Space>
             }
-            open={openPopoverId === record.id}
-            onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
-            <Tooltip title="อนุมัติ">
+            <Tooltip
+              title={
+                record.status === "pending" ? "อนุมัติ" : "ไม่สามารถอนุมัติได้"
+              }
+            >
               <CheckCircleOutlined
                 style={{
                   fontSize: 22,
-                  color: record.status !== "pending" ? "#ccc" : "#52c41a",
+                  // ถ้าเป็น pending ให้เป็นสีเขียว (พร้อมกด) ถ้าไม่ใช่ให้เป็นสีเทา
+                  color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
                   cursor:
-                    record.status !== "pending" ? "not-allowed" : "pointer",
-                  opacity: record.status !== "pending" ? 0.5 : 1,
+                    record.status === "pending" ? "pointer" : "not-allowed",
+                  opacity: record.status === "pending" ? 1 : 0.5,
+                  transition: "color 0.2s",
                 }}
-                onClick={() => {
-                  if (record.status === "pending") {
-                    setOpenPopoverId(record.id);
+                onClick={(e) => {
+                  if (record.status !== "pending") {
+                    e.stopPropagation(); // หยุด Event ไม่ให้ Popover ทำงาน
+                    return;
                   }
+                  setOpenPopoverId(record.id);
                 }}
               />
             </Tooltip>
@@ -481,7 +482,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
 
   return (
     <>
-      <Table
+      <CustomTable
         rowKey="id"
         columns={columns}
         dataSource={data}

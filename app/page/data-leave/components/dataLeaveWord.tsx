@@ -11,7 +11,7 @@ import { DataLeaveService } from "../services/dataLeave.service";
 import { useEffect, useState } from "react";
 import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import { userService } from "../../user/services/user.service";
-import { ExportOutlined } from "@ant-design/icons";
+import { ExportOutlined, FileWordOutlined } from "@ant-design/icons";
 
 dayjs.locale("th");
 
@@ -34,7 +34,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         await intraAuthDataLeaveService.getMasterLeaveQuery();
       const dataLeaveUser =
         await intraAuthDataLeaveService.getDataLeaveByUserId(
-          record.createdById
+          record.createdById,
         );
       setUserData(res);
       setMasterLeave(dataMasterLeaves);
@@ -65,11 +65,11 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         (item) =>
           item.typeId === leave.id &&
           item.status === "approve" &&
-          item.id !== record.id
+          item.id !== record.id,
       )
       .reduce(
         (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd),
-        0
+        0,
       );
 
     // ลาครั้งนี้
@@ -112,10 +112,10 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         ? creators.gender === "male"
           ? "นาย"
           : creators.gender === "female"
-          ? "นาง"
-          : creators.gender === "miss"
-          ? "นางสาว"
-          : creators.gender ?? "-"
+            ? "นาง"
+            : creators.gender === "miss"
+              ? "นางสาว"
+              : (creators.gender ?? "-")
         : "-";
 
       // const userPosition =
@@ -125,7 +125,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       const userPosition =
         record.createdName && userData.length > 0
           ? userData.find(
-              (u) => `${u.firstName} ${u.lastName}` === record.createdName
+              (u) => `${u.firstName} ${u.lastName}` === record.createdName,
             )?.position || "ไม่ระบุตำแหน่ง"
           : "ไม่ระบุตำแหน่ง";
 
@@ -152,7 +152,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       const leaveTypes = record.masterLeave?.leaveType ?? "-";
 
       const sortedLeave = [...(dataLeaveUser || [])].sort(
-        (a, b) => dayjs(b.dateEnd).valueOf() - dayjs(a.dateEnd).valueOf()
+        (a, b) => dayjs(b.dateEnd).valueOf() - dayjs(a.dateEnd).valueOf(),
       );
 
       // ถ้ามีหลายครั้ง → เอาครั้งก่อนล่าสุด (index 1)
@@ -185,10 +185,10 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         ? creator.gender === "male"
           ? "นาย"
           : creator.gender === "female"
-          ? "นาง"
-          : creator.gender === "miss"
-          ? "นางสาว"
-          : creator.gender ?? "-"
+            ? "นาง"
+            : creator.gender === "miss"
+              ? "นางสาว"
+              : (creator.gender ?? "-")
         : "-";
 
       const data = {
@@ -221,7 +221,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         dateEnds: latestDateEnd ? formatThaiDate(latestDateEnd) : "-",
         leaveD,
         gd: genderPrefix,
-        gds:genderPrefixs,
+        gds: genderPrefixs,
         sS: leaveTypes === "ลาป่วย" ? checked : unchecked,
         sP: leaveTypes === "ลากิจส่วนตัว" ? checked : unchecked,
         sM: leaveTypes === "ลาคลอดบุตร" ? checked : unchecked,
@@ -272,9 +272,9 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
     // </>
     <>
       <Tooltip title="Export">
-        <ExportOutlined
+        <FileWordOutlined
           style={{
-            fontSize: 20,
+            fontSize: 22,
             color: record.status === "pending" ? "#1677ff" : "#d9d9d9",
             cursor: record.status === "pending" ? "pointer" : "not-allowed",
             transition: "color 0.2s",

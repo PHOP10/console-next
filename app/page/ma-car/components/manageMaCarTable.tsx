@@ -23,12 +23,16 @@ import dayjs from "dayjs";
 import { useSession } from "next-auth/react";
 import {
   CheckCircleOutlined,
+  DeleteOutlined,
+  EditOutlined,
   ExclamationCircleOutlined,
   FileSearchOutlined,
+  RollbackOutlined,
   UndoOutlined,
 } from "@ant-design/icons";
 import MaCarDetail from "./maCarDetail";
 import MaCarEditModal from "./MaCarEditModal";
+import CustomTable from "../../common/CustomTable";
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -50,7 +54,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
   const { data: session } = useSession();
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<MaCarType | null>(null);
   const [form] = Form.useForm();
   const [formCancel] = Form.useForm();
@@ -85,42 +89,28 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     setEditModalOpen(false);
     setEditRecord(null);
   };
-  //   setEditingCar(record);
-  //   form.setFieldsValue({
-  //     requesterName: record.requesterName,
-  //     purpose: record.purpose,
-  //     dateStart: record.dateStart ? dayjs(record.dateStart) : null,
-  //     dateEnd: record.dateEnd ? dayjs(record.dateEnd) : null,
-  //     destination: record.destination,
-  //     passengers: record.passengers,
-  //     budget: record.budget,
-  //   });
-  //   setIsModalOpen(true);
+
+  // const handleUpdate = async () => {
+  //   try {
+  //     if (!editingCar) return;
+  //     const values = await form.validateFields();
+  //     const body = {
+  //       ...values,
+  //       id: editingCar.id,
+  //       dateStart: values.dateStart?.toISOString(),
+  //       dateEnd: values.dateEnd?.toISOString(),
+  //     };
+
+  //     await intraAuthService.updateMaCar(body);
+
+  //     message.success("แก้ไขข้อมูลสำเร็จ");
+  //     setIsModalOpen(false);
+  //     fetchData();
+  //   } catch (error) {
+  //     console.error("Error updating car:", error);
+  //     message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
+  //   }
   // };
-
-  const handleUpdate = async () => {
-    try {
-      if (!editingCar) return;
-
-      const values = await form.validateFields();
-
-      const body = {
-        ...values,
-        id: editingCar.id,
-        dateStart: values.dateStart?.toISOString(),
-        dateEnd: values.dateEnd?.toISOString(),
-      };
-
-      await intraAuthService.updateMaCar(body);
-
-      message.success("แก้ไขข้อมูลสำเร็จ");
-      setIsModalOpen(false);
-      fetchData();
-    } catch (error) {
-      console.error("Error updating car:", error);
-      message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
-    }
-  };
 
   const handleApprove = async (record: any) => {
     try {
@@ -256,7 +246,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         switch (status) {
           case "pending":
             color = "blue";
-            text = "รอดำเนินการ";
+            text = "รออนุมัติ";
             break;
           case "approve":
             color = "green";
@@ -299,21 +289,29 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       key: "action",
       render: (_, record) => (
         <Space>
-          <Button
-            size="small"
-            type="primary"
-            style={{
-              backgroundColor:
-                record.status === "pending" ? "#faad14" : "#d9d9d9",
-              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
-              color: record.status === "pending" ? "white" : "#888",
-              cursor: record.status === "pending" ? "pointer" : "not-allowed",
-            }}
-            disabled={record.status !== "pending"}
-            onClick={() => handleEdit(record)}
-          >
-            แก้ไข
-          </Button>
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              type="primary"
+              style={{
+                fontSize: 22,
+                color:
+                  record.status === "pending" || record.status === "edit"
+                    ? "#faad14"
+                    : "#d9d9d9",
+                cursor:
+                  record.status === "pending" || record.status === "edit"
+                    ? "pointer"
+                    : "not-allowed",
+                opacity:
+                  record.status === "pending" || record.status === "edit"
+                    ? 1
+                    : 0.6,
+              }}
+              disabled={record.status !== "pending"}
+              onClick={() => handleEdit(record)}
+            />
+          </Tooltip>
+
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -330,9 +328,18 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             okText="ใช่"
             cancelText="ยกเลิก"
           >
-            <Button danger size="small">
-              ลบ
-            </Button>
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 22,
+                  color: "#ff4d4f",
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
+              />
+            </Tooltip>
           </Popconfirm>
 
           <Popconfirm
@@ -343,7 +350,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             disabled={record.status !== "approve"}
           >
             <Tooltip title="ส่งคืนเพื่อแก้ไข">
-              <UndoOutlined
+              <RollbackOutlined
                 style={{
                   fontSize: 22,
                   color: record.status === "approve" ? "orange" : "#d9d9d9",
@@ -366,30 +373,28 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             content={
               <Space style={{ display: "flex", marginTop: 13 }}>
                 <Button
+                  danger
+                  size="small"
+                  onClick={() => {
+                    setSelectedCancelRecord(record);
+                    setModalCancelOpen(true);
+                    setOpenPopoverId(null);
+                  }}
+                >
+                  ยกเลิกการจอง
+                </Button>
+                <Button
                   type="primary"
                   size="small"
                   onClick={() => handleApprove(record)}
                 >
                   อนุมัติ
                 </Button>
-                <Button
-                  danger
-                  size="small"
-                  onClick={() => {
-                    setSelectedCancelRecord(record);
-                    setModalCancelOpen(true);
-                    // setPopoverOpen(false);
-                    setOpenPopoverId(null);
-                  }}
-                >
-                  ยกเลิก
-                </Button>
               </Space>
             }
             open={openPopoverId === record.id}
             onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
           >
-         
             <Tooltip title="อนุมัติ">
               <CheckCircleOutlined
                 style={{
@@ -408,13 +413,6 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Tooltip>
           </Popover>
 
-          {/* <Button
-            size="small"
-            type="primary"
-            onClick={() => handleShowDetail(record, dataUser)}
-          >
-            รายละเอียด
-          </Button> */}
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
               style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
@@ -428,7 +426,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
 
   return (
     <>
-      <Table
+      <CustomTable
         columns={columns}
         dataSource={data}
         rowKey="id"
@@ -440,7 +438,8 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         onClose={handleCloseDetail}
         record={selectedRecord}
       />
-      <Modal
+
+      {/* <Modal
         title="แก้ไขการจองรถ"
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
@@ -472,7 +471,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             <InputNumber style={{ width: "100%" }} />
           </Form.Item>
         </Form>
-      </Modal>
+      </Modal> */}
 
       <Modal
         title="ยกเลิกการจองรถ"

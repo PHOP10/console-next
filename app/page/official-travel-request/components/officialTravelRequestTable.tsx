@@ -11,8 +11,13 @@ import {
 import OfficialTravelRequestDetail from "./officialTravelRequestDetail";
 import OfficialTravelRequestEditModal from "./OfficialTravelRequestEditModal";
 import { useSession } from "next-auth/react";
-import { FileSearchOutlined, FormOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  FileSearchOutlined,
+  FormOutlined,
+} from "@ant-design/icons";
 import OfficialTravelExportWord from "./officialTravelRequestExport";
+import CustomTable from "../../common/CustomTable";
 
 interface Props {
   data: OfficialTravelRequestType[];
@@ -36,7 +41,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   const { data: session } = useSession();
 
   const filteredData = data.filter(
-    (item) => item.createdById === session?.user?.userId
+    (item) => item.createdById === session?.user?.userId,
   );
 
   const handleShowDetail = (record: any) => {
@@ -131,33 +136,34 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
         }).format(date);
       },
     },
-
     {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
-      render: (status) => {
+      render: (status: string) => {
         let color = "default";
-        let text = "";
+        let text = status;
 
         switch (status) {
           case "pending":
             color = "blue";
-            text = "รอดำเนินการ";
+            text = "รออนุมัติ";
             break;
           case "approve":
             color = "green";
             text = "อนุมัติ";
             break;
+          case "edit":
+            color = "purple";
+            text = "รอแก้ไข";
+            break;
           case "cancel":
             color = "red";
             text = "ยกเลิก";
-          case "edit":
-            color = "orange";
-            text = "รอแก้ไข";
             break;
           default:
             text = status;
+            break;
         }
 
         return <Tag color={color}>{text}</Tag>;
@@ -185,24 +191,8 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       key: "action",
       render: (_, record) => (
         <Space>
-          {/* <Button
-            size="small"
-            type="primary"
-            style={{
-              backgroundColor:
-                record.status === "pending" ? "#faad14" : "#d9d9d9",
-              borderColor: record.status === "pending" ? "#faad14" : "#d9d9d9",
-              color: record.status === "pending" ? "white" : "#888",
-              cursor: record.status === "pending" ? "pointer" : "not-allowed",
-            }}
-            disabled={record.status !== "pending"}
-            onClick={() => handleEdit(record)}
-          >
-            แก้ไข
-          </Button> */}
-
           <Tooltip title="แก้ไข">
-            <FormOutlined
+            <EditOutlined
               style={{
                 fontSize: 22,
                 color:
@@ -240,7 +230,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
 
   return (
     <>
-      <Table
+      <CustomTable
         rowKey="id"
         columns={columns}
         dataSource={filteredData}

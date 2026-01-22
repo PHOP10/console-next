@@ -10,7 +10,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../../user/services/user.service";
 import { useEffect, useState } from "react";
 import { UserType } from "../../common";
-import { ExportOutlined } from "@ant-design/icons";
+import { ExportOutlined, FileWordOutlined } from "@ant-design/icons";
 
 dayjs.locale("th");
 
@@ -84,7 +84,7 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
       const userPosition =
         record.createdName && userData.length > 0
           ? userData.find(
-              (u) => `${u.firstName} ${u.lastName}` === record.createdName
+              (u) => `${u.firstName} ${u.lastName}` === record.createdName,
             )?.position || "ไม่ระบุตำแหน่ง"
           : "ไม่ระบุตำแหน่ง";
 
@@ -119,10 +119,10 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
         ? creator.gender === "male"
           ? "นาย"
           : creator.gender === "female"
-          ? "นาง"
-          : creator.gender === "miss"
-          ? "นางสาว"
-          : creator.gender ?? "-"
+            ? "นาง"
+            : creator.gender === "miss"
+              ? "นางสาว"
+              : (creator.gender ?? "-")
         : "-";
 
       const checkeds = "(/)";
@@ -178,7 +178,7 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
           ? toThaiNumber(
               // ถ้า budget เก็บเป็น string ตัวเลข หรือ number ให้แปลงก่อน
               // สมมติถ้าเก็บเป็น Text ชื่องบเฉยๆ ก็แสดงเลย แต่ถ้าเป็นตัวเงินต้องแปลง
-              record.budget
+              record.budget,
             )
           : "-",
 
@@ -215,7 +215,7 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
         // ใน Schema ใหม่เป็น MasterCar (ตัวพิมพ์ใหญ่ M) และเป็น Optional
         carName: record.MasterCar?.carName ?? "-",
         licensePlate: toThaiNumber(
-          record.MasterCar?.licensePlate ?? "................"
+          record.MasterCar?.licensePlate ?? "................",
         ),
         brand: record.MasterCar?.brand ?? "-",
         model: record.MasterCar?.model ?? "-",
@@ -253,14 +253,15 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
   };
 
   return (
-    <Tooltip title="Export Official Travel Request">
-      <ExportOutlined
+    <Tooltip title="พิมพ์ใบขอไปราชการ">
+      <FileWordOutlined
         style={{
-          fontSize: 20,
+          fontSize: 22,
+          // ถ้าสถานะเป็น pending หรือ approved ให้ใช้สีฟ้า (หรือสีน้ำเงินเข้มเพื่อให้ดูเหมือน Word)
           color:
             record.status === "pending" || record.status === "approved"
-              ? "#1677ff"
-              : "#d9d9d9", // ปรับเงื่อนไขสีปุ่มตามต้องการ
+              ? "#1890ff" // สีฟ้าแบบ Word หรือ #2b579a (Official Word Blue)
+              : "#d9d9d9",
           cursor: "pointer",
           transition: "color 0.2s",
         }}

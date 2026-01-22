@@ -1,16 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Form,
-  Input,
-  InputNumber,
-  DatePicker,
-  Button,
-  message,
-  Card,
-  Select,
-} from "antd";
+import { Form, Input, DatePicker, Button, message, Card, Select } from "antd";
 import { infectiousWasteServices } from "../services/infectiouswaste.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { useSession } from "next-auth/react";
@@ -57,44 +48,45 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
     }
   };
 
+  // --- Style Constant (ตามแบบฉบับ Master Template) ---
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
   return (
     <Card
+      // ปรับ Card ให้มีมิติ ลอยเด่น และขอบมน
+      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
       title={
-        <div
-          style={{
-            textAlign: "center",
-            color: "#0683e9",
-            fontWeight: "bold",
-            fontSize: "20px",
-          }}
-        >
-          เลือกประเภทขยะติดเชื้อ
+        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
+          บันทึกการทิ้งขยะติดเชื้อ
         </div>
       }
     >
-      <div style={{ display: "flex", justifyContent: "center" }}>
-        <div style={{ width: "100%", maxWidth: 350 }}>
+      <div className="flex justify-center">
+        <div className="w-full max-w-[350px]">
           <Form
             form={form}
             layout="vertical"
             onFinish={handleSubmit}
             initialValues={{ discardedDate: dayjs() }}
           >
+            {/* 1. Select Type */}
             <Form.Item
               label="ประเภทขยะติดเชื้อ"
               name="wasteType"
               rules={[{ required: true, message: "กรุณาระบุประเภทขยะ" }]}
             >
-              <Select placeholder="เลือกประเภทขยะ">
-                <Select.Option value="ขยะติดเชื้อทั่วไป">
-                  ขยะติดเชื้อทั่วไป
-                </Select.Option>
-                <Select.Option value="ขยะติดเชื้อมีคม">
-                  ขยะติดเชื้อมีคม
-                </Select.Option>
-              </Select>
+              <Select
+                placeholder="เลือกประเภทขยะ"
+                className="h-11 [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm"
+                options={[
+                  { value: "ขยะติดเชื้อทั่วไป", label: "ขยะติดเชื้อทั่วไป" },
+                  { value: "ขยะติดเชื้อมีคม", label: "ขยะติดเชื้อมีคม" },
+                ]}
+              />
             </Form.Item>
 
+            {/* 2. Weight Input */}
             <Form.Item
               label="น้ำหนักขยะติดเชื้อ (กิโลกรัม)"
               name="wasteWeight"
@@ -106,9 +98,10 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
                 },
               ]}
             >
-              <Input placeholder="เช่น 1.25" />
+              <Input placeholder="เช่น 1.25" className={inputStyle} />
             </Form.Item>
 
+            {/* 3. Date Picker */}
             <Form.Item
               label="วันที่ทิ้งขยะ"
               name="discardedDate"
@@ -117,12 +110,20 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
               <DatePicker
                 locale={th_TH}
                 format="D MMMM BBBB"
+                placeholder="เลือกวันที่"
                 style={{ width: "100%" }}
+                className="h-11 shadow-sm rounded-xl border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:shadow-md"
               />
             </Form.Item>
 
-            <Form.Item style={{ textAlign: "center" }}>
-              <Button type="primary" htmlType="submit" loading={submitting}>
+            {/* Submit Button */}
+            <Form.Item className="text-center mb-0 mt-6">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={submitting}
+                className="h-9 px-4 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+              >
                 บันทึกข้อมูล
               </Button>
             </Form.Item>
