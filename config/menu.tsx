@@ -246,7 +246,7 @@ export const MenuSider: IMenu[] = [
     children: [
       {
         key: "medicalEquipment",
-        label: "ข้อมมูลเครื่องมือแพทย์",
+        label: "ข้อมูลเครื่องมือแพทย์",
         roles: [
           group.admin,
           group.user,
