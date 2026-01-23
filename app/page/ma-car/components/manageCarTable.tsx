@@ -224,7 +224,7 @@ return (
       <div
         style={{
           textAlign: "center",
-          fontSize: "20px",
+          fontSize: "24px",
           fontWeight: "bold",
           color: "#0683e9",
           borderBottom: "1px solid #f0f0f0",

@@ -163,7 +163,7 @@ export default function ThrowAwayWasteTable({
         <div
           style={{
             textAlign: "center",
-            fontSize: "20px",
+            fontSize: "24px",
             fontWeight: "bold",
             color: "#0683e9",
           }}
@@ -178,6 +178,7 @@ export default function ThrowAwayWasteTable({
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 10 }}
+        bordered
       />
 
       {/* Modal สำหรับแก้ไข */}

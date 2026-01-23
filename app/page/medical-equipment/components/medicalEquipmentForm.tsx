@@ -25,6 +25,8 @@ import th_TH from "antd/es/date-picker/locale/th_TH";
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
 
+import { SaveOutlined } from "@ant-design/icons"; /* ไอคอนสำหรับปุ่มบันททึกฟอร์ม */
+
 const { TextArea } = Input;
 const { Option } = Select;
 
@@ -92,14 +94,7 @@ export default function CreateMedicalEquipmentForm({
     "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
 
   return (
-    <Card
-      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden mt-5"
-      title={
-        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-          ส่งเครื่องมือแพทย์
-        </div>
-      }
-    >
+    <Card>
       <Form
         preserve={false}
         form={form}
@@ -369,6 +364,7 @@ export default function CreateMedicalEquipmentForm({
 
         <Form.Item className="text-center mt-4 mb-0">
           <Button
+            icon={<SaveOutlined />}
             type="primary"
             htmlType="submit"
             className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"

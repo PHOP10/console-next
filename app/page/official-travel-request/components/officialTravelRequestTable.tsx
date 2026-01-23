@@ -145,6 +145,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status: string) => {
         let color = "default";
         let text = status;
@@ -237,12 +238,21 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
 
   return (
     <>
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          รายการบันทึกขออนุมัติเดินทางไปราชการ
+        </h2>
+        {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
+        <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
+      </div>
+      
       <CustomTable
         rowKey="id"
         columns={columns}
         dataSource={filteredData}
         loading={loading}
         scroll={{ x: "max-content" }}
+        bordered
       />
 
       <OfficialTravelRequestDetail

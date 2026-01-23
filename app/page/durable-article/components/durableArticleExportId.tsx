@@ -283,6 +283,7 @@ const DurableArticleExportExcel: React.FC<DurableArticleExportExcelProps> = ({
       type="primary"
       onClick={handleExport}
       disabled={!record}
+      className="rounded-lg bg-green-600 hover:bg-green-700 border-none"
     >
       Export Excel
     </Button>

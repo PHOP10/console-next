@@ -125,12 +125,12 @@ export default function Page() {
               textAlign: "center",
               color: "#0683e9",
               fontWeight: "bold",
-              fontSize: "20px",
+              fontSize: "24px",
               marginTop: "-8px",
               marginBottom: "15px",
             }}
           >
-            เลือกประเภทขยะติดเชื้อ
+            บันทึกการทิ้งขยะติดเชื้อ
           </div>
 
           <ThrowAwayWaste setLoading={setLoading} fetchData={fetchData} />

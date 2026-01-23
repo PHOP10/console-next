@@ -187,7 +187,7 @@ export default function ManageDrugTable({
       title: "ยอดรวม",
       dataIndex: "totalPrice",
       key: "totalPrice",
-      align: "right",
+      align: "center",
       render: (val) => (val ? `${Number(val).toLocaleString()} บ.` : "-"),
     },
     {
@@ -362,7 +362,7 @@ export default function ManageDrugTable({
         <div
           style={{
             textAlign: "center",
-            fontSize: "20px",
+            fontSize: "24px",
             fontWeight: "bold",
             color: "#0683e9",
           }}

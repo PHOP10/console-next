@@ -66,8 +66,6 @@ export default function Page() {
 
   return (
     <div>
-      <Breadcrumb items={[{ title: "หน้าหลัก" }, { title: "ข้อมูลยา" }]} />
-      <Divider />
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Tabs defaultActiveKey="1" items={items} />

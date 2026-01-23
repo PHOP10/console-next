@@ -52,13 +52,12 @@ export default function MaCarPage() {
       label: "ฟอร์มจองรถ",
       children: (
         <Card>
-          
           <div
             style={{
               textAlign: "center",
               color: "#0683e9",
               fontWeight: "bold",
-              fontSize: "20px",
+              fontSize: "24px",
               marginTop: "-8px",
 
               marginBottom: "15px",

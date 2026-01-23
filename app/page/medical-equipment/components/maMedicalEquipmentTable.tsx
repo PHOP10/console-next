@@ -448,12 +448,12 @@ export default function MaMedicalEquipmentTable({
         <div
           style={{
             textAlign: "center",
-            fontSize: "20px",
+            fontSize: "24px",
             fontWeight: "bold",
             color: "#0683e9",
           }}
         >
-          ข้อมูลเครื่องมือแพทย์
+          คลังข้อมูลเครื่องมือแพทย์
         </div>
       }
       bordered

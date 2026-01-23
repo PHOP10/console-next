@@ -27,6 +27,15 @@ import { DrugType } from "../../common";
 import { useSession } from "next-auth/react";
 import CustomTable from "../../common/CustomTable";
 
+/* ข้อมูลตัวอย่าง-----------------------------------------  */
+import { 
+  ExperimentOutlined, 
+} from "@ant-design/icons";
+
+// 2. Import dayjs สำหรับจัดการวันที่
+import dayjs from "dayjs";
+
+
 interface MaDrugFormProps {
   drugs: DrugType[];
   refreshData: () => void;
@@ -246,15 +255,78 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
     },
   ];
 
+  /* -------------------------------------------ข้อมูลตัวอย่าง----------------------------------------- */
+  const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
+
+  const getRandomElement = (arr: any[]) =>
+    arr[Math.floor(Math.random() * arr.length)];
+
+  const handleAutoFill = () => {
+    // A. สุ่มข้อมูลส่วนหัว (Header)
+    const requestUnits = [
+      "ห้องฉุกเฉิน (ER)",
+      "ผู้ป่วยใน (IPD)",
+      "ผู้ป่วยนอก (OPD)",
+      "ทันตกรรม",
+      "ห้องคลอด",
+      "เวชกรรมสังคม",
+    ];
+    const notes = [
+      "เบิกเพิ่มเติมประจำเดือน",
+      "เบิกฉุกเฉิน",
+      "ทดแทนยาที่หมดอายุ",
+      "สำรองคลังย่อย",
+      "-",
+    ];
+
+    // สุ่มวันที่ (ย้อนหลัง 0-7 วัน)
+    const randDate = dayjs().subtract(getRandomInt(0, 7), "day");
+
+    // สร้างเลขที่ใบเบิกจำลอง
+    const randReqNo = `REQ-${dayjs().format("YYMM")}-${getRandomInt(100, 999)}`;
+
+    // B. สุ่มรายการยา (Drug Items)
+    // เช็คว่ามี Master Data หรือไม่
+    const availableDrugs = drugs || [];
+    let randomSelectedDrugs: any[] = [];
+
+    if (availableDrugs.length > 0) {
+      // สุ่มจำนวนรายการที่จะเบิก (1 - 5 รายการ)
+      const itemCount = getRandomInt(1, Math.min(5, availableDrugs.length));
+
+      // Shuffle แล้วตัดมาตามจำนวน
+      const shuffled = [...availableDrugs].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, itemCount);
+
+      // แปลงโครงสร้างข้อมูลให้ตรงกับ Table (เพิ่ม key และ quantity)
+      randomSelectedDrugs = selected.map((drug) => ({
+        ...drug,
+        key: drug.id, // ใช้ ID เป็น Key
+        quantity: getRandomInt(10, 100), // สุ่มจำนวนเบิก 10-100 ชิ้น
+      }));
+    }
+
+    // ✅ C. ใส่ค่าลง Form
+    form.setFieldsValue({
+      requestNumber: randReqNo,
+      requestDate: randDate,
+      requestUnit: getRandomElement(requestUnits),
+      roundNumber: getRandomInt(1, 5),
+      note: getRandomElement(notes),
+    });
+
+    // ✅ D. อัปเดต State ตารางรายการยา (สำคัญมาก เพื่อให้ตารางแสดงผล)
+    setDataSource(randomSelectedDrugs);
+
+    // (Optional) ถ้ามี Logic คำนวณราคารวมใน useEffect ก็จะทำงานต่อเอง
+    // หรือถ้าคำนวณมือ:
+    // const total = randomSelectedDrugs.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    // form.setFieldValue('totalPrice', total);
+  };
+
   return (
-    <Card
-      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
-      title={
-        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-          ใบเบิกจ่ายเวชภัณฑ์
-        </div>
-      }
-    >
+    <Card>
       <Form
         form={form}
         layout="vertical"
@@ -410,18 +482,29 @@ export default function MaDrugForm({ drugs, refreshData }: MaDrugFormProps) {
           />
         </div>
 
-        {/* Submit Button */}
-        <Form.Item className="text-center mt-8 mb-2">
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={loading}
-            icon={<SaveOutlined />}
-            className="h-11 px-8 rounded-xl text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9]"
-            style={{ width: "220px" }}
-          >
-            บันทึกการเบิกจ่าย
-          </Button>
+        {/* Submit Button Area */}
+        <Form.Item className="mt-8 mb-2">
+          <div className="flex justify-center items-center gap-3">
+            {/* ปุ่มบันทึก (สีฟ้า) */}
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={loading}
+              icon={<SaveOutlined />}
+              className="h-11 px-8 rounded-xl text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center"
+            >
+              บันทึกการเบิกจ่าย
+            </Button>
+
+            {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (สีเหลือง) */}
+            <Button
+              onClick={handleAutoFill}
+              icon={<ExperimentOutlined />} // อย่าลืม import
+              className="h-11 px-6 rounded-xl text-base shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
+            >
+              สุ่มข้อมูลตัวอย่าง
+            </Button>
+          </div>
         </Form.Item>
       </Form>
 

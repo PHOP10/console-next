@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Breadcrumb, Col, Divider, Row, Tabs, TabsProps, message } from "antd";
+import {
+  Breadcrumb,
+  Card,
+  Col,
+  Divider,
+  Row,
+  Tabs,
+  TabsProps,
+  message,
+} from "antd";
 import DrugDaisbursementTable from "../components/maDrugTable";
 import MaDrugForm from "../components/maDrugForm";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -19,7 +28,7 @@ export default function Page() {
   const fetchDrugs = async () => {
     try {
       const result = await intraAuthService.getDrugQuery?.();
-       const results = await intraAuthService.getMaDrugQuery();
+      const results = await intraAuthService.getMaDrugQuery();
       setData(Array.isArray(results) ? results : results?.data || []);
       setDrugs(Array.isArray(result) ? result : result?.data || []);
     } catch (error) {
@@ -42,14 +51,31 @@ export default function Page() {
     {
       key: "2",
       label: "การเบิกจ่ายยา",
-      children: <MaDrugForm drugs={drugs} refreshData={fetchDrugs} />, // ✅ ส่ง drugs + refreshData
+      children: (
+        <>
+          <Card>
+            <div
+              style={{
+                textAlign: "center",
+                color: "#0683e9",
+                fontWeight: "bold",
+                fontSize: "24px",
+                marginTop: "-8px",
+                marginBottom: "15px",
+              }}
+            >
+              ใบเบิกจ่ายเวชภัณฑ์
+            </div>
+
+            <MaDrugForm drugs={drugs} refreshData={fetchDrugs} />
+          </Card>
+        </>
+      ),
     },
   ];
 
   return (
     <div>
-      <Breadcrumb items={[{ title: "หน้าหลัก" }, { title: "เบิกจ่ายยา" }]} />
-      <Divider />
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Tabs defaultActiveKey="1" items={items} />

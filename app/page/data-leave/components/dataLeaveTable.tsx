@@ -224,7 +224,7 @@ export default function DataLeaveTable({
       <div
         style={{
           textAlign: "center",
-          fontSize: "20px",
+          fontSize: "24px",
           fontWeight: "bold",
           color: "#0683e9",
           marginTop: "-12px",
@@ -240,35 +240,38 @@ export default function DataLeaveTable({
         ข้อมูลการลา
       </div>
 
-      <DataLeaveDetail
-        open={detailModalOpen}
-        onClose={handleCloseDetail}
-        record={selectedRecord}
-        user={user}
-      />
-      <Row gutter={[24, 24]}>
-        <CustomTable
-          rowKey="id"
-          columns={columns}
-          dataSource={leaveByUserId}
-          loading={loading}
-          pagination={{ pageSize: 10 }}
-          scroll={{ x: "800" }}
+      <div className="p-3 pt-1">
+        <DataLeaveDetail
+          open={detailModalOpen}
+          onClose={handleCloseDetail}
+          record={selectedRecord}
+          user={user}
         />
-      </Row>
-      <DataLeaveEdit
-        open={isEditOpen}
-        record={currentRecord}
-        masterLeaves={masterLeaves}
-        onClose={() => {
-          setIsEditOpen(false);
-        }}
-        onUpdate={handleUpdate}
-        fetchData={fetchData}
-        leaveByUserId={leaveByUserId}
-        user={user}
-        formEdit={formEdit}
-      />
+        <Row gutter={[24, 24]}>
+          <CustomTable
+            rowKey="id"
+            columns={columns}
+            dataSource={leaveByUserId}
+            loading={loading}
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: "800" }}
+            bordered
+          />
+        </Row>
+        <DataLeaveEdit
+          open={isEditOpen}
+          record={currentRecord}
+          masterLeaves={masterLeaves}
+          onClose={() => {
+            setIsEditOpen(false);
+          }}
+          onUpdate={handleUpdate}
+          fetchData={fetchData}
+          leaveByUserId={leaveByUserId}
+          user={user}
+          formEdit={formEdit}
+        />
+      </div>
     </>
   );
 }

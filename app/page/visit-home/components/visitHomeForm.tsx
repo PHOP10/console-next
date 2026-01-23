@@ -13,6 +13,7 @@ import {
   InputNumber,
   ConfigProvider,
   Divider,
+  Card,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { visitHomeServices } from "../services/visitHome.service";
@@ -30,6 +31,8 @@ import {
 } from "@ant-design/icons";
 
 import "./Form.css";
+
+import { ExperimentOutlined } from "@ant-design/icons"; /* ตัวอย่างข้อมูล */
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -132,25 +135,135 @@ export default function VisitHomeForm() {
     </div>
   );
 
-  return (
-    <ConfigProvider locale={th_TH}>
-      <div className="min-h-screen bg-gray-50 p-4 md:p-6 flex justify-center">
-        {/* Paper Container: กระดาษแผ่นเดียว สีขาวนวล เงานุ่ม */}
-        <div className="bg-white w-full max-w-6xl shadow-xl rounded-3xl md:p-10 border border-white">
-          <div className="text-center mb-4 -mt-2">
-            <h1 className="text-2xl md:text-xl font-bold text-[#0683e9] mb-0">
-              แบบบันทึกการดูแลต่อเนื่องที่บ้าน
-            </h1>
-          </div>
+  // --------------------------------------------------------ข้อมูลตัวอย่าง---------------------------//
+  const getRandomInt = (min: number, max: number) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
 
-          <Form layout="vertical" form={form} onFinish={handleFinish}>
-            {/* ---------------- Section 1: ข้อมูลผู้ป่วย ---------------- */}
+  const getRandomElement = (arr: any[]) =>
+    arr[Math.floor(Math.random() * arr.length)];
+
+  const handleAutoFill = () => {
+    // A. ข้อมูลผู้ป่วย (Mock Data)
+    const firstNames = ["สมชาย", "วิชัย", "กานดา", "มานี", "สมศรี", "อำนวย"];
+    const lastNames = ["ใจดี", "รักชาติ", "มีสุข", "เจริญพร", "มั่นคง"];
+    const addresses = [
+      "123 ม.1 ต.เชียงทอง",
+      "55 ม.4 ต.วังเจ้า",
+      "88/9 ถ.พหลโยธิน",
+    ];
+    const diagnosisList = [
+      "Stroke with Hemiparesis",
+      "Diabetes Mellitus type 2",
+      "Hypertension with complications",
+      "COPD with acute exacerbation",
+      "Bedridden patient",
+    ];
+    const symptomsList = [
+      "มีอาการอ่อนแรงซีกซ้าย",
+      "แผลกดทับที่ก้นกบ ระดับ 2",
+      "หายใจเหนื่อยหอบเล็กน้อย",
+      "รับประทานอาหารได้น้อยลง",
+      "ระดับน้ำตาลในเลือดสูง",
+    ];
+    const medicationList = [
+      "Metformin 500mg 1x3 pc",
+      "Amlodipine 5mg 1x1 pc",
+      "ASA 81mg 1x1 pc",
+      "Omeprazole 20mg 1x2 ac",
+    ];
+    const equipmentList = [
+      "Foley Catheter",
+      "NG Tube",
+      "Oxygen Cannula",
+      "Wheelchair",
+      "-",
+    ];
+
+    // B. สุ่มข้อมูลทั่วไป
+    const randAge = getRandomInt(40, 90);
+    const randCID = Array(13)
+      .fill(0)
+      .map(() => getRandomInt(0, 9))
+      .join("");
+    const randPhone =
+      "08" +
+      Array(8)
+        .fill(0)
+        .map(() => getRandomInt(0, 9))
+        .join("");
+    const randHN = getRandomInt(100000, 999999).toString();
+
+    // C. สุ่มวันที่
+    const today = dayjs();
+    const admitDate = today.subtract(getRandomInt(5, 30), "day");
+    const dischargeDate = admitDate.add(getRandomInt(3, 10), "day");
+    const referralDate = today.subtract(getRandomInt(0, 5), "day");
+
+    // D. สุ่มสัญญาณชีพ (Vital Signs) - ให้ค่าอยู่ในเกณฑ์ปกติถึงปานกลาง
+    const temp = (getRandomInt(360, 375) / 10).toFixed(1); // 36.0 - 37.5
+    const pulse = getRandomInt(70, 100);
+    const resp = getRandomInt(18, 24);
+    const bpSystolic = getRandomInt(110, 150);
+    const bpDiastolic = getRandomInt(70, 90);
+    const o2sat = getRandomInt(95, 100);
+
+    // E. สุ่มประเภทผู้ป่วย (จาก Master Data ที่มี)
+    let randPatientTypeId = undefined;
+    if (masterPatients && masterPatients.length > 0) {
+      randPatientTypeId = getRandomElement(masterPatients).id;
+    }
+
+    // ✅ F. ใส่ค่าลง Form
+    form.setFieldsValue({
+      // ข้อมูลทั่วไป
+      hhcNo: `HHC-${getRandomInt(100, 999)}`,
+      referralDate: referralDate,
+      patientTypeId: randPatientTypeId,
+      fullName: `${getRandomElement(firstNames)} ${getRandomElement(lastNames)}`,
+      age: randAge,
+      cid: randCID,
+      hn: randHN,
+      dob: dayjs()
+        .year(dayjs().year() - randAge)
+        .startOf("year"), // วันเกิดคร่าวๆ ตามอายุ
+      phone: randPhone,
+      allergies: Math.random() > 0.8 ? "Penicillin" : "-", // สุ่มแพ้ยา 20%
+      address: getRandomElement(addresses),
+
+      // ประวัติ & Vital Signs
+      admissionDate: admitDate,
+      dischargeDate: dischargeDate,
+      initialHistory: "ผู้ป่วยเข้ารับการรักษาด้วยอาการ...",
+      temperature: temp,
+      pulseRate: pulse,
+      respRate: resp,
+      bloodPressure: `${bpSystolic}/${bpDiastolic}`,
+      oxygenSat: o2sat,
+
+      // การประเมิน & รักษา
+      symptoms: getRandomElement(symptomsList),
+      diagnosis: getRandomElement(diagnosisList),
+      careNeeds: "ต้องการการดูแลแผลและกายภาพบำบัด",
+      medication: getRandomElement(medicationList),
+      medicalEquipment: getRandomElement(equipmentList),
+
+      // นัดหมาย
+      visitDate: today,
+      nextAppointment: today.add(getRandomInt(7, 30), "day"),
+      notes: Math.random() > 0.5 ? "ทดสอบระบบ (Auto-fill)" : "",
+    });
+  };
+
+  return (
+    <Card>
+      <ConfigProvider locale={th_TH}>
+        <div className=" rounded-xl shadow-sm mx-auto max-w-7xl overflow-hidden">
+          <Form form={form} layout="vertical" onFinish={handleFinish}>
             <SectionHeader
               icon={<UserOutlined />}
               title="ข้อมูลทั่วไปผู้ป่วย"
             />
 
-            {/* Grid 4 Columns System */}
             <Row gutter={[20, 12]}>
               <Col xs={24} md={6}>
                 <Form.Item name="hhcNo" label="เลขที่ HHC">
@@ -306,7 +419,7 @@ export default function VisitHomeForm() {
               </Col>
             </Row>
 
-            {/* Vital Signs Bar - แถบสีพื้นหลังเพื่อให้ดูเป็นกลุ่มก้อนเดียวกัน */}
+            {/* Vital Signs Bar */}
             <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 mt-2 mb-4">
               <Row gutter={[16, 12]} align="middle">
                 <Col xs={24} md={2}>
@@ -385,9 +498,8 @@ export default function VisitHomeForm() {
 
             <Divider className="my-6 border-gray-100" />
 
-            {/* ---------------- Section 3: Layout 2 คอลัมน์ (ประหยัดที่แนวตั้ง) ---------------- */}
+            {/* ---------------- Section 3: Layout 2 คอลัมน์ ---------------- */}
             <Row gutter={48}>
-              {/* คอลัมน์ซ้าย: การประเมิน */}
               <Col xs={24} lg={12}>
                 <SectionHeader
                   icon={<FileTextOutlined />}
@@ -416,7 +528,6 @@ export default function VisitHomeForm() {
                 </Form.Item>
               </Col>
 
-              {/* คอลัมน์ขวา: การรักษา (มีเส้นแบ่งบนจอใหญ่) */}
               <Col
                 xs={24}
                 lg={12}
@@ -445,7 +556,7 @@ export default function VisitHomeForm() {
 
             <Divider className="my-6 border-gray-100" />
 
-            {/* ---------------- Section 4: นัดหมาย (Footer Bar) ---------------- */}
+            {/* ---------------- Section 4: นัดหมาย ---------------- */}
             <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100">
               <SectionHeader icon={<CalendarOutlined />} title="การนัดหมาย" />
               <Row gutter={[20, 12]} align="bottom">
@@ -482,19 +593,27 @@ export default function VisitHomeForm() {
               </Row>
             </div>
 
-            {/* Submit Button Area */}
-            <div className="mt-8 flex justify-center">
+            <div className="mt-8 flex justify-center items-center gap-3">
               <Button
                 type="primary"
                 htmlType="submit"
-                className="h-9 px-6 rounded-lg text-sm font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-r from-[#0683e9] to-[#2593fc] border-0"
+                icon={<SaveOutlined />}
+                className="h-10 px-8 rounded-lg text-sm font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-r from-[#0683e9] to-[#2593fc] border-0 flex items-center"
               >
                 บันทึกข้อมูลการเยี่ยมบ้าน
+              </Button>
+
+              <Button
+                onClick={handleAutoFill}
+                icon={<ExperimentOutlined />}
+                className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
+              >
+                สุ่มข้อมูลตัวอย่าง
               </Button>
             </div>
           </Form>
         </div>
-      </div>
-    </ConfigProvider>
+      </ConfigProvider>
+    </Card>
   );
 }

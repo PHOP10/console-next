@@ -29,6 +29,11 @@ import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { MaCarType } from "../../common";
 
+import {
+  SaveOutlined,
+  ExperimentOutlined,
+} from "@ant-design/icons"; /* ตัวอย่างข้อมูล */
+
 dayjs.locale("th");
 dayjs.extend(isBetween);
 dayjs.extend(isSameOrBefore);
@@ -133,34 +138,36 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
   const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
 
   /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
-  // --- Helper Functions สำหรับการสุ่ม (แก้ไข Type แล้ว) ---
   const getRandomInt = (min: number, max: number) =>
     Math.floor(Math.random() * (max - min + 1)) + min;
 
   const getRandomElement = (arr: any[]) =>
     arr[Math.floor(Math.random() * arr.length)];
 
-  // ✅ ฟังก์ชันสุ่มข้อมูลใส่ฟอร์ม (Random Auto-fill)
   const handleAutoFill = () => {
-    // 1. เตรียมชุดข้อมูลตัวอย่าง
+    // A. เตรียมชุดข้อมูล
     const recipients = [
       "สาธารณสุขอำเภอวังเจ้า",
       "โรงพยาบาลตากสิน",
       "สสจ. ตาก",
       "อบต. เชียงทอง",
+      "เทศบาลนครแม่สอด",
     ];
     const purposes = [
-      "เข้าร่วมประชุมวิชาการประจำปี",
-      "รับส่งผู้ป่วยส่งต่อ",
-      "รับวัคซีนและเวชภัณฑ์",
-      "ออกหน่วยแพทย์เคลื่อนที่",
-      "ติดต่อประสานงานโครงการส่งเสริมสุขภาพ",
+      "ประชุมวิชาการ",
+      "รับผู้ป่วย",
+      "รับวัคซีน",
+      "ออกหน่วยแพทย์",
+      "ส่งเอกสารด่วน",
+      "ตรวจราชการ",
     ];
     const destinations = [
       "อ.เมือง จ.ตาก",
-      "อ.แม่สอด จ.ตาก",
-      "ศาลากลางจังหวัด",
-      "ศูนย์ราชการ",
+      "อ.แม่สอด",
+      "อ.สามเงา",
+      "ศาลากลาง",
+      "กทม.",
+      "เชียงใหม่",
     ];
     const budgets = [
       "งบกลาง",
@@ -172,63 +179,69 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
     const typeOptions = ["ในจังหวัด", "นอกจังหวัด"];
     const planOptions = ["แผนปกติ", "แผนด่วน"];
 
-    // 2. สุ่มวันที่ (เริ่มอีก 1-7 วันข้างหน้า, ระยะเวลา 1-3 วัน)
-    const startOffset = getRandomInt(1, 7);
-    const duration = getRandomInt(1, 3);
-    // เซ็ตเวลาให้ดูสมจริง (เช่น เริ่ม 08:30)
+    // ✅ B. สุ่มวันที่แบบอิสระ (ไม่ยึดเดือนปัจจุบัน)
+    // 1. สุ่มปี (เช่น ระหว่าง 2025 - 2026)
+    const randYear = getRandomInt(2025, 2026);
+    // 2. สุ่มเดือน (0 = ม.ค., 11 = ธ.ค.)
+    const randMonth = getRandomInt(0, 11);
+    // 3. สุ่มวันที่ (เอาแค่ 1-28 เพื่อความปลอดภัย ไม่ต้องเช็ค Leap Year)
+    const randDay = getRandomInt(1, 28);
+    // 4. สุ่มเวลา
+    const randHour = getRandomInt(8, 16);
+    const randMinute = getRandomElement([0, 30]);
+
+    // สร้าง Object วันที่เริ่ม
     const randStartDate = dayjs()
-      .add(startOffset, "day")
-      .hour(8)
-      .minute(30)
+      .year(randYear)
+      .month(randMonth)
+      .date(randDay)
+      .hour(randHour)
+      .minute(randMinute)
       .second(0);
+
+    // วันที่สิ้นสุด (ห่างจากวันเริ่ม 0-3 วัน)
+    const duration = getRandomInt(0, 3);
     const randEndDate = randStartDate
       .add(duration, "day")
-      .hour(16)
-      .minute(30)
-      .second(0);
+      .hour(17) // กลับถึงประมาณ 5 โมงเย็น
+      .minute(0);
 
-    // 3. สุ่มผู้โดยสาร (1-5 คน)
-    const randPassengers = getRandomInt(1, 5);
-    // สุ่มรายชื่อคน (Shuffle array แล้วตัดมาตามจำนวน)
-    // ตรวจสอบว่ามี dataUser หรือไม่ เพื่อป้องกัน error
+    // C. สุ่มผู้โดยสาร
     const validUsers = dataUser || [];
+    const randPassengerCount = getRandomInt(1, Math.min(5, validUsers.length));
     const shuffledUsers = [...validUsers].sort(() => 0.5 - Math.random());
-    const randPassengerNames = shuffledUsers
-      .slice(0, randPassengers)
+    const selectedPassengerIds = shuffledUsers
+      .slice(0, randPassengerCount)
       .map((u) => u.userId);
 
-    // 4. สุ่มรถ (ถ้ามีข้อมูลรถ)
+    // D. สุ่มรถ
     let randCarId = undefined;
     if (cars && cars.length > 0) {
       randCarId = getRandomElement(cars).id;
     }
 
-    // ✅ Set ค่าเข้าฟอร์ม
+    // E. Set ค่าเข้าฟอร์ม
     form.setFieldsValue({
-      typeName: [getRandomElement(typeOptions), getRandomElement(planOptions)], // สุ่มเลือก Checkbox อย่างละ 1
+      typeName: [getRandomElement(typeOptions), getRandomElement(planOptions)],
       carId: randCarId,
       recipient: getRandomElement(recipients),
       purpose: getRandomElement(purposes),
       destination: getRandomElement(destinations),
       dateStart: randStartDate,
       dateEnd: randEndDate,
-      driver: Math.random() > 0.5 ? "yes" : "no", // สุ่ม Yes/No
+      driver: Math.random() > 0.5 ? "yes" : "no",
       budget: getRandomElement(budgets),
-      passengers: randPassengers,
-      passengerNames: randPassengerNames,
-      note: Math.random() > 0.7 ? "ทดสอบระบบ Auto-fill" : "", // สุ่มใส่หมายเหตุบ้าง
+      passengers: randPassengerCount,
+      passengerNames: selectedPassengerIds,
+      note:
+        Math.random() > 0.7
+          ? `ทดสอบระบบ (Gen: ${randDay}/${randMonth + 1})`
+          : "",
     });
   };
 
   return (
-    <Card
-      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
-      title={
-        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-          ฟอร์มจองรถ
-        </div>
-      }
-    >
+    <Card>
       <ConfigProvider locale={th_TH}>
         <Form
           form={form}
@@ -238,7 +251,6 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             requesterName: session?.user?.fullName,
           }}
         >
-          {/* Section 1: ประเภทการเดินทาง */}
           <div className="mb-6">
             <Form.Item
               name="typeName"
@@ -545,14 +557,26 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             />
           </Form.Item>
 
-          <Form.Item style={{ textAlign: "center" }}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
-            >
-              จองรถ
-            </Button>
+          <Form.Item style={{ marginTop: 24 }}>
+            <div className="flex justify-center items-center gap-3">
+              <Button
+                type="primary"
+                htmlType="submit"
+                // loading={submitting}
+                icon={<SaveOutlined />}
+                className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center border-none"
+              >
+                จองรถ
+              </Button>
+
+              <Button
+                onClick={handleAutoFill}
+                icon={<ExperimentOutlined />}
+                className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
+              >
+                สุ่มข้อมูลตัวอย่าง
+              </Button>
+            </div>
           </Form.Item>
         </Form>
       </ConfigProvider>

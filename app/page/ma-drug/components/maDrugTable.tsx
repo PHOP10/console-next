@@ -261,7 +261,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
           <div
             style={{
               textAlign: "center",
-              fontSize: "20px",
+              fontSize: "24px",
               fontWeight: "bold",
               color: "#0683e9",
             }}

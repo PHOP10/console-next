@@ -124,6 +124,7 @@ export default function DrugTable({
       title: "ชื่อยา",
       dataIndex: "name",
       key: "name",
+      align: "center",
       width: 200,
     },
     {
@@ -155,7 +156,7 @@ export default function DrugTable({
       title: "ราคา/หน่วย",
       dataIndex: "price",
       key: "price",
-      align: "right",
+      align: "center",
       render: (value) =>
         Number(value).toLocaleString("th-TH", {
           style: "currency",
@@ -256,7 +257,7 @@ export default function DrugTable({
           <div
             style={{
               textAlign: "center",
-              fontSize: "20px",
+              fontSize: "24px",
               fontWeight: "bold",
               color: "#0683e9",
             }}

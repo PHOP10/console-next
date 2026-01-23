@@ -207,13 +207,13 @@ export default function EquipmentTable({
         title={
           <div
             style={{
-              fontSize: "20px",
+              fontSize: "24px",
               textAlign: "center",
               fontWeight: "bold",
               color: "#0683e9",
             }}
           >
-            ข้อมูลเครื่องมือแพทย์ทั้งหมด
+            รายการเครื่องมือแพทย์ทั้งหมด
           </div>
         }
         bordered={true}

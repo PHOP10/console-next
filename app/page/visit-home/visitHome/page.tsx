@@ -42,6 +42,19 @@ export default function VisitHomePage() {
       label: `การเยี่ยมบ้าน`,
       children: (
         <Card>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "24px",
+              marginTop: "-8px",
+
+              marginBottom: "15px",
+            }}
+          >
+            แบบบันทึกการดูแลต่อเนื่องที่บ้าน
+          </div>
           <VisitHomeForm />
         </Card>
       ),

@@ -351,12 +351,12 @@ export default function MedicalEquipmentTable({
         <div
           style={{
             textAlign: "center",
-            fontSize: "20px",
+            fontSize: "24px",
             fontWeight: "bold",
             color: "#0683e9ff",
           }}
         >
-          ข้อมูลเครื่องมือแพทย์
+          รายการส่งเครื่องมือแพทย์
         </div>
       }
     >

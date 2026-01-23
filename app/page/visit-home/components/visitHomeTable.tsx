@@ -284,7 +284,7 @@ export default function VisitHomeTable({
               >
                 <UserOutlined style={{ fontSize: 20 }} />
               </div>
-              <span style={{ fontSize: 20, fontWeight: "bold", color: "#333" }}>
+              <span style={{ fontSize: 24, fontWeight: "bold", color: "#333" }}>
                 ข้อมูลการเยี่ยมบ้าน
               </span>
             </div>
@@ -348,6 +348,7 @@ export default function VisitHomeTable({
             position: ["bottomRight"],
           }}
           scroll={{ x: 1300 }}
+          bordered
         />
       </Card>
 

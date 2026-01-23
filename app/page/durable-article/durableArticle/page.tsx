@@ -63,13 +63,13 @@ if (session?.user?.role === "asset" || session?.user?.role === "admin") {
       label: "เพิ่มครุภัณฑ์",
       children: (
         <Card>
-          {/* ส่วนหัวข้อสไตล์เดียวกับฟอร์มขอไปราชการ */}
+          {/* ส่วนหัวข้อสไตล์เดียวกับ */}
           <div
             style={{
               textAlign: "center",
               color: "#0683e9",
               fontWeight: "bold",
-              fontSize: "20px",
+              fontSize: "24px",
               marginTop: "-8px",
               marginBottom: "15px",
             }}

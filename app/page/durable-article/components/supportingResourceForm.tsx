@@ -19,6 +19,8 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import th_TH from "antd/locale/th_TH";
 
+import { SaveOutlined, ExperimentOutlined } from "@ant-design/icons"; /* ข้อมูลตัวอย่าง */
+
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
@@ -69,15 +71,66 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
   const selectStyle =
     "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
 
+  /* -------------------------------------------ข้อมูลตัวอย่าง----------------------------------------- */
+  const handleAutoFill = () => {
+    // A. ชุดข้อมูลตัวอย่าง
+    const categories = [
+      "ครุภัณฑ์วิทยาศาสตร์การแพทย์",
+      "ครุภัณฑ์สำนักงาน",
+      "ครุภัณฑ์คอมพิวเตอร์",
+      "ครุภัณฑ์การแพทย์",
+      "ครุภัณฑ์ไฟฟ้าและวิทยุ",
+    ];
+    const descriptions = [
+      "เครื่องวัดความดันโลหิตแบบดิจิตอล Omron",
+      "เครื่องผลิตออกซิเจน 5 ลิตร Yuwell",
+      "คอมพิวเตอร์ All-in-One Dell OptiPlex",
+      "เครื่องตรวจคลื่นไฟฟ้าหัวใจ (EKG)",
+      "ตู้เย็นเก็บยาและเวชภัณฑ์ 10 คิว",
+    ];
+    const vendors = [
+      "บจก. การแพทย์ไทย",
+      "ร้านเมดิคอล ซัพพลาย",
+      "หจก. รวมเวชภัณฑ์",
+      "บริษัท นำเข้าจำกัด",
+    ];
+    const acqTypes = ["งบประมาณ", "เงินบำรุง", "เงินงบประมาณ ตกลงราคา"];
+
+    // B. สุ่มตัวเลขและวันที่
+    const getRandomInt = (min: number, max: number) =>
+      Math.floor(Math.random() * (max - min + 1)) + min;
+    const getRandomElement = (arr: any[]) =>
+      arr[Math.floor(Math.random() * arr.length)];
+
+    const randCode = `${getRandomInt(1000, 9999)}-${getRandomInt(100, 999)}-${getRandomInt(1000, 9999)}`;
+    const randDocId = `ตล.${getRandomInt(10, 99)}/${getRandomInt(2567, 2568)}`;
+    const randPrice = getRandomInt(5000, 55000);
+    const randLifespan = getRandomElement([3, 5, 8, 10]);
+    const randDate = dayjs().subtract(getRandomInt(1, 12), "month");
+
+    // คำนวณค่าเสื่อมเบื้องต้น (ราคา / (ปี * 12))
+    const monthlyDep = parseFloat((randPrice / (randLifespan * 12)).toFixed(2));
+
+    // ✅ C. ใส่ค่าเข้าฟอร์ม
+    form.setFieldsValue({
+      code: randCode,
+      acquiredDate: randDate,
+      documentId: randDocId,
+      description: getRandomElement(descriptions),
+      registrationNumber: `SN-${getRandomInt(100000, 999999)}`,
+      category: getRandomElement(categories),
+      attributes: "สภาพใหม่ 100%, มีใบรับประกัน",
+      responsibleAgency: getRandomElement(vendors),
+      unitPrice: randPrice,
+      acquisitionType: getRandomElement(acqTypes),
+      usageLifespanYears: randLifespan,
+      monthlyDepreciation: monthlyDep,
+      note: Math.random() > 0.5 ? "ตรวจรับเรียบร้อย" : "-",
+    });
+  };
+
   return (
-    <Card
-      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
-      title={
-        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-          เพิ่มวัสดุสนับสนุน
-        </div>
-      }
-    >
+    <Card>
       <ConfigProvider locale={th_TH}>
         <Form
           form={form}
@@ -394,15 +447,28 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
             <Input.TextArea rows={2} className={textAreaStyle} />
           </Form.Item>
 
-          {/* ปุ่มบันทึก */}
-          <Form.Item style={{ textAlign: "center" }}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
-            >
-              บันทึก
-            </Button>
+          {/* ปุ่มบันทึก และ ปุ่มสุ่มข้อมูล */}
+          <Form.Item style={{ textAlign: "center", marginTop: "24px" }}>
+            <div className="flex justify-center items-center gap-3">
+              {/* ปุ่มบันทึก (สีฟ้า) */}
+              <Button
+                type="primary"
+                htmlType="submit"
+                icon={<SaveOutlined />} // อย่าลืม import
+                className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center border-none"
+              >
+                บันทึก
+              </Button>
+
+              {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (สีเหลือง) */}
+              <Button
+                onClick={handleAutoFill}
+                icon={<ExperimentOutlined />} // อย่าลืม import
+                className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
+              >
+                สุ่มข้อมูลตัวอย่าง
+              </Button>
+            </div>
           </Form.Item>
         </Form>
       </ConfigProvider>

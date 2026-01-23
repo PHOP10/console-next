@@ -35,11 +35,7 @@ import { SaveOutlined } from "@ant-design/icons";
 dayjs.locale("th");
 dayjs.extend(isBetween);
 
-import {
-  CheckCircleFilled,
-  CloseCircleFilled,
-  ExclamationCircleFilled,
-} from "@ant-design/icons"; /* อันใหม่ */
+import { ExperimentOutlined } from "@ant-design/icons"; /* อันใหม่ */
 
 interface Props {
   dataUser: UserType[];
@@ -69,7 +65,7 @@ export default function OfficialTravelRequestBookForm({
   const selectedTravelType = Form.useWatch("travelType", form);
 
   // 1. กดปุ่มบันทึก -> ตรวจสอบเงื่อนไข -> เปิด Modal
-const onFinish = async (values: any) => {
+  const onFinish = async (values: any) => {
     setSubmitting(true);
     try {
       const { carId, startDate, endDate, travelType } = values;
@@ -153,15 +149,60 @@ const onFinish = async (values: any) => {
 
   const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
 
+  /* --------------------------------------------ข้อมูลตัวอย่างอัตโนมัติ (Auto Fill)------------------------- */
+  const handleAutoFill = () => {
+    // 1. สุ่มเลขที่เอกสาร
+    const randomNum = Math.floor(Math.random() * 10000);
+    const docNo = `${randomNum}/2569`;
+
+    // 2. สุ่มวันที่ (เริ่มพรุ่งนี้)
+    const start = dayjs().add(1, "day");
+    const end = dayjs().add(Math.floor(Math.random() * 3) + 1, "day");
+
+    // 3. สุ่มประเภทการเดินทาง
+    const travelTypes = ["official", "bus", "plane", "private", "other"];
+    const selectedType =
+      travelTypes[Math.floor(Math.random() * travelTypes.length)];
+
+    // 4. เตรียมข้อมูลเฉพาะของแต่ละประเภทเดินทาง
+    let extraFields = {};
+    if (selectedType === "official" && cars.length > 0) {
+      // สุ่มรถ 1 คัน
+      const randomCar = cars[Math.floor(Math.random() * cars.length)];
+      extraFields = { carId: randomCar.id };
+    } else if (selectedType === "private") {
+      extraFields = { privateCarId: "กข 9999 ตาก" };
+    } else if (selectedType === "other") {
+      extraFields = { otherTravelType: "เรือด่วนเจ้าพระยา" };
+    }
+
+    // 5. สุ่มผู้โดยสาร (1-3 คน) จาก dataUser
+    const shuffledUsers = [...dataUser].sort(() => 0.5 - Math.random());
+    const selectedUsers = shuffledUsers.slice(
+      0,
+      Math.floor(Math.random() * 3) + 1,
+    );
+    const passengerIds = selectedUsers.map((u) => u.userId);
+
+    // 6. Set ค่าเข้า Form
+    form.setFieldsValue({
+      documentNo: docNo,
+      recipient: "สาธารณสุขอำเภอวังเจ้า",
+      missionDetail: "เข้าร่วมประชุมเชิงปฏิบัติการเพื่อพัฒนาระบบบริการสุขภาพ",
+      location: "สำนักงานสาธารณสุขจังหวัดเชียงใหม่",
+      startDate: start,
+      endDate: end,
+      travelType: selectedType,
+      passengers: passengerIds.length,
+      passengerNames: passengerIds,
+      budget: "งบกลาง",
+      note: "ข้อมูลตัวอย่างสำหรับการทดสอบระบบ (Auto Generated)",
+      ...extraFields, // Spread ค่าที่สุ่มมาเฉพาะประเภท
+    });
+  };
+
   return (
-    <Card
-      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
-      title={
-        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-          ฟอร์มขอไปราชการ
-        </div>
-      }
-    >
+    <Card>
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={onFinish}>
           {/* Section 1: ข้อมูลเอกสาร */}
@@ -535,24 +576,27 @@ const onFinish = async (values: any) => {
             </Col>
           </Row>
 
-          <Form.Item style={{ textAlign: "center", marginTop: 16 }}>
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={submitting}
-              icon={<SaveOutlined />}
-              className="h-9 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9]"
-            >
-              ยื่นคำขอ
-            </Button>
+          <Form.Item style={{ marginTop: 16 }}>
+            <div className="flex justify-center items-center gap-3">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={submitting}
+                icon={<SaveOutlined />}
+                className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center"
+              >
+                ยื่นคำขอ
+              </Button>
 
-            {/* <Button
-              onClick={handleAutoFill}
-              size="large"
-              style={{ height: "45px", fontSize: "16px" }}
-            >
-              สุ่มข้อมูลตัวอย่าง
-            </Button> */}
+              <Button
+                onClick={handleAutoFill}
+                icon={<ExperimentOutlined />}
+                className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
+              >
+                สุ่มข้อมูลตัวอย่าง
+              </Button>
+              
+            </div>
           </Form.Item>
         </Form>
       </ConfigProvider>

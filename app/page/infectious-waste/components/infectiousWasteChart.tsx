@@ -197,7 +197,7 @@ export default function InfectiousWasteChart({ data }: Props) {
         >
           <AntTitle
             level={4}
-            style={{ margin: 0, color: "#262626", fontFamily: "Sarabun" }}
+            style={{ margin: 0, color: "#262626", fontFamily: "Sarabun", fontSize: 24}}
           >
             📊 สรุปปริมาณขยะติดเชื้อ
           </AntTitle>

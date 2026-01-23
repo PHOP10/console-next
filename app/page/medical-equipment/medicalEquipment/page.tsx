@@ -65,12 +65,12 @@ export default function Page() {
               textAlign: "center",
               color: "#0683e9",
               fontWeight: "bold",
-              fontSize: "20px",
+              fontSize: "24px",
               marginTop: "-8px",
               marginBottom: "15px",
             }}
           >
-            ส่งเครื่องมือแพทย์
+            เพิ่มเครื่องมือแพทย์
           </div>
           
           <CreateMedicalEquipmentForm

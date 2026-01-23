@@ -42,16 +42,18 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
 
   return (
     <>
-      <Button
-        type="primary"
-        onClick={() => {
-          form.resetFields();
-          setIsModalOpen(true);
-        }}
-        className="mb-4 ml-2 h-10 px-6 rounded-lg shadow-md hover:shadow-lg transition-all"
-      >
-        + เพิ่มผู้ใช้
-      </Button>
+      <div className="flex justify-start mb-4">
+        <Button
+          type="primary"
+          onClick={() => {
+            form.resetFields();
+            setIsModalOpen(true);
+          }}
+          className="h-10 px-6 rounded-lg shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] border-none flex items-center"
+        >
+          + เพิ่มผู้ใช้
+        </Button>
+      </div>
 
       <Modal
         // --- ปรับส่วน Title ตรงนี้ ---

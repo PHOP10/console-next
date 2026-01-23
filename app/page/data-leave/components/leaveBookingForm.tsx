@@ -29,6 +29,8 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import CustomTable from "../../common/CustomTable";
 dayjs.locale("th");
 
+import { ExperimentOutlined, SaveOutlined } from "@ant-design/icons"; /*  ตัวอย่างไอคอนสำหรับปุ่ม */
+
 interface LeaveBookingFormProps {
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -208,7 +210,7 @@ export default function LeaveBookingForm({
   };
 
   /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
-// --- Helper Functions สำหรับการสุ่ม (แก้ไข Type แล้ว) ---
+  // --- Helper Functions สำหรับการสุ่ม (แก้ไข Type แล้ว) ---
   const getRandomInt = (min: number, max: number) =>
     Math.floor(Math.random() * (max - min + 1)) + min;
 
@@ -281,113 +283,6 @@ export default function LeaveBookingForm({
         >
           <ConfigProvider locale={th_TH}>
             <Form form={form} layout="vertical" onFinish={onFinish}>
-<<<<<<< HEAD
-              <Form.Item
-                label="เขียนที่"
-                name="writeAt"
-                rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอกเขียนที่...",
-                  },
-                ]}
-              >
-                <Select
-                  placeholder="เขียนที่"
-                  onChange={(value) => {
-                    form.setFieldValue(
-                      "writeAt",
-                      value === "other" ? "" : value,
-                    );
-                  }}
-                  dropdownRender={(menu) => (
-                    <>
-                      {menu}
-                      <div style={{ display: "flex", padding: 8 }}>
-                        <Input
-                          placeholder="กรอกอื่น ๆ..."
-                          onPressEnter={(e) => {
-                            form.setFieldValue(
-                              "writeAt",
-                              e.currentTarget.value,
-                            );
-                          }}
-                          onBlur={(e) => {
-                            form.setFieldValue(
-                              "writeAt",
-                              e.currentTarget.value,
-                            );
-                          }}
-                        />
-                      </div>
-                    </>
-                  )}
-                >
-                  <Select.Option value="รพ.สต.บ้านผาผึ้ง">
-                    รพ.สต.บ้านผาผึ้ง
-                  </Select.Option>
-                  <Select.Option value="other">อื่นๆ...</Select.Option>
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                label="ประเภทการลา"
-                name="typeId"
-                rules={[{ required: true, message: "กรุณาเลือกประเภทลา" }]}
-              >
-                <Select placeholder="เลือกประเภทลา">
-                  {masterLeaves.map((item) => (
-                    <Select.Option key={item.id} value={item.id}>
-                      {item.leaveType}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                label="เหตุผลการลา"
-                name="reason"
-                rules={[{ required: true, message: "กรุณากรอกเหตุผลการลา" }]}
-              >
-                <TextArea
-                  rows={2}
-                  placeholder="กรอกเหตุผลการลา"
-                  maxLength={50}
-                />
-              </Form.Item>
-
-              <Row gutter={8}>
-                <Col span={12}>
-                  <Form.Item
-                    label="ตั้งแต่วันที่"
-                    name="dateStart"
-                    rules={[
-                      { required: true, message: "กรุณาเลือกวันที่เริ่มลา" },
-                    ]}
-                  >
-                    <DatePicker
-                      format="DD/MM/YYYY"
-                      style={{ width: "100%" }}
-                      placeholder="เลือกวันที่เริ่มลา"
-                      onChange={() => {
-                        // ล้างค่า dateEnd เมื่อเปลี่ยน dateStart
-                        form.setFieldValue("dateEnd", null);
-                      }}
-                      disabledDate={(current) => {
-                        if (!current) return false;
-                        // ห้ามเลือกวันในอดีต
-                        if (current < dayjs().startOf("day")) return true;
-
-                        // ตรวจสอบว่าทับกับการลาที่มีอยู่แล้วหรือไม่
-                        return leaveByUserId.some((leave) => {
-                          const start = dayjs(leave.dateStart).startOf("day");
-                          const end = dayjs(leave.dateEnd).endOf("day");
-                          return dayjs(current).isBetween(
-                            start,
-                            end,
-                            "day",
-                            "[]",
-=======
               {/* สไตล์กลางสำหรับ Input ทั้งหมด */}
               {(() => {
                 const inputStyle =
@@ -413,7 +308,6 @@ export default function LeaveBookingForm({
                           form.setFieldValue(
                             "writeAt",
                             value === "other" ? "" : value,
->>>>>>> acb37c206e06cff9da6310f2bbc54f844b5114d1
                           );
                         }}
                         dropdownRender={(menu) => (
@@ -629,137 +523,6 @@ export default function LeaveBookingForm({
                       getValueFromEvent={(e) =>
                         Array.isArray(e) ? e : e?.fileList
                       }
-<<<<<<< HEAD
-                      disabled={!selectedDateStart}
-                      disabledDate={(current) => {
-                        if (!current) return false;
-                        if (
-                          selectedDateStart &&
-                          current < dayjs(selectedDateStart).startOf("day")
-                        ) {
-                          return true;
-                        }
-                        if (current < dayjs().startOf("day")) return true;
-                        return leaveByUserId.some((leave) => {
-                          const start = dayjs(leave.dateStart).startOf("day");
-                          const end = dayjs(leave.dateEnd).endOf("day");
-                          return dayjs(current).isBetween(
-                            start,
-                            end,
-                            "day",
-                            "[]",
-                          );
-                        });
-                      }}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Form.Item
-                label="ระหว่างลาติดต่อได้ที่"
-                name="contactAddress"
-                rules={[{ required: false }]}
-              >
-                <TextArea rows={2} placeholder="กรอกระหว่างลาติดต่อได้ที่" />
-              </Form.Item>
-
-              {/* เบอร์โทรศัพท์ */}
-              <Form.Item
-                label="เบอร์ติดต่อระหว่างลา"
-                name="contactPhone"
-                rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอก เบอร์โทรศัพท์",
-                  },
-                ]}
-              >
-                <Input
-                  placeholder="กรอกเบอร์โทรศัพท์"
-                  maxLength={10}
-                  onKeyPress={(e) => {
-                    if (!/[0-9]/.test(e.key)) {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-              </Form.Item>
-
-              <Form.Item
-                label="ผู้รับผิดชอบงานระหว่างลา"
-                name="backupUserId"
-                rules={[
-                  {
-                    required: true,
-                    message: "กรุณาเลือกผู้รับผิดชอบงานระหว่างลา",
-                  },
-                ]}
-              >
-                <Select placeholder="เลือกผู้รับผิดชอบงาน">
-                  {user.map((user) => (
-                    <Select.Option key={user.userId} value={user.userId}>
-                      {user.firstName} {user.lastName}
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-
-              <Form.Item
-                label="แนบไฟล์ใบรับรองแพทย์ (ถ้ามี)"
-                name="fileName"
-                valuePropName="fileList"
-                getValueFromEvent={(e) => (Array.isArray(e) ? e : e?.fileList)}
-              >
-                <Upload
-                  name="file"
-                  maxCount={1}
-                  fileList={fileList}
-                  beforeUpload={() => false}
-                  onChange={handleUploadChange}
-                  accept=".pdf,.jpg,.jpeg,.png"
-                >
-                  <Button icon={<UploadOutlined />}>เลือกไฟล์</Button>
-                </Upload>
-              </Form.Item>
-
-              <Form.Item label="หมายเหตุเพิ่มเติม" name="details">
-                <TextArea rows={3} placeholder="หมายเหตุเพิ่มเติม" />
-              </Form.Item>
-
-              {/* ✅ ปรับปรุงส่วนปุ่มกด */}
-              <Form.Item style={{ textAlign: "center", marginTop: 20 }}>
-                <Space size="large" wrap>
-                  {/* ปุ่มส่งใบลา (Submit) */}
-                  <Button
-                    type="primary"
-                    htmlType="submit"
-                    size="large"
-                    style={{
-                      minWidth: "150px",
-                      height: "50px",
-                      fontSize: "16px",
-                    }}
-                  >
-                    ส่งใบลา
-                  </Button>
-
-                  {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (เพิ่มใหม่) */}
-                  <Button
-                    htmlType="button" // ต้องใส่ htmlType="button" กัน Submit
-                    onClick={handleAutoFill}
-                    size="large"
-                    style={{
-                      minWidth: "150px",
-                      height: "50px",
-                      fontSize: "16px",
-                    }}
-                  >
-                    สุ่มข้อมูลตัวอย่าง
-                  </Button>
-                </Space>
-              </Form.Item>
-=======
                     >
                       <Upload
                         name="file"
@@ -788,23 +551,33 @@ export default function LeaveBookingForm({
 
                     <Form.Item
                       style={{
-                        textAlign: "center",
                         marginTop: 24,
                         marginBottom: 8,
                       }}
                     >
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] border-0"
-                      >
-                        ส่งใบลา
-                      </Button>
+                      {/* ✅ ใช้ Flexbox จัดปุ่มให้อยู่กึ่งกลางและวางคู่กัน */}
+                      <div className="flex justify-center items-center gap-3">
+                        <Button
+                          icon={<SaveOutlined />}
+                          type="primary"
+                          htmlType="submit"
+                          className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] border-0 flex items-center"
+                        >
+                          ส่งใบลา
+                        </Button>
+
+                        <Button
+                          onClick={handleAutoFill}
+                          icon={<ExperimentOutlined />} // อย่าลืม import
+                          className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
+                        >
+                          สุ่มข้อมูลตัวอย่าง
+                        </Button>
+                      </div>
                     </Form.Item>
                   </>
                 );
               })()}
->>>>>>> acb37c206e06cff9da6310f2bbc54f844b5114d1
             </Form>
           </ConfigProvider>
         </Card>
