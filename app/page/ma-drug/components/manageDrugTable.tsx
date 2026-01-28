@@ -174,7 +174,15 @@ export default function ManageDrugTable({
       key: "requestDate",
       align: "center",
       width: 120,
-      render: (value) => new Date(value).toLocaleDateString("th-TH"),
+      render: (text: string) => {
+        if (!text) return "-";
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "รายการ",
@@ -342,9 +350,9 @@ export default function ManageDrugTable({
             <Tooltip title="พิมพ์ใบเบิก (Excel)">
               <FileExcelOutlined
                 style={{
-                  fontSize: 22, // ขนาดไอคอน
-                  color: "#217346", // สีเขียว Excel
-                  cursor: "pointer", // เปลี่ยนเมาส์เป็นรูปมือ
+                  fontSize: 22,
+                  color: "#217346",
+                  cursor: "pointer",
                   transition: "color 0.2s",
                 }}
                 onClick={() => handleExport(record)}
@@ -367,7 +375,7 @@ export default function ManageDrugTable({
             color: "#0683e9",
           }}
         >
-          จัดการรายการใบเบิกยา
+          รายการใบเบิกยา
         </div>
       }
       bordered={false}

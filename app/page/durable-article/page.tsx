@@ -2,13 +2,16 @@
 
 import React, { useState } from "react";
 import { Card, Col, message, Row, Tabs, TabsProps } from "antd";
-import DurableArticleTable from "../components/durableArticleTable";
-import DurableArticleForm from "../components/durableArticleForm";
+// import DurableArticleTable from "../components/durableArticleTable";
+// import DurableArticleForm from "../components/durableArticleForm";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-import { infectiousWasteServices } from "../services/durableArticle.service";
-import { DurableArticleType } from "../../common";
+// import { infectiousWasteServices } from "../services/durableArticle.service";
+import { DurableArticleType } from "../common/index";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
+import { infectiousWasteServices } from "./services/durableArticle.service";
+import DurableArticleTable from "./components/durableArticleTable";
+import DurableArticleForm from "./components/durableArticleForm";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
@@ -65,10 +68,9 @@ export default function Page() {
       label: "ข้อมูลครุภัณฑ์",
       children: (
         <DurableArticleTable
-          setLoading={setManualLoading}
+          setLoading={setManualLoading} // ใช้ manualLoading แทน
           loading={loading}
           data={data}
-          fetchData={fetchData}
         />
       ),
     },
@@ -80,6 +82,19 @@ export default function Page() {
       label: "เพิ่มครุภัณฑ์",
       children: (
         <Card>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "24px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            แบบฟอร์มเพิ่มครุภัณฑ์
+          </div>
+
           <DurableArticleForm
             setLoading={setManualLoading}
             loading={loading}

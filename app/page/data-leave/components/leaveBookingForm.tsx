@@ -27,9 +27,9 @@ import "dayjs/locale/th";
 import { DataLeaveService } from "../services/dataLeave.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import CustomTable from "../../common/CustomTable";
+import { useRouter } from "next/navigation";
+import { ExperimentOutlined, SaveOutlined } from "@ant-design/icons";
 dayjs.locale("th");
-
-import { ExperimentOutlined, SaveOutlined } from "@ant-design/icons"; /*  ตัวอย่างไอคอนสำหรับปุ่ม */
 
 interface LeaveBookingFormProps {
   loading: boolean;
@@ -55,6 +55,7 @@ export default function LeaveBookingForm({
   const [fileList, setFileList] = React.useState<UploadFile[]>([]);
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
+  const router = useRouter();
 
   const handleUploadChange = ({ fileList }: { fileList: UploadFile[] }) => {
     setFileList(fileList);
@@ -201,72 +202,13 @@ export default function LeaveBookingForm({
       message.success("บันทึกใบลาสำเร็จ");
       form.resetFields();
       setFileList([]);
+      router.push("/page/data-leave/dataLeave");
     } catch (err: any) {
       console.error("Error in onFinish:", err);
       message.error(err.message || "ไม่สามารถบันทึกใบลาได้");
     } finally {
       setLoading(false);
     }
-  };
-
-  /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
-  // --- Helper Functions สำหรับการสุ่ม (แก้ไข Type แล้ว) ---
-  const getRandomInt = (min: number, max: number) =>
-    Math.floor(Math.random() * (max - min + 1)) + min;
-
-  const getRandomElement = (arr: any[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
-
-  // ✅ ฟังก์ชันสุ่มข้อมูลใส่ฟอร์ม (Auto-fill)
-  const handleAutoFill = () => {
-    // 1. ชุดข้อมูลตัวอย่าง
-    const leaveTypes = masterLeaves.map((l) => l.id); // ดึง ID ประเภทลาทั้งหมดมาสุ่ม
-    const reasons = [
-      "ทำธุระส่วนตัว",
-      "ไม่สบาย ปวดหัว ตัวร้อน",
-      "พาญาติไปหาหมอ",
-      "รถเสีย",
-      "ติดต่อราชการ",
-    ];
-    const locations = ["รพ.สต.บ้านผาผึ้ง", "บ้านพัก", "โรงพยาบาลอำเภอ"];
-    const contactAddresses = [
-      "บ้านเลขที่ 123 หมู่ 1 ต.เชียงทอง",
-      "หอพักแพทย์",
-      "ติดต่อทางไลน์",
-    ];
-
-    // 2. สุ่มวันที่ (ลาล่วงหน้า 1-5 วัน, นาน 1-2 วัน)
-    const startOffset = getRandomInt(1, 5);
-    const duration = getRandomInt(1, 2);
-    const randStartDate = dayjs().add(startOffset, "day");
-    const randEndDate = randStartDate.add(duration, "day");
-
-    // 3. สุ่มเบอร์โทร (สร้างเลขสุ่ม 10 หลัก)
-    const randPhone =
-      "08" +
-      Array(8)
-        .fill(0)
-        .map(() => getRandomInt(0, 9))
-        .join("");
-
-    // 4. สุ่มผู้รับผิดชอบงานแทน (ถ้ามี user)
-    let randBackupUserId = undefined;
-    if (user && user.length > 0) {
-      randBackupUserId = getRandomElement(user).userId;
-    }
-
-    // ✅ Set ค่าเข้าฟอร์ม
-    form.setFieldsValue({
-      writeAt: getRandomElement(locations),
-      typeId: getRandomElement(leaveTypes),
-      reason: getRandomElement(reasons),
-      dateStart: randStartDate,
-      dateEnd: randEndDate,
-      contactAddress: getRandomElement(contactAddresses),
-      contactPhone: randPhone,
-      backupUserId: randBackupUserId,
-      details: Math.random() > 0.5 ? "ทดสอบระบบ Auto-fill ใบลา" : "",
-    });
   };
 
   return (
@@ -277,7 +219,7 @@ export default function LeaveBookingForm({
           className="shadow-lg rounded-2xl border-gray-100 overflow-hidden h-full"
           title={
             <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-              ฟอร์มใบลา
+              แบบฟอร์มใบลา
             </div>
           }
         >
@@ -565,14 +507,6 @@ export default function LeaveBookingForm({
                         >
                           ส่งใบลา
                         </Button>
-
-                        <Button
-                          onClick={handleAutoFill}
-                          icon={<ExperimentOutlined />} // อย่าลืม import
-                          className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
-                        >
-                          สุ่มข้อมูลตัวอย่าง
-                        </Button>
                       </div>
                     </Form.Item>
                   </>
@@ -595,7 +529,7 @@ export default function LeaveBookingForm({
                 fontSize: "20px",
               }}
             >
-              สรุปการลา
+              สรุปการลาของผู้ใช้
             </div>
           }
         >

@@ -11,11 +11,15 @@ import MaCarExportWord from "./maCarExport";
 import MaCarEditModal from "./MaCarEditModal";
 import { useSession } from "next-auth/react";
 import {
+  CarOutlined,
+  CheckCircleOutlined,
   EditOutlined,
   FileSearchOutlined,
   FormOutlined,
+  RollbackOutlined,
 } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
+import MaCarReturn from "./maCarReturn";
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -41,6 +45,8 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<any>(null);
   const { data: session } = useSession();
+  const [returnModalOpen, setReturnModalOpen] = useState(false);
+  const [returnRecord, setReturnRecord] = useState<any>(null);
 
   const filteredData = data.filter(
     (item) => item.createdById === session?.user?.userId,
@@ -64,6 +70,11 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
   const handleCloseEdit = () => {
     setEditModalOpen(false);
     setEditRecord(null);
+  };
+
+  const handleShowReturn = (record: any) => {
+    setReturnRecord(record);
+    setReturnModalOpen(true);
   };
 
   // const handleUpdate = async (values: any) => {
@@ -169,10 +180,18 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
             color = "red";
             text = "ยกเลิก";
             break;
+          case "return":
+            color = "purple";
+            text = "คืนรถแล้ว";
+            break;
+          case "success":
+            color = "default";
+            text = "เสร็จสิ้น";
+            break;
           default:
             text = status;
+            color = "default";
         }
-
         return <Tag color={color}>{text}</Tag>;
       },
     },
@@ -225,6 +244,21 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
             />
           </Tooltip>
 
+          <Tooltip title="คืนรถ">
+            <CarOutlined
+              style={{
+                fontSize: 22,
+                // ใช้สีม่วงหรือสีเขียวที่สื่อถึงการเสร็จสิ้น
+                color: record.status === "approve" ? "#722ed1" : "#d9d9d9",
+                cursor: record.status === "approve" ? "pointer" : "not-allowed",
+                opacity: record.status === "approve" ? 1 : 0.6,
+              }}
+              onClick={() => {
+                if (record.status === "approve") handleShowReturn(record);
+              }}
+            />
+          </Tooltip>
+
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
               style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
@@ -240,8 +274,8 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
   return (
     <>
       <div className="mb-6 -mt-7">
-        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
-          รายการขออนุมัติใช้รถ
+        <h2 className="text-2xl font-bold text-blue-500 text-center mb-2 tracking-tight">
+          รายการจองรถของผู้ใช้
         </h2>
         {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
@@ -271,6 +305,15 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
         fetchData={fetchData}
         data={data}
         maCarUser={maCarUser}
+      />
+      <MaCarReturn
+        open={returnModalOpen}
+        onClose={() => {
+          setReturnModalOpen(false);
+          setReturnRecord(null);
+        }}
+        record={returnRecord}
+        fetchData={fetchData}
       />
     </>
   );

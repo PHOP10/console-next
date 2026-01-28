@@ -23,8 +23,9 @@ import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { DrugType, MasterDrugType } from "../../common"; // ✅ import MasterDrugType
+import { DrugType, MasterDrugType } from "../../common";
 import CustomTable from "../../common/CustomTable";
+import { packingOptions } from "../../../common/index";
 
 interface DrugTableProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -222,32 +223,6 @@ export default function DrugTable({
         </Space>
       ),
     },
-  ];
-
-  const packingOptions = [
-    { value: "10's" },
-    { value: "50's" },
-    { value: "100's" },
-    { value: "500's" },
-    { value: "1000's" },
-    { value: "แผง" },
-    { value: "กล่อง" },
-    { value: "ขวด" },
-    { value: "กระปุก" },
-    { value: "ซอง" },
-    { value: "ถุง" },
-    { value: "ห่อ" },
-    { value: "แพ็ค" },
-    { value: "ชิ้น" },
-    { value: "คู่" },
-    { value: "ชุด" },
-    { value: "ม้วน" },
-    { value: "หลอด" },
-    { value: "Vial" },
-    { value: "Amp" },
-    { value: "5 g." },
-    { value: "10 g." },
-    { value: "lb." },
   ];
 
   return (

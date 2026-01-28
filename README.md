@@ -8,3 +8,4 @@ npm
 ```npm install exceljs file-saver```
 
 ```npm install --save-dev @types/crypto-js```
+``npm install swr``

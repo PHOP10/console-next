@@ -4,6 +4,8 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
   const baseUrlApimaDrug = "/maDrug";
   const baseUrlApiDrug = "/drug";
   const baseUrlApiMasterDrug = "/masterDrug";
+  const baseUrlApiDispense = "/dispense";
+
   return {
     getMaDrugQuery: async () => {
       return await axiosInstance
@@ -53,19 +55,18 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
         });
     },
 
-    receiveMaDrug: async (id: any) => {
+    receiveMaDrug: async (payload: any) => {
+      const { id, ...data } = payload;
       return await axiosInstance
-        .patch(`${baseUrlApimaDrug}/${id}/receive`)
+        .patch(`${baseUrlApimaDrug}/${id}/receive`, data)
         .then((res) => {
           return res.data;
         })
         .catch((err) => {
           console.log(err);
-          // อาจจะ throw error เพื่อให้หน้าบ้านรู้ว่าทำรายการไม่สำเร็จ
           throw err;
         });
     },
-
     getDrugQuery: async () => {
       return await axiosInstance
         .get(`${baseUrlApiDrug}`)
@@ -152,6 +153,54 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
     deleteMasterDrug: async (id: any) => {
       return await axiosInstance
         .delete(`${baseUrlApiMasterDrug}/${id}`)
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
+
+    getDispenseQuery: async () => {
+      return await axiosInstance
+        .get(`${baseUrlApiDispense}`)
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
+
+    createDispense: async (body: any) => {
+      return await axiosInstance
+        .post(`${baseUrlApiDispense}`, body)
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
+
+    updateDispense: async (body: any) => {
+      return await axiosInstance
+        .patch(`${baseUrlApiDispense}/${body.id}`, body)
+        .then((res) => {
+          return res.data;
+        })
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
+
+    deleteDispense: async (id: any) => {
+      return await axiosInstance
+        .delete(`${baseUrlApiDispense}/${id}`)
         .then((res) => {
           return res.data;
         })

@@ -115,8 +115,8 @@ const DurableArticleDetail: React.FC<DurableArticleDetailProps> = ({
                   <InfoBox text={record.description} />
                 </Col>
                 <Col xs={24} sm={12}>
-                  <Label>ลักษณะ/คุณสมบัติ :</Label>
-                  <InfoBox text={record.attributes} />
+                  <Label>สถานที่ตั้ง/ที่อยู่ :</Label>
+                  <InfoBox text={record.location} />
                 </Col>
 
                 <Divider className="my-0 col-span-2" dashed />

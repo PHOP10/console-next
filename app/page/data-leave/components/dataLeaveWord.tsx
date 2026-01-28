@@ -260,37 +260,27 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
   };
 
   return (
-    // <>
-    //   <Button
-    //     size="small"
-    //     type="primary"
-    //     onClick={handleExport}
-    //     disabled={record.status !== "pending"}
-    //   >
-    //     Export
-    //   </Button>
-    // </>
     <>
       <Tooltip title="Export">
         <FileWordOutlined
           style={{
             fontSize: 22,
-            color: record.status === "pending" ? "#1677ff" : "#d9d9d9",
-            cursor: record.status === "pending" ? "pointer" : "not-allowed",
+            color: record.status === "approve" ? "#1677ff" : "#d9d9d9",
+            cursor: record.status === "approve" ? "pointer" : "not-allowed",
             transition: "color 0.2s",
           }}
           onClick={() => {
-            if (record.status === "pending") {
+            if (record.status === "approve") {
               handleExport();
             }
           }}
           onMouseEnter={(e) => {
-            if (record.status === "pending") {
+            if (record.status === "approve") {
               (e.currentTarget as HTMLElement).style.color = "#0958d9";
             }
           }}
           onMouseLeave={(e) => {
-            if (record.status === "pending") {
+            if (record.status === "approve") {
               (e.currentTarget as HTMLElement).style.color = "#1677ff";
             }
           }}

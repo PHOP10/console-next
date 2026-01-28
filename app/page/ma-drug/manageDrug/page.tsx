@@ -1,58 +1,87 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Breadcrumb, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
-import MaDrugDaisbursementTable from "../components/manageDrugTable";
+import { Col, message, Row, Tabs, TabsProps } from "antd";
 import { useSession } from "next-auth/react";
+import useSWR from "swr";
+import MaDrugDaisbursementTable from "../components/manageDrugTable";
+import MaDispenseTable from "../components/maDispenseTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { MaDrugType } from "../../common";
+import { MaDrugType, DispenseType } from "../../common";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = MaDrug(intraAuth);
-  const [loading, setLoading] = useState<boolean>(true);
   const { data: session } = useSession();
-  const [data, setData] = useState<MaDrugType[]>([]);
+  const [manualLoading, setManualLoading] = useState<boolean>(false);
+  const [requestData, setRequestData] = useState<MaDrugType[]>([]);
+  const [dispenseData, setDispenseData] = useState<DispenseType[]>([]);
 
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const result = await intraAuthService.getMaDrugQuery();
-      setData(Array.isArray(result) ? result : result?.data || []);
-    } catch (error) {
-      console.error("โหลดข้อมูลไม่สำเร็จ:", error);
-      message.error("ไม่สามารถดึงข้อมูลได้");
-    } finally {
-      setLoading(false);
-    }
+  // 4. สร้าง Fetcher Function
+  const fetcher = async () => {
+    const maDrugService = MaDrug(intraAuth);
+
+    // ดึงข้อมูลพร้อมกัน
+    const [requestsRes, dispensesRes] = await Promise.all([
+      maDrugService.getMaDrugQuery(),
+      maDrugService.getDispenseQuery(),
+    ]);
+
+    return {
+      requests: Array.isArray(requestsRes)
+        ? requestsRes
+        : requestsRes?.data || [],
+      dispenses: Array.isArray(dispensesRes)
+        ? dispensesRes
+        : dispensesRes?.data || [],
+    };
   };
 
+  const {
+    data: swrData,
+    isLoading: isSwrLoading,
+    mutate,
+  } = useSWR("dashboardData", fetcher, {
+    refreshInterval: 5000,
+    revalidateOnFocus: true,
+    onError: (error) => {
+      console.error("โหลดข้อมูลไม่สำเร็จ:", error);
+      message.error("ไม่สามารถดึงข้อมูลได้");
+    },
+  });
+
+  // 6. Sync ข้อมูลเข้า State
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (swrData) {
+      setRequestData(swrData.requests);
+      setDispenseData(swrData.dispenses);
+    }
+  }, [swrData]);
 
-  // ❌ ลบ useEffect ที่ซ้ำซ้อนออก (fetchData จัดการ loading ใน finally แล้ว)
-  // useEffect(() => {
-  //   setLoading(false);
-  // }, []);
+  const fetchData = async () => {
+    setManualLoading(true);
+    await mutate();
+    setManualLoading(false);
+  };
 
-  // ✅ วิธีแก้ไข: สร้าง Array ว่างก่อน แล้วใช้ if push ข้อมูลเข้าไป
-  const items: TabsProps["items"] = [];
-
-  if (session?.user?.role === "admin") {
-    items.push({
+  const items: TabsProps["items"] = [
+    {
       key: "1",
-      label: "จัดการข้อมูลการเบิกจ่ายยา",
+      label: "จัดการข้อมูลการเบิกยา",
       children: (
         <MaDrugDaisbursementTable
-          data={data}
+          data={requestData}
           fetchData={fetchData}
-          setData={setData}
+          setData={setRequestData}
         />
       ),
-    });
-  }
+    },
+    {
+      key: "2",
+      label: "จัดการข้อมูลการจ่ายยา",
+      children: <MaDispenseTable data={dispenseData} fetchData={fetchData} />,
+    },
+  ];
 
   return (
     <div>

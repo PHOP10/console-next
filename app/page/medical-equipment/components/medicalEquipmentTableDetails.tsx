@@ -24,7 +24,7 @@ export default function MedicalEquipmentTableDetails({
     includeTime = false,
   ) => {
     if (!dateString) return "-";
-    const format = includeTime ? "DD MMM YYYY HH:mm น." : "DD MMM YYYY";
+    const format = includeTime ? "DD MMMM YYYY HH:mm น." : "DD MMMM YYYY";
     return dayjs(dateString).locale("th").format(format);
   };
 

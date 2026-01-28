@@ -15,7 +15,6 @@ import {
   ConfigProvider,
   Radio,
   Checkbox,
-  Space,
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
@@ -28,11 +27,6 @@ import { useRouter } from "next/navigation";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { MaCarType } from "../../common";
-
-import {
-  SaveOutlined,
-  ExperimentOutlined,
-} from "@ant-design/icons"; /* ตัวอย่างข้อมูล */
 
 dayjs.locale("th");
 dayjs.extend(isBetween);
@@ -64,7 +58,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
 
   const onFinish = async (values: any) => {
     try {
-      const { carId, dateStart, dateEnd } = values;
+      const { carId, dateStart, dateEnd, typeName } = values;
       const currentUserId = session?.user?.userId;
 
       // ตรวจสอบการจองซ้ำ
@@ -97,6 +91,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         message.warning(`ไม่สามารถจองรถได้: ${conflictType}`);
         return;
       }
+      const selectedCar = cars.find((c) => c.id === carId);
 
       const payload = {
         ...values,
@@ -105,6 +100,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         createdById: session?.user?.userId,
         dateStart: dayjs(dateStart).toISOString(),
         dateEnd: dayjs(dateEnd).toISOString(),
+        startMileage: selectedCar?.mileage ? Number(selectedCar.mileage) : 0,
       };
 
       await intraAuthService.createMaCar(payload);
@@ -115,9 +111,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         await fetchData();
       }
 
-      setTimeout(() => {
-        router.push("/page/ma-car/maCar");
-      }, 1000);
+      router.push("/page/ma-car/maCar");
     } catch (err) {
       console.error("Booking Error:", err);
       message.error("เกิดข้อผิดพลาดจากระบบ ไม่สามารถดำเนินการได้");
@@ -137,111 +131,8 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
   // Checkbox & Radio Style (Optional: ทำให้ดู Modern ขึ้น)
   const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
 
-  /*  ----------------------------------------- ข้อมูลตัวอย่าง/------------------------------------------ */
-  const getRandomInt = (min: number, max: number) =>
-    Math.floor(Math.random() * (max - min + 1)) + min;
-
-  const getRandomElement = (arr: any[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
-
-  const handleAutoFill = () => {
-    // A. เตรียมชุดข้อมูล
-    const recipients = [
-      "สาธารณสุขอำเภอวังเจ้า",
-      "โรงพยาบาลตากสิน",
-      "สสจ. ตาก",
-      "อบต. เชียงทอง",
-      "เทศบาลนครแม่สอด",
-    ];
-    const purposes = [
-      "ประชุมวิชาการ",
-      "รับผู้ป่วย",
-      "รับวัคซีน",
-      "ออกหน่วยแพทย์",
-      "ส่งเอกสารด่วน",
-      "ตรวจราชการ",
-    ];
-    const destinations = [
-      "อ.เมือง จ.ตาก",
-      "อ.แม่สอด",
-      "อ.สามเงา",
-      "ศาลากลาง",
-      "กทม.",
-      "เชียงใหม่",
-    ];
-    const budgets = [
-      "งบกลาง",
-      "งบโครงการ",
-      "งบผู้จัด",
-      "เงินบำรุง",
-      "ไม่ขอเบิก",
-    ];
-    const typeOptions = ["ในจังหวัด", "นอกจังหวัด"];
-    const planOptions = ["แผนปกติ", "แผนด่วน"];
-
-    // ✅ B. สุ่มวันที่แบบอิสระ (ไม่ยึดเดือนปัจจุบัน)
-    // 1. สุ่มปี (เช่น ระหว่าง 2025 - 2026)
-    const randYear = getRandomInt(2025, 2026);
-    // 2. สุ่มเดือน (0 = ม.ค., 11 = ธ.ค.)
-    const randMonth = getRandomInt(0, 11);
-    // 3. สุ่มวันที่ (เอาแค่ 1-28 เพื่อความปลอดภัย ไม่ต้องเช็ค Leap Year)
-    const randDay = getRandomInt(1, 28);
-    // 4. สุ่มเวลา
-    const randHour = getRandomInt(8, 16);
-    const randMinute = getRandomElement([0, 30]);
-
-    // สร้าง Object วันที่เริ่ม
-    const randStartDate = dayjs()
-      .year(randYear)
-      .month(randMonth)
-      .date(randDay)
-      .hour(randHour)
-      .minute(randMinute)
-      .second(0);
-
-    // วันที่สิ้นสุด (ห่างจากวันเริ่ม 0-3 วัน)
-    const duration = getRandomInt(0, 3);
-    const randEndDate = randStartDate
-      .add(duration, "day")
-      .hour(17) // กลับถึงประมาณ 5 โมงเย็น
-      .minute(0);
-
-    // C. สุ่มผู้โดยสาร
-    const validUsers = dataUser || [];
-    const randPassengerCount = getRandomInt(1, Math.min(5, validUsers.length));
-    const shuffledUsers = [...validUsers].sort(() => 0.5 - Math.random());
-    const selectedPassengerIds = shuffledUsers
-      .slice(0, randPassengerCount)
-      .map((u) => u.userId);
-
-    // D. สุ่มรถ
-    let randCarId = undefined;
-    if (cars && cars.length > 0) {
-      randCarId = getRandomElement(cars).id;
-    }
-
-    // E. Set ค่าเข้าฟอร์ม
-    form.setFieldsValue({
-      typeName: [getRandomElement(typeOptions), getRandomElement(planOptions)],
-      carId: randCarId,
-      recipient: getRandomElement(recipients),
-      purpose: getRandomElement(purposes),
-      destination: getRandomElement(destinations),
-      dateStart: randStartDate,
-      dateEnd: randEndDate,
-      driver: Math.random() > 0.5 ? "yes" : "no",
-      budget: getRandomElement(budgets),
-      passengers: randPassengerCount,
-      passengerNames: selectedPassengerIds,
-      note:
-        Math.random() > 0.7
-          ? `ทดสอบระบบ (Gen: ${randDay}/${randMonth + 1})`
-          : "",
-    });
-  };
-
   return (
-    <Card>
+    <Card className="shadow-lg rounded-2xl border-gray-100 overflow-hidden">
       <ConfigProvider locale={th_TH}>
         <Form
           form={form}
@@ -251,56 +142,40 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             requesterName: session?.user?.fullName,
           }}
         >
+          {/* Section 1: ประเภทการเดินทาง */}
           <div className="mb-6">
             <Form.Item
               name="typeName"
-              label="ประเภทการเดินทางและแผนงาน"
+              label={
+                <span className="font-semibold text-gray-700">
+                  ประเภทการเดินทางและแผนงาน
+                </span>
+              }
               rules={[
                 { required: true, message: "กรุณาเลือกอย่างน้อย 1 รายการ" },
               ]}
             >
-              <div className={optionGroupStyle}>
-                <Checkbox.Group style={{ width: "100%" }}>
-                  <Row gutter={[16, 16]}>
-                    <Col xs={12} sm={6}>
-                      <Checkbox value="ในจังหวัด">ในจังหวัด</Checkbox>
-                    </Col>
-                    <Col xs={12} sm={6}>
-                      <Checkbox value="นอกจังหวัด">นอกจังหวัด</Checkbox>
-                    </Col>
-                    <Col xs={12} sm={6}>
-                      <Checkbox value="แผนปกติ">แผนปกติ</Checkbox>
-                    </Col>
-                    <Col xs={12} sm={6}>
-                      <Checkbox value="แผนด่วน">แผนด่วน</Checkbox>
-                    </Col>
-                  </Row>
-                </Checkbox.Group>
-              </div>
+              <Checkbox.Group className={`${optionGroupStyle} w-full`}>
+                <Row gutter={[16, 16]}>
+                  <Col span={6}>
+                    <Checkbox value="ในจังหวัด">ในจังหวัด</Checkbox>
+                  </Col>
+                  <Col span={6}>
+                    <Checkbox value="นอกจังหวัด">นอกจังหวัด</Checkbox>
+                  </Col>
+                  <Col span={6}>
+                    <Checkbox value="แผนปกติ">แผนปกติ</Checkbox>
+                  </Col>
+                  <Col span={6}>
+                    <Checkbox value="แผนด่วน">แผนด่วน</Checkbox>
+                  </Col>
+                </Row>
+              </Checkbox.Group>
             </Form.Item>
           </div>
 
           {/* Section 2: ข้อมูลรถและการใช้งาน */}
           <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                name="carId"
-                label="เลือกรถ"
-                rules={[{ required: true, message: "กรุณาเลือกรถ" }]}
-              >
-                <Select
-                  placeholder="เลือกรถ"
-                  loading={loading}
-                  className={selectStyle}
-                >
-                  {cars.map((car) => (
-                    <Select.Option key={car.id} value={car.id}>
-                      {car.carName} ({car.licensePlate})
-                    </Select.Option>
-                  ))}
-                </Select>
-              </Form.Item>
-            </Col>
             <Col span={12}>
               <Form.Item
                 label="เรียน"
@@ -346,9 +221,6 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 </Select>
               </Form.Item>
             </Col>
-          </Row>
-
-          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 name="purpose"
@@ -363,6 +235,9 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 />
               </Form.Item>
             </Col>
+          </Row>
+
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 name="destination"
@@ -375,85 +250,6 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   className={textAreaStyle}
                   style={{ minHeight: "44px" }}
                 />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Section 3: วันเวลา */}
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                name="dateStart"
-                label="ตั้งแต่วันที่"
-                rules={[{ required: true, message: "กรุณาเลือกวันเวลาเริ่ม" }]}
-              >
-                <DatePicker
-                  showTime={{ format: "HH:mm" }}
-                  style={{ width: "100%" }}
-                  format="DD/MM/YYYY HH:mm"
-                  placeholder="เลือกวันเวลาเริ่ม"
-                  className={`${inputStyle} pt-2`}
-                  onChange={() => form.setFieldValue("dateEnd", null)}
-                  disabledDate={(current) =>
-                    current && current < dayjs().startOf("day")
-                  }
-                />
-              </Form.Item>
-            </Col>
-
-            <Col span={12}>
-              <Form.Item
-                noStyle
-                shouldUpdate={(prev, cur) => prev.dateStart !== cur.dateStart}
-              >
-                {({ getFieldValue }) => {
-                  const dateStart = getFieldValue("dateStart");
-                  return (
-                    <Form.Item
-                      name="dateEnd"
-                      label="ถึงวันที่"
-                      rules={[
-                        { required: true, message: "กรุณาเลือกวันเวลาสิ้นสุด" },
-                      ]}
-                    >
-                      <DatePicker
-                        showTime={{ format: "HH:mm" }}
-                        style={{ width: "100%" }}
-                        format="DD/MM/YYYY HH:mm"
-                        placeholder="เลือกวันเวลาสิ้นสุด"
-                        className={`${inputStyle} pt-2`}
-                        disabled={!dateStart}
-                        disabledDate={(current) => {
-                          const today = dayjs().startOf("day");
-                          const startDay = dateStart
-                            ? dayjs(dateStart).startOf("day")
-                            : today;
-                          return (
-                            current && (current < today || current < startDay)
-                          );
-                        }}
-                      />
-                    </Form.Item>
-                  );
-                }}
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Section 4: ข้อมูลเพิ่มเติม */}
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                label="พนักงานขับรถ"
-                name="driver"
-                rules={[{ required: true, message: "กรุณาเลือกตัวเลือก" }]}
-              >
-                <div className={`${optionGroupStyle} py-2`}>
-                  <Radio.Group>
-                    <Radio value="yes">ขอพนักงานขับรถ</Radio>
-                    <Radio value="no">ไม่ขอพนักงานขับรถ</Radio>
-                  </Radio.Group>
-                </div>
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -498,8 +294,201 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             </Col>
           </Row>
 
+          <Row gutter={16}>
+            {/* 1. พนักงานขับรถ */}
+            <Col span={12}>
+              <Form.Item
+                label="พนักงานขับรถ"
+                name="driver"
+                rules={[{ required: true, message: "กรุณาเลือกตัวเลือก" }]}
+              >
+                <div className={`${optionGroupStyle} py-2`}>
+                  <Radio.Group>
+                    <Radio value="yes">ขอพนักงานขับรถ</Radio>
+                    <Radio value="no">ไม่ขอพนักงานขับรถ</Radio>
+                  </Radio.Group>
+                </div>
+              </Form.Item>
+            </Col>
+
+            {/* 2. เลือกรถ */}
+            <Col span={12}>
+              <Form.Item
+                name="carId"
+                label="เลือกรถ"
+                rules={[{ required: true, message: "กรุณาเลือกรถ" }]}
+              >
+                <Select
+                  placeholder="เลือกรถ"
+                  loading={loading}
+                  className={selectStyle}
+                >
+                  {cars.map((car) => (
+                    <Select.Option key={car.id} value={car.id}>
+                      {car.carName} ({car.licensePlate})
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          {/* Section 3: วันเวลา */}
           <Row gutter={24}>
-            <Col span={8}>
+            <Col span={12}>
+              <Form.Item
+                name="dateStart"
+                label="ตั้งแต่วันที่"
+                dependencies={["carId"]} // ✅ เพิ่ม: ให้เช็คใหม่เมื่อเปลี่ยนรถ
+                rules={[
+                  { required: true, message: "กรุณาเลือกวันเวลาเริ่ม" },
+                  {
+                    validator: (_, value) => {
+                      if (!value) return Promise.resolve();
+
+                      // ดึงค่ารถที่เลือกปัจจุบัน
+                      const carId = form.getFieldValue("carId");
+
+                      // ถ้ายังไม่เลือกรถ ให้ผ่านไปก่อน หรือจะบังคับให้เลือกก็ได้
+                      if (!carId) return Promise.resolve();
+
+                      // ✅ Logic เช็คว่ารถว่างไหม (Real-time)
+                      const isCarBusy = maCar.some((booking) => {
+                        // ข้ามรายการที่ยกเลิก
+                        if (booking.status === "cancel") return false;
+
+                        // เช็คเฉพาะรถคันที่เราเลือก
+                        if (Number(booking.carId) !== Number(carId))
+                          return false;
+
+                        const bStart = dayjs(booking.dateStart);
+                        const bEnd = dayjs(booking.dateEnd);
+
+                        // เช็คว่าเวลาที่เลือก (value) ไปแทรกอยู่ในช่วงที่รถไม่ว่างไหม
+                        return value.isBetween(bStart, bEnd, null, "[]");
+                      });
+
+                      if (isCarBusy) {
+                        return Promise.reject(
+                          new Error("รถคันนี้ไม่ว่างในช่วงเวลานี้"),
+                        );
+                      }
+
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+                style={{ marginBottom: 0 }}
+              >
+                <DatePicker
+                  showTime={{ format: "HH:mm" }}
+                  style={{ width: "100%" }}
+                  format="DD/MM/YYYY HH:mm"
+                  placeholder="เลือกวันเวลาเริ่ม"
+                  className={`${inputStyle} pt-2`}
+                  onChange={() => form.setFieldValue("dateEnd", null)}
+                  disabledDate={(current) =>
+                    current && current < dayjs().startOf("day")
+                  }
+                />
+              </Form.Item>
+            </Col>
+
+            <Col span={12}>
+              <Form.Item
+                noStyle
+                shouldUpdate={
+                  (prev, cur) =>
+                    prev.dateStart !== cur.dateStart || prev.carId !== cur.carId // ✅ อัปเดตเมื่อเปลี่ยนรถด้วย
+                }
+              >
+                {({ getFieldValue }) => {
+                  const dateStart = getFieldValue("dateStart");
+                  return (
+                    <Form.Item
+                      name="dateEnd"
+                      label="ถึงวันที่"
+                      dependencies={["dateStart", "carId"]}
+                      rules={[
+                        { required: true, message: "กรุณาเลือกวันเวลาสิ้นสุด" },
+                        {
+                          validator: (_, value) => {
+                            if (!value || !dateStart) return Promise.resolve();
+
+                            const currentStart = dayjs(dateStart);
+                            const currentEnd = dayjs(value);
+
+                            // 1. เช็คเวลา Start < End
+                            if (
+                              currentEnd.isBefore(currentStart) ||
+                              currentEnd.isSame(currentStart)
+                            ) {
+                              return Promise.reject(
+                                new Error(
+                                  "เวลาสิ้นสุดต้องอยู่หลังจากเวลาเริ่มต้น",
+                                ),
+                              );
+                            }
+
+                            const carId = getFieldValue("carId");
+                            if (carId) {
+                              const isOverlap = maCar.some((booking) => {
+                                if (booking.status === "cancel") return false;
+                                if (Number(booking.carId) !== Number(carId))
+                                  return false;
+
+                                const bStart = dayjs(booking.dateStart);
+                                const bEnd = dayjs(booking.dateEnd);
+
+                                // สูตรเช็คชนกัน: (StartA < EndB) และ (EndA > StartB)
+                                return (
+                                  currentStart.isBefore(bEnd) &&
+                                  currentEnd.isAfter(bStart)
+                                );
+                              });
+
+                              if (isOverlap) {
+                                return Promise.reject(
+                                  new Error("ช่วงเวลานี้มีการจองแล้ว"),
+                                );
+                              }
+                            }
+
+                            return Promise.resolve();
+                          },
+                        },
+                      ]}
+                      style={{ marginBottom: 0 }}
+                    >
+                      <DatePicker
+                        showTime={{ format: "HH:mm" }}
+                        style={{ width: "100%" }}
+                        format="DD/MM/YYYY HH:mm"
+                        placeholder={
+                          dateStart
+                            ? "เลือกวันเวลาสิ้นสุด"
+                            : "กรุณาเลือกวันเริ่มก่อน"
+                        }
+                        className={`${inputStyle} pt-2`}
+                        disabled={!dateStart}
+                        disabledDate={(current) => {
+                          // ห้ามเลือกวันก่อนวันเริ่ม
+                          if (
+                            dateStart &&
+                            current < dayjs(dateStart).startOf("day")
+                          ) {
+                            return true;
+                          }
+                          return current && current < dayjs().startOf("day");
+                        }}
+                      />
+                    </Form.Item>
+                  );
+                }}
+              </Form.Item>
+            </Col>
+          </Row>
+          <Row gutter={24}>
+            <Col span={6}>
               <Form.Item
                 name="passengers"
                 label="จำนวนผู้โดยสาร"
@@ -528,7 +517,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 />
               </Form.Item>
             </Col>
-            <Col span={16}>
+            <Col span={18}>
               <Form.Item
                 name="passengerNames"
                 label="ชื่อผู้โดยสาร"
@@ -557,26 +546,14 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             />
           </Form.Item>
 
-          <Form.Item style={{ marginTop: 24 }}>
-            <div className="flex justify-center items-center gap-3">
-              <Button
-                type="primary"
-                htmlType="submit"
-                // loading={submitting}
-                icon={<SaveOutlined />}
-                className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center border-none"
-              >
-                จองรถ
-              </Button>
-
-              <Button
-                onClick={handleAutoFill}
-                icon={<ExperimentOutlined />}
-                className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
-              >
-                สุ่มข้อมูลตัวอย่าง
-              </Button>
-            </div>
+          <Form.Item style={{ textAlign: "center" }}>
+            <Button
+              type="primary"
+              htmlType="submit"
+              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+            >
+              จองรถ
+            </Button>
           </Form.Item>
         </Form>
       </ConfigProvider>

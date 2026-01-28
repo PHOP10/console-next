@@ -6,7 +6,6 @@ import {
   message,
   Popconfirm,
   Space,
-  Table,
   Input,
   Select,
   Tag,
@@ -14,6 +13,8 @@ import {
   Row,
   Col,
   Tooltip,
+  DatePicker, // ตรวจสอบว่ามี import DatePicker
+  ConfigProvider,
 } from "antd";
 import dayjs from "dayjs";
 import CryptoJS from "crypto-js";
@@ -21,22 +22,23 @@ import {
   SearchOutlined,
   EditOutlined,
   DeleteOutlined,
-  ReloadOutlined,
   UserOutlined,
-  EyeOutlined,
   FileSearchOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
-
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { VisitHomeType, MasterPatientType } from "../../common";
 import { visitHomeServices } from "../services/visitHome.service";
-
-// Import Component แก้ไขที่แยกออกไป
 import VisitHomeEdit from "./visitHomeEdit";
 import CustomTable from "../../common/CustomTable";
+import "dayjs/locale/th";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+import thTH from "antd/es/locale/th_TH";
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
 
 const { Option } = Select;
+const { RangePicker } = DatePicker; // 1. ดึง RangePicker ออกมาใช้
 
 const SECRET_KEY =
   process.env.NEXT_PUBLIC_ENCRYPTION_KEY || "MY_SUPER_SECRET_KEY_1234";
@@ -58,20 +60,17 @@ export default function VisitHomeTable({
 }: VisitHomeTableProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
-
-  // State สำหรับ Modal แก้ไข
   const [editingRecord, setEditingRecord] = useState<VisitHomeType | null>(
     null,
   );
   const [modalVisible, setModalVisible] = useState(false);
-
-  // Search State
   const [searchText, setSearchText] = useState("");
   const [filterPatientType, setFilterPatientType] = useState<number | null>(
     null,
   );
+  const [filterDate, setFilterDate] = useState<any>(null);
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");
-  // ฟังก์ชันถอดรหัส (สำหรับแสดงในตาราง)
+
   const decryptData = (ciphertext: string) => {
     if (!ciphertext) return "-";
     if (!ciphertext.toString().startsWith("U2F")) return ciphertext;
@@ -88,12 +87,11 @@ export default function VisitHomeTable({
   const filteredData = data.filter((item) => {
     const firstName = decryptData(item.firstName || "").toLowerCase();
     const lastName = decryptData(item.lastName || "").toLowerCase();
-    // ถ้ามี field fullName ให้ใช้ decryptData(item.fullName) แทน
     const fullName = decryptData(item.fullName || "").toLowerCase();
-
     const address = decryptData(item.address || "").toLowerCase();
     const search = searchText.toLowerCase();
 
+    // กรองด้วย Text
     const matchesSearch =
       firstName.includes(search) ||
       lastName.includes(search) ||
@@ -102,11 +100,22 @@ export default function VisitHomeTable({
       item.symptoms?.toLowerCase().includes(search) ||
       (item.age !== undefined && item.age.toString().includes(search));
 
+    // กรองด้วยประเภทผู้ป่วย
     const matchesPatientType = filterPatientType
       ? item.patientType?.id === filterPatientType
       : true;
 
-    return matchesSearch && matchesPatientType;
+    // 3. กรองด้วยวันที่ (เปรียบเทียบ string YYYY-MM-DD เพื่อความแม่นยำ)
+    let matchesDate = true;
+    if (filterDate && filterDate[0] && filterDate[1] && item.visitDate) {
+      const visitDateStr = dayjs(item.visitDate).format("YYYY-MM-DD");
+      const startDateStr = filterDate[0].format("YYYY-MM-DD");
+      const endDateStr = filterDate[1].format("YYYY-MM-DD");
+
+      matchesDate = visitDateStr >= startDateStr && visitDateStr <= endDateStr;
+    }
+
+    return matchesSearch && matchesPatientType && matchesDate;
   });
 
   const handleDelete = async (id: number) => {
@@ -119,17 +128,9 @@ export default function VisitHomeTable({
     }
   };
 
-  const getPatientTypeColor = (typeName: string) => {
-    if (typeName.includes("ติดเตียง")) return "red";
-    if (typeName.includes("ติดบ้าน")) return "orange";
-    if (typeName.includes("NCD")) return "blue";
-    if (typeName.includes("Palliative")) return "purple";
-    return "default";
-  };
-
   const openModal = (record: VisitHomeType, mode: "view" | "edit") => {
     setEditingRecord(record);
-    setModalMode(mode); // set mode
+    setModalMode(mode);
     setModalVisible(true);
   };
 
@@ -139,7 +140,6 @@ export default function VisitHomeTable({
       dataIndex: "fullName",
       key: "fullName",
       width: 200,
-      // fixed: "left",
       render: (text: string) => (
         <div style={{ fontWeight: 500 }}>{decryptData(text)}</div>
       ),
@@ -150,11 +150,7 @@ export default function VisitHomeTable({
       key: "patientType",
       width: 150,
       align: "center",
-      render: (value: any) => (
-        <Tag color={getPatientTypeColor(value?.typeName || "")}>
-          {value?.typeName || "-"}
-        </Tag>
-      ),
+      render: (value: any) => <Tag color="cyan">{value?.typeName || "-"}</Tag>,
     },
     {
       title: "อายุ",
@@ -172,7 +168,7 @@ export default function VisitHomeTable({
       align: "center",
       sorter: (a, b) => dayjs(a.visitDate).unix() - dayjs(b.visitDate).unix(),
       render: (value: string) =>
-        value ? dayjs(value).format("DD-MM-YYYY") : "-",
+        value ? dayjs(value).format("DD MMMM YYYY") : "-",
     },
     {
       title: "ที่อยู่",
@@ -182,7 +178,7 @@ export default function VisitHomeTable({
       ellipsis: { showTitle: false },
       render: (address) => (
         <Tooltip placement="topLeft" title={decryptData(address)}>
-          <li>{decryptData(address)}</li>
+          {decryptData(address)}
         </Tooltip>
       ),
     },
@@ -206,27 +202,28 @@ export default function VisitHomeTable({
       key: "nextAppointment",
       width: 120,
       align: "center",
-      render: (value: string) =>
-        value ? (
-          <Tag color="blue">{dayjs(value).format("DD-MM-YYYY")}</Tag>
-        ) : (
-          "-"
-        ),
+      render: (text: string) => {
+        if (!text) return "-";
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "จัดการ",
       key: "action",
-      width: 150, // ขยายความกว้างนิดหน่อยเผื่อปุ่มที่ 3
+      width: 150,
       fixed: "right",
       align: "center",
       render: (_, record) => (
         <Space size="small">
-          {/* ปุ่มดูรายละเอียด (สีฟ้า/เขียว) */}
           <Tooltip title="ดูรายละเอียด">
             <FileSearchOutlined
-              type="default"
               style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
-              onClick={() => openModal(record, "view")} // เปิดแบบ view
+              onClick={() => openModal(record, "view")}
             />
           </Tooltip>
 
@@ -234,7 +231,7 @@ export default function VisitHomeTable({
             <EditOutlined
               style={{
                 fontSize: 22,
-                color: "#faad14", // สีส้ม
+                color: "#faad14",
                 cursor: "pointer",
                 transition: "color 0.2s",
               }}
@@ -242,7 +239,6 @@ export default function VisitHomeTable({
             />
           </Tooltip>
 
-          {/* ปุ่มลบ (ไอคอนถังขยะสีแดง) */}
           <Popconfirm
             title="ยืนยันการลบ?"
             description="ข้อมูลนี้จะหายไปจากระบบ"
@@ -255,7 +251,7 @@ export default function VisitHomeTable({
               <DeleteOutlined
                 style={{
                   fontSize: 22,
-                  color: "#ff4d4f", // สีแดง
+                  color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
                 }}
@@ -272,7 +268,7 @@ export default function VisitHomeTable({
       {/* Header Section */}
       <Card bordered={false} style={{ marginBottom: 20, borderRadius: 8 }}>
         <Row justify="space-between" align="middle" gutter={[16, 16]}>
-          <Col xs={24} md={12}>
+          <Col xs={24} md={8}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div
                 style={{
@@ -284,15 +280,26 @@ export default function VisitHomeTable({
               >
                 <UserOutlined style={{ fontSize: 20 }} />
               </div>
-              <span style={{ fontSize: 24, fontWeight: "bold", color: "#333" }}>
+              <span
+                style={{ fontSize: 24, fontWeight: "bold", color: "#0683e9" }}
+              >
                 ข้อมูลการเยี่ยมบ้าน
               </span>
             </div>
           </Col>
 
           {/* Filter Controls */}
-          <Col xs={24} md={12} style={{ textAlign: "right" }}>
+          <Col xs={24} md={16} style={{ textAlign: "right" }}>
             <Space wrap>
+              <ConfigProvider locale={thTH}>
+                <RangePicker
+                  format="D/MMM/YYYY"
+                  placeholder={["วันที่เริ่ม", "วันที่สิ้นสุด"]}
+                  value={filterDate}
+                  onChange={(dates) => setFilterDate(dates)}
+                  style={{ width: 260 }}
+                />
+              </ConfigProvider>
               <Select
                 placeholder="กรองประเภทผู้ป่วย"
                 style={{ width: 180 }}
@@ -312,24 +319,25 @@ export default function VisitHomeTable({
                 prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                style={{ width: 250 }}
+                style={{ width: 200 }}
                 allowClear
               />
 
               <Button
-                icon={<ReloadOutlined />}
+                type="primary"
                 onClick={() => {
                   setSearchText("");
                   setFilterPatientType(null);
+                  setFilterDate(null); // 5. ล้างค่าวันที่เมื่อกดปุ่ม
                   fetchData();
                 }}
               >
-                Reset
+                ล้างตัวกรอง
               </Button>
             </Space>
           </Col>
         </Row>
-    </Card>
+      </Card>
 
       {/* Table Section */}
       <Card
@@ -366,7 +374,7 @@ export default function VisitHomeTable({
         }}
         record={editingRecord}
         masterPatients={masterPatients}
-        initialMode={modalMode} // ส่ง mode ไป
+        initialMode={modalMode}
       />
     </div>
   );

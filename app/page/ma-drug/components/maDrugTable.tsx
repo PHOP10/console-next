@@ -17,6 +17,7 @@ import { exportMaDrugToExcel } from "./maDrugExport";
 import MaDrugTableDetail from "./maDrugDetail";
 import MaDrugEdit from "./maDrugEdit";
 import CustomTable from "../../common/CustomTable";
+import MaDrugReceiveModal from "./maDrugReceiveModal";
 
 interface MaDrugFormProps {
   data: MaDrugType[];
@@ -32,23 +33,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
   const [detailVisible, setDetailVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MaDrugType | null>(null);
-
-  // const fetchData = async () => {
-  //   try {
-  //     setLoading(true);
-  //     const result = await intraAuthService.getMaDrugQuery();
-  //     setData(Array.isArray(result) ? result : result?.data || []);
-  //   } catch (error) {
-  //     console.error("โหลดข้อมูลล้มเหลว:", error);
-  //     message.error("ไม่สามารถดึงข้อมูลการเบิกยาได้");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchData();
-  // }, []);
+  const [receiveVisible, setReceiveVisible] = useState(false);
 
   const handleViewDetail = (record: MaDrugType) => {
     setSelectedRecord(record);
@@ -58,6 +43,11 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
   const handleEdit = (record: MaDrugType) => {
     setSelectedRecord(record);
     setEditVisible(true);
+  };
+
+  const handleOpenReceive = (record: MaDrugType) => {
+    setSelectedRecord(record);
+    setReceiveVisible(true);
   };
 
   const handleExport = (record: MaDrugType) => {
@@ -70,7 +60,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
     }
   };
 
-  // ✅ ฟังก์ชันรับยาเข้าคลัง
   const handleReceive = async (id: number) => {
     try {
       setLoading(true);
@@ -113,7 +102,15 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
       dataIndex: "requestDate",
       key: "requestDate",
       align: "center",
-      render: (value) => new Date(value).toLocaleDateString("th-TH"),
+      render: (text: string) => {
+        if (!text) return "-";
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "สถานะ",
@@ -153,7 +150,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
       align: "center",
       width: 220,
       render: (_, record) => {
-        // ✅ ประกาศตัวแปรเช็คสถานะ เพื่อให้อ่านง่าย
         const isPending = record.status === "pending";
         const isApproved = record.status === "approved";
         const isCompleted = record.status === "completed";
@@ -192,28 +188,20 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
               />
             </Tooltip>
 
-            {/* 2. ปุ่มรับยา (แสดงเฉพาะตอน Approved) */}
-            {/* อันนี้แนะนำให้ "ซ่อน" เหมือนเดิมดีแล้วครับ เพราะเป็นขั้นตอนเฉพาะกิจ */}
             {canReceive && (
               <Tooltip title="ยืนยันรับยาเข้าคลัง">
-                <Popconfirm
-                  title="ยืนยันการรับยา"
-                  description="ตรวจสอบความถูกต้องแล้ว และต้องการนำยาเข้าคลังใช่หรือไม่?"
-                  onConfirm={() => handleReceive(record.id)}
-                  okText="ยืนยัน (อัปเดตสต็อก)"
-                  cancelText="ยกเลิก"
-                >
-                  <Button
-                    type="primary"
-                    shape="circle"
-                    icon={<DownloadOutlined />}
-                    size="small"
-                    style={{
-                      backgroundColor: "#13c2c2",
-                      borderColor: "#13c2c2",
-                    }}
-                  />
-                </Popconfirm>
+                {/* ไม่ต้องใช้ Popconfirm แล้ว เพราะมี Modal ยืนยัน */}
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={<DownloadOutlined />}
+                  size="small"
+                  style={{
+                    backgroundColor: "#13c2c2",
+                    borderColor: "#13c2c2",
+                  }}
+                  onClick={() => handleOpenReceive(record)} // ✅ เรียกเปิด Modal แทน
+                />
               </Tooltip>
             )}
 
@@ -234,9 +222,9 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
             <Tooltip title="พิมพ์ใบเบิกยา">
               <FileExcelOutlined
                 style={{
-                  fontSize: 22, // ขนาดไอคอน
-                  color: "#217346", // สีเขียว Excel
-                  cursor: "pointer", // เปลี่ยนเมาส์เป็นรูปมือ
+                  fontSize: 22,
+                  color: "#217346",
+                  cursor: "pointer",
                   transition: "color 0.2s",
                 }}
                 onClick={() => handleExport(record)}
@@ -250,36 +238,23 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
 
   return (
     <>
-      <Card
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-500 text-center mb-2 tracking-tight">
+          รายการเบิกจ่ายยา
+        </h2>
+        {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
+        <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
+      </div>
+
+      <CustomTable
+        rowKey="id"
+        columns={columns}
+        dataSource={data}
+        loading={loading}
         bordered
-        style={{
-          backgroundColor: "white",
-          borderRadius: "8px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-        }}
-        title={
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#0683e9",
-            }}
-          >
-            ประวัติการเบิกจ่ายยา
-          </div>
-        }
-      >
-        <CustomTable
-          rowKey="id"
-          columns={columns}
-          dataSource={data}
-          loading={loading}
-          bordered
-          pagination={{ pageSize: 10 }}
-          scroll={{ x: 1000 }}
-        />
-      </Card>
+        pagination={{ pageSize: 10 }}
+        scroll={{ x: 1000 }}
+      />
 
       <MaDrugTableDetail
         visible={detailVisible}
@@ -291,6 +266,12 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
         visible={editVisible}
         onClose={() => setEditVisible(false)}
         onSuccess={() => fetchDrugs()}
+        data={selectedRecord}
+      />
+      <MaDrugReceiveModal
+        visible={receiveVisible}
+        onClose={() => setReceiveVisible(false)}
+        onSuccess={() => fetchDrugs()} // โหลดข้อมูลใหม่เมื่อรับยาเสร็จ
         data={selectedRecord}
       />
     </>

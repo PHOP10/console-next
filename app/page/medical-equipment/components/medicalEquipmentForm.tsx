@@ -1,19 +1,28 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Button,
   Form,
   InputNumber,
   DatePicker,
-  Select,
   message,
   Card,
   Row,
   Col,
   Input,
-  FormListFieldData,
+  Table,
+  Tag,
+  Typography,
+  Modal,
+  Space,
 } from "antd";
+import {
+  PlusOutlined,
+  DeleteOutlined,
+  SearchOutlined,
+  ToolOutlined,
+} from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MaMedicalEquipmentType, MedicalEquipmentType } from "../../common";
@@ -22,13 +31,12 @@ import dayjs from "dayjs";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import "dayjs/locale/th";
 import th_TH from "antd/es/date-picker/locale/th_TH";
+
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
 
-import { SaveOutlined } from "@ant-design/icons"; /* ไอคอนสำหรับปุ่มบันททึกฟอร์ม */
-
 const { TextArea } = Input;
-const { Option } = Select;
+const { Text } = Typography;
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -46,32 +54,132 @@ export default function CreateMedicalEquipmentForm({
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
-
   const maService = maMedicalEquipmentServices(intraAuth);
 
+  // State สำหรับ Modal และการเลือก
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTools, setSelectedTools] = useState<any[]>([]); // รายการที่เลือกมาลงตารางหลัก
+  const [tempSelectedKeys, setTempSelectedKeys] = useState<React.Key[]>([]); // state ชั่วคราวใน Modal
+  const [searchText, setSearchText] = useState("");
+
+  // ---------------------------------------------------------------------------
+  // 1. Logic แก้ไขการคำนวณ Stock (หัวใจสำคัญ)
+  // ---------------------------------------------------------------------------
+  const stockData = useMemo(() => {
+    return dataEQ.map((eq) => {
+      const items = eq.items || [];
+
+      // คำนวณยอดที่ถูกจอง (ต้องเช็ค items ของ eq นั้นๆ)
+      const reservedQuantity = items.reduce((sum: number, item: any) => {
+        // ต้องเช็คว่า maMedicalEquipment มีอยู่จริงไหมก่อนเรียก status
+        const status = item.maMedicalEquipment?.status?.toLowerCase();
+
+        // ถ้าสถานะเป็น Pending หรือ Approve ถือว่าของถูกใช้อยู่
+        if (status === "pending" || status === "approve") {
+          return sum + (item.quantity || 0);
+        }
+        return sum;
+      }, 0);
+
+      const totalQuantity = eq.quantity || 0;
+      const remaining = totalQuantity - reservedQuantity;
+
+      return {
+        ...eq,
+        key: eq.id, // ต้องมี key สำหรับ Table
+        reservedQuantity,
+        remainingQuantity: remaining < 0 ? 0 : remaining, // ห้ามติดลบ
+      };
+    });
+  }, [dataEQ]); // คำนวณใหม่เมื่อ dataEQ เปลี่ยน
+
+  // กรองข้อมูลใน Modal ตาม Search Text
+  const modalDataSource = stockData.filter((item) =>
+    item.equipmentName?.toLowerCase().includes(searchText.toLowerCase()),
+  );
+
+  // ---------------------------------------------------------------------------
+  // 2. Event Handlers
+  // ---------------------------------------------------------------------------
+
+  // เปิด Modal
+  const handleOpenModal = () => {
+    // ให้ Modal เลือกรายการที่มีอยู่แล้วไว้ก่อน (Pre-select)
+    setTempSelectedKeys(selectedTools.map((t) => t.id));
+    setSearchText("");
+    setIsModalOpen(true);
+  };
+
+  // กดตกลงใน Modal
+  const handleModalOk = () => {
+    // กรองเอาเฉพาะข้อมูลของ keys ที่เลือก
+    const newSelectedTools = stockData
+      .filter((item) => tempSelectedKeys.includes(item.id))
+      .map((item) => {
+        // ถ้าเคยเลือกไว้แล้ว ให้คงค่าจำนวนเดิม (quantityToSend) ไว้
+        const existing = selectedTools.find((t) => t.id === item.id);
+        return {
+          ...item,
+          quantityToSend: existing ? existing.quantityToSend : undefined,
+        };
+      });
+
+    setSelectedTools(newSelectedTools);
+    setIsModalOpen(false);
+  };
+
+  // ลบรายการออกจากตารางหลัก
+  const handleDeleteItem = (id: number) => {
+    setSelectedTools((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // เปลี่ยนค่าจำนวนที่จะส่ง (InputNumber)
+  const handleQuantityChange = (id: number, value: number | null) => {
+    setSelectedTools((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, quantityToSend: value } : item,
+      ),
+    );
+  };
+
+  // Submit Form
   const onFinish = async (values: any) => {
     try {
+      // Validation: ต้องมีรายการ และทุกรายการต้องระบุจำนวน > 0
+      if (selectedTools.length === 0) {
+        message.warning("กรุณาเลือกเครื่องมืออย่างน้อย 1 รายการ");
+        return;
+      }
+
+      const invalidItems = selectedTools.filter(
+        (t) => !t.quantityToSend || t.quantityToSend <= 0,
+      );
+      if (invalidItems.length > 0) {
+        message.warning("กรุณาระบุจำนวนที่ส่งซ่อมให้ครบถ้วน");
+        return;
+      }
+
       const payload = {
         sentDate: values.sentDate.toISOString(),
-        receivedDate: values.receivedDate
-          ? values.receivedDate.toISOString()
-          : null,
+        receivedDate: null,
         note: values.note,
         createdBy: session?.user?.fullName,
         createdById: session?.user?.userId,
         createdAt: new Date(),
-        items: values.equipmentInfo.map((item: any) => ({
-          medicalEquipmentId: item.medicalEquipmentId,
-          quantity: item.quantity,
+        // Map จาก state selectedTools แทน values ของ Form เดิม
+        items: selectedTools.map((item) => ({
+          medicalEquipmentId: item.id,
+          quantity: item.quantityToSend,
         })),
       };
 
       const res = await maService.createMaMedicalEquipment(payload);
       if (res) {
         setLoading(true);
-        fetchData(); // แก้ไข Syntax เรียกใช้ function
+        await fetchData();
         message.success("บันทึกข้อมูลสำเร็จ");
         form.resetFields();
+        setSelectedTools([]); // เคลียร์ตาราง
       } else {
         message.error("ไม่สามารถบันทึกข้อมูลได้");
       }
@@ -81,246 +189,128 @@ export default function CreateMedicalEquipmentForm({
     }
   };
 
-  useEffect(() => {
-    form.resetFields();
-  }, [form]);
+  // ---------------------------------------------------------------------------
+  // 3. UI Components (Columns)
+  // ---------------------------------------------------------------------------
 
-  // --- Styles Constants ---
-  const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+  // Columns ของ Modal (เลือกของ)
+  const modalColumns = [
+    {
+      title: "ชื่อเครื่องมือ",
+      dataIndex: "equipmentName",
+      render: (text: string, record: any) => (
+        <span>
+          {text} {record.remainingQuantity === 0 && <Tag color="red">หมด</Tag>}
+        </span>
+      ),
+    },
+    {
+      title: "คงเหลือ",
+      dataIndex: "remainingQuantity",
+      width: 100,
+      align: "center" as const,
+      render: (val: number) => (
+        <span
+          className={val > 0 ? "text-green-600 font-bold" : "text-gray-400"}
+        >
+          {val}
+        </span>
+      ),
+    },
+  ];
 
-  // สไตล์เฉพาะสำหรับ Select ของ Ant Design ให้มนและมีเงา
-  const selectStyle =
-    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+  // Columns ของตารางหลัก (กรอกจำนวน)
+  const mainTableColumns = [
+    {
+      title: "ชื่อเครื่องมือ",
+      dataIndex: "equipmentName",
+      key: "equipmentName",
+    },
+    {
+      title: "คงเหลือ",
+      dataIndex: "remainingQuantity",
+      key: "remainingQuantity",
+      width: 100,
+      align: "center" as const,
+      render: (val: number) => <Tag>{val}</Tag>,
+    },
+    {
+      title: "จำนวนที่ส่งซ่อม",
+      key: "quantityToSend",
+      width: 180,
+      render: (_: any, record: any) => (
+        <InputNumber
+          min={1}
+          max={record.remainingQuantity}
+          placeholder="ระบุจำนวน"
+          className="w-full"
+          value={record.quantityToSend}
+          onChange={(val) => handleQuantityChange(record.id, val)}
+          status={!record.quantityToSend ? "warning" : ""}
+        />
+      ),
+    },
+    {
+      title: "",
+      key: "action",
+      width: 50,
+      render: (_: any, record: any) => (
+        <Button
+          type="text"
+          danger
+          icon={<DeleteOutlined />}
+          onClick={() => handleDeleteItem(record.id)}
+        />
+      ),
+    },
+  ];
 
   return (
-    <Card>
-      <Form
-        preserve={false}
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        initialValues={{ status: "Pending" }}
-      >
-        <Form.List name="equipmentInfo">
-          {(fields, { add, remove }) => {
-            const groupedFields: FormListFieldData[][] = [];
-            for (let i = 0; i < fields.length; i += 2) {
-              groupedFields.push(fields.slice(i, i + 2));
-            }
+    <Card className="shadow-lg rounded-2xl border-gray-100 overflow-hidden mt-5">
+      <Form form={form} layout="vertical" onFinish={onFinish} preserve={false}>
+        {/* ส่วนหัวตาราง + ปุ่มกดเลือก */}
+        <div className="flex justify-between items-center mb-4">
+          <Text strong className="text-base text-gray-700">
+            รายการเครื่องมือที่ส่งนึ่งฆ่าเชื้อ
+          </Text>
+          <Button
+            type="dashed"
+            icon={<PlusOutlined />}
+            onClick={handleOpenModal}
+            className="text-blue-600 border-blue-300 hover:bg-blue-50"
+          >
+            เลือกเครื่องมือ
+          </Button>
+        </div>
 
+        {/* ตารางหลัก (แสดงเฉพาะที่เลือก) */}
+        <Table
+          dataSource={selectedTools}
+          columns={mainTableColumns}
+          pagination={false}
+          locale={{ emptyText: "ยังไม่ได้เลือกเครื่องมือ" }}
+          bordered
+          size="middle"
+          summary={(pageData) => {
+            if (pageData.length > 0) return null;
             return (
-              <>
-                <div className="mb-4 text-base font-semibold text-gray-700">
-                  รายการเครื่องมือที่ส่งซ่อม
-                </div>
-
-                {groupedFields.map((pair, rowIndex) => (
-                  <Row gutter={24} key={rowIndex} className="mb-2">
-                    {pair.map(({ key, name, ...restField }) => (
-                      <Col span={12} key={key}>
-                        {/* กรอบของแต่ละ Item เพื่อให้ดูเป็นกลุ่มก้อน */}
-                        <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4 relative hover:shadow-md transition-shadow">
-                          <Row gutter={12} align="bottom">
-                            {/* 1. เลือกเครื่องมือ */}
-                            <Col flex="auto">
-                              <Form.Item
-                                {...restField}
-                                label={
-                                  <span className="text-gray-600">
-                                    ชื่อเครื่องมือ
-                                  </span>
-                                }
-                                name={[name, "medicalEquipmentId"]}
-                                rules={[
-                                  {
-                                    required: true,
-                                    message: "กรุณาเลือกเครื่องมือ",
-                                  },
-                                ]}
-                                style={{ marginBottom: 0 }}
-                              >
-                                <Select
-                                  placeholder="เลือกเครื่องมือ"
-                                  showSearch
-                                  optionFilterProp="children"
-                                  className={selectStyle}
-                                >
-                                  {dataEQ.map((eq) => {
-                                    // --- Logic คำนวณ Stock คงเดิม ---
-                                    const reservedQuantity = dataEQ
-                                      .flatMap((ma) => ma.items || [])
-                                      .filter(
-                                        (item: any) =>
-                                          item.medicalEquipmentId === eq.id &&
-                                          ["pending", "approve"].includes(
-                                            item.maMedicalEquipment?.status,
-                                          ),
-                                      )
-                                      .reduce(
-                                        (sum: number, item: any) =>
-                                          sum + item.quantity,
-                                        0,
-                                      );
-
-                                    const remainingQuantity =
-                                      eq.quantity - reservedQuantity;
-
-                                    const selectedIds = (
-                                      form.getFieldValue("equipmentInfo") ?? []
-                                    )
-                                      .filter((i: any) => i)
-                                      .map((i: any) => i.medicalEquipmentId)
-                                      .filter((id: any) => id !== undefined);
-
-                                    const isSelected =
-                                      selectedIds.includes(eq.id) &&
-                                      eq.id !==
-                                        form.getFieldValue([
-                                          "equipmentInfo",
-                                          name,
-                                          "medicalEquipmentId",
-                                        ]);
-
-                                    return (
-                                      <Option
-                                        key={eq.id}
-                                        value={eq.id}
-                                        disabled={
-                                          isSelected || remainingQuantity <= 0
-                                        }
-                                      >
-                                        {eq.equipmentName} (คงเหลือ{" "}
-                                        {remainingQuantity})
-                                      </Option>
-                                    );
-                                  })}
-                                </Select>
-                              </Form.Item>
-                            </Col>
-
-                            {/* 2. จำนวน */}
-                            <Col flex="100px">
-                              <Form.Item
-                                {...restField}
-                                label={
-                                  <span className="text-gray-600">จำนวน</span>
-                                }
-                                name={[name, "quantity"]}
-                                style={{ marginBottom: 0 }}
-                                rules={[
-                                  { required: true, message: "ระบุจำนวน" },
-                                  ({ getFieldValue }) => ({
-                                    validator(_, value) {
-                                      const equipmentId = getFieldValue([
-                                        "equipmentInfo",
-                                        name,
-                                        "medicalEquipmentId",
-                                      ]);
-                                      if (!equipmentId)
-                                        return Promise.resolve();
-
-                                      const selected = dataEQ.find(
-                                        (eq) => eq.id === equipmentId,
-                                      );
-
-                                      if (selected) {
-                                        const reservedQuantity = dataEQ
-                                          .flatMap((ma) => ma.items || [])
-                                          .filter(
-                                            (item: any) =>
-                                              item.medicalEquipmentId ===
-                                                selected.id &&
-                                              ["pending", "approve"].includes(
-                                                item.maMedicalEquipment?.status,
-                                              ),
-                                          )
-                                          .reduce(
-                                            (sum: number, item: any) =>
-                                              sum + item.quantity,
-                                            0,
-                                          );
-
-                                        const actualRemainingQuantity =
-                                          selected.quantity - reservedQuantity;
-
-                                        if (value > actualRemainingQuantity) {
-                                          return Promise.reject(
-                                            new Error(
-                                              `เกินสต็อก (${actualRemainingQuantity})`,
-                                            ),
-                                          );
-                                        }
-                                      }
-                                      return Promise.resolve();
-                                    },
-                                  }),
-                                ]}
-                              >
-                                <InputNumber
-                                  min={1}
-                                  placeholder="0"
-                                  className="w-full h-11 rounded-xl border-gray-300 shadow-sm pt-1" // pt-1 เพื่อจัด text ให้กลางเพราะ InputNumber มี padding แปลกๆ
-                                />
-                              </Form.Item>
-                            </Col>
-
-                            {/* 3. ปุ่มลบ */}
-                            <Col>
-                              <Button
-                                danger
-                                type="text"
-                                onClick={() => remove(name)}
-                                className="h-11 w-11 flex items-center justify-center rounded-xl hover:bg-red-50"
-                              >
-                                ลบ
-                              </Button>
-                            </Col>
-                          </Row>
-                        </div>
-                      </Col>
-                    ))}
-                  </Row>
-                ))}
-
-                {/* ปุ่มเพิ่มรายการ */}
-                <Form.Item>
-                  <Button
-                    type="dashed"
-                    block
-                    onClick={() => {
-                      const values = form.getFieldValue("equipmentInfo") || [];
-                      const lastItem = values[values.length - 1];
-
-                      if (values.length === 0) {
-                        add();
-                        return;
-                      }
-
-                      if (
-                        !lastItem ||
-                        !lastItem.medicalEquipmentId ||
-                        !lastItem.quantity
-                      ) {
-                        message.warning(
-                          "กรุณากรอกข้อมูลเครื่องมือและจำนวนให้ครบก่อน",
-                        );
-                        return;
-                      }
-                      add();
-                    }}
-                    className="h-11 rounded-xl border-blue-300 text-blue-500 hover:text-blue-600 hover:bg-blue-50 hover:border-blue-400 shadow-sm transition-all"
+              <Table.Summary.Row>
+                <Table.Summary.Cell index={0} colSpan={4}>
+                  <div
+                    className="text-center py-8 text-gray-400 cursor-pointer"
+                    onClick={handleOpenModal}
                   >
-                    + เพิ่มรายการเครื่องมือ
-                  </Button>
-                </Form.Item>
-              </>
+                    + กดที่นี่เพื่อเลือกเครื่องมือ
+                  </div>
+                </Table.Summary.Cell>
+              </Table.Summary.Row>
             );
           }}
-        </Form.List>
+        />
 
         <div className="border-t border-gray-100 my-6 pt-6"></div>
 
+        {/* ส่วนข้อมูลวันที่และหมายเหตุ (เหมือนเดิม) */}
         <Row gutter={24}>
           <Col span={12}>
             <Form.Item
@@ -331,32 +321,36 @@ export default function CreateMedicalEquipmentForm({
               <DatePicker
                 locale={th_TH}
                 format="D MMMM BBBB"
-                placeholder="เลือกวันที่"
-                className={`${inputStyle} w-full`} // ใช้ inputStyle ร่วมกับ w-full
+                className="w-full h-11 rounded-xl"
                 disabledDate={(current) => {
                   if (!current) return false;
+
+                  // 1. ห้ามเลือกวันในอดีต
                   const today = dayjs().startOf("day");
-                  if (current < today) return true;
-                  const bookedDates = data
-                    .map((item: any) =>
-                      item.sentDate
-                        ? dayjs(item.sentDate).startOf("day")
-                        : null,
-                    )
-                    .filter(Boolean);
-                  return bookedDates.some((d: any) => d.isSame(current, "day"));
+                  if (current.isBefore(today)) return true;
+
+                  // 2. ห้ามเลือกวันที่ซ้ำกับที่มีอยู่แล้ว (check duplicate)
+                  const isDuplicate = data.some((item) => {
+                    // ถ้าไม่มีวันที่ หรือ รายการนั้นถูก "ยกเลิก" ไปแล้ว -> ไม่นับว่าซ้ำ (เลือกได้)
+                    if (!item.sentDate || item.status === "cancel")
+                      return false;
+
+                    // เช็คว่าวันที่ตรงกันหรือไม่
+                    return dayjs(item.sentDate).isSame(current, "day");
+                  });
+
+                  return isDuplicate;
                 }}
               />
             </Form.Item>
           </Col>
-
           <Col span={12}>
             <Form.Item label="หมายเหตุ" name="note">
               <TextArea
-                rows={1} // เริ่มต้น 1 บรรทัด แต่จะขยายถ้ามีข้อความ (หรือปรับเป็น 2 ก็ได้)
-                placeholder="รายละเอียดเพิ่มเติม (ถ้ามี)"
-                className="rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md"
-                style={{ minHeight: "44px" }} // ให้สูงเท่า Input ปกติ
+                rows={1}
+                placeholder="รายละเอียดเพิ่มเติม"
+                className="rounded-xl"
+                style={{ minHeight: "44px" }}
               />
             </Form.Item>
           </Col>
@@ -364,15 +358,48 @@ export default function CreateMedicalEquipmentForm({
 
         <Form.Item className="text-center mt-4 mb-0">
           <Button
-            icon={<SaveOutlined />}
             type="primary"
             htmlType="submit"
-            className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+            className="h-10 px-8 rounded-lg shadow-md bg-[#0683e9]"
           >
             บันทึกข้อมูล
           </Button>
         </Form.Item>
       </Form>
+
+      <Modal
+        title="เลือกเครื่องมือแพทย์"
+        open={isModalOpen}
+        onOk={handleModalOk}
+        onCancel={() => setIsModalOpen(false)}
+        width={600}
+        okText="ยืนยันการเลือก"
+        cancelText="ยกเลิก"
+      >
+        <Input
+          placeholder="ค้นหาชื่อเครื่องมือ..."
+          prefix={<SearchOutlined />}
+          className="mb-4"
+          value={searchText}
+          onChange={(e) => setSearchText(e.target.value)}
+        />
+        <Table
+          rowSelection={{
+            type: "checkbox",
+            selectedRowKeys: tempSelectedKeys,
+            onChange: (keys) => setTempSelectedKeys(keys),
+            // ปิดไม่ให้เลือกรายการที่ของหมด (Remaining = 0)
+            getCheckboxProps: (record) => ({
+              disabled: record.remainingQuantity <= 0,
+            }),
+          }}
+          dataSource={modalDataSource}
+          columns={modalColumns}
+          pagination={{ pageSize: 5 }}
+          size="small"
+          scroll={{ y: 300 }} // Fix ความสูงถ้ามีของเยอะ
+        />
+      </Modal>
     </Card>
   );
 }

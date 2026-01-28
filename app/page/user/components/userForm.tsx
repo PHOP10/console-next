@@ -1,7 +1,17 @@
 "use client";
 
 import React, { useState } from "react";
-import { Modal, Form, Input, Select, message, Button, DatePicker } from "antd";
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  message,
+  Button,
+  DatePicker,
+  Row,
+  Col,
+} from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../services/user.service";
 
@@ -11,6 +21,10 @@ interface UserFormProps {
 
 const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // 1. เพิ่ม State สำหรับ Loading
+  const [loading, setLoading] = useState(false);
+
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = userService(intraAuth);
@@ -18,11 +32,16 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
   const handleAddUser = async () => {
     try {
       const values = await form.validateFields();
+
+      // เปิด Loading ก่อนเริ่มยิง API
+      setLoading(true);
+
       const payload = {
         ...values,
         startDate: values.startDate ? values.startDate.toISOString() : null,
-        createdAt: values.createdAt ? values.createdAt.toISOString() : null,
+        // 2. ลบ createdAt ออก (ให้ Backend จัดการเอง ปลอดภัยกว่า)
       };
+
       await intraAuthService.createUser(payload);
 
       message.success("เพิ่มผู้ใช้สำเร็จ");
@@ -30,15 +49,21 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
       form.resetFields();
       fetchData();
     } catch (err: any) {
-      if (err?.errorFields) return;
+      if (err?.errorFields) return; // เงียบไว้ถ้าเป็น validate error
       console.error("Create User Error:", err);
       message.error("ไม่สามารถเพิ่มผู้ใช้ได้");
+    } finally {
+      // ปิด Loading ไม่ว่าจะสำเร็จหรือล้มเหลว
+      setLoading(false);
     }
   };
 
-  // --- Class สำหรับ Input ที่เน้นมิติ (Dimension) ---
   const inputStyle =
     "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+
+  // สร้าง Style กลางสำหรับ Select ให้เหมือน Input
+  const selectStyle =
+    "h-11 [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
 
   return (
     <>
@@ -56,7 +81,6 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
       </div>
 
       <Modal
-        // --- ปรับส่วน Title ตรงนี้ ---
         title={
           <div className="text-xl font-bold text-[#0683e9] text-center w-full">
             เพิ่มผู้ใช้
@@ -64,14 +88,16 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
         }
         open={isModalOpen}
         onOk={handleAddUser}
+        // 3. เพิ่ม confirmLoading เพื่อหมุนติ้วๆ ที่ปุ่มบันทึก
+        confirmLoading={loading}
         onCancel={() => setIsModalOpen(false)}
         okText="บันทึก"
-        cancelText="ยกเลิก"
+        cancelButtonProps={{ style: { display: "none" } }}
         width={800}
         centered
         styles={{
           content: { borderRadius: "20px", padding: "30px" },
-          header: { marginBottom: "20px" }, // เพิ่มระยะห่างใต้หัวข้อเล็กน้อย
+          header: { marginBottom: "20px" },
         }}
       >
         <Form form={form} layout="vertical" className="mt-2">
@@ -103,7 +129,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
             >
               <Select
                 placeholder="เลือกเพศ"
-                className="h-11 [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm"
+                className={selectStyle}
                 options={[
                   { label: "นาย", value: "male" },
                   { label: "นาง", value: "female" },
@@ -122,7 +148,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
                 style={{ width: "100%" }}
                 placeholder="เลือกวันที่เริ่มงาน"
                 format="DD/MM/YYYY"
-                className="h-11 shadow-sm rounded-xl border-gray-300"
+                className="h-11 shadow-sm rounded-xl border-gray-300 hover:border-blue-400"
               />
             </Form.Item>
 
@@ -148,9 +174,26 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
             <Form.Item
               label="รหัสพนักงาน"
               name="employeeId"
-              rules={[{ required: true, message: "กรุณากรอกรหัสพนักงาน" }]}
+              rules={[
+                { required: true, message: "กรุณากรอกรหัสพนักงาน" },
+                {
+                  pattern: /^[0-9]{2}$/,
+                  message: "กรุณากรอกตัวเลข 2 หลัก (00-99)",
+                },
+              ]}
             >
-              <Input placeholder="รหัสพนักงาน" className={inputStyle} />
+              <Input
+                placeholder="รหัสพนักงาน"
+                className={inputStyle}
+                maxLength={2}
+                // 4. เพิ่ม inputMode เพื่อให้มือถือเด้งแป้นตัวเลข
+                inputMode="numeric"
+                onKeyPress={(event) => {
+                  if (!/[0-9]/.test(event.key)) {
+                    event.preventDefault();
+                  }
+                }}
+              />
             </Form.Item>
 
             {/* 8. Position */}
@@ -161,18 +204,18 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
             >
               <Select
                 placeholder="เลือกตำแหน่ง"
-                className="h-11 [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm"
+                className={selectStyle}
                 options={[
-                  {
-                    label: "ผู้อำนวยการสถานีอนามัย",
-                    value: "ผู้อำนวยการสถานีอนามัย",
-                  },
+                  { label: "ผู้อำนวยการ รพ.สต.", value: "ผู้อำนวยการ รพ.สต." },
                   { label: "พยาบาลวิชาชีพ", value: "พยาบาลวิชาชีพ" },
                   {
                     label: "นักวิชาการสาธารณสุข",
                     value: "นักวิชาการสาธารณสุข",
                   },
-                  { label: "เจ้าหน้าที่พนักงาน", value: "เจ้าหน้าที่พนักงาน" },
+                  {
+                    label: "เจ้าพนักงานสาธารณสุข",
+                    value: "เจ้าพนักงานสาธารณสุข",
+                  },
                 ]}
               />
             </Form.Item>
@@ -181,10 +224,7 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
             <Form.Item
               label="อีเมล"
               name="email"
-              rules={[
-                { required: true, message: "กรุณากรอกอีเมล" },
-                { type: "email", message: "อีเมลไม่ถูกต้อง" },
-              ]}
+              rules={[{ type: "email", message: "อีเมลไม่ถูกต้อง" }]}
             >
               <Input placeholder="Email" className={inputStyle} />
             </Form.Item>
@@ -194,7 +234,6 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
               label="เบอร์โทร"
               name="phoneNumber"
               rules={[
-                { required: true, message: "กรุณากรอกเบอร์โทร" },
                 {
                   pattern: /^[0-9]{10}$/,
                   message: "กรุณากรอกเบอร์โทร 10 หลัก",
@@ -205,24 +244,31 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
                 placeholder="เบอร์โทรศัพท์"
                 maxLength={10}
                 className={inputStyle}
+                // 4. เพิ่ม inputMode เพื่อให้มือถือเด้งแป้นตัวเลข
+                inputMode="numeric"
+                onKeyPress={(event) => {
+                  if (!/[0-9]/.test(event.key)) {
+                    event.preventDefault();
+                  }
+                }}
               />
             </Form.Item>
 
             {/* 11. Role */}
             <Form.Item
-              label="ระดับผู้ใช้"
+              label="สิทธิ์การใช้งานระบบ"
               name="role"
               initialValue="user"
-              rules={[{ required: true, message: "กรุณาเลือก Role" }]}
+              rules={[{ required: true, message: "กรุณาเลือกสิทธิ์การใช้งาน" }]}
             >
               <Select
-                className="h-11 [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm"
+                className={selectStyle}
                 options={[
-                  { label: "ผู้ใช้", value: "user" },
                   { label: "หัวหน้า", value: "admin" },
                   { label: "ผู้ดูแลระบบคลังยา", value: "pharmacy" },
                   { label: "ผู้ดูแลระบบครุภัณฑ์", value: "asset" },
                   { label: "ผู้ดูแลระบบเยี่ยมบ้าน", value: "home" },
+                  { label: "ผู้ใช้งานทั่วไป", value: "user" },
                 ]}
               />
             </Form.Item>

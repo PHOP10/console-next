@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Modal,
   Form,
@@ -19,24 +19,29 @@ import th_TH from "antd/locale/th_TH";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
+import { SaveOutlined } from "@ant-design/icons";
 
 interface DurableArticleEditModalProps {
   open: boolean;
-  onClose: () => void;
-  onSuccess: () => void;
+  onClose: () => void; // ใช้ฟังก์ชันนี้ฟังก์ชันเดียวในการปิด
   record: DurableArticleType | null;
+  fetchData: () => Promise<void>;
 }
 
 export default function DurableArticleEditModal({
   open,
   onClose,
-  onSuccess,
   record,
+  fetchData,
 }: DurableArticleEditModalProps) {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
+
+  // Refs สำหรับปิด Select Dropdown
+  const categoryRef = useRef<any>(null);
+  const acquisitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (open && record) {
@@ -44,15 +49,16 @@ export default function DurableArticleEditModal({
         ...record,
         acquiredDate: record.acquiredDate ? dayjs(record.acquiredDate) : null,
       });
-    } else {
-      form.resetFields();
     }
+    // ไม่ต้อง resetFields ใน else เพราะเราใช้ key ที่ Parent จัดการล้างค่าให้แล้ว
   }, [open, record, form]);
 
   const handleUpdate = async (values: any) => {
     if (!record) return;
+
+    setLoading(true); // หมุนปุ่ม
+
     try {
-      setLoading(true);
       const payload = {
         ...values,
         id: record.id,
@@ -61,25 +67,41 @@ export default function DurableArticleEditModal({
           : null,
       };
 
+      // 1. ยิง API บันทึก (ถ้าพังจะกระโดดไป catch)
       await intraAuthService.updateDurableArticle(payload);
+
       message.success("แก้ไขข้อมูลสำเร็จ");
-      onSuccess(); // แจ้งตัวแม่ให้โหลดข้อมูลใหม่
-      onClose();
     } catch (error) {
       console.error("Error updating:", error);
       message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
-    } finally {
-      setLoading(false);
+      setLoading(false); // หยุดหมุนเฉพาะเมื่อ Error
+      return; // จบการทำงาน ไม่ปิด Modal
     }
+    onClose();
+    // 3. สั่ง Refresh ข้อมูลเงียบๆ ข้างหลัง
+    try {
+      await fetchData();
+    } catch (refreshError) {
+      console.warn("Refresh failed:", refreshError);
+    }
+
+    // ไม่ต้อง setLoading(false) เพราะ Modal ถูกปิดไปแล้ว (Unmount)
   };
 
-  // --- Style Constants (Master Template) ---
+  const formatBuddhist = (value: dayjs.Dayjs | null) => {
+    if (!value) return "";
+    const date = dayjs(value).locale("th");
+    const day = date.date();
+    const month = date.format("MMMM");
+    const year = date.year() + 543;
+    return `${day} ${month} ${year}`;
+  };
+
+  // --- Style Constants ---
   const inputStyle =
     "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
-
   const textAreaStyle =
     "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
-
   const selectStyle =
     "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
 
@@ -91,7 +113,7 @@ export default function DurableArticleEditModal({
         </div>
       }
       open={open}
-      onCancel={onClose}
+      onCancel={onClose} // กดปุ่ม X หรือคลิกข้างนอก ก็เรียก onClose
       footer={null}
       width={900}
       centered
@@ -107,9 +129,9 @@ export default function DurableArticleEditModal({
     >
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={handleUpdate}>
-          {/* Row 1: รหัส, วันที่ */}
+          {/* --- Row 1 --- */}
           <Row gutter={24}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="รหัส"
                 name="code"
@@ -131,25 +153,7 @@ export default function DurableArticleEditModal({
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item
-                label="วันที่ได้มา"
-                name="acquiredDate"
-                rules={[{ required: true, message: "กรุณาเลือกวันที่ได้มา" }]}
-              >
-                <DatePicker
-                  format="DD/MM/YYYY"
-                  style={{ width: "100%" }}
-                  className={`${inputStyle} pt-2`}
-                  placeholder="เลือกวันที่"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Row 2: เอกสาร, รายละเอียด */}
-          <Row gutter={24}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentId"
@@ -168,30 +172,11 @@ export default function DurableArticleEditModal({
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
-              <Form.Item
-                label="ชื่อ ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
-                name="description"
-                rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
-              >
-                <Input.TextArea
-                  rows={2}
-                  className={textAreaStyle}
-                  placeholder="รายละเอียด..."
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Row 3: ทะเบียน, ประเภท */}
-          <Row gutter={24}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="หมายเลขและทะเบียน"
                 name="registrationNumber"
-                rules={[
-                  { required: true, message: "กรุณาหมายเลขและทะเบียน" },
-                ]}
+                rules={[{ required: true, message: "กรุณาหมายเลขและทะเบียน" }]}
               >
                 <Input
                   placeholder="กรอกหมายเลขและทะเบียน"
@@ -199,6 +184,43 @@ export default function DurableArticleEditModal({
                 />
               </Form.Item>
             </Col>
+          </Row>
+
+          {/* --- Row 2 --- */}
+          <Row gutter={24}>
+            <Col span={12}>
+              <Form.Item
+                label="ชื่อ ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
+                name="description"
+                rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
+              >
+                <Input.TextArea
+                  rows={1}
+                  className={textAreaStyle}
+                  maxLength={200}
+                  style={{ minHeight: "44px" }}
+                  placeholder="กรอกชื่อ ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="สถานที่ตั้ง/ที่อยู่"
+                name="location"
+                rules={[{ required: true, message: "กรุณาระบุสถานที่ตั้ง" }]}
+              >
+                <Input.TextArea
+                  placeholder="กรอกสถานที่ตั้ง/ที่อยู่"
+                  className={inputStyle}
+                  maxLength={150}
+                  style={{ minHeight: "44px" }}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* --- Row 3 --- */}
+          <Row gutter={24}>
             <Col span={12}>
               <Form.Item
                 label="ประเภท"
@@ -206,14 +228,9 @@ export default function DurableArticleEditModal({
                 rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
               >
                 <Select
+                  ref={categoryRef}
                   placeholder="เลือกประเภท"
                   className={selectStyle}
-                  onChange={(value) => {
-                    form.setFieldValue(
-                      "category",
-                      value === "other" ? "" : value
-                    );
-                  }}
                   dropdownRender={(menu) => (
                     <>
                       {menu}
@@ -222,16 +239,19 @@ export default function DurableArticleEditModal({
                           placeholder="กรอกประเภทอื่นๆ"
                           className="rounded-lg"
                           onPressEnter={(e) => {
+                            e.preventDefault();
                             form.setFieldValue(
                               "category",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
+                            categoryRef.current?.blur();
                           }}
                           onBlur={(e) => {
-                            form.setFieldValue(
-                              "category",
-                              e.currentTarget.value
-                            );
+                            if (e.currentTarget.value)
+                              form.setFieldValue(
+                                "category",
+                                e.currentTarget.value,
+                              );
                           }}
                         />
                       </div>
@@ -265,25 +285,7 @@ export default function DurableArticleEditModal({
                   <Select.Option value="ครุภัณฑ์ก่อสร้าง">
                     ครุภัณฑ์ก่อสร้าง
                   </Select.Option>
-                  <Select.Option value="other">ครุภัณฑ์อื่น...</Select.Option>
                 </Select>
-              </Form.Item>
-            </Col>
-          </Row>
-
-          {/* Row 4: ลักษณะ, ผู้ขาย */}
-          <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                label="ลักษณะ/คุณสมบัติ"
-                name="attributes"
-                rules={[{ required: true, message: "กรุณากรอกคุณสมบัติ" }]}
-              >
-                <Input.TextArea
-                  rows={2}
-                  placeholder="กรอกลักษณะ/คุณสมบัติ "
-                  className={textAreaStyle}
-                />
               </Form.Item>
             </Col>
             <Col span={12}>
@@ -298,30 +300,17 @@ export default function DurableArticleEditModal({
                 ]}
               >
                 <Input.TextArea
-                  rows={2}
-                  placeholder="กรอกชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
-                  className={textAreaStyle}
+                  className={inputStyle}
+                  placeholder="ระบุชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+                  maxLength={150}
+                  style={{ minHeight: "44px" }}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* Row 5: ราคา, วิธีได้มา */}
+          {/* --- Row 4 --- */}
           <Row gutter={24}>
-            <Col span={12}>
-              <Form.Item
-                label="ราคาต่อหน่วย"
-                name="unitPrice"
-                rules={[{ required: true, message: "กรุณากรอกราคาต่อหน่วย" }]}
-              >
-                <InputNumber
-                  min={0}
-                  step={0.01}
-                  style={{ width: "100%" }}
-                  className={`${inputStyle} pt-1`}
-                />
-              </Form.Item>
-            </Col>
             <Col span={12}>
               <Form.Item
                 name="acquisitionType"
@@ -329,14 +318,9 @@ export default function DurableArticleEditModal({
                 rules={[{ required: true, message: "กรุณาเลือกวิธีการได้มา" }]}
               >
                 <Select
+                  ref={acquisitionRef}
                   placeholder="เลือกงบประมาณ"
                   className={selectStyle}
-                  onChange={(value) => {
-                    form.setFieldValue(
-                      "acquisitionType",
-                      value === "other" ? "" : value
-                    );
-                  }}
                   dropdownRender={(menu) => (
                     <>
                       {menu}
@@ -345,16 +329,19 @@ export default function DurableArticleEditModal({
                           placeholder="กรอกงบประมาณอื่นๆ"
                           className="rounded-lg"
                           onPressEnter={(e) => {
+                            e.preventDefault();
                             form.setFieldValue(
                               "acquisitionType",
-                              e.currentTarget.value
+                              e.currentTarget.value,
                             );
+                            acquisitionRef.current?.blur();
                           }}
                           onBlur={(e) => {
-                            form.setFieldValue(
-                              "acquisitionType",
-                              e.currentTarget.value
-                            );
+                            if (e.currentTarget.value)
+                              form.setFieldValue(
+                                "acquisitionType",
+                                e.currentTarget.value,
+                              );
                           }}
                         />
                       </div>
@@ -366,52 +353,93 @@ export default function DurableArticleEditModal({
                   <Select.Option value="เงินงบประมาณ ตกลงราคา">
                     เงินงบประมาณ ตกลงราคา
                   </Select.Option>
-                  <Select.Option value="other">อื่นๆ...</Select.Option>
+                  <Select.Option value="สนับสนุน">สนับสนุน</Select.Option>
                 </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                label="วันที่ได้มา"
+                name="acquiredDate"
+                rules={[{ required: true, message: "กรุณาเลือกวันที่ได้มา" }]}
+              >
+                <DatePicker
+                  style={{ width: "100%" }}
+                  placeholder="เลือกวันที่"
+                  format={(value) => formatBuddhist(value as dayjs.Dayjs)}
+                  className={`${inputStyle} pt-2`}
+                />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* Row 6: อายุ, ค่าเสื่อม */}
+          {/* --- Row 5 --- */}
           <Row gutter={24}>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
-                label="อายุการใช้งาน (ปี)"
-                name="usageLifespanYears"
-                rules={[
-                  { required: true, message: "กรุณากรอกอายุการใช้งาน" },
-                ]}
+                label="ราคาต่อหน่วย"
+                name="unitPrice"
+                rules={[{ required: true, message: "กรุณากรอกราคาต่อหน่วย" }]}
               >
                 <InputNumber
-                  min={1}
+                  min={0}
+                  step={0.01}
+                  precision={2}
+                  formatter={(value) =>
+                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value: any) => value!.replace(/\$\s?|(,*)/g, "")}
                   style={{ width: "100%" }}
                   className={`${inputStyle} pt-1`}
+                  placeholder="0.00"
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
               <Form.Item
                 label="ค่าเสื่อมราคาต่อเดือน"
                 name="monthlyDepreciation"
                 rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอกค่าเสื่อมราคาต่อเดือน",
-                  },
+                  { required: true, message: "กรุณากรอกค่าเสื่อมราคาต่อเดือน" },
                 ]}
               >
                 <InputNumber
                   min={0}
                   step={0.01}
+                  precision={2}
+                  formatter={(value) =>
+                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value: any) => value!.replace(/\$\s?|(,*)/g, "")}
                   style={{ width: "100%" }}
                   className={`${inputStyle} pt-1`}
+                  placeholder="0.00"
+                />
+              </Form.Item>
+            </Col>
+            <Col span={8}>
+              <Form.Item
+                label="อายุการใช้งาน (ปี)"
+                name="usageLifespanYears"
+                rules={[{ required: true, message: "กรุณากรอกอายุการใช้งาน" }]}
+              >
+                <InputNumber
+                  min={1}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1`}
+                  placeholder="0"
                 />
               </Form.Item>
             </Col>
           </Row>
 
+          {/* --- Row 6 --- */}
           <Form.Item label="หมายเหตุ" name="note">
-            <Input.TextArea rows={2} className={textAreaStyle} />
+            <Input.TextArea
+              rows={2}
+              className={textAreaStyle}
+              placeholder="กรอกหมายเหตุ (ถ้ามี)"
+            />
           </Form.Item>
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
@@ -425,9 +453,10 @@ export default function DurableArticleEditModal({
               type="primary"
               htmlType="submit"
               loading={loading}
-              className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
+              icon={<SaveOutlined />}
+              className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0 flex items-center"
             >
-              บันทึก
+              บันทึกแก้ไข
             </Button>
           </div>
         </Form>

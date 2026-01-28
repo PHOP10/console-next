@@ -29,9 +29,7 @@ import {
   CalendarOutlined,
   MedicineBoxOutlined,
 } from "@ant-design/icons";
-
 import "./Form.css";
-
 import { ExperimentOutlined } from "@ant-design/icons"; /* ตัวอย่างข้อมูล */
 
 const { Option } = Select;
@@ -273,7 +271,7 @@ export default function VisitHomeForm() {
               <Col xs={24} md={6}>
                 <Form.Item name="referralDate" label="วันที่ส่ง">
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    format="DD MMMM YYYY"
                     className={`${inputStyle} pt-2`}
                     style={{ width: "100%" }}
                   />
@@ -340,7 +338,7 @@ export default function VisitHomeForm() {
               <Col xs={24} md={6}>
                 <Form.Item name="dob" label="วันเกิด">
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    format="DD MMMM YYYY"
                     className={`${inputStyle} pt-2`}
                     style={{ width: "100%" }}
                   />
@@ -391,7 +389,7 @@ export default function VisitHomeForm() {
               <Col xs={12} md={6}>
                 <Form.Item name="admissionDate" label="วันที่รับรักษา">
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    format="DD MMMM YYYY"
                     className={`${inputStyle} pt-2`}
                     style={{ width: "100%" }}
                   />
@@ -400,7 +398,7 @@ export default function VisitHomeForm() {
               <Col xs={12} md={6}>
                 <Form.Item name="dischargeDate" label="วันที่จำหน่าย">
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    format="DD MMMM YYYY"
                     className={`${inputStyle} pt-2`}
                     style={{ width: "100%" }}
                   />
@@ -567,7 +565,7 @@ export default function VisitHomeForm() {
                     rules={[{ required: true }]}
                   >
                     <DatePicker
-                      format="DD/MM/YYYY"
+                      format="DD MMMM YYYY"
                       className={`${inputStyle} pt-2`}
                       style={{ width: "100%" }}
                     />
@@ -576,7 +574,7 @@ export default function VisitHomeForm() {
                 <Col xs={12} md={6}>
                   <Form.Item name="nextAppointment" label="นัดครั้งถัดไป">
                     <DatePicker
-                      format="DD/MM/YYYY"
+                      format="DD MMMM YYYY"
                       className={`${inputStyle} pt-2`}
                       style={{ width: "100%" }}
                     />

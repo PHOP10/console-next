@@ -160,7 +160,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
             text = "อนุมัติ";
             break;
           case "edit":
-            color = "purple";
+            color = "orange";
             text = "รอแก้ไข";
             break;
           case "cancel":
@@ -240,12 +240,12 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
-          รายการบันทึกขออนุมัติเดินทางไปราชการ
+          รายการคำขอไปราชการของผู้ใช้
         </h2>
         {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
-      
+
       <CustomTable
         rowKey="id"
         columns={columns}
@@ -269,6 +269,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
         fetchData={fetchData}
         dataUser={dataUser}
         cars={cars}
+        dataOTR={data}
       />
     </>
   );

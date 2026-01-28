@@ -101,7 +101,7 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
             >
               <DatePicker
                 locale={th_TH}
-                format="D MMMM BBBB"
+                format="D MMMM YYYY"
                 placeholder="เลือกวันที่"
                 style={{ width: "100%" }}
                 className="h-11 shadow-sm rounded-xl border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:shadow-md"

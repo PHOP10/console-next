@@ -1,37 +1,52 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
-import { Tabs, Breadcrumb, Row, Col, Divider } from "antd";
+import React, { useEffect, useState } from "react";
+import { Tabs, Row, Col } from "antd";
 import type { TabsProps } from "antd";
 import MaMedicalEquipmentTable from "../components/maMedicalEquipmentTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MaMedicalEquipmentType, MedicalEquipmentType } from "../../common";
+import useSWR from "swr";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = maMedicalEquipmentServices(intraAuth);
-  const [data, setData] = useState<MaMedicalEquipmentType[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [dataEQ, setDataRQ] = useState<MedicalEquipmentType[]>([]);
+  const [manualLoading, setManualLoading] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const result = await intraAuthService.getMaMedicalEquipmentQuery();
-      const res = await intraAuthService.getMedicalEquipmentQuery();
+  const fetcher = async () => {
+    const intraAuthService = maMedicalEquipmentServices(intraAuth);
+    const [result, res] = await Promise.all([
+      intraAuthService.getMaMedicalEquipmentQuery(),
+      intraAuthService.getMedicalEquipmentQuery(),
+    ]);
 
-      setDataRQ(res);
-      setData(result);
-    } catch (error) {
+    return {
+      data: result,
+      dataEQ: res,
+    };
+  };
+
+  const {
+    data: swrData,
+    isLoading: isSwrLoading,
+    mutate,
+  } = useSWR("maMedicalEquipmentPage", fetcher, {
+    refreshInterval: 5000,
+    revalidateOnFocus: true,
+    onError: (error) => {
       console.error("Failed to fetch data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [intraAuthService]);
+    },
+  });
 
   useEffect(() => {
-    if (loading) fetchData();
-  }, [loading, fetchData]);
+    if (manualLoading) {
+      mutate().then(() => setManualLoading(false));
+    }
+  }, [manualLoading, mutate]);
+
+  const data: MaMedicalEquipmentType[] = swrData?.data || [];
+  const dataEQ: MedicalEquipmentType[] = swrData?.dataEQ || [];
+  const loading = isSwrLoading || manualLoading;
 
   const items: TabsProps["items"] = [
     {
@@ -39,7 +54,7 @@ export default function Page() {
       label: "จัดการข้อมูลการส่งเครื่องมือแพทย์",
       children: (
         <MaMedicalEquipmentTable
-          setLoading={setLoading}
+          setLoading={setManualLoading}
           loading={loading}
           data={data}
           dataEQ={dataEQ}

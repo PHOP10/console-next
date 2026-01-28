@@ -14,12 +14,14 @@ import {
   Space,
   AutoComplete,
 } from "antd";
-import { SaveOutlined, ClearOutlined, ExperimentOutlined } from "@ant-design/icons";
+import {
+  SaveOutlined,
+  ClearOutlined,
+  ExperimentOutlined,
+} from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { DrugType, MasterDrugType } from "../../common";
-
-
 
 interface DrugFormProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -126,66 +128,13 @@ export default function DrugForm({
   const autoCompleteStyle =
     "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400 focus-within:[&>.ant-select-selector]:!border-blue-500 focus-within:[&>.ant-select-selector]:!ring-4 focus-within:[&>.ant-select-selector]:!ring-blue-50 focus-within:[&>.ant-select-selector]:!shadow-md";
 
-  /* --------------------------------------ข้อมูลตัวอย่าง--------------------------------------- */
-  const getRandomInt = (min: number, max: number) =>
-    Math.floor(Math.random() * (max - min + 1)) + min;
-
-  const getRandomElement = (arr: any[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
-
-  const handleAutoFill = () => {
-    // A. ชุดข้อมูลตัวอย่าง
-    const drugNames = [
-      { th: "พาราเซตามอล 500 มก.", en: "Paracetamol 500mg" },
-      { th: "อะม็อกซีซิลลิน 500 มก.", en: "Amoxicillin 500mg" },
-      { th: "โอเมพราโซล 20 มก.", en: "Omeprazole 20mg" },
-      { th: "ลอร์ราทาดีน 10 มก.", en: "Loratadine 10mg" },
-      { th: "เมทฟอร์มิน 500 มก.", en: "Metformin 500mg" },
-    ];
-
-    const packings = [
-      "แผง/10 เม็ด",
-      "ขวด/60 มล.",
-      "กล่อง/50 แผง",
-      "กระปุก/1,000 เม็ด",
-    ];
-    const notes = [
-      "ยาใช้ภายใน",
-      "เก็บให้พ้นแสง",
-      "ยาควบคุมพิเศษ",
-      "-",
-      "เก็บในอุณหภูมิต่ำกว่า 30 องศา",
-    ];
-
-    // B. เลือกข้อมูลสุ่ม
-    const selectedDrug = getRandomElement(drugNames);
-    const randWorkingCode = `W-${getRandomInt(100, 999)}`;
-
-    // สุ่มเลือกประเภทยาจาก Options ที่มีใน Master Data
-    let randTypeId = undefined;
-    if (masterDrugOptions && masterDrugOptions.length > 0) {
-      randTypeId = getRandomElement(masterDrugOptions).value;
-    }
-
-    // ✅ C. ใส่ค่าเข้าฟอร์ม
-    form.setFieldsValue({
-      workingCode: randWorkingCode,
-      drugTypeId: randTypeId,
-      name: `${selectedDrug.th} (${selectedDrug.en})`,
-      packagingSize: getRandomElement(packings),
-      price: getRandomInt(10, 500), // สุ่มราคา 10 - 500 บาท
-      quantity: getRandomInt(50, 500), // สุ่มจำนวนเริ่มต้น 50 - 500
-      note: getRandomElement(notes),
-    });
-  };
-
   return (
     <Card
       className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
       style={{ maxWidth: 800, margin: "0 auto" }}
       title={
         <div className="text-2xl font-bold text-[#0683e9] text-center py-2">
-          เพิ่มข้อมูลยาใหม่
+          เพิ่มข้อมูลยา
         </div>
       }
     >
@@ -306,29 +255,10 @@ export default function DrugForm({
         {/* ปุ่มกด (จัดกึ่งกลาง) */}
         <Form.Item style={{ textAlign: "center", marginBottom: 0 }}>
           <Space size="middle">
-            {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (สีเหลือง/ส้ม) */}
-            <Button
-              onClick={handleAutoFill}
-              icon={<ExperimentOutlined />} // อย่าลืม import
-              className="h-9 px-6 rounded-lg text-sm bg-amber-500 hover:bg-amber-600 text-white border-none shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all flex items-center"
-            >
-              สุ่มข้อมูลตัวอย่าง
-            </Button>
-
-            <Button
-              icon={<ClearOutlined />}
-              onClick={() => form.resetFields()}
-              disabled={loading}
-              className="h-9 px-6 rounded-lg text-sm border-gray-300 text-gray-600 hover:text-red-500 hover:border-red-400 shadow-sm transition-all flex items-center"
-            >
-              ล้างค่า
-            </Button>
-
             <Button
               type="primary"
               htmlType="submit"
               loading={loading}
-              icon={<SaveOutlined />}
               className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex items-center bg-[#0683e9] border-none"
             >
               บันทึกข้อมูลยา

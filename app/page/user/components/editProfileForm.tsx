@@ -93,17 +93,17 @@ export default function EditProfileForm({
       </Row>
 
       <Row gutter={16}>
-        <Col span={12}>
+        {/* <Col span={12}>
           <Form.Item label="ชื่อเล่น" name="nickName">
             <Input placeholder="ชื่อเล่น" />
           </Form.Item>
-        </Col>
+        </Col> */}
         <Col span={12}>
           <Form.Item label="เพศ" name="gender">
             <Select>
-              <Select.Option value="male">ชาย</Select.Option>
-              <Select.Option value="female">หญิง</Select.Option>
-              <Select.Option value="other">อื่นๆ</Select.Option>
+              <Select.Option value="male">นาย</Select.Option>
+              <Select.Option value="female">นาง</Select.Option>
+              <Select.Option value="female">นางสาว</Select.Option>
             </Select>
           </Form.Item>
         </Col>

@@ -190,11 +190,11 @@ export default function ManagementMasterLeaveTable({
           marginRight: "-24px",
         }}
       >
-        ข้อมูลประเภทลา
+        ข้อมูลประเภทการลา
       </div>
 
       <Button type="primary" style={{ marginBottom: 16 }} onClick={handleAdd}>
-        + เพิ่มประเภทลา
+        + เพิ่มประเภทการลา
       </Button>
 
       <CustomTable
@@ -208,7 +208,7 @@ export default function ManagementMasterLeaveTable({
       />
 
       <Modal
-        title="เพิ่มประเภทลา"
+        title="เพิ่มประเภทการลา"
         open={isAddModalOpen}
         onOk={handleAddOk}
         onCancel={() => setIsAddModalOpen(false)}

@@ -86,7 +86,7 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
       <FileWordOutlined
         style={{
           fontSize: 22,
-          color: "#217346", // สีเขียว Excel
+          color: "#1677ff", // สีเขียว Excel
           cursor: "pointer",
           transition: "color 0.2s",
         }}

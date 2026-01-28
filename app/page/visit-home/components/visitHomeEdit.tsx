@@ -205,9 +205,9 @@ export default function VisitHomeEdit({
         title={
           <div className="text-xl font-bold text-[#0683e9] text-center w-full">
             {mode === "view" ? (
-              <span>📄 รายละเอียดการเยี่ยมบ้าน</span>
+              <span>รายละเอียดการเยี่ยมบ้าน</span>
             ) : (
-              <span>✏️ แก้ไขข้อมูลการเยี่ยมบ้าน</span>
+              <span>แก้ไขข้อมูลการเยี่ยมบ้าน</span>
             )}
           </div>
         }
@@ -246,7 +246,7 @@ export default function VisitHomeEdit({
             <Col xs={12} md={4}>
               <Form.Item name="referralDate" label="วันที่ส่ง">
                 <DatePicker
-                  format="DD-MM-YYYY"
+                  format="DD MMMM YYYY"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -295,7 +295,7 @@ export default function VisitHomeEdit({
             <Col xs={12} md={6}>
               <Form.Item name="dob" label="วันเกิด">
                 <DatePicker
-                  format="DD-MM-YYYY"
+                  format="DD MMMM YYYY"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -331,7 +331,7 @@ export default function VisitHomeEdit({
             <Col xs={12} md={4}>
               <Form.Item name="admissionDate" label="วันรับรักษา">
                 <DatePicker
-                  format="DD-MM-YYYY"
+                  format="DD MMMM YYYY"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -339,7 +339,7 @@ export default function VisitHomeEdit({
             <Col xs={12} md={4}>
               <Form.Item name="dischargeDate" label="วันจำหน่าย">
                 <DatePicker
-                  format="DD-MM-YYYY"
+                  format="DD MMMM YYYY"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -488,7 +488,7 @@ export default function VisitHomeEdit({
                 rules={[{ required: true }]}
               >
                 <DatePicker
-                  format="DD-MM-YYYY"
+                  format="DD MMMM YYYY"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -496,7 +496,7 @@ export default function VisitHomeEdit({
             <Col xs={12} md={5}>
               <Form.Item name="nextAppointment" label="นัดถัดไป">
                 <DatePicker
-                  format="DD-MM-YYYY"
+                  format="DD MMMM YYYY"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -510,14 +510,6 @@ export default function VisitHomeEdit({
 
           {/* --- Buttons Area --- */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-            <Button
-              onClick={onCancel}
-              className="h-10 px-6 rounded-lg text-gray-600 hover:bg-gray-100 border-gray-300"
-              icon={<CloseOutlined />}
-            >
-              {mode === "view" ? "ปิดหน้าต่าง" : "ยกเลิก"}
-            </Button>
-
             {mode === "view" ? (
               <Button
                 type="primary"
@@ -532,7 +524,6 @@ export default function VisitHomeEdit({
                 type="primary"
                 onClick={handleUpdate}
                 className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
-                icon={<SaveOutlined />}
               >
                 บันทึกการแก้ไข
               </Button>

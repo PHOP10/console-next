@@ -317,7 +317,7 @@ export default function MaMedicalEquipmentTable({
       },
     },
     {
-      title: "การจัดการ",
+      title: "จัดการ",
       key: "action",
       align: "center",
       render: (_, record) => (
@@ -453,7 +453,7 @@ export default function MaMedicalEquipmentTable({
             color: "#0683e9",
           }}
         >
-          คลังข้อมูลเครื่องมือแพทย์
+          รายการส่งเครื่องมือแพทย์
         </div>
       }
       bordered

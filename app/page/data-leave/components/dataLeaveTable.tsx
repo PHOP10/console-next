@@ -145,10 +145,15 @@ export default function DataLeaveTable({
             color = "green";
             text = "อนุมัติ";
             break;
+          case "success":
+            color = "gray";
+            text = "เสร็จสิ้น";
+            break;
           case "cancel":
             color = "red";
             text = "ยกเลิก";
             break;
+
           default:
             text = status;
         }
@@ -221,23 +226,11 @@ export default function DataLeaveTable({
 
   return (
     <>
-      <div
-        style={{
-          textAlign: "center",
-          fontSize: "24px",
-          fontWeight: "bold",
-          color: "#0683e9",
-          marginTop: "-12px",
-
-          borderBottom: "1px solid #f0f0f0",
-          paddingBottom: "12px",
-          marginBottom: "24px",
-
-          marginLeft: "-24px",
-          marginRight: "-24px",
-        }}
-      >
-        ข้อมูลการลา
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          ข้อมูลการลาของผู้ใช้
+        </h2>
+        <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
       </div>
 
       <div className="p-3 pt-1">
