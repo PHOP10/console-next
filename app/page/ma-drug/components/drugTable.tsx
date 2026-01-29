@@ -67,12 +67,38 @@ export default function DrugTable({
   const handleDelete = async (id: number) => {
     try {
       setLoading(true);
-      await intraAuthService.deleteMaDrug(id);
+      await intraAuthService.deleteDrugItem(id);
       message.success("ลบข้อมูลสำเร็จ");
       setData((prev) => prev.filter((item) => item.id !== id));
-    } catch (error) {
-      console.error(error);
-      message.error("ลบข้อมูลไม่สำเร็จ");
+    } catch (error: any) {
+      console.error("Delete Error:", error);
+
+      const status = error.response?.status;
+      const errorMessage = error.response?.data?.message || "";
+      if (
+        status === 400 ||
+        status === 409 ||
+        errorMessage.includes("foreign key") ||
+        errorMessage.includes("constraint")
+      ) {
+        Modal.warning({
+          title: "ไม่สามารถลบข้อมูลได้",
+          content: (
+            <div>
+              <p>
+                รายการยานี้มีการใช้งานอยู่ในระบบ (เช่น มีประวัติการเบิก/จ่าย
+                หรือรับเข้า)
+              </p>
+              <p className="text-gray-500 text-xs mt-2">
+                เพื่อความถูกต้องของข้อมูลสต็อก ไม่สามารถลบได้
+              </p>
+            </div>
+          ),
+          okText: "เข้าใจแล้ว",
+        });
+      } else {
+        message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+      }
     } finally {
       setLoading(false);
     }
@@ -192,7 +218,7 @@ export default function DrugTable({
             <EditOutlined
               style={{
                 fontSize: 22,
-                color: "#faad14", // สีส้ม (หรือใช้ #1677ff สีฟ้าก็ได้)
+                color: "#faad14",
                 cursor: "pointer",
                 transition: "color 0.2s",
               }}
@@ -213,7 +239,7 @@ export default function DrugTable({
               <DeleteOutlined
                 style={{
                   fontSize: 22,
-                  color: "#ff4d4f", // สีแดง Danger
+                  color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
                 }}
