@@ -13,56 +13,58 @@ import {
   Tag,
   Divider,
 } from "antd";
-import { SaveOutlined, CalculatorOutlined } from "@ant-design/icons";
-import { MaDrugType } from "../../common";
+import { SaveOutlined, CheckCircleOutlined } from "@ant-design/icons";
+import { DispenseType } from "../../common"; // อย่าลืม Import Type ของ Dispense
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
+// สมมติว่าคุณรวมฟังก์ชันเกี่ยวกับ Dispense ไว้ใน Service นี้ หรือแยกเป็น DispenseService
 import { MaDrug } from "../services/maDrug.service";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 
-interface MaDrugReceiveModalProps {
+interface DispenseConfirmModalProps {
   visible: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  data: MaDrugType | null;
+  data: DispenseType | null;
 }
 
-interface ReceiveItem {
-  id: number; // ID ของ MaDrugItem
+interface ConfirmItem {
+  id: number; // ID ของ DispenseItem
   drugId: number;
   drugName: string;
   drugCode: string;
   packagingSize: string;
   price: number;
-  requestQty: number; // จำนวนที่ขอเบิก
-  receivedQty: number | null;
+  qty: number; // จำนวนที่ระบุในใบจ่าย
+  dispensedQty: number | null; // จำนวนที่จ่ายจริง (ตัดสต็อก)
 }
 
-export default function MaDrugReceiveModal({
+export default function DispenseConfirmModal({
   visible,
   onClose,
   onSuccess,
   data,
-}: MaDrugReceiveModalProps) {
+}: DispenseConfirmModalProps) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
-  const intraAuthService = MaDrug(intraAuth);
+  // เรียก Service (ถ้าคุณแยก DispenseService ก็เปลี่ยนตรงนี้ได้เลย)
+  const dispenseService = MaDrug(intraAuth);
 
   const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState<ReceiveItem[]>([]);
+  const [items, setItems] = useState<ConfirmItem[]>([]);
 
   // แปลงข้อมูลเมื่อเปิด Modal
   useEffect(() => {
-    if (visible && data?.maDrugItems) {
-      const initialItems = data.maDrugItems.map((item: any) => ({
+    if (visible && data?.dispenseItems) {
+      const initialItems = data.dispenseItems.map((item: any) => ({
         id: item.id,
         drugId: item.drugId,
         drugName: item.drug?.name || "-",
         drugCode: item.drug?.workingCode || "-",
         packagingSize: item.drug?.packagingSize || "-",
-        price: item.drug?.price || 0,
-        requestQty: item.quantity,
-        receivedQty: item.quantity,
+        price: item.price || 0,
+        qty: item.quantity,
+        dispensedQty: item.quantity, // ค่าเริ่มต้นให้เท่ากับจำนวนที่คีย์มา
       }));
       setItems(initialItems);
     }
@@ -71,11 +73,11 @@ export default function MaDrugReceiveModal({
   // คำนวณยอดรวม Real-time
   const summary = useMemo(() => {
     const totalQty = items.reduce(
-      (sum, item) => sum + (item.receivedQty || 0),
+      (sum, item) => sum + (item.dispensedQty || 0),
       0,
     );
     const totalAmt = items.reduce(
-      (sum, item) => sum + (item.receivedQty || 0) * item.price,
+      (sum, item) => sum + (item.dispensedQty || 0) * item.price,
       0,
     );
     return { totalQty, totalAmt };
@@ -83,37 +85,59 @@ export default function MaDrugReceiveModal({
 
   const handleQtyChange = (val: number | null, index: number) => {
     const newItems = [...items];
-    newItems[index].receivedQty = val;
-
+    // ปรับแก้: ถ้าเป็น null ให้ใส่ null ไปก่อน (เพื่อไม่ให้เด้งเป็น 0 ตอนลบ)
+    newItems[index].dispensedQty = val;
     setItems(newItems);
   };
+
+  // ในไฟล์ DispenseConfirmModal.tsx
+
   const handleFinish = async () => {
     if (!data) return;
+
+    // ส่วน Validation (ถ้ามี)
+    const invalidItems = items.filter(
+      (i) => !i.dispensedQty || i.dispensedQty <= 0,
+    );
+    // if (invalidItems.length > 0) { ... }
 
     try {
       setLoading(true);
       const payload = {
         id: data.id,
         items: items.map((item) => ({
-          maDrugItemId: item.id,
+          dispenseItemId: item.id,
           drugId: item.drugId,
-          receivedQuantity: item.receivedQty,
+          quantity: item.dispensedQty || 0,
         })),
         totalPrice: summary.totalAmt,
+        status: "completed",
       };
-      await intraAuthService.receiveMaDrug(payload);
 
-      message.success("บันทึกการรับยาเรียบร้อยแล้ว");
+      await dispenseService.executeDispense(payload);
+
+      message.success("บันทึกการจ่ายยาและตัดสต็อกเรียบร้อยแล้ว");
       onSuccess();
       onClose();
-    } catch (error) {
-      console.error(error);
-      message.error("เกิดข้อผิดพลาดในการบันทึก");
+    } catch (error: any) {
+      console.error("Error Detail:", error);
+
+      const backendMessage = error.response?.data?.message;
+
+      if (backendMessage) {
+        // ถ้า Backend ส่งมาเป็น Array (กรณี error หลายตัว) ให้รวมข้อความ
+        const msgToShow = Array.isArray(backendMessage)
+          ? backendMessage.join(", ")
+          : backendMessage;
+
+        message.error(msgToShow); // 🚨 จะโชว์สาเหตุจริง เช่น "ยา X มีไม่พอ"
+      } else {
+        message.error("เกิดข้อผิดพลาดในการบันทึก (Unknown Error)");
+      }
     } finally {
       setLoading(false);
     }
   };
-
   // Columns ตาราง
   const columns = [
     {
@@ -125,28 +149,29 @@ export default function MaDrugReceiveModal({
     {
       title: "รายการยา",
       dataIndex: "drugName",
-      render: (text: string, record: ReceiveItem) => (
+      render: (text: string, record: ConfirmItem) => (
         <div>
           <div className="font-medium text-slate-700">{text}</div>
           <div className="text-xs text-slate-400">
-            ขนาด: {record.packagingSize} | ราคา: {record.price} บ.
+            ขนาด: {record.packagingSize} | ราคา: {record.price.toLocaleString()}{" "}
+            บ.
           </div>
         </div>
       ),
     },
     {
-      title: "ขอเบิก",
-      dataIndex: "requestQty",
+      title: "จำนวนขอ",
+      dataIndex: "qty",
       align: "center" as const,
       width: 100,
-      render: (val: number) => <span className="text-slate-500">{val}</span>,
+      render: (val: number) => <span className="text-slate-400">{val}</span>,
     },
     {
-      title: "รับจริง",
-      dataIndex: "receivedQty",
+      title: "จ่ายจริง",
+      dataIndex: "dispensedQty",
       align: "center" as const,
       width: 140,
-      render: (val: number, record: ReceiveItem, index: number) => (
+      render: (val: number, record: ConfirmItem, index: number) => (
         <InputNumber
           min={0}
           value={val}
@@ -160,9 +185,9 @@ export default function MaDrugReceiveModal({
       key: "total",
       align: "right" as const,
       width: 120,
-      render: (_: any, record: ReceiveItem) => (
+      render: (_: any, record: ConfirmItem) => (
         <span className="font-semibold text-slate-700">
-          {((record.receivedQty || 0) * record.price).toLocaleString()}
+          {((record.dispensedQty || 0) * record.price).toLocaleString()}
         </span>
       ),
     },
@@ -174,7 +199,7 @@ export default function MaDrugReceiveModal({
     <Modal
       title={
         <div className="text-xl font-bold text-[#0683e9] flex items-center gap-2">
-          ยืนยันการรับยาเข้าคลัง
+          <CheckCircleOutlined /> ยืนยันการจ่ายยา (ตัดสต็อก)
         </div>
       }
       open={visible}
@@ -189,35 +214,39 @@ export default function MaDrugReceiveModal({
       }}
     >
       <Form form={form} layout="vertical" onFinish={handleFinish}>
-        {/* 1. ส่วนแสดงข้อมูลใบเบิก (Read Only) */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 mb-6">
           <Row gutter={[16, 16]}>
             <Col span={8}>
-              <div className="text-xs text-slate-500">เลขที่ใบเบิก</div>
+              <div className="text-xs text-slate-500">ผู้จ่ายยา</div>
               <div className="font-bold text-slate-700 text-lg">
-                {data.requestNumber}
+                {data.dispenserName}
               </div>
             </Col>
             <Col span={8}>
-              <div className="text-xs text-slate-500">หน่วยงาน</div>
+              <div className="text-xs text-slate-500">ผู้รับยา/หน่วยงาน</div>
               <div className="font-semibold text-slate-700">
-                {data.requestUnit}
+                {data.receiverName}
               </div>
             </Col>
             <Col span={8}>
-              <div className="text-xs text-slate-500">วันที่ขอเบิก</div>
+              <div className="text-xs text-slate-500">วันที่จ่าย</div>
               <div className="font-medium text-slate-700">
-                {dayjs(data.requestDate).locale("th").format("DD MMM YYYY")}
+                {dayjs(data.dispenseDate).locale("th").format("DD MMM YYYY")}
               </div>
             </Col>
           </Row>
+          {data.note && (
+            <div className="mt-2 pt-2 border-t border-blue-200 text-xs text-slate-500">
+              หมายเหตุ: <span className="text-slate-700">{data.note}</span>
+            </div>
+          )}
         </div>
 
         {/* 2. ตารางรายการยา */}
         <div className="mb-6 border border-slate-200 rounded-lg overflow-hidden">
           <div className="bg-blue-50/50 px-4 py-2 border-b border-blue-100 flex justify-between items-center">
             <span className="font-semibold text-blue-700">
-              รายการยาที่ขอเบิก
+              รายการยาที่จะตัดจ่าย
             </span>
             <Tag color="blue">{items.length} รายการ</Tag>
           </div>
@@ -242,7 +271,7 @@ export default function MaDrugReceiveModal({
                   </span>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={2} align="right">
-                  <span className="text-red-600 text-lg">
+                  <span className="text-blue-600 text-lg">
                     ฿ {summary.totalAmt.toLocaleString()}
                   </span>
                 </Table.Summary.Cell>
@@ -260,9 +289,9 @@ export default function MaDrugReceiveModal({
             type="primary"
             htmlType="submit"
             loading={loading}
-            className="h-10 px-6 rounded-lg bg-[#0683e9] shadow-md hover:shadow-lg border-0"
+            className="h-10 px-6 rounded-lg bg-blue-600 hover:bg-blue-500 shadow-md hover:shadow-lg border-0"
           >
-            ยืนยันการรับยา (อัปเดตสต็อก)
+            ยืนยันการตัดสต็อก
           </Button>
         </div>
       </Form>

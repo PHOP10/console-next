@@ -79,7 +79,11 @@ export default function Page() {
       label: "ทำรายการเบิกยา",
       children: (
         <Card>
-          <MaDrugForm drugs={drugs} data={maDrugData} refreshData={fetchDrugs} />
+          <MaDrugForm
+            drugs={drugs}
+            data={maDrugData}
+            refreshData={fetchDrugs}
+          />
         </Card>
       ),
     },
@@ -88,7 +92,11 @@ export default function Page() {
       label: "ข้อมูลการจ่ายยา",
       children: (
         <Card bordered={false} className="shadow-sm">
-          <DispenseTable data={dispenseData} refreshData={fetchDrugs} />
+          <DispenseTable
+            data={dispenseData}
+            refreshData={fetchDrugs}
+            drugs={drugs}
+          />
         </Card>
       ),
     },

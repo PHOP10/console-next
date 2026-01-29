@@ -77,8 +77,7 @@ export default function DispenseForm({
   useEffect(() => {
     if (session?.user) {
       form.setFieldsValue({
-        dispenserName: session.user.fullName, // ดึงชื่อคน login มาใส่เป็นผู้จ่าย
-        dispenseDate: dayjs(), // วันที่ปัจจุบัน
+        dispenserName: session.user.fullName,
       });
     }
   }, [session, form]);
@@ -150,8 +149,8 @@ export default function DispenseForm({
             workingCode: drug.workingCode,
             drugName: drug.name,
             packagingSize: drug.packagingSize,
-            stockQty: drug.quantity, // ✅ เก็บยอดคงเหลือจริงมาด้วย
-            quantity: 1, // Default จำนวนจ่ายเริ่มที่ 1
+            stockQty: drug.quantity,
+            quantity: 1,
             price: drug.price,
           });
         }
@@ -213,21 +212,25 @@ export default function DispenseForm({
       width: 150,
       render: (value: number, record: DispenseItemRow) => (
         <Form.Item
+          // เพิ่ม validation เช็คเกินสต็อก (Optional)
           validateStatus={value > record.stockQty ? "error" : ""}
           help={value > record.stockQty ? "เกินสต็อก" : null}
           style={{ marginBottom: 0 }}
         >
           <InputNumber
             min={1}
-            max={record.stockQty} // ✅ ห้ามจ่ายเกินสต็อก
+            max={record.stockQty} // ✅ ยังคง limit ห้ามเกินสต็อกที่มี
             value={value}
-            className={tableInputStyle}
+            className={tableInputStyle} // ใช้ style เดิมของคุณ
             onChange={(val) => {
               const newData = [...dataSource];
               const index = newData.findIndex(
                 (item) => item.key === record.key,
               );
-              newData[index].quantity = val || 0;
+
+              // ✅ ใช้ Logic แบบที่คุณต้องการ: ถ้าเป็นค่าว่าง ให้ใส่ 1 แทน
+              newData[index].quantity = val || 1;
+
               setDataSource(newData);
             }}
           />
@@ -301,7 +304,7 @@ export default function DispenseForm({
               <Form.Item
                 label="วันที่จ่าย"
                 name="dispenseDate"
-                validateTrigger={["onChange", "onBlur"]} // ให้ตรวจสอบทันทีที่เปลี่ยนค่า
+                validateTrigger={["onChange", "onBlur"]}
                 rules={[
                   { required: true, message: "ระบุวันที่" },
                   () => ({
@@ -334,7 +337,7 @@ export default function DispenseForm({
                   format="DD/MM/YYYY"
                   className={`${inputStyle} pt-2 w-full`}
                   placeholder="เลือกวันที่"
-                  disabledDate={disabledDate} // ✅ ใส่ prop นี้เพื่อกันย้อนหลัง
+                  disabledDate={disabledDate}
                 />
               </Form.Item>
             </Col>
@@ -372,7 +375,7 @@ export default function DispenseForm({
           <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-6">
             <div className="flex justify-between items-center mb-4 px-2">
               <span className="font-bold text-lg text-gray-700">
-                💊 รายการยาที่จะตัดจ่าย
+                รายการยาที่จะตัดจ่าย
               </span>
               <Button
                 type="dashed"

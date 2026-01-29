@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Col, message, Row, Tabs, TabsProps } from "antd";
+import { Card, Col, message, Row, Tabs, TabsProps } from "antd";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import MaDrugDaisbursementTable from "../components/manageDrugTable";
@@ -69,17 +69,23 @@ export default function Page() {
       key: "1",
       label: "จัดการข้อมูลการเบิกยา",
       children: (
-        <MaDrugDaisbursementTable
-          data={requestData}
-          fetchData={fetchData}
-          setData={setRequestData}
-        />
+        <Card>
+          <MaDrugDaisbursementTable
+            data={requestData}
+            fetchData={fetchData}
+            setData={setRequestData}
+          />
+        </Card>
       ),
     },
     {
       key: "2",
       label: "จัดการข้อมูลการจ่ายยา",
-      children: <MaDispenseTable data={dispenseData} fetchData={fetchData} />,
+      children: (
+        <Card>
+          <MaDispenseTable data={dispenseData} fetchData={fetchData} />
+        </Card>
+      ),
     },
   ];
 

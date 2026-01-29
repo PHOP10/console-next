@@ -32,6 +32,7 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
     },
 
     updateMaDrug: async (body: any) => {
+      console.log(1);
       return await axiosInstance
         .patch(`${baseUrlApimaDrug}/${body.id}`, body)
         .then((res) => {
@@ -40,6 +41,16 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
         .catch((err) => {
           console.log(err);
           return [];
+        });
+    },
+
+    editMaDrug: async (payload: any) => {
+      return await axiosInstance
+        .put(`${baseUrlApimaDrug}/${payload.id}`, payload)
+        .then((res) => res.data)
+        .catch((err) => {
+          console.log(err);
+          throw err;
         });
     },
 
@@ -196,6 +207,19 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
           console.log(err);
           return [];
         });
+    },
+
+    editDispense: async (payload: any) => {
+      return await axiosInstance
+        .put(`${baseUrlApiDispense}/${payload.id}`, payload)
+        .then((res) => res.data);
+    },
+
+    executeDispense: async (payload: any) => {
+      // ✅ ส่ง payload ไปเป็น argument ที่ 2 ของ axios.patch
+      return await axiosInstance
+        .patch(`${baseUrlApiDispense}/${payload.id}/execute`, payload)
+        .then((res) => res.data);
     },
 
     deleteDispense: async (id: any) => {

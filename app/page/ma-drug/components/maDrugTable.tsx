@@ -8,6 +8,7 @@ import {
   EditOutlined,
   DownloadOutlined, // ไอคอนสำหรับรับของ
   CheckCircleOutlined,
+  MedicineBoxOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -113,6 +114,19 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
       },
     },
     {
+      title: "ยอดรวม",
+      dataIndex: "totalPrice",
+      key: "totalPrice",
+      align: "center",
+      render: (val) => (
+        <span className="text-blue-600 font-semibold">
+          {val
+            ? val.toLocaleString(undefined, { minimumFractionDigits: 2 })
+            : "0.00"}
+        </span>
+      ),
+    },
+    {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
@@ -175,8 +189,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
               <EditOutlined
                 type="primary"
                 shape="circle"
-                // icon={<EditOutlined />}
-                // size="small"
                 style={{
                   fontSize: 22, // ปรับขนาดตามความเหมาะสม
                   color: record.status === "pending" ? "#faad14" : "#d9d9d9",
@@ -190,17 +202,15 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
 
             {canReceive && (
               <Tooltip title="ยืนยันรับยาเข้าคลัง">
-                {/* ไม่ต้องใช้ Popconfirm แล้ว เพราะมี Modal ยืนยัน */}
                 <Button
-                  type="primary"
+                  type="text"
                   shape="circle"
-                  icon={<DownloadOutlined />}
-                  size="small"
-                  style={{
-                    backgroundColor: "#13c2c2",
-                    borderColor: "#13c2c2",
-                  }}
-                  onClick={() => handleOpenReceive(record)} // ✅ เรียกเปิด Modal แทน
+                  icon={
+                    <MedicineBoxOutlined
+                      style={{ fontSize: 22, color: "#52c41a" }}
+                    />
+                  }
+                  onClick={() => handleOpenReceive(record)}
                 />
               </Tooltip>
             )}
@@ -239,10 +249,10 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
   return (
     <>
       <div className="mb-6 -mt-7">
-        <h2 className="text-2xl font-bold text-blue-500 text-center mb-2 tracking-tight">
-          รายการเบิกจ่ายยา
+        <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
+          ข้อมูลรายการเบิกยา
         </h2>
-        {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
+
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
 
@@ -267,7 +277,9 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
         onClose={() => setEditVisible(false)}
         onSuccess={() => fetchDrugs()}
         data={selectedRecord}
+        existingData={data}
       />
+
       <MaDrugReceiveModal
         visible={receiveVisible}
         onClose={() => setReceiveVisible(false)}

@@ -524,7 +524,7 @@ export default function MaDrugForm({
             columns={modalColumns}
             dataSource={filteredDrugs}
             rowKey="id"
-            pagination={{ pageSize: 10 }} // ลด pageSize ลงนิดนึงเพื่อให้ Modal ไม่ยาวเกินไป
+            pagination={{ pageSize: 10 }}
             size="small"
             scroll={{ y: 300 }}
           />
