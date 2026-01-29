@@ -212,7 +212,7 @@ export default function MaDispenseTable({
             text = "อนุมัติแล้ว";
             break;
           case "completed":
-            color = "success";
+            color = "default";
             text = "จ่ายสำเร็จ";
             break;
           case "canceled":
@@ -293,28 +293,24 @@ export default function MaDispenseTable({
               </Tooltip>
             </Popover>
 
-            {/* 2. ปุ่มลบ (แสดงเฉพาะ Pending) */}
-            {isPending && (
-              <Tooltip title="ลบรายการ">
-                <Popconfirm
-                  title="ยืนยันการลบ"
-                  description="คุณต้องการลบรายการนี้ใช่หรือไม่?"
-                  onConfirm={() => handleDelete(record.id)}
-                  okText="ลบ"
-                  cancelText="ยกเลิก"
-                  okButtonProps={{ danger: true }}
-                >
-                  <Button
-                    type="text"
-                    shape="circle"
-                    danger
-                    icon={<DeleteOutlined style={{ fontSize: 20 }} />}
-                  />
-                </Popconfirm>
-              </Tooltip>
-            )}
+            <Tooltip title="ลบรายการ">
+              <Popconfirm
+                title="ยืนยันการลบ"
+                description="คุณต้องการลบรายการนี้ใช่หรือไม่?"
+                onConfirm={() => handleDelete(record.id)}
+                okText="ลบ"
+                cancelText="ยกเลิก"
+                okButtonProps={{ danger: true }}
+              >
+                <Button
+                  type="text"
+                  shape="circle"
+                  danger
+                  icon={<DeleteOutlined style={{ fontSize: 20 }} />}
+                />
+              </Popconfirm>
+            </Tooltip>
 
-            {/* 3. ปุ่มดูรายละเอียด */}
             <Tooltip title="ดูรายละเอียด">
               <Button
                 type="text"

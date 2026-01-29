@@ -61,6 +61,12 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
             รอแก้ไข
           </Tag>
         );
+      case "success":
+        return (
+          <Tag color="default" className={baseStyle}>
+            สำเร็จ
+          </Tag>
+        );
       default:
         return <Tag className={baseStyle}>{status}</Tag>;
     }

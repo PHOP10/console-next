@@ -47,6 +47,8 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
         return "#f59e0b";
       case "pending":
         return "#3b82f6";
+      case "success":
+        return "#6b7280";
       default:
         return "#3b82f6";
     }

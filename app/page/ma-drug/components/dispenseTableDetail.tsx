@@ -41,7 +41,7 @@ export default function DispenseTableDetail({
         );
       case "completed":
         return (
-          <Tag color="green" className={baseStyle}>
+          <Tag color="default" className={baseStyle}>
             จ่ายสำเร็จ
           </Tag>
         );

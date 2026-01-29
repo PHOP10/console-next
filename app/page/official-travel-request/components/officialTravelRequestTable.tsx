@@ -149,7 +149,6 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       render: (status: string) => {
         let color = "default";
         let text = status;
-
         switch (status) {
           case "pending":
             color = "blue";
@@ -162,6 +161,10 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
           case "edit":
             color = "orange";
             text = "รอแก้ไข";
+            break;
+          case "success":
+            color = "default";
+            text = "สำเร็จ";
             break;
           case "cancel":
             color = "red";

@@ -146,7 +146,7 @@ export default function DataLeaveTable({
             text = "อนุมัติ";
             break;
           case "success":
-            color = "gray";
+            color = "default";
             text = "เสร็จสิ้น";
             break;
           case "cancel":

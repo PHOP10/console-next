@@ -125,6 +125,12 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
           return [];
         });
     },
+
+    deleteDrugItem: async (id: any) => {
+      const response = await axiosInstance.delete(`${baseUrlApiDrug}/${id}`);
+      return response.data;
+    },
+
     getMasterDrugQuery: async () => {
       return await axiosInstance
         .get(`${baseUrlApiMasterDrug}`)

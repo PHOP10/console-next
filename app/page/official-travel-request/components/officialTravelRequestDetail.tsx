@@ -50,6 +50,12 @@ const OfficialTravelRequestDetail: React.FC<
             รอแก้ไข
           </Tag>
         );
+      case "success":
+        return (
+          <Tag color="default" className={baseStyle}>
+            สำเร็จ
+          </Tag>
+        );
       default:
         return <Tag className={baseStyle}>{status}</Tag>;
     }
@@ -133,12 +139,11 @@ const OfficialTravelRequestDetail: React.FC<
       )}
       styles={{
         body: { padding: 0, backgroundColor: "transparent" },
-        header: { display: "none" }, // ซ่อน Header ของ AntD ไปเลย
+        header: { display: "none" },
       }}
     >
       {record && (
         <div className="flex flex-col">
-          {/* 🔹 ส่วนหัว (Custom Header) */}
           <div className="bg-white px-6 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10">
             <div>
               <h2 className="text-xl font-bold text-slate-800 m-0">
