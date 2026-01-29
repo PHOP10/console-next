@@ -4,12 +4,9 @@ import {
   message,
   Popconfirm,
   Space,
-  Table,
   Modal,
   Form,
   Input,
-  InputNumber,
-  DatePicker,
   Tag,
   Popover,
   Typography,
@@ -22,17 +19,20 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import dayjs from "dayjs";
 import { useSession } from "next-auth/react";
 import {
+  CarOutlined,
   CheckCircleOutlined,
   DeleteOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
+  FileDoneOutlined,
+  FileProtectOutlined,
   FileSearchOutlined,
   RollbackOutlined,
-  UndoOutlined,
 } from "@ant-design/icons";
 import MaCarDetail from "./maCarDetail";
 import MaCarEditModal from "./MaCarEditModal";
 import CustomTable from "../../common/CustomTable";
+import MaCarReturn from "./maCarReturn";
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -54,19 +54,20 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
   const { data: session } = useSession();
-  // const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCar, setEditingCar] = useState<MaCarType | null>(null);
   const [form] = Form.useForm();
   const [formCancel] = Form.useForm();
   const [modalCancelOpen, setModalCancelOpen] = useState(false);
   const [selectedCancelRecord, setSelectedCancelRecord] =
     useState<MaCarType | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<any>(null);
+  const [ackModalOpen, setAckModalOpen] = useState(false);
+  const [selectedAckRecord, setSelectedAckRecord] = useState<MaCarType | null>(
+    null,
+  );
 
   // const handleEdit = (record: MaCarType) => {
 
@@ -90,27 +91,10 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     setEditRecord(null);
   };
 
-  // const handleUpdate = async () => {
-  //   try {
-  //     if (!editingCar) return;
-  //     const values = await form.validateFields();
-  //     const body = {
-  //       ...values,
-  //       id: editingCar.id,
-  //       dateStart: values.dateStart?.toISOString(),
-  //       dateEnd: values.dateEnd?.toISOString(),
-  //     };
-
-  //     await intraAuthService.updateMaCar(body);
-
-  //     message.success("แก้ไขข้อมูลสำเร็จ");
-  //     setIsModalOpen(false);
-  //     fetchData();
-  //   } catch (error) {
-  //     console.error("Error updating car:", error);
-  //     message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
-  //   }
-  // };
+  const handleShowAcknowledge = (record: MaCarType) => {
+    setSelectedAckRecord(record);
+    setAckModalOpen(true);
+  };
 
   const handleApprove = async (record: any) => {
     try {
@@ -146,7 +130,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       });
       message.success("ยกเลิกรายการแล้ว");
       setModalCancelOpen(false);
-      formCancel.resetFields(); // รีเซ็ต Form
+      formCancel.resetFields();
       fetchData();
     } catch (err) {
       console.error(err);
@@ -169,11 +153,17 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   };
 
   const columns: ColumnsType<MaCarType> = [
-    { title: "ผู้ขอใช้รถ", dataIndex: "createdName", key: "createdName" },
+    {
+      title: "ผู้ขอใช้รถ",
+      dataIndex: "createdName",
+      key: "createdName",
+      align: "center",
+    },
     {
       title: "วัตถุประสงค์",
       dataIndex: "purpose",
       key: "purpose",
+      align: "center",
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -190,6 +180,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "ปลายทาง",
       dataIndex: "destination",
       key: "destination",
+      align: "center",
       render: (text: string) => {
         const maxLength = 20;
         if (!text) return "-";
@@ -206,6 +197,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "ตั้งแต่วันที่",
       dataIndex: "dateStart",
       key: "dateStart",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -219,6 +211,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "ถึงวันที่",
       dataIndex: "dateEnd",
       key: "dateEnd",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -232,13 +225,16 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "รถที่ใช้",
       dataIndex: "masterCar",
       key: "masterCar",
+      align: "center",
       render: (masterCar) =>
         masterCar ? `${masterCar.carName} (${masterCar.licensePlate})` : "-",
     },
+    // ... ในส่วน columns
     {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) => {
         let color = "default";
         let text = "";
@@ -260,10 +256,18 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             color = "red";
             text = "ยกเลิก";
             break;
+          case "return":
+            color = "purple";
+            text = "คืนรถแล้ว";
+            break;
+          case "success":
+            color = "default";
+            text = "เสร็จสิ้น";
+            break;
           default:
             text = status;
+            color = "default";
         }
-
         return <Tag color={color}>{text}</Tag>;
       },
     },
@@ -271,6 +275,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       title: "หมมายเหตุ",
       dataIndex: "note",
       key: "note",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -287,145 +292,183 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     {
       title: "จัดการ",
       key: "action",
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="แก้ไข">
-            <EditOutlined
-              type="primary"
-              style={{
-                fontSize: 22,
-                color:
-                  record.status === "pending" || record.status === "edit"
-                    ? "#faad14"
-                    : "#d9d9d9",
-                cursor:
-                  record.status === "pending" || record.status === "edit"
-                    ? "pointer"
-                    : "not-allowed",
-                opacity:
-                  record.status === "pending" || record.status === "edit"
-                    ? 1
-                    : 0.6,
-              }}
-              disabled={record.status !== "pending"}
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
+      align: "center",
+      render: (_, record) => {
+        // Logic สำหรับควบคุมการเปิด-ปิดปุ่ม
+        const isPending = record.status === "pending";
+        const isApprove = record.status === "approve";
+        const isEdit = record.status === "edit";
+        const isReturn = record.status === "return";
 
-          <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteMaCar(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                fetchData();
-              } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการลบ:", error);
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+        return (
+          <Space>
+            {/* 1. ปุ่มแก้ไข: กดได้เฉพาะตอนรออนุมัติหรือรอแก้ไข */}
+
+            {/* 2. ปุ่มอนุมัติ (Popover): กดได้เฉพาะตอนรออนุมัติเท่านั้น */}
+            <Popover
+              trigger={isPending ? "click" : []} // ถ้าไม่เป็น pending จะไม่แสดง Popover
+              title={
+                <Space>
+                  <ExclamationCircleOutlined style={{ color: "#faad14" }} />
+                  <Typography.Text strong>ยืนยันการดำเนินการ ?</Typography.Text>
+                </Space>
               }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Tooltip title="ลบ">
-              <DeleteOutlined
-                style={{
-                  fontSize: 22,
-                  color: "#ff4d4f",
-                  cursor: "pointer",
-                  transition: "color 0.2s",
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
-              />
-            </Tooltip>
-          </Popconfirm>
-
-          <Popconfirm
-            title="ยืนยันการส่งคืนเพื่อแก้ไข"
-            okText="ยืนยัน"
-            cancelText="ยกเลิก"
-            onConfirm={() => returnEdit(record)}
-            disabled={record.status !== "approve"}
-          >
-            <Tooltip title="ส่งคืนเพื่อแก้ไข">
-              <RollbackOutlined
-                style={{
-                  fontSize: 22,
-                  color: record.status === "approve" ? "orange" : "#d9d9d9",
-                  cursor:
-                    record.status === "approve" ? "pointer" : "not-allowed",
-                  transition: "color 0.2s",
-                }}
-              />
-            </Tooltip>
-          </Popconfirm>
-
-          <Popover
-            trigger="click"
-            title={
-              <Space>
-                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
-              </Space>
-            }
-            content={
-              <Space style={{ display: "flex", marginTop: 13 }}>
-                <Button
-                  danger
-                  size="small"
-                  onClick={() => {
-                    setSelectedCancelRecord(record);
-                    setModalCancelOpen(true);
-                    setOpenPopoverId(null);
+              content={
+                <Space style={{ display: "flex", marginTop: 13 }}>
+                  <Button
+                    danger
+                    size="small"
+                    onClick={() => {
+                      setSelectedCancelRecord(record);
+                      setModalCancelOpen(true);
+                      setOpenPopoverId(null);
+                    }}
+                  >
+                    ยกเลิกการจอง
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => handleApprove(record)}
+                  >
+                    อนุมัติ
+                  </Button>
+                </Space>
+              }
+              open={openPopoverId === record.id}
+              onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
+            >
+              <Tooltip title={isPending ? "อนุมัติ/ปฏิเสธ" : "ดำเนินการแล้ว"}>
+                <CheckCircleOutlined
+                  style={{
+                    fontSize: 20,
+                    color: isPending ? "#52c41a" : "#d9d9d9",
+                    cursor: isPending ? "pointer" : "not-allowed",
                   }}
-                >
-                  ยกเลิกการจอง
-                </Button>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => handleApprove(record)}
-                >
-                  อนุมัติ
-                </Button>
-              </Space>
-            }
-            open={openPopoverId === record.id}
-            onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
-          >
-            <Tooltip title="อนุมัติ">
-              <CheckCircleOutlined
+                  onClick={() => {
+                    if (isPending) setOpenPopoverId(record.id);
+                  }}
+                />
+              </Tooltip>
+            </Popover>
+
+            {/* 3. ปุ่มส่งคืนแก้ไข: กดได้เฉพาะรายการที่อนุมัติแล้วแต่ต้องการให้แก้ใหม่ */}
+            <Tooltip
+              title={isApprove ? "ส่งคืนให้ผู้ใช้แก้ไข" : "ส่งคืนไม่ได้"}
+            >
+              <Popconfirm
+                title="ยืนยันการส่งคืนเพื่อแก้ไข"
+                onConfirm={() => returnEdit(record)}
+                disabled={!isApprove}
+                okText="ยืนยัน"
+                cancelText="ยกเลิก"
+              >
+                <RollbackOutlined
+                  style={{
+                    fontSize: 20,
+                    color: isApprove ? "orange" : "#d9d9d9",
+                    cursor: isApprove ? "pointer" : "not-allowed",
+                  }}
+                />
+              </Popconfirm>
+            </Tooltip>
+
+            <Tooltip
+              title={
+                record.status === "return"
+                  ? "ตรวจสอบสภาพรถและรับคืน"
+                  : record.status === "success"
+                    ? "รับรถคืนสำเร็จแล้ว"
+                    : "รอนำรถมาคืน"
+              }
+            >
+              <div
                 style={{
-                  fontSize: 22,
-                  color: record.status !== "pending" ? "#ccc" : "#52c41a", // เทาเมื่อ disable, เขียวเมื่อ active
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  position: "relative",
                   cursor:
-                    record.status !== "pending" ? "not-allowed" : "pointer",
-                  opacity: record.status !== "pending" ? 0.5 : 1,
+                    record.status === "return" ? "pointer" : "not-allowed",
+                  opacity: record.status === "return" ? 1 : 0.6,
                 }}
                 onClick={() => {
-                  if (record.status === "pending") {
-                    setOpenPopoverId(record.id);
-                  }
+                  if (record.status === "return") handleShowAcknowledge(record);
+                }}
+              >
+                <CarOutlined
+                  style={{
+                    fontSize: 24, // ปรับขนาดให้ใหญ่เห็นชัด
+                    color: record.status === "return" ? "#722ed1" : "#d9d9d9",
+                  }}
+                />
+              </div>
+            </Tooltip>
+
+            {/* 5. ปุ่มรายละเอียด: กดได้ทุกสถานะ */}
+            <Tooltip title="รายละเอียดทั้งหมด">
+              <FileSearchOutlined
+                style={{ fontSize: 20, color: "#1677ff", cursor: "pointer" }}
+                onClick={() => handleShowDetail(record, dataUser)}
+              />
+            </Tooltip>
+
+            <Tooltip
+              title={
+                isPending || isEdit ? "แก้ไข" : "ไม่สามารถแก้ไขได้ในสถานะนี้"
+              }
+            >
+              <EditOutlined
+                style={{
+                  fontSize: 20,
+                  color: isPending || isEdit ? "#faad14" : "#d9d9d9",
+                  cursor: isPending || isEdit ? "pointer" : "not-allowed",
+                }}
+                onClick={() => {
+                  if (isPending || isEdit) handleEdit(record);
                 }}
               />
             </Tooltip>
-          </Popover>
 
-          <Tooltip title="รายละเอียด">
-            <FileSearchOutlined
-              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
-              onClick={() => handleShowDetail(record, dataUser)}
-            />
-          </Tooltip>
-        </Space>
-      ),
+            {/* 6. ปุ่มลบ: ลบได้ทุกสถานะ (หรือปรับตามนโยบาย) */}
+            <Popconfirm
+              title="ยืนยันการลบ"
+              description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?" // (Optional) เพิ่มคำอธิบายเพื่อให้ชัดเจนขึ้น
+              onConfirm={async () => {
+                try {
+                  await intraAuthService.deleteMaCar(record.id);
+                  message.success("ลบข้อมูลสำเร็จ");
+                  fetchData();
+                } catch (error) {
+                  message.error("เกิดข้อผิดพลาดในการลบ");
+                }
+              }}
+              okText="ยืนยัน"
+              cancelText="ยกเลิก"
+              okButtonProps={{ danger: true }}
+            >
+              <Tooltip title="ลบรายการ">
+                <DeleteOutlined
+                  style={{ fontSize: 20, color: "#ff4d4f", cursor: "pointer" }}
+                />
+              </Tooltip>
+            </Popconfirm>
+          </Space>
+        );
+      },
     },
   ];
 
   return (
     <>
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          รายการการจองรถ
+        </h2>
+
+        <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
+      </div>
+
       <CustomTable
         columns={columns}
         dataSource={data}
@@ -438,40 +481,6 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         onClose={handleCloseDetail}
         record={selectedRecord}
       />
-
-      {/* <Modal
-        title="แก้ไขการจองรถ"
-        open={isModalOpen}
-        onCancel={() => setIsModalOpen(false)}
-        onOk={handleUpdate}
-        okText="บันทึก"
-        cancelText="ยกเลิก"
-      >
-        <Form form={form} layout="vertical">
-          <Form.Item name="requesterName" label="ผู้ขอใช้รถ">
-            <Input />
-          </Form.Item>
-          <Form.Item name="purpose" label="วัตถุประสงค์">
-            <Input />
-          </Form.Item>
-          <Form.Item name="dateStart" label="วันเริ่มเดินทาง">
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
-          </Form.Item>
-          <Form.Item name="dateEnd" label="วันกลับ">
-            <DatePicker style={{ width: "100%" }} format="DD/MM/YYYY" />
-          </Form.Item>
-
-          <Form.Item name="destination" label="ปลายทาง">
-            <Input />
-          </Form.Item>
-          <Form.Item name="passengers" label="จำนวนผู้โดยสาร">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-          <Form.Item name="budget" label="งบประมาณ">
-            <InputNumber style={{ width: "100%" }} />
-          </Form.Item>
-        </Form>
-      </Modal> */}
 
       <Modal
         title="ยกเลิกการจองรถ"
@@ -504,6 +513,14 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         fetchData={fetchData}
         maCarUser={maCarUser}
         data={data}
+      />
+
+      <MaCarReturn
+        open={ackModalOpen}
+        onClose={() => setAckModalOpen(false)}
+        record={selectedAckRecord}
+        fetchData={fetchData}
+        mode="admin_ack" // สำคัญมาก: ใส่ mode นี้เพื่อให้เป็นหน้าจอรับรถ
       />
     </>
   );

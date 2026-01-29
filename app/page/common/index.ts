@@ -77,6 +77,11 @@ export interface MaCarType {
   createdName: string;
   driver?: string;
   note?: string;
+  returnAt: string;
+  returnNote: string;
+  returnByName: string;
+  startMileage?: number;
+  returnMileage?: number;
 }
 
 export interface MasterCarType {
@@ -92,6 +97,7 @@ export interface MasterCarType {
   carId?: string;
   numberType?: number;
   fuelType?: string;
+  mileage?: number;
 }
 
 export interface DataLeaveType {
@@ -178,7 +184,7 @@ export interface MasterPatientType {
   VisitHome: VisitHomeType;
 }
 
-// รายการเบิกยา
+// 1. MaDrug (ใบเบิกยา - ขาเข้า)
 export interface MaDrugType {
   id: number;
   requestNumber: string;
@@ -192,14 +198,15 @@ export interface MaDrugType {
   status: string;
   createdAt: string;
   updatedAt: string;
-  quantityUsed?: string;
+  quantityUsed?: number; // แก้เป็น number ให้ตรงกับ DB (Int) หรือ string ตามที่คุณใช้
   totalPrice?: number;
   createdName: string;
+
   // ความสัมพันธ์
   maDrugItems?: MaDrugItemType[];
 }
 
-// ข้อมูลยา
+// 2. Drug (ข้อมูลยา Master)
 export interface DrugType {
   id: number;
   workingCode: string;
@@ -207,7 +214,7 @@ export interface DrugType {
   drugTypeId: number; // FK ไป MasterDrug
   packagingSize: string;
   price: number;
-  quantity: number;
+  quantity: number; // จำนวนคงเหลือ (Stock ปัจจุบัน)
   note?: string;
   createdAt: string;
   updatedAt: string;
@@ -215,9 +222,10 @@ export interface DrugType {
   // ความสัมพันธ์
   drugType?: MasterDrugType;
   maDrugItems?: MaDrugItemType[];
+  dispenseItems?: DispenseItemType[];
 }
 
-// ประเภทยา
+// 3. MasterDrug (ประเภทยา)
 export interface MasterDrugType {
   id: number;
   drugTypeId: number;
@@ -228,7 +236,7 @@ export interface MasterDrugType {
   drugs?: DrugType[];
 }
 
-// รายการยาในแต่ละการเบิก
+// 4. MaDrugItem (รายการยาในใบเบิก - ขาเข้า)
 export interface MaDrugItemType {
   id: number;
   maDrugId: number;
@@ -238,6 +246,35 @@ export interface MaDrugItemType {
 
   // ความสัมพันธ์
   maDrug?: MaDrugType;
+  drug?: DrugType;
+}
+
+// ✅ 5. Dispense (ใบจ่ายยา - ขาออก) [NEW]
+export interface DispenseType {
+  id: number;
+  dispenseDate: string; // ISO Date String
+  dispenserName?: string; // ผู้จ่าย
+  receiverName?: string; // ผู้รับ
+  note?: string;
+  totalPrice?: number;
+  status: string; // pending, approved, completed, canceled
+  createdAt: string;
+  updatedAt: string;
+
+  // ความสัมพันธ์
+  dispenseItems?: DispenseItemType[];
+}
+
+// ✅ 6. DispenseItem (รายการยาในใบจ่าย - ขาออก) [NEW]
+export interface DispenseItemType {
+  id: number;
+  dispenseId: number;
+  drugId: number;
+  quantity: number; // จำนวนที่ตัดจ่าย
+  price?: number; // ราคายา ณ ขณะที่จ่าย (Snapshot)
+
+  // ความสัมพันธ์
+  dispense?: DispenseType;
   drug?: DrugType;
 }
 

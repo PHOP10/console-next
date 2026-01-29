@@ -2,6 +2,8 @@
 
 import React from "react";
 import { Modal, Row, Col, Tag, Divider } from "antd";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
 
 interface OfficialTravelRequestDetailProps {
   open: boolean;
@@ -16,13 +18,10 @@ const OfficialTravelRequestDetail: React.FC<
   // --- 1. Helper Function จัดการวันที่ ---
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
-    return new Date(dateString).toLocaleDateString("th-TH", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    });
+    const d = dayjs(dateString).locale("th");
+    // dayjs ปีไทยต้องบวก 543 เอง หรือใช้ plugin (แต่เขียนสดแบบนี้ชัวร์สุดครับ)
+    return `${d.date()} ${d.format("MMMM")} ${d.year() + 543} เวลา ${d.format("HH:mm")} น.`;
   };
-
   // --- 2. Helper Function จัดการ Status Tag ---
   const getStatusTag = (status: string) => {
     const baseStyle = "px-3 py-1 rounded-full text-sm font-medium border-0";

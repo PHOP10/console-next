@@ -29,6 +29,7 @@ interface CustomEvent extends RbcEvent {
     model: string;
   };
   masterCar: string;
+  masterCarObj?: any;
   originalRecord: OfficialTravelRequestType;
 }
 
@@ -47,7 +48,6 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
 
   // --- Event Handling ---
   const onSelectEvent = (event: CustomEvent) => {
-    // หาข้อมูล record จริงจาก data
     const item = data.find((d) => d.id === event.id);
     if (item) {
       setSelected(item);
@@ -57,17 +57,34 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    // setTimeout(() => setSelected(null), 300); // ถ้าต้องการเคลียร์ data หลังปิด Animation
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "approve":
+        return "#10b981";
+      case "cancel":
+        return "#ef4444";
+      case "pending":
+        return "#3b82f6";
+      case "edit":
+        return "#f97316";
+      default:
+        return "#3b82f6";
+    }
   };
 
   return (
     <>
-      {/* 🔹 ส่วนปฏิทิน */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <h2 className="text-lg font-bold text-slate-700 mb-4 border-l-4 border-blue-500 pl-3">
-          ปฏิทินการเดินทาง
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          ปฏิทินคำขอไปราขการ
         </h2>
+        {/* เส้น Divider */}
+        <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
+      </div>
 
+      <div className="modern-calendar-wrapper">
         <Calendar<CustomEvent>
           localizer={localizer}
           events={data.map(
@@ -85,41 +102,27 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
           )}
           style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
           onSelectEvent={onSelectEvent}
-          // Custom Event Style (Soft Pill Look) - คงไว้เพื่อให้ปฏิทินสวยเหมือนเดิม
-          eventPropGetter={(event: CustomEvent) => {
-            let bgColor = "#eff6ff"; // blue-50
-            let textColor = "#1d4ed8"; // blue-700
-            let borderColor = "#bfdbfe"; // blue-200
-
-            if (event.status === "approve") {
-              bgColor = "#f0fdf4"; // green-50
-              textColor = "#15803d"; // green-700
-              borderColor = "#bbf7d0"; // green-200
-            } else if (event.status === "cancel") {
-              bgColor = "#fef2f2"; // red-50
-              textColor = "#b91c1c"; // red-700
-              borderColor = "#fecaca"; // red-200
-            } else if (event.status === "edit") {
-              bgColor = "#fff7ed"; // orange-50
-              textColor = "#c2410c"; // orange-700
-              borderColor = "#fed7aa"; // orange-200
-            }
-
+          // ✅ ปรับช่องวันให้เป็นสีขาวปกติ มีเส้นขอบ
+          eventPropGetter={(event) => {
+            const color = getStatusColor(event.status);
             return {
               style: {
-                backgroundColor: bgColor,
-                color: textColor,
-                border: `1px solid ${borderColor}`,
+                backgroundColor: `${color}1A`, // Opacity 10%
+                color: color,
+                border: `1px solid ${color}4D`,
+                borderTop: "1px solid #e2e8f0",
                 fontSize: 12,
-                borderRadius: 6,
-                fontWeight: 500,
-                padding: "2px 5px",
+                borderRadius: "4px",
+                fontWeight: 600,
+                padding: "2px 6px",
+                boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                marginBottom: "2px",
               },
             };
           }}
           messages={{
             next: "ถัดไป",
-            previous: "ก่อนหน้า",
+            previous: "ย้อนกลับ",
             today: "วันนี้",
             month: "เดือน",
             week: "สัปดาห์",
@@ -128,12 +131,134 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
             date: "วันที่",
             time: "เวลา",
             event: "ภารกิจ",
-            showMore: (total) => `+ ดูอีก ${total} รายการ`,
+            showMore: (total) => `+ อีก ${total} รายการ`,
           }}
         />
       </div>
 
-      {/* 🔹 เรียกใช้ Component Detail แทนการเขียน Modal ซ้ำ */}
+      <style jsx global>{`
+        /* สีประจำวัน */
+        .rbc-header:nth-child(1) {
+          background-color: #fef2f2;
+          color: #dc2626;
+          border-bottom: 2px solid #fecaca;
+        }
+        .rbc-header:nth-child(2) {
+          background-color: #fefce8;
+          color: #a16207;
+          border-bottom: 2px solid #fef08a;
+        }
+        .rbc-header:nth-child(3) {
+          background-color: #fdf2f8;
+          color: #db2777;
+          border-bottom: 2px solid #fbcfe8;
+        }
+        .rbc-header:nth-child(4) {
+          background-color: #f0fdf4;
+          color: #16a34a;
+          border-bottom: 2px solid #bbf7d0;
+        }
+        .rbc-header:nth-child(5) {
+          background-color: #fff7ed;
+          color: #ea580c;
+          border-bottom: 2px solid #fed7aa;
+        }
+        .rbc-header:nth-child(6) {
+          background-color: #e0f2fe;
+          color: #0284c7;
+          border-bottom: 2px solid #bae6fd;
+        }
+        .rbc-header:nth-child(7) {
+          background-color: #faf5ff;
+          color: #9333ea;
+          border-bottom: 2px solid #e9d5ff;
+        }
+
+        /* Toolbar */
+        .rbc-toolbar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 10px;
+        }
+        .rbc-toolbar-label {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #1e293b;
+        }
+
+        /* Buttons */
+        .rbc-btn-group button {
+          border: 1px solid #cbd5e1 !important;
+          background-color: #fff;
+          color: #475569;
+          padding: 6px 14px;
+          font-size: 0.9rem;
+          transition: all 0.2s;
+        }
+        .rbc-btn-group > button:first-child {
+          border-top-left-radius: 8px;
+          border-bottom-left-radius: 8px;
+        }
+        .rbc-btn-group > button:last-child {
+          border-top-right-radius: 8px;
+          border-bottom-right-radius: 8px;
+        }
+        .rbc-btn-group button.rbc-active {
+          background-color: #2563eb !important;
+          color: #fff !important;
+          border-color: #2563eb !important;
+        }
+
+        /* Grid */
+        .rbc-month-view {
+          border: 1px solid #cbd5e1;
+          border-radius: 12px;
+          overflow: hidden;
+          background-color: #fff;
+        }
+        .rbc-header {
+          padding: 12px 0;
+          font-size: 0.95rem;
+          font-weight: 700;
+        }
+        .rbc-day-bg {
+          border-left: 1px solid #e2e8f0;
+        }
+        .rbc-month-row + .rbc-month-row {
+          border-top: 1px solid #e2e8f0;
+        }
+        .rbc-off-range-bg {
+          background-color: #f8fafc !important;
+        }
+        .rbc-date-cell {
+          padding: 6px 8px;
+          font-weight: 600;
+          color: #64748b;
+        }
+
+        /* Current Day */
+        .rbc-now .rbc-button-link {
+          color: #fff;
+          background: #2563eb;
+          border-radius: 50%;
+          width: 26px;
+          height: 26px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        @media (max-width: 768px) {
+          .rbc-toolbar {
+            flex-direction: column;
+          }
+          .rbc-toolbar-label {
+            margin: 10px 0;
+          }
+        }
+      `}</style>
+
       <OfficialTravelRequestDetail
         open={modalOpen}
         onClose={handleCloseModal}

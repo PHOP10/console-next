@@ -134,7 +134,7 @@ export default function ChangePasswordForm({
         <Button onClick={onCancel} style={{ marginRight: 8 }}>
           ยกเลิก
         </Button>
-        <Button type="primary" htmlType="submit" loading={submitting} danger>
+        <Button type="primary" htmlType="submit" loading={submitting}>
           ยืนยัน
         </Button>
       </div>

@@ -31,7 +31,6 @@
 
 /* พื้นหลังหัวฟอร์ม */
 .infectious-card .ant-card-head {
-  background: linear-gradient(90deg, #d9f0ea 0%, #b6e6d8 100%);
   color: #2e3a3a;
   font-weight: 600;
   letter-spacing: 0.3px;

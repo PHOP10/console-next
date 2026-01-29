@@ -11,6 +11,7 @@ import {
   Space,
   message,
   Skeleton,
+  Tag,
 } from "antd";
 import { UserOutlined, EditOutlined, KeyOutlined } from "@ant-design/icons";
 import { useSession } from "next-auth/react";
@@ -32,14 +33,12 @@ export default function UserProfile() {
     "view",
   );
   const [userData, setUserData] = useState<UserType | null>(null);
-  const [allUserData, setAllUserData] = useState<UserType[]>([]);
 
   const fetchUserData = async () => {
     if (!session?.user?.userId) return;
     setLoading(true);
     try {
       const allUsers = await intraAuthService.getUserQuery();
-      setAllUserData(allUsers);
       const myUser = allUsers.find(
         (u: any) => u.userId === session.user.userId,
       );
@@ -60,21 +59,36 @@ export default function UserProfile() {
   const getCardTitle = () => {
     switch (editMode) {
       case "profile":
-        return "แก้ไขข้อมูลส่วนตัว";
+        return <span className="text-[#0683e9]">แก้ไขข้อมูลส่วนตัว</span>;
       case "password":
-        return "เปลี่ยนรหัสผ่าน";
+        return <span className="text-[#0683e9]">เปลี่ยนรหัสผ่าน</span>;
       default:
-        return "ข้อมูลส่วนตัว";
+        return <span className="text-[#0683e9]">ข้อมูลส่วนตัว</span>;
     }
   };
 
   if (loading && !userData) {
     return (
-      <Card style={{ marginTop: 20 }}>
+      <Card style={{ marginTop: 20, borderRadius: "16px" }}>
         <Skeleton avatar active paragraph={{ rows: 4 }} />
       </Card>
     );
   }
+
+  // --- Style สำหรับ Label (หัวข้อ) ให้เป็นสีฟ้าอ่อน ---
+  const descriptionLabelStyle: React.CSSProperties = {
+    backgroundColor: "#f0f5ff", // สีฟ้าอ่อน
+    fontWeight: "600",
+    color: "#1d39c4", // สีตัวหนังสือโทนน้ำเงินเข้ม
+    width: "180px", // กำหนดความกว้างให้เท่ากันสวยงาม
+    verticalAlign: "middle",
+  };
+
+  const descriptionContentStyle: React.CSSProperties = {
+    backgroundColor: "#fff",
+    color: "#333",
+    verticalAlign: "middle",
+  };
 
   return (
     <div style={{ padding: "20px" }}>
@@ -85,22 +99,44 @@ export default function UserProfile() {
             bordered={false}
             style={{
               textAlign: "center",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              borderRadius: "16px",
+              height: "100%",
             }}
           >
-            <div style={{ marginBottom: 16 }}>
+            <div style={{ marginBottom: 24, marginTop: 12 }}>
               <Avatar
-                size={100}
+                size={120}
                 icon={<UserOutlined />}
-                style={{ backgroundColor: "#1890ff" }}
+                style={{
+                  backgroundColor: "#0683e9", // สีฟ้าหลักของแอป
+                  fontSize: "48px",
+                  boxShadow: "0 4px 10px rgba(6, 131, 233, 0.3)",
+                }}
               />
             </div>
-            <h2 style={{ margin: 0 }}>
+            <h2
+              style={{
+                margin: "0 0 8px 0",
+                fontSize: "20px",
+                fontWeight: "bold",
+                color: "#333",
+              }}
+            >
               {userData?.firstName} {userData?.lastName}
             </h2>
-            <p style={{ color: "gray" }}>
-              {userData?.position || "ไม่ระบุตำแหน่ง"}
-            </p>
+            <div style={{ marginBottom: 16 }}>
+              <Tag
+                color="blue"
+                style={{
+                  fontSize: "14px",
+                  padding: "4px 12px",
+                  borderRadius: "12px",
+                }}
+              >
+                {userData?.position || "ไม่ระบุตำแหน่ง"}
+              </Tag>
+            </div>
           </Card>
         </Col>
 
@@ -109,13 +145,17 @@ export default function UserProfile() {
           <Card
             title={getCardTitle()}
             bordered={false}
-            style={{ boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+            style={{
+              boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+              borderRadius: "16px",
+              minHeight: "100%",
+            }}
             extra={
               editMode === "view" && (
                 <Space>
                   <Button
-                    // icon={<KeyOutlined />}
                     onClick={() => setEditMode("password")}
+                    style={{ borderRadius: "8px" }}
                   >
                     เปลี่ยนรหัสผ่าน
                   </Button>
@@ -123,6 +163,10 @@ export default function UserProfile() {
                     type="primary"
                     icon={<EditOutlined />}
                     onClick={() => setEditMode("profile")}
+                    style={{
+                      borderRadius: "8px",
+                      backgroundColor: "#0683e9",
+                    }}
                   >
                     แก้ไขข้อมูล
                   </Button>
@@ -132,7 +176,7 @@ export default function UserProfile() {
           >
             {editMode === "profile" && userData && (
               <EditProfileForm
-                userData={userData}
+                userData={userData} // ถ้า error ตรงนี้ให้แก้ UserEditModalProps ให้รับ record หรือ userData ให้ตรงกัน
                 onCancel={() => setEditMode("view")}
                 onSuccess={() => {
                   setEditMode("view");
@@ -143,10 +187,9 @@ export default function UserProfile() {
 
             {editMode === "password" && userData && (
               <ChangePasswordForm
-                userId={userData.userId} // ตรวจสอบ type ให้ตรงกับ interface
+                userId={userData.userId}
                 onCancel={() => setEditMode("view")}
                 onSuccess={() => setEditMode("view")}
-                // allUserData={allUserData}
               />
             )}
 
@@ -154,14 +197,14 @@ export default function UserProfile() {
               <Descriptions
                 bordered
                 column={{ xxl: 2, xl: 2, lg: 1, md: 1, sm: 1, xs: 1 }}
-                labelStyle={{ fontWeight: "bold", width: "150px" }}
+                size="middle"
+                // --- ใส่ Style ตรงนี้ ---
+                labelStyle={descriptionLabelStyle}
+                contentStyle={descriptionContentStyle}
               >
                 <Descriptions.Item label="ชื่อ-นามสกุล">
                   {userData?.firstName} {userData?.lastName}
                 </Descriptions.Item>
-                {/* <Descriptions.Item label="ชื่อเล่น">
-                  {userData?.nickName || "-"}
-                </Descriptions.Item> */}
                 <Descriptions.Item label="เพศ">
                   {userData?.gender === "male"
                     ? "ชาย"

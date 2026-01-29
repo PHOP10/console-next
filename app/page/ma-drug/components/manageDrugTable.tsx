@@ -92,7 +92,6 @@ export default function ManageDrugTable({
     }
   };
 
-  // --- ฟังก์ชันอนุมัติ (กดจากใน Popover) ---
   const handleApprove = async (id: number) => {
     try {
       setLoading(true); // show loading
@@ -173,8 +172,16 @@ export default function ManageDrugTable({
       dataIndex: "requestDate",
       key: "requestDate",
       align: "center",
-      width: 120,
-      render: (value) => new Date(value).toLocaleDateString("th-TH"),
+      width: 140,
+      render: (text: string) => {
+        if (!text) return "-";
+        const date = new Date(text);
+        return new Intl.DateTimeFormat("th-TH", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }).format(date);
+      },
     },
     {
       title: "รายการ",
@@ -187,8 +194,14 @@ export default function ManageDrugTable({
       title: "ยอดรวม",
       dataIndex: "totalPrice",
       key: "totalPrice",
-      align: "right",
-      render: (val) => (val ? `${Number(val).toLocaleString()} บ.` : "-"),
+      align: "center",
+      render: (val) => (
+        <span className="text-blue-600 font-semibold">
+          {val
+            ? val.toLocaleString(undefined, { minimumFractionDigits: 2 })
+            : "0.00"}
+        </span>
+      ),
     },
     {
       title: "สถานะ",
@@ -247,10 +260,8 @@ export default function ManageDrugTable({
               <EditOutlined
                 type="primary"
                 shape="circle"
-                // icon={<EditOutlined />}
-                // size="small"
                 style={{
-                  fontSize: 22, // ปรับขนาดตามความเหมาะสม
+                  fontSize: 22,
                   color: record.status === "pending" ? "#faad14" : "#d9d9d9",
                   cursor:
                     record.status === "pending" ? "pointer" : "not-allowed",
@@ -304,7 +315,6 @@ export default function ManageDrugTable({
                     <CheckCircleOutlined
                       style={{
                         fontSize: 22,
-                        // ✅ Style สีและความทึบ
                         color: isPending ? "#52c41a" : "#ccc",
                         opacity: isPending ? 1 : 0.5,
                       }}
@@ -342,9 +352,9 @@ export default function ManageDrugTable({
             <Tooltip title="พิมพ์ใบเบิก (Excel)">
               <FileExcelOutlined
                 style={{
-                  fontSize: 22, // ขนาดไอคอน
-                  color: "#217346", // สีเขียว Excel
-                  cursor: "pointer", // เปลี่ยนเมาส์เป็นรูปมือ
+                  fontSize: 22,
+                  color: "#217346",
+                  cursor: "pointer",
                   transition: "color 0.2s",
                 }}
                 onClick={() => handleExport(record)}
@@ -357,25 +367,14 @@ export default function ManageDrugTable({
   ];
 
   return (
-    <Card
-      title={
-        <div
-          style={{
-            textAlign: "center",
-            fontSize: "20px",
-            fontWeight: "bold",
-            color: "#0683e9",
-          }}
-        >
-          จัดการรายการใบเบิกยา
-        </div>
-      }
-      bordered={false}
-      style={{
-        backgroundColor: "white",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-      }}
-    >
+    <>
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
+          ข้อมูลรายการเบิกยา
+        </h2>
+
+        <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
+      </div>
       <CustomTable
         rowKey="id"
         columns={columns}
@@ -385,13 +384,13 @@ export default function ManageDrugTable({
         pagination={{ pageSize: 10 }}
         scroll={{ x: 900 }}
       />
+
       <MaDrugTableDetail
         visible={detailVisible}
         onClose={() => setDetailVisible(false)}
         data={selectedRecord}
       />
 
-      {/* --- Modal สำหรับกรอกเหตุผลการยกเลิก (เปิดเมื่อกดปุ่ม "ยกเลิก" ใน Popover) --- */}
       <Modal
         title={
           <div style={{ color: "#ff4d4f" }}>
@@ -417,11 +416,10 @@ export default function ManageDrugTable({
       <MaDrugEdit
         visible={editVisible}
         onClose={() => setEditVisible(false)}
-        onSuccess={() => {
-          fetchData(); // โหลดข้อมูลใหม่หลังแก้ไขเสร็จ
-        }}
+        onSuccess={() => fetchData()}
         data={selectedRecord}
+        existingData={data}
       />
-    </Card>
+    </>
   );
 }

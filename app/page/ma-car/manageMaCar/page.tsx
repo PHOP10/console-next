@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
@@ -8,42 +8,69 @@ import ManageMaCarTable from "../components/manageMaCarTable";
 import ManageCarTable from "../components/manageCarTable";
 import { MaCarType, MasterCarType } from "../../common";
 import { useSession } from "next-auth/react";
+import useSWR from "swr"; // 1. Import SWR
 
-export default function manageMaCarPage() {
+export default function ManageMaCarPage() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = maCarService(intraAuth);
   const { data: session } = useSession();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<MaCarType[]>([]); // เก็บข้อมูล MaCar
-  const [dataCar, setDataCar] = useState<MasterCarType[]>([]); // เก็บข้อมูล MaCar
-  const [dataUser, setDataUser] = useState<any[]>([]);
-  const [maCarUser, setMaCarUser] = useState<MaCarType[]>([]);
-  // ฟังก์ชันดึงข้อมูล
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await intraAuthService.getMaCarQuery();
-      const dataCar = await intraAuthService.getMasterCarQuery();
-      const resUsers = await intraAuthService.getUserQuery();
-      const resMaCar = await intraAuthService.getMaCarQuery();
-      const resMaCarUser = resMaCar.filter(
-        (car: any) => car.createdById === session?.user?.userId
-      );
-      setDataUser(resUsers);
-      setDataCar(dataCar);
-      setMaCarUser(resMaCarUser);
-      setData(res);
-    } catch (err) {
-      console.error(err);
-      message.error("ไม่สามารถดึงข้อมูลรถได้");
-    } finally {
-      setLoading(false);
-    }
+
+  // 2. แยก manualLoading สำหรับ Action ต่างๆ (เช่น กดลบ/แก้ไข ในตาราง)
+  const [manualLoading, setManualLoading] = useState<boolean>(false);
+
+  // 3. สร้าง Fetcher Function
+  const fetcher = async () => {
+    const intraAuthService = maCarService(intraAuth);
+
+    // ใช้ Promise.all ดึงข้อมูลพร้อมกัน 3 ส่วน (ลดเวลาโหลด)
+    const [resMaCar, resCars, resUsers] = await Promise.all([
+      intraAuthService.getMaCarQuery(), // รายการจองรถ
+      intraAuthService.getMasterCarQuery(), // ข้อมูลรถ
+      intraAuthService.getUserQuery(), // ข้อมูลผู้ใช้
+    ]);
+
+    // Filter ข้อมูลของ User ปัจจุบัน (ใช้ข้อมูลจาก resMaCar ที่ดึงมาแล้วได้เลย)
+    const resMaCarUser = resMaCar.filter(
+      (car: any) => car.createdById === session?.user?.userId,
+    );
+
+    return {
+      data: resMaCar,
+      dataCar: resCars,
+      dataUser: resUsers,
+      maCarUser: resMaCarUser,
+    };
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // 4. เรียกใช้ SWR
+  const {
+    data: swrData,
+    isLoading: isSwrLoading,
+    mutate,
+  } = useSWR(
+    session?.user?.userId ? ["manageMaCarPage", session.user.userId] : null,
+    fetcher,
+    {
+      refreshInterval: 5000, // อัปเดตอัตโนมัติทุก 5 วินาที
+      revalidateOnFocus: true,
+      onError: () => {
+        message.error("ไม่สามารถดึงข้อมูลรถได้");
+      },
+    },
+  );
+
+  // 5. Map ข้อมูลกลับมาเป็นตัวแปร (ใช้ Array ว่างเป็น Default เพื่อป้องกัน Error)
+  const data: MaCarType[] = swrData?.data || [];
+  const dataCar: MasterCarType[] = swrData?.dataCar || [];
+  const dataUser: any[] = swrData?.dataUser || [];
+  const maCarUser: MaCarType[] = swrData?.maCarUser || [];
+
+  // รวม Loading state
+  const loading = isSwrLoading || manualLoading;
+
+  // 6. Wrapper function สำหรับส่งให้ลูก (เพื่อให้ Type ตรงกับ Promise<void>)
+  const fetchData = async () => {
+    await mutate();
+  };
 
   const items: TabsProps["items"] = [
     {
@@ -70,7 +97,7 @@ export default function manageMaCarPage() {
           <ManageCarTable
             dataCar={dataCar}
             loading={loading}
-            setLoading={setLoading}
+            setLoading={setManualLoading} // ส่ง setManualLoading ไปใช้แทน
           />
         </Card>
       ),

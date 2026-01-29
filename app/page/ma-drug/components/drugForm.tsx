@@ -14,7 +14,11 @@ import {
   Space,
   AutoComplete,
 } from "antd";
-import { SaveOutlined, ClearOutlined } from "@ant-design/icons";
+import {
+  SaveOutlined,
+  ClearOutlined,
+  ExperimentOutlined,
+} from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { DrugType, MasterDrugType } from "../../common";
@@ -129,8 +133,8 @@ export default function DrugForm({
       className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
       style={{ maxWidth: 800, margin: "0 auto" }}
       title={
-        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-          เพิ่มข้อมูลยาใหม่
+        <div className="text-2xl font-bold text-[#0683e9] text-center py-2">
+          เพิ่มข้อมูลยา
         </div>
       }
     >
@@ -252,19 +256,10 @@ export default function DrugForm({
         <Form.Item style={{ textAlign: "center", marginBottom: 0 }}>
           <Space size="middle">
             <Button
-              icon={<ClearOutlined />}
-              onClick={() => form.resetFields()}
-              disabled={loading}
-              className="h-9 px-6 rounded-lg text-sm border-gray-300 text-gray-600 hover:text-red-500 hover:border-red-400 shadow-sm transition-all"
-            >
-              ล้างค่า
-            </Button>
-            <Button
               type="primary"
               htmlType="submit"
               loading={loading}
-              icon={<SaveOutlined />}
-              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300"
+              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex items-center bg-[#0683e9] border-none"
             >
               บันทึกข้อมูลยา
             </Button>

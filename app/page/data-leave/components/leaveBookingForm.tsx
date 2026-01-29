@@ -12,6 +12,7 @@ import {
   message,
   Row,
   Select,
+  Space,
   Table,
   Upload,
 } from "antd";
@@ -26,6 +27,8 @@ import "dayjs/locale/th";
 import { DataLeaveService } from "../services/dataLeave.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import CustomTable from "../../common/CustomTable";
+import { useRouter } from "next/navigation";
+import { ExperimentOutlined, SaveOutlined } from "@ant-design/icons";
 dayjs.locale("th");
 
 interface LeaveBookingFormProps {
@@ -52,6 +55,7 @@ export default function LeaveBookingForm({
   const [fileList, setFileList] = React.useState<UploadFile[]>([]);
   const intraAuth = useAxiosAuth();
   const intraAuthService = DataLeaveService(intraAuth);
+  const router = useRouter();
 
   const handleUploadChange = ({ fileList }: { fileList: UploadFile[] }) => {
     setFileList(fileList);
@@ -198,6 +202,7 @@ export default function LeaveBookingForm({
       message.success("บันทึกใบลาสำเร็จ");
       form.resetFields();
       setFileList([]);
+      router.push("/page/data-leave/dataLeave");
     } catch (err: any) {
       console.error("Error in onFinish:", err);
       message.error(err.message || "ไม่สามารถบันทึกใบลาได้");
@@ -205,6 +210,7 @@ export default function LeaveBookingForm({
       setLoading(false);
     }
   };
+
   return (
     <Row gutter={[24, 24]}>
       {/* ฟอร์ม */}
@@ -213,7 +219,7 @@ export default function LeaveBookingForm({
           className="shadow-lg rounded-2xl border-gray-100 overflow-hidden h-full"
           title={
             <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-              ฟอร์มใบลา
+              แบบฟอร์มใบลา
             </div>
           }
         >
@@ -487,18 +493,21 @@ export default function LeaveBookingForm({
 
                     <Form.Item
                       style={{
-                        textAlign: "center",
                         marginTop: 24,
                         marginBottom: 8,
                       }}
                     >
-                      <Button
-                        type="primary"
-                        htmlType="submit"
-                        className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] border-0"
-                      >
-                        ส่งใบลา
-                      </Button>
+                      {/* ✅ ใช้ Flexbox จัดปุ่มให้อยู่กึ่งกลางและวางคู่กัน */}
+                      <div className="flex justify-center items-center gap-3">
+                        <Button
+                          icon={<SaveOutlined />}
+                          type="primary"
+                          htmlType="submit"
+                          className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] border-0 flex items-center"
+                        >
+                          ส่งใบลา
+                        </Button>
+                      </div>
                     </Form.Item>
                   </>
                 );
@@ -520,7 +529,7 @@ export default function LeaveBookingForm({
                 fontSize: "20px",
               }}
             >
-              สรุปการลา
+              สรุปการลาของผู้ใช้
             </div>
           }
         >

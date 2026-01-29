@@ -1,0 +1,37 @@
+/* 1. นำเข้าฟอนต์ */
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap');
+
+* {
+  font-family: 'IBM Plex Sans Thai', sans-serif !important;
+  font-weight: 600;
+}
+
+td, 
+li, 
+textarea, 
+input,
+.ant-select-item-option-content, 
+.ant-select-selection-item,
+.ant-picker-input > input, 
+.ant-picker-cell-inner,
+.ant-tooltip-inner
+{
+  font-family: 'IBM Plex Sans Thai', sans-serif !important;
+  font-weight: 400 !important; 
+}
+
+.ant-picker-content th {
+  font-family: 'IBM Plex Sans Thai', sans-serif !important;
+  font-weight: 600 !important;
+  color: #333 !important;     
+}
+
+li::marker {
+  font-size: 14px !important;
+  color: rgba(0, 0, 0, 0.7) !important; 
+} 
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

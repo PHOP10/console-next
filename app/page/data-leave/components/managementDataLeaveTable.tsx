@@ -127,7 +127,8 @@ export default function ManagementDataLeaveTable({
         approvedDate: new Date().toISOString(),
       });
       message.success("อนุมัติรายการนี้แล้ว");
-      setLoading(true);
+      // setLoading(true);
+      fetchData();
       setOpenPopoverId(null);
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการอนุมัติ:", error);
@@ -178,11 +179,17 @@ export default function ManagementDataLeaveTable({
   };
 
   const columns: ColumnsType<DataLeaveType> = [
-    { title: "ชื่อผู้ลา", dataIndex: "createdName", key: "createdName" },
+    {
+      title: "ชื่อผู้ลา",
+      dataIndex: "createdName",
+      key: "createdName",
+      align: "center",
+    },
     {
       title: "เหตุผลการลา",
       dataIndex: "reason",
       key: "reason",
+      align: "center",
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -199,6 +206,7 @@ export default function ManagementDataLeaveTable({
       title: "ตั้งแต่วันที่",
       dataIndex: "dateStart",
       key: "dateStart",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -212,6 +220,7 @@ export default function ManagementDataLeaveTable({
       title: "ถึงวันที่",
       dataIndex: "dateEnd",
       key: "dateEnd",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -225,6 +234,7 @@ export default function ManagementDataLeaveTable({
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) => {
         let color = "default";
         let text = "";
@@ -242,6 +252,10 @@ export default function ManagementDataLeaveTable({
             color = "green";
             text = "อนุมัติ";
             break;
+          case "success":
+            color = "gray";
+            text = "เสร็จสิ้น";
+            break;
           case "cancel":
             color = "red";
             text = "ยกเลิก";
@@ -258,6 +272,7 @@ export default function ManagementDataLeaveTable({
       title: "หมายเหตุเพิ่มเติม",
       dataIndex: "details",
       key: "details",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -274,68 +289,9 @@ export default function ManagementDataLeaveTable({
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
-          <Tooltip title="แก้ไข">
-            <EditOutlined
-              style={{
-                fontSize: 22,
-                // ใช้สีส้ม (#faad14) เมื่อสถานะเป็น pending, นอกนั้นสีเทา
-                color: record.status === "pending" ? "#faad14" : "#d9d9d9",
-                cursor: record.status === "pending" ? "pointer" : "not-allowed",
-                transition: "color 0.2s",
-              }}
-              onClick={() => {
-                // ต้องเช็คสถานะก่อนเปิด Modal เพราะ Icon ไม่มี prop disabled เหมือน Button
-                if (record.status === "pending") {
-                  openEditModal(record);
-                }
-              }}
-            />
-          </Tooltip>
-
-          <Popconfirm
-            title="ยืนยันการลบ"
-            // description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?" // ควรใส่ description เพิ่มเพื่อความชัดเจน (ถ้าต้องการ)
-            okText="ใช่"
-            cancelText="ยกเลิก"
-            onConfirm={() => handleDelete(record)}
-          >
-            <Tooltip title="ลบ">
-              <DeleteOutlined
-                style={{
-                  fontSize: 22,
-                  color: "#ff4d4f", // สีแดง Danger
-                  cursor: "pointer",
-                  transition: "color 0.2s",
-                }}
-                // (Optional) เพิ่มลูกเล่นให้สีเข้มขึ้นตอนเอาเมาส์ชี้
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
-              />
-            </Tooltip>
-          </Popconfirm>
-
-          <Popconfirm
-            title="ยืนยันการส่งคืนเพื่อแก้ไข"
-            okText="ยืนยัน"
-            cancelText="ยกเลิก"
-            onConfirm={() => returnEdit(record)}
-            disabled={record.status !== "approve"}
-          >
-            <Tooltip title="ส่งคืนเพื่อแก้ไข">
-              <RollbackOutlined
-                style={{
-                  fontSize: 22,
-                  color: record.status === "approve" ? "orange" : "#d9d9d9",
-                  cursor:
-                    record.status === "approve" ? "pointer" : "not-allowed",
-                  transition: "color 0.2s",
-                }}
-              />
-            </Tooltip>
-          </Popconfirm>
-
           <Popover
             trigger="click"
             title={
@@ -388,12 +344,72 @@ export default function ManagementDataLeaveTable({
             </Tooltip>
           </Popover>
 
+          <Popconfirm
+            title="ยืนยันการส่งคืนเพื่อแก้ไข"
+            okText="ยืนยัน"
+            cancelText="ยกเลิก"
+            onConfirm={() => returnEdit(record)}
+            disabled={record.status !== "approve"}
+          >
+            <Tooltip title="ส่งคืนเพื่อแก้ไข">
+              <RollbackOutlined
+                style={{
+                  fontSize: 22,
+                  color: record.status === "approve" ? "orange" : "#d9d9d9",
+                  cursor:
+                    record.status === "approve" ? "pointer" : "not-allowed",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
+          </Popconfirm>
+
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
               style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
               onClick={() => handleShowDetail(record)}
             />
           </Tooltip>
+
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              style={{
+                fontSize: 22,
+                // ใช้สีส้ม (#faad14) เมื่อสถานะเป็น pending, นอกนั้นสีเทา
+                color: record.status === "pending" ? "#faad14" : "#d9d9d9",
+                cursor: record.status === "pending" ? "pointer" : "not-allowed",
+                transition: "color 0.2s",
+              }}
+              onClick={() => {
+                // ต้องเช็คสถานะก่อนเปิด Modal เพราะ Icon ไม่มี prop disabled เหมือน Button
+                if (record.status === "pending") {
+                  openEditModal(record);
+                }
+              }}
+            />
+          </Tooltip>
+
+          <Popconfirm
+            title="ยืนยันการลบ"
+            // description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?" // ควรใส่ description เพิ่มเพื่อความชัดเจน (ถ้าต้องการ)
+            okText="ใช่"
+            cancelText="ยกเลิก"
+            onConfirm={() => handleDelete(record)}
+          >
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{
+                  fontSize: 22,
+                  color: "#ff4d4f", // สีแดง Danger
+                  cursor: "pointer",
+                  transition: "color 0.2s",
+                }}
+                // (Optional) เพิ่มลูกเล่นให้สีเข้มขึ้นตอนเอาเมาส์ชี้
+                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
+              />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -401,6 +417,13 @@ export default function ManagementDataLeaveTable({
 
   return (
     <>
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          รายการการลา
+        </h2>
+        <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
+      </div>
+
       <DataLeaveDetail
         open={detailModalOpen}
         onClose={handleCloseDetail}
@@ -414,6 +437,7 @@ export default function ManagementDataLeaveTable({
         loading={loading}
         pagination={{ pageSize: 10 }}
         scroll={{ x: "max-content" }}
+        bordered
       />
 
       <DataLeaveEdit

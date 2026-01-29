@@ -195,10 +195,10 @@ export default function MaMedicalEquipmentTable({
       align: "center",
     },
     {
-      title: "รายการ/ชื่อเครื่องมือ",
+      title: "รายการ",
       dataIndex: "items",
       key: "items",
-      width: 200,
+      width: 140,
       align: "center",
       render: (items: any[]) => {
         const maxToShow = 2;
@@ -227,7 +227,7 @@ export default function MaMedicalEquipmentTable({
       title: "จำนวน",
       dataIndex: "items",
       key: "items",
-      width: 160,
+      width: 140,
       align: "center",
       render: (items: any[]) => {
         if (!items || items.length === 0) return null;
@@ -317,7 +317,7 @@ export default function MaMedicalEquipmentTable({
       },
     },
     {
-      title: "การจัดการ",
+      title: "จัดการ",
       key: "action",
       align: "center",
       render: (_, record) => (
@@ -448,12 +448,12 @@ export default function MaMedicalEquipmentTable({
         <div
           style={{
             textAlign: "center",
-            fontSize: "20px",
+            fontSize: "24px",
             fontWeight: "bold",
             color: "#0683e9",
           }}
         >
-          ข้อมูลเครื่องมือแพทย์
+          รายการส่งเครื่องมือแพทย์
         </div>
       }
       bordered

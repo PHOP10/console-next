@@ -1,7 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { Breadcrumb, Col, Divider, message, Row, Tabs, TabsProps } from "antd";
+import {
+  Breadcrumb,
+  Card,
+  Col,
+  Divider,
+  message,
+  Row,
+  Tabs,
+  TabsProps,
+} from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
@@ -64,11 +73,29 @@ export default function Page() {
       key: "2",
       label: "เพิ่มวัสดุสนับสนุน",
       children: (
-        <SupportingResourceForm
-          setLoading={setLoading}
-          loading={loading}
-          fetchData={fetchData}
-        />
+        <Card
+          className="shadow-sm rounded-2xl border-gray-100 overflow-hidden"
+        >
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "24px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            เพิ่มวัสดุสนับสนุน
+          </div>
+
+          {/* 🔹 ตัวฟอร์มต้นฉบับ */}
+          <SupportingResourceForm
+            setLoading={setLoading}
+            loading={loading}
+            fetchData={fetchData}
+          />
+        </Card>
       ),
     });
   }

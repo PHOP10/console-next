@@ -49,16 +49,20 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
 
   const formatThaiDate = (date: string | Date) => {
     if (!date) return "-";
+
     const d = dayjs(date);
-    const day = toThaiNumber(d.format("D"));
-    const month = d.format("MMMM");
-    const year = toThaiNumber(d.year() + 543);
-    return `${day} ${month} ${year}`;
+
+    const day = d.format("D"); // 24
+    const month = d.format("MMMM"); // มกราคม
+    const year = d.year() + 543; // 2569
+    const time = d.format("HH:mm"); // 08:00
+
+    // เว้นวรรค: วัน เดือน ปี เวลา xx:xx น.
+    return `${day} ${month} ${year} เวลา ${time} น.`;
   };
 
   const handleExport = async () => {
     try {
-      // ✅ เปลี่ยนชื่อไฟล์ Template
       const response = await fetch("/officialTravelRequestTemplate.docx");
       if (!response.ok)
         throw new Error("ไม่สามารถโหลด officialTravelRequestTemplate.docx");
@@ -237,19 +241,31 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
   };
 
   return (
-    <Tooltip title="พิมพ์ใบขอไปราชการ">
+    <Tooltip
+      title={
+        record.status === "approve"
+          ? "พิมพ์ใบขอไปราชการ"
+          : "รอการอนุมัติเพื่อพิมพ์เอกสาร"
+      }
+    >
       <FileWordOutlined
         style={{
           fontSize: 22,
-          // ถ้าสถานะเป็น pending หรือ approved ให้ใช้สีฟ้า (หรือสีน้ำเงินเข้มเพื่อให้ดูเหมือน Word)
-          color:
-            record.status === "pending" || record.status === "approved"
-              ? "#1890ff" // สีฟ้าแบบ Word หรือ #2b579a (Official Word Blue)
-              : "#d9d9d9",
-          cursor: "pointer",
-          transition: "color 0.2s",
+          // 1. กำหนดสี: ถ้า approved ใช้สีฟ้า Word ถ้ายังไม่ approved (เช่น pending) ใช้สีเทาจางๆ
+          color: record.status === "approve" ? "#1677ff" : "#d9d9d9",
+
+          // 2. กำหนด Mouse Cursor: ถ้ายังไม่ approved ให้เป็นรูปห้าม (not-allowed)
+          cursor: record.status === "approve" ? "pointer" : "not-allowed",
+
+          opacity: record.status === "approve" ? 1 : 0.45,
+
+          transition: "all 0.2s",
         }}
-        onClick={handleExport}
+        onClick={() => {
+          if (record.status === "approve") {
+            handleExport();
+          }
+        }}
       />
     </Tooltip>
   );

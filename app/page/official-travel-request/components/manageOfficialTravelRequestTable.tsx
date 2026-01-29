@@ -193,16 +193,19 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       title: "ผู้ยื่นคำขอ",
       dataIndex: "createdName",
       key: "createdName",
+      align: "center",
     },
     {
       title: "เลขที่เอกสาร",
       dataIndex: "documentNo",
       key: "documentNo",
+      align: "center",
     },
     {
       title: "วัตถุประสงค์",
       dataIndex: "missionDetail",
       key: "missionDetail",
+      align: "center",
       // ellipsis: true,
       render: (text: string) => {
         const maxLength = 25;
@@ -220,6 +223,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       title: "สถานที่",
       dataIndex: "location",
       key: "location",
+      align: "center",
       // ellipsis: true,
       render: (text: string) => {
         const maxLength = 25;
@@ -237,6 +241,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       title: "ตั้งแต่วันที่",
       dataIndex: "startDate",
       key: "startDate",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -250,6 +255,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       title: "ถึงวันที่",
       dataIndex: "endDate",
       key: "endDate",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -278,7 +284,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             text = "อนุมัติ";
             break;
           case "edit":
-            color = "purple";
+            color = "orange";
             text = "รอแก้ไข";
             break;
           case "cancel":
@@ -297,6 +303,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       title: "หมมายเหตุ",
       dataIndex: "note",
       key: "note",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -313,6 +320,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_, record) => (
         <Space>
           <Tooltip title="แก้ไข">
@@ -452,7 +460,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                 }}
                 onClick={(e) => {
                   if (record.status !== "pending") {
-                    e.stopPropagation(); // หยุด Event ไม่ให้ Popover ทำงาน
+                    e.stopPropagation();
                     return;
                   }
                   setOpenPopoverId(record.id);
@@ -482,6 +490,14 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
 
   return (
     <>
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          รายการขอไปราชการ
+        </h2>
+        {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
+        <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
+      </div>
+
       <CustomTable
         rowKey="id"
         columns={columns}
@@ -554,6 +570,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
         fetchData={fetchData}
         dataUser={dataUser}
         cars={cars}
+        dataOTR={data}
       />
 
       <Modal

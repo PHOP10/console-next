@@ -53,15 +53,7 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
     "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
   return (
-    <Card
-      // ปรับ Card ให้มีมิติ ลอยเด่น และขอบมน
-      className="shadow-lg rounded-2xl border-gray-100 overflow-hidden"
-      title={
-        <div className="text-xl font-bold text-[#0683e9] text-center py-2">
-          บันทึกการทิ้งขยะติดเชื้อ
-        </div>
-      }
-    >
+    <Card>
       <div className="flex justify-center">
         <div className="w-full max-w-[350px]">
           <Form
@@ -109,7 +101,7 @@ export default function ThrowAwayWasteForm({ setLoading }: Props) {
             >
               <DatePicker
                 locale={th_TH}
-                format="D MMMM BBBB"
+                format="D MMMM YYYY"
                 placeholder="เลือกวันที่"
                 style={{ width: "100%" }}
                 className="h-11 shadow-sm rounded-xl border-gray-300 hover:border-blue-400 focus:border-blue-500 focus:shadow-md"

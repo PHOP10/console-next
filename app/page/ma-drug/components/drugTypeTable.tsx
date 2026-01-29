@@ -140,11 +140,13 @@ export default function DrugTypeTable() {
       title: "ชื่อประเภทยา",
       dataIndex: "drugType",
       key: "drugType",
+      align: "center",
     },
     {
       title: "คำอธิบาย",
       dataIndex: "description",
       key: "description",
+      align: "center",
       render: (text) => text || "-", // ถ้าไม่มีข้อมูลให้โชว์ขีด
     },
     {
@@ -202,28 +204,35 @@ export default function DrugTypeTable() {
             color: "#0683e9",
             display: "flex",
             alignItems: "center",
+            justifyContent: "center", 
             gap: 8,
+            fontSize: "24px",
+            fontWeight: "bold", 
+            marginTop: "10px",
+            marginBottom: "8px",
           }}
         >
-          <span>จัดการประเภทยา</span>
+          จัดการประเภทยา
         </div>
       }
     >
-      {/* ปุ่มเพิ่มข้อมูลอยู่เหนือตาราง */}
       <div
         style={{
-          marginBottom: 16,
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "flex-start",
+          marginBottom: "16px",
         }}
       >
         <Button
           type="primary"
-          icon={<PlusOutlined />}
           onClick={handleOpenAdd}
-          size="small"
+          style={{
+            borderRadius: "8px", // ปรับมุมโค้งให้เข้ากับธีม Card
+            display: "inline-flex", // บังคับให้ขนาดกว้างเท่ากับเนื้อหาข้างใน
+            alignItems: "center",
+          }}
         >
-          เพิ่มประเภทยา
+         + เพิ่มประเภทยา
         </Button>
       </div>
 
@@ -247,7 +256,6 @@ export default function DrugTypeTable() {
               </span>
             ) : (
               <span>
-                <PlusOutlined className="mr-2" />
                 เพิ่มประเภทยาใหม่
               </span>
             )}

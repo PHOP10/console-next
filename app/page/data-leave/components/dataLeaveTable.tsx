@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Form, Space, Table, Tag, Tooltip, Row } from "antd";
+import { Form, Space, Table, Tag, Tooltip, Row, Col } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import dayjs from "dayjs";
@@ -72,11 +72,17 @@ export default function DataLeaveTable({
   };
 
   const columns: ColumnsType<DataLeaveType> = [
-    { title: "ชื่อผู้ลา", dataIndex: "createdName", key: "createdName" },
+    {
+      title: "ชื่อผู้ลา",
+      dataIndex: "createdName",
+      key: "createdName",
+      align: "center",
+    },
     {
       title: "เหตุผลการลา",
       dataIndex: "reason",
       key: "reason",
+      align: "center",
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -93,6 +99,7 @@ export default function DataLeaveTable({
       title: "ตั้งแต่วันที่",
       dataIndex: "dateStart",
       key: "dateStart",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -106,6 +113,7 @@ export default function DataLeaveTable({
       title: "ถึงวันที่",
       dataIndex: "dateEnd",
       key: "dateEnd",
+      align: "center",
       render: (text: string) => {
         const date = new Date(text);
         return new Intl.DateTimeFormat("th-TH", {
@@ -119,6 +127,7 @@ export default function DataLeaveTable({
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
       render: (status) => {
         let color = "default";
         let text = "";
@@ -136,10 +145,15 @@ export default function DataLeaveTable({
             color = "green";
             text = "อนุมัติ";
             break;
+          case "success":
+            color = "gray";
+            text = "เสร็จสิ้น";
+            break;
           case "cancel":
             color = "red";
             text = "ยกเลิก";
             break;
+
           default:
             text = status;
         }
@@ -151,6 +165,7 @@ export default function DataLeaveTable({
       title: "หมายเหตุเพิ่มเติม",
       dataIndex: "details",
       key: "details",
+      align: "center",
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
@@ -168,6 +183,7 @@ export default function DataLeaveTable({
     {
       title: "จัดการ",
       key: "action",
+      align: "center",
       render: (_: any, record: any) => (
         <Space>
           <Tooltip title="แก้ไข">
@@ -210,35 +226,45 @@ export default function DataLeaveTable({
 
   return (
     <>
-      <DataLeaveDetail
-        open={detailModalOpen}
-        onClose={handleCloseDetail}
-        record={selectedRecord}
-        user={user}
-      />
-      <Row gutter={[24, 24]}>
-        <CustomTable
-          rowKey="id"
-          columns={columns}
-          dataSource={leaveByUserId}
-          loading={loading}
-          pagination={{ pageSize: 10 }}
-          scroll={{ x: "800" }}
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          ข้อมูลการลาของผู้ใช้
+        </h2>
+        <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
+      </div>
+
+      <div className="p-3 pt-1">
+        <DataLeaveDetail
+          open={detailModalOpen}
+          onClose={handleCloseDetail}
+          record={selectedRecord}
+          user={user}
         />
-      </Row>
-      <DataLeaveEdit
-        open={isEditOpen}
-        record={currentRecord}
-        masterLeaves={masterLeaves}
-        onClose={() => {
-          setIsEditOpen(false);
-        }}
-        onUpdate={handleUpdate}
-        fetchData={fetchData}
-        leaveByUserId={leaveByUserId}
-        user={user}
-        formEdit={formEdit}
-      />
+        <Row gutter={[24, 24]}>
+          <CustomTable
+            rowKey="id"
+            columns={columns}
+            dataSource={leaveByUserId}
+            loading={loading}
+            pagination={{ pageSize: 10 }}
+            scroll={{ x: "800" }}
+            bordered
+          />
+        </Row>
+        <DataLeaveEdit
+          open={isEditOpen}
+          record={currentRecord}
+          masterLeaves={masterLeaves}
+          onClose={() => {
+            setIsEditOpen(false);
+          }}
+          onUpdate={handleUpdate}
+          fetchData={fetchData}
+          leaveByUserId={leaveByUserId}
+          user={user}
+          formEdit={formEdit}
+        />
+      </div>
     </>
   );
 }

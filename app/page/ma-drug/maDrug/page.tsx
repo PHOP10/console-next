@@ -1,55 +1,122 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Breadcrumb, Col, Divider, Row, Tabs, TabsProps, message } from "antd";
+import React, { useState } from "react";
+import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
+import useSWR from "swr";
+
+// Components
 import DrugDaisbursementTable from "../components/maDrugTable";
 import MaDrugForm from "../components/maDrugForm";
+import DispenseForm from "../components/dispenseForm";
+import DispenseTable from "../components/dispenseTable"; // ✅ เปลี่ยนชื่อ import ให้สื่อความหมาย (เดิม DispenseType)
+
+// Services & Hooks
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { DrugType, MaDrugType } from "../../common";
+
+// Types
+import { DrugType, MaDrugType, DispenseType } from "../../common";
 
 export default function Page() {
-  const [loading, setLoading] = useState<boolean>(true);
-  const [drugs, setDrugs] = useState<DrugType[]>([]);
-  const [data, setData] = useState<MaDrugType[]>([]);
   const intraAuth = useAxiosAuth();
-  const intraAuthService = MaDrug(intraAuth);
+  const [manualLoading, setManualLoading] = useState<boolean>(false);
 
-  // ฟังก์ชันดึงรายการยา
-  const fetchDrugs = async () => {
-    try {
-      const result = await intraAuthService.getDrugQuery?.();
-       const results = await intraAuthService.getMaDrugQuery();
-      setData(Array.isArray(results) ? results : results?.data || []);
-      setDrugs(Array.isArray(result) ? result : result?.data || []);
-    } catch (error) {
-      console.error(error);
-      message.error("ไม่สามารถดึงข้อมูลยาได้");
-    }
+  // 1. ปรับ Fetcher ให้ดึงข้อมูล 3 ส่วน: ยา (Master), ใบเบิก (Stock In), ใบจ่าย (Stock Out)
+  const fetcher = async () => {
+    const intraAuthService = MaDrug(intraAuth);
+
+    const [drugsRes, maDrugsRes, dispenseRes] = await Promise.all([
+      intraAuthService.getDrugQuery?.(), // Master Drugs
+      intraAuthService.getMaDrugQuery(), // Stock In
+      intraAuthService.getDispenseQuery(), // ✅ Stock Out (ดึงข้อมูลจ่ายยา)
+    ]);
+
+    return {
+      drugs: Array.isArray(drugsRes) ? drugsRes : drugsRes?.data || [],
+      maDrugs: Array.isArray(maDrugsRes) ? maDrugsRes : maDrugsRes?.data || [],
+      dispenses: Array.isArray(dispenseRes)
+        ? dispenseRes
+        : dispenseRes?.data || [], // ✅ เก็บข้อมูลจ่ายยา
+    };
   };
 
-  useEffect(() => {
-    setLoading(true);
-    fetchDrugs().finally(() => setLoading(false));
-  }, []);
+  const {
+    data: swrData,
+    isLoading: isSwrLoading,
+    mutate,
+  } = useSWR("maDrugDisbursementPage", fetcher, {
+    refreshInterval: 5000,
+    revalidateOnFocus: true,
+    onError: (error) => {
+      console.error(error);
+      message.error("ไม่สามารถดึงข้อมูลได้");
+    },
+  });
+
+  // 2. แยกข้อมูลออกมาใช้งาน
+  const drugs: DrugType[] = swrData?.drugs || [];
+  const maDrugData: MaDrugType[] = swrData?.maDrugs || [];
+  const dispenseData: DispenseType[] = swrData?.dispenses || []; // ✅ ข้อมูลสำหรับตารางจ่ายยา
+
+  const fetchDrugs = async () => {
+    setManualLoading(true);
+    await mutate(); // รีโหลดข้อมูลทั้งหมดใหม่
+    setManualLoading(false);
+  };
 
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลการเบิกจ่ายยา",
-      children: <DrugDaisbursementTable data={data} fetchDrugs={fetchDrugs} />,
+      label: "ข้อมูลการเบิกยา",
+      children: (
+        <Card bordered={false} className="shadow-sm">
+          <DrugDaisbursementTable data={maDrugData} fetchDrugs={fetchDrugs} />
+        </Card>
+      ),
     },
     {
       key: "2",
-      label: "การเบิกจ่ายยา",
-      children: <MaDrugForm drugs={drugs} refreshData={fetchDrugs} />, // ✅ ส่ง drugs + refreshData
+      label: "ทำรายการเบิกยา",
+      children: (
+        <Card>
+          <MaDrugForm
+            drugs={drugs}
+            data={maDrugData}
+            refreshData={fetchDrugs}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: "3",
+      label: "ข้อมูลการจ่ายยา",
+      children: (
+        <Card bordered={false} className="shadow-sm">
+          <DispenseTable
+            data={dispenseData}
+            refreshData={fetchDrugs}
+            drugs={drugs}
+          />
+        </Card>
+      ),
+    },
+    {
+      key: "4",
+      label: "ทำรายการจ่ายยา",
+      children: (
+        <Card>
+          <DispenseForm
+            drugs={drugs}
+            data={dispenseData}
+            refreshData={fetchDrugs}
+          />
+        </Card>
+      ),
     },
   ];
 
   return (
     <div>
-      <Breadcrumb items={[{ title: "หน้าหลัก" }, { title: "เบิกจ่ายยา" }]} />
-      <Divider />
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Tabs defaultActiveKey="1" items={items} />

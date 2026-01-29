@@ -46,6 +46,7 @@ type Props = {
   loading: boolean;
   data: MaMedicalEquipmentType[];
   dataEQ: MedicalEquipmentType[];
+  fetchData: () => Promise<void>;
 };
 
 export default function MedicalEquipmentTable({
@@ -53,6 +54,7 @@ export default function MedicalEquipmentTable({
   loading,
   data,
   dataEQ,
+  fetchData,
 }: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maMedicalEquipmentServices(intraAuth);
@@ -80,10 +82,11 @@ export default function MedicalEquipmentTable({
     setEditModalVisible(true);
   };
 
-  const handleEditSuccess = () => {
+  const handleEditSuccess = async () => {
     setLoading(true); // Refresh Data
     setEditModalVisible(false);
     setEditingItem(null);
+    await fetchData();
   };
 
   const handleOpenModalReturn = (record: any) => {
@@ -109,6 +112,7 @@ export default function MedicalEquipmentTable({
   const handleConfirmReturn = async () => {
     if (!recordReturn) return;
     try {
+      setLoading(true); // ✅ เริ่มโหลด
       await intraAuthService.updateMaMedicalEquipment({
         id: recordReturn.id,
         status: "return",
@@ -120,10 +124,12 @@ export default function MedicalEquipmentTable({
       message.success("รับคืนอุปกรณ์เรียบร้อยแล้ว");
       setIsModalOpen(false);
       setRecordReturn(null);
-      setLoading(true);
+
+      await fetchData(); // ✅ ดึงข้อมูลใหม่เพื่อรีเฟรชตาราง
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์:", error);
       message.error("ไม่สามารถรับคืนอุปกรณ์ได้");
+      setLoading(false); // ❌ อย่าลืมปิด loading กรณี error
     }
   };
 
@@ -141,11 +147,11 @@ export default function MedicalEquipmentTable({
       align: "center",
     },
     {
-      title: "รายการ/ชื่อเครื่องมือ",
+      title: "รายการ",
       dataIndex: "items",
       key: "items",
       align: "center",
-      width: 160,
+      width: 140,
       render: (items: any[]) => {
         const maxToShow = 2;
         const hasMore = items?.length > maxToShow;
@@ -257,7 +263,7 @@ export default function MedicalEquipmentTable({
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
         return (
           <Tooltip title={text}>
-            <span>{shortText}</span>
+            <li>{shortText}</li>
           </Tooltip>
         );
       },
@@ -351,12 +357,12 @@ export default function MedicalEquipmentTable({
         <div
           style={{
             textAlign: "center",
-            fontSize: "20px",
+            fontSize: "24px",
             fontWeight: "bold",
             color: "#0683e9ff",
           }}
         >
-          ข้อมูลเครื่องมือแพทย์
+          รายการส่งเครื่องมือแพทย์
         </div>
       }
     >

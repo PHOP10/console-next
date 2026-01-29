@@ -216,49 +216,54 @@ export default function SupportingResourceTable({
       <Card bodyStyle={{ padding: 0 }}>
         <div
           style={{
-            fontSize: "20px",
+            fontSize: "24px",
             textAlign: "center",
             fontWeight: "bold",
             color: "#0683e9",
-            marginBottom: "20px",
+            marginBottom: "0px",
             borderBottom: "1px solid #e8e8e8",
             paddingTop: "14px",
-            height: "59px",
+            height: "60px",
           }}
         >
           ข้อมูลวัสดุสนับสนุน
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: 16,
-            paddingLeft: 24,
-            paddingRight: 24,
-          }}
-        >
-          <Input.Search
-            placeholder="ค้นหาวัสดุ..."
-            onChange={(e) => setSearchText(e.target.value)}
-            style={{ width: 300 }}
-            className="rounded-lg"
+        <div className="p-6">
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: 16,
+              alignItems: "center"
+            }}
+          >
+            <Input.Search
+              placeholder="ค้นหาวัสดุ..."
+              onChange={(e) => setSearchText(e.target.value)}
+              style={{ width: 300 }}
+              className="rounded-lg"
+            />
+
+            <Button
+              type="primary"
+              onClick={() => exportDurableArticles(data)}
+              className="rounded-lg bg-green-600 hover:bg-green-700 border-none"
+            >
+              Export Excel
+            </Button>
+          </div>
+
+          <CustomTable
+            rowKey="id"
+            columns={columns}
+            dataSource={filteredData}
+            loading={loading}
+            bordered
+            scroll={{ x: "max-content" }}
+            style={{ width: "100%" }}
           />
-
-          <Button type="primary" onClick={() => exportDurableArticles(data)}>
-            Export Excel
-          </Button>
         </div>
-
-        <CustomTable
-          rowKey="id"
-          columns={columns}
-          dataSource={filteredData}
-          loading={loading}
-          bordered
-          scroll={{ x: "max-content" }}
-          style={{ width: "100%" }}
-        />
       </Card>
 
       {/* --- เรียกใช้ Modal ที่แยกไฟล์ออกมา --- */}

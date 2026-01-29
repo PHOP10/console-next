@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Tabs, Breadcrumb, Row, Col, Divider } from "antd";
+import React, { useState } from "react";
+import { Tabs, Row, Col, Card } from "antd";
 import type { TabsProps } from "antd";
 import MedicalEquipmentTable from "../components/medicalEquipmentTable";
 import {
@@ -13,34 +13,57 @@ import EquipmentTable from "../components/equipmentTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { useSession } from "next-auth/react";
+import useSWR from "swr"; // 1. Import SWR
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = maMedicalEquipmentServices(intraAuth);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [data, setData] = useState<MaMedicalEquipmentType[]>([]);
-  const [dataEQ, setDataRQ] = useState<MedicalEquipmentType[]>([]);
   const { data: session } = useSession();
 
-  const fetchData = useCallback(async () => {
-    try {
-      const data = await intraAuthService.getMaMedicalEquipmentQuery();
-      const res = await intraAuthService.getMedicalEquipmentQuery();
-      setData(data);
-      setDataRQ(res);
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [intraAuthService, setLoading]);
+  // 2. แยก manualLoading สำหรับ Action ต่างๆ จาก Component ลูก
+  const [manualLoading, setManualLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    // console.log(data);
-    if (loading) {
-      fetchData();
-    }
-  }, [loading, fetchData]);
+  // 3. สร้าง Fetcher Function
+  const fetcher = async () => {
+    const intraAuthService = maMedicalEquipmentServices(intraAuth);
+
+    // ดึงข้อมูลพร้อมกัน
+    const [resData, resEQ] = await Promise.all([
+      intraAuthService.getMaMedicalEquipmentQuery(),
+      intraAuthService.getMedicalEquipmentQuery(),
+    ]);
+
+    return {
+      data: resData,
+      dataEQ: resEQ,
+    };
+  };
+
+  // 4. เรียกใช้ SWR
+  const {
+    data: swrData,
+    isLoading: isSwrLoading,
+    mutate,
+  } = useSWR("medicalEquipmentPage", fetcher, {
+    refreshInterval: 5000, // อัปเดตข้อมูลทุก 5 วินาที
+    revalidateOnFocus: true,
+    onError: (error) => {
+      console.error("Failed to fetch data:", error);
+    },
+  });
+
+  // 5. Map ข้อมูล (ใช้ Array ว่างเป็น Default)
+  const data: MaMedicalEquipmentType[] = swrData?.data || [];
+  const dataEQ: MedicalEquipmentType[] = swrData?.dataEQ || [];
+
+  // รวม Loading state
+  const loading = isSwrLoading || manualLoading;
+
+  // 6. Wrapper function สำหรับส่งให้ลูก (เพื่อให้ Type ตรงกับ Promise<void> และจัดการ Loading)
+  const fetchData = async () => {
+    setManualLoading(true);
+    await mutate();
+    setManualLoading(false);
+  };
 
   const items: TabsProps["items"] = [
     {
@@ -48,9 +71,10 @@ export default function Page() {
       label: "ข้อมูลการส่งเครื่องมือแพทย์",
       children: (
         <MedicalEquipmentTable
-          setLoading={setLoading}
+          setLoading={setManualLoading} // ใช้ manualLoading แทน
           loading={loading}
           data={data}
+          fetchData={fetchData}
           dataEQ={dataEQ}
         />
       ),
@@ -59,12 +83,27 @@ export default function Page() {
       key: "2",
       label: "ส่งเครื่องมือแพทย์",
       children: (
-        <CreateMedicalEquipmentForm
-          setLoading={setLoading}
-          dataEQ={dataEQ}
-          data={data}
-           fetchData={fetchData}
-        />
+        <Card>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "24px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            ส่งเครื่องมือแพทย์
+          </div>
+
+          <CreateMedicalEquipmentForm
+            setLoading={setManualLoading}
+            dataEQ={dataEQ}
+            data={data}
+            fetchData={fetchData}
+          />
+        </Card>
       ),
     },
     ...(session?.user?.role === "admin" || session?.user?.role === "pharmacy"
@@ -74,7 +113,7 @@ export default function Page() {
             label: "ข้อมูลเครื่องมือแพทย์ทั้งหมด",
             children: (
               <EquipmentTable
-                setLoading={setLoading}
+                setLoading={setManualLoading}
                 loading={loading}
                 dataEQ={dataEQ}
                 fetchData={fetchData}

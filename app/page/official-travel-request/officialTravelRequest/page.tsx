@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { officialTravelRequestService } from "../services/officialTravelRequest.service";
@@ -9,37 +9,53 @@ import OfficialTravelRequestCalendar from "../components/officialTravelRequestCa
 import { userService } from "../../user/services/user.service";
 import { MasterCarType, UserType } from "../../common";
 import { maCarService } from "../../ma-car/services/maCar.service";
+import useSWR from "swr";
 
 export default function page() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = officialTravelRequestService(intraAuth);
-  const intraAuthUserService = userService(intraAuth);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<any[]>([]);
-  const intraAuthCarService = maCarService(intraAuth);
-  const [dataUser, setDataUser] = useState<UserType[]>([]);
-  const [cars, setCars] = useState<MasterCarType[]>([]);
+  const [manualLoading, setManualLoading] = useState<boolean>(false);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await intraAuthService.getOfficialTravelRequestQuery();
-      const resUsers = await intraAuthUserService.getUserQuery();
-      const resCar = await intraAuthCarService.getMasterCarQuery();
-      setCars(resCar);
-      setData(res);
-      setDataUser(resUsers);
-    } catch (err) {
-      console.error(err);
-      message.error("ไม่สามารถดึงข้อมูลรถได้");
-    } finally {
-      setLoading(false);
-    }
+  const fetcher = async () => {
+    const intraAuthService = officialTravelRequestService(intraAuth);
+    const intraAuthUserService = userService(intraAuth);
+    const intraAuthCarService = maCarService(intraAuth);
+
+    const [res, resUsers, resCar] = await Promise.all([
+      intraAuthService.getOfficialTravelRequestQuery(),
+      intraAuthUserService.getUserQuery(),
+      intraAuthCarService.getMasterCarQuery(),
+    ]);
+
+    return {
+      data: res,
+      dataUser: resUsers,
+      cars: resCar,
+    };
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const {
+    data: swrData,
+    isLoading: isSwrLoading,
+    mutate,
+  } = useSWR("officialTravelRequestPage", fetcher, {
+    refreshInterval: 5000,
+    revalidateOnFocus: true,
+    onError: () => {
+      message.error("ไม่สามารถดึงข้อมูลรถได้");
+    },
+  });
+
+  const data: any[] = swrData?.data || [];
+  const dataUser: UserType[] = swrData?.dataUser || [];
+  const cars: MasterCarType[] = swrData?.cars || [];
+
+  const loading = isSwrLoading || manualLoading;
+
+  const fetchData = async () => {
+    setManualLoading(true);
+    await mutate();
+    setManualLoading(false);
+  };
 
   const items: TabsProps["items"] = [
     {
@@ -60,15 +76,18 @@ export default function page() {
       key: "2",
       label: "ข้อมูลตารางคำขอไปราชการ",
       children: (
-        <Card>
-          <OfficialTravelRequestTable
-            data={data}
-            loading={loading}
-            fetchData={fetchData}
-            dataUser={dataUser}
-            cars={cars}
-          />
-        </Card>
+     
+          <Card>
+            <OfficialTravelRequestTable
+              data={data}
+              loading={loading}
+              fetchData={fetchData}
+              dataUser={dataUser}
+              cars={cars}
+            />
+          </Card>
+       
+      
       ),
     },
   ];

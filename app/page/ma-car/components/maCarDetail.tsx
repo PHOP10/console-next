@@ -1,8 +1,7 @@
-// MaCarDetail.tsx
-
 import React from "react";
 import { Modal, Row, Col, Tag, Divider } from "antd";
 import { MaCarType, UserType } from "../../common";
+import { CarOutlined, DashboardOutlined } from "@ant-design/icons";
 
 interface MaCarDetailProps {
   open: boolean;
@@ -64,25 +63,31 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
             รอแก้ไข
           </Tag>
         );
+      case "return":
+        return (
+          <Tag color="purple" className={baseStyle}>
+            คืนรถแล้ว
+          </Tag>
+        );
       default:
         return <Tag className={baseStyle}>{status}</Tag>;
     }
   };
 
-  // --- 2. Styled Components (Reusable) ---
-
+  // --- Styled Components ---
   const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div className="text-slate-500 text-xs sm:text-sm font-medium mb-1">
       {children}
     </div>
   );
 
-  const Value: React.FC<{ children: React.ReactNode; isBold?: boolean }> = ({
-    children,
-    isBold,
-  }) => (
+  const Value: React.FC<{
+    children: React.ReactNode;
+    isBold?: boolean;
+    className?: string;
+  }> = ({ children, isBold, className }) => (
     <div
-      className={`text-slate-800 text-sm sm:text-base break-words ${isBold ? "font-semibold" : ""}`}
+      className={`text-slate-800 text-sm sm:text-base break-words ${isBold ? "font-semibold" : ""} ${className || ""}`}
     >
       {children}
     </div>
@@ -119,30 +124,27 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
       {record && (
         <div className="flex flex-col">
           {/* 🔹 Header */}
-          <div className="bg-white px-6 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10">
+          <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10">
             <div>
               <h2 className="text-xl font-bold text-slate-800 m-0">
                 รายละเอียดการจองรถ
               </h2>
-              {/* ถ้ามีเลขเอกสารให้แสดงตรงนี้ ถ้าไม่มีก็เว้นไว้ */}
               <div className="text-slate-500 text-sm mt-1">
-                ตรวจสอบข้อมูลรายละเอียดคำขอใช้รถ
+                ตรวจสอบข้อมูลรายละเอียดคำขอใช้รถและการคืนรถ
               </div>
             </div>
             <div className="text-right">{getStatusTag(record.status)}</div>
           </div>
 
           <div className="p-2 overflow-y-auto max-h-[75vh]">
-            {/* 🔹 Card 1: ภารกิจ (Recipient, Purpose, Destination) */}
+            {/* 🔹 Card 1: ภารกิจ */}
             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
               <Row gutter={[24, 20]}>
                 <Col span={24}>
                   <Label>เรียน :</Label>
                   <Value isBold>{record.recipient || "-"}</Value>
                 </Col>
-
                 <Divider className="my-0" dashed />
-
                 <Col span={24}>
                   <Label>วัตถุประสงค์ :</Label>
                   <InfoBox text={record.purpose} />
@@ -154,11 +156,11 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
               </Row>
             </div>
 
-            {/* 🔹 Card 2: วันเวลา & รถ (Time, Driver, Car, Budget) */}
+            {/* 🔹 Card 2: ข้อมูลการใช้รถ และ ประเภทการเดินทาง (เพิ่มส่วนนี้) */}
             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4 relative overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
               <h3 className="text-slate-800 font-semibold mb-4 text-base pl-2">
-                ข้อมูลการใช้รถ
+                ข้อมูลการใช้รถและแผนงาน
               </h3>
 
               <Row gutter={[24, 20]}>
@@ -191,10 +193,29 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                   <Label>รถที่ใช้ :</Label>
                   <Value>
                     {record.masterCar ? (
-                      <span className="bg-slate-100 text-slate-700 px-2 py-1 rounded border border-slate-200 text-sm">
-                        {record.masterCar.carName} (
-                        {record.masterCar.licensePlate})
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        {/* ส่วนชื่อรถและทะเบียน */}
+                        <div className="flex items-center gap-2 font-semibold text-slate-700">
+                          <span>
+                            {record.masterCar.carName}
+                            <span className="text-slate-500 font-normal text-sm ml-1">
+                              ({record.masterCar.licensePlate})
+                            </span>
+                          </span>
+                        </div>
+
+                        {/* ส่วนเลขไมล์ (แยกบรรทัดลงมา) */}
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                          <DashboardOutlined />
+                          <span>เลขไมล์ก่อนเดินทาง:</span>
+                          <span className="font-mono font-medium text-slate-700">
+                            {record.startMileage
+                              ? record.startMileage.toLocaleString()
+                              : "-"}
+                          </span>
+                          <span>กม.</span>
+                        </div>
+                      </div>
                     ) : (
                       "-"
                     )}
@@ -202,15 +223,40 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                 </Col>
                 <Col xs={24} sm={12}>
                   <Label>งบประมาณ :</Label>
-                  {/* สีฟ้าตาม Theme */}
                   <div className="text-blue-500 font-bold text-lg">
                     {record.budget || 0}
+                  </div>
+                </Col>
+
+                <Divider className="my-0" dashed />
+
+                {/* ✅ ส่วนที่เพิ่ม: ประเภทการเดินทางและแผนงาน */}
+                <Col span={24}>
+                  <Label>ประเภทการเดินทางและแผนงาน :</Label>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {record.typeName &&
+                    Array.isArray(record.typeName) &&
+                    record.typeName.length > 0 ? (
+                      record.typeName.map((name: string, index: number) => (
+                        <Tag
+                          key={index}
+                          color="blue"
+                          className="px-3 py-1 rounded-full border-blue-100 text-blue-700 bg-blue-50 m-0"
+                        >
+                          {name}
+                        </Tag>
+                      ))
+                    ) : (
+                      <span className="text-slate-400 italic text-sm">
+                        - ไม่ได้ระบุแผนงาน -
+                      </span>
+                    )}
                   </div>
                 </Col>
               </Row>
             </div>
 
-            {/* 🔹 Card 3: ผู้โดยสาร & แผนงาน */}
+            {/* 🔹 Card 3: ผู้โดยสาร */}
             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
               <Row gutter={[24, 20]}>
                 <Col span={24}>
@@ -221,68 +267,61 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {record.dataUser
-                      ? record.dataUser
-                          .filter((u: any) =>
-                            record.passengerNames?.includes(u.userId),
-                          )
-                          .map((u: any) => (
-                            <div
-                              key={u.userId}
-                              className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-lg text-sm"
-                            >
-                              {u.firstName} {u.lastName}
-                            </div>
-                          ))
-                      : record.passengerNames?.map(
-                          (name: string, index: number) => (
-                            <div
-                              key={index}
-                              className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-lg text-sm"
-                            >
-                              {name}
-                            </div>
-                          ),
-                        )}
-                    {(!record.passengerNames ||
-                      record.passengerNames.length === 0) && (
-                      <span className="text-slate-400 text-sm">-</span>
-                    )}
-                  </div>
-                </Col>
-
-                <Divider className="my-0" dashed />
-
-                <Col span={24}>
-                  <Label>ประเภทการเดินทางและแผนงาน :</Label>
-                  <div className="mt-2 flex flex-col gap-1">
-                    {record.typeName && record.typeName.length > 0 ? (
-                      record.typeName.map((name: string, index: number) => (
-                        <div
-                          key={index}
-                          className="flex items-start gap-2 text-slate-700 text-sm"
-                        >
-                          <span className="text-blue-500 mt-0.5">•</span>
-                          <span>{name}</span>
-                        </div>
-                      ))
+                    {record.passengerNames &&
+                    record.passengerNames.length > 0 ? (
+                      record.passengerNames.map(
+                        (name: string, index: number) => (
+                          <div
+                            key={index}
+                            className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-lg text-sm"
+                          >
+                            {name}
+                          </div>
+                        ),
+                      )
                     ) : (
-                      <span className="text-slate-400 italic text-sm">
-                        - ไม่ได้ระบุ -
-                      </span>
+                      <span className="text-slate-400 text-sm">-</span>
                     )}
                   </div>
                 </Col>
               </Row>
             </div>
 
-            {/* 🔹 Notes (ถ้ามี) */}
+            {/* 🔹 Notes */}
             {record.note && (
               <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl mb-4">
                 <Label>เหตุผลเพิ่มเติม :</Label>
                 <div className="text-amber-900 mt-1 text-sm whitespace-pre-wrap">
                   {record.note}
                 </div>
+              </div>
+            )}
+
+            {/* 🔹 Card 4: ข้อมูลการคืนรถ (แสดงเฉพาะเมื่อมีการคืนรถแล้ว) */}
+            {(record.status === "return" || record.returnAt) && (
+              <div className="bg-purple-50 p-5 rounded-xl shadow-sm border border-purple-100 mb-4 relative overflow-hidden">
+                <div className="absolute left-0 top-0 bottom-0 w-1 bg-purple-500"></div>
+                <h3 className="text-purple-800 font-semibold mb-4 text-base pl-2 flex items-center gap-2">
+                  <span>ข้อมูลการคืนรถ</span>
+                </h3>
+                <Row gutter={[24, 20]}>
+                  <Col xs={24} sm={12}>
+                    <Label>ชื่อผู้คืนรถ :</Label>
+                    <Value isBold>{record.returnByName || "-"}</Value>
+                  </Col>
+                  <Col xs={24} sm={12}>
+                    <Label>วันที่และเวลาที่คืน :</Label>
+                    <Value isBold className="text-purple-700">
+                      {formatDateTime(record.returnAt)}
+                    </Value>
+                  </Col>
+                  <Col span={24}>
+                    <Label>หมายเหตุการคืน / สภาพรถ :</Label>
+                    <div className="bg-white border border-purple-100 rounded-lg p-3 text-slate-700 text-sm italic">
+                      {record.returnNote || "ไม่มีหมายเหตุเพิ่มเติม"}
+                    </div>
+                  </Col>
+                </Row>
               </div>
             )}
 
@@ -340,9 +379,7 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                   </Col>
                 )}
               </Row>
-
               <Divider className="my-3 bg-slate-300" />
-
               <div className="flex justify-between text-xs text-slate-400">
                 <span>ยื่นคำขอ: {formatDateOnly(record.createdAt)}</span>
                 <span>อัปเดต: {formatDateOnly(record.updatedAt)}</span>

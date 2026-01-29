@@ -147,9 +147,10 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   ];
 
   return (
-    <div className="custom-table-container">
-      <div className="text-center text-xl font-bold text-[#0683e9] mb-4 mt-6">
+    <div className="custom-table-container p-6">
+      <div className="text-[24px] text-center text-xl font-bold text-[#0683e9] mb-4">
         จัดการข้อมูลผู้ใช้
+        <hr className="border-slate-100/30 -mx-4 md:-mx-6 mt-4" />
       </div>
       <UserForm fetchData={fetchData} />
       <CustomTable
@@ -158,6 +159,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
         loading={loading}
         rowKey="id"
         scroll={{ x: "max-content" }}
+        bordered
       />
 
       {/* ✅ เรียกใช้ Modal ที่แยกไฟล์ออกมา */}

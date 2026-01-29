@@ -1,107 +1,54 @@
 "use client";
 
-import {
-  Breadcrumb,
-  Card,
-  Col,
-  Row,
-  TabsProps,
-  Tabs,
-  Divider,
-  Table,
-  Button,
-  Popconfirm,
-  message,
-  Space,
-} from "antd";
-import { useEffect, useState, useCallback } from "react";
+import { Card, Col, Row, TabsProps, Tabs, message } from "antd";
+import { useState } from "react";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "./services/infectiouswaste.service";
 import { InfectiousWasteType } from "./../common/index";
-import type { ColumnsType } from "antd/es/table";
 import ThrowAwayWaste from "./components/throwAwayWasteForm";
 import InfectiousWasteChart from "./components/infectiousWasteChart";
 import ThrowAwayWasteTable from "./components/throwAwayWasteTable";
+import useSWR from "swr"; // 1. Import SWR
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = infectiousWasteServices(intraAuth);
 
-  const [dataInfectiousWaste, setDataInfectiousWaste] = useState<
-    InfectiousWasteType[]
-  >([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  // 2. แยก manualLoading สำหรับการกดปุ่มต่างๆ (เช่น บันทึก/ลบ)
+  const [manualLoading, setManualLoading] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<string>("1");
 
-  const fetchData = useCallback(async () => {
-    try {
-      const data = await intraAuthService.getInfectiousWasteQuery();
-      setDataInfectiousWaste(data);
-    } catch (error) {
+  // 3. สร้าง Fetcher Function
+  const fetcher = async () => {
+    const intraAuthService = infectiousWasteServices(intraAuth);
+    return await intraAuthService.getInfectiousWasteQuery();
+  };
+
+  // 4. เรียกใช้ SWR
+  const {
+    data: swrData,
+    isLoading: isSwrLoading,
+    mutate,
+  } = useSWR("infectiousWastePage", fetcher, {
+    refreshInterval: 5000, // อัปเดตข้อมูลทุก 5 วินาที
+    revalidateOnFocus: true,
+    onError: (error) => {
       console.error("Failed to fetch data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, [intraAuthService]);
+      // message.error("ไม่สามารถดึงข้อมูลได้"); // เลือกเปิดได้ตามต้องการ
+    },
+  });
 
-  const editRecord = (record: InfectiousWasteType) => {};
+  // 5. Map ข้อมูล (ใช้ Array ว่างเป็น Default)
+  const dataInfectiousWaste: InfectiousWasteType[] = swrData || [];
 
-  useEffect(() => {
-    if (loading) {
-      fetchData();
-    }
-  }, [loading, fetchData]);
+  // รวม Loading state
+  const loading = isSwrLoading || manualLoading;
 
-  // const columns: ColumnsType<InfectiousWasteType> = [
-  //   {
-  //     title: "ประเภทขยะ",
-  //     dataIndex: "wasteType",
-  //     key: "wasteType",
-  //   },
-  //   {
-  //     title: "น้ำหนัก (กิโลกรัม)",
-  //     dataIndex: "wasteWeight",
-  //     key: "wasteWeight",
-  //   },
-  //   {
-  //     title: "วันที่ทิ้ง",
-  //     dataIndex: "discardedDate",
-  //     key: "discardedDate",
-  //     render: (date: string) => new Date(date).toLocaleDateString("th-TH"),
-  //   },
-  //   {
-  //     title: "การจัดการ",
-  //     key: "action",
-  //     render: (_, record) => (
-  //       <Space>
-  //         <Popconfirm
-  //           title="ยืนยันการลบ"
-  //           description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-  //           onConfirm={async () => {
-  //             try {
-  //               await intraAuthService.deleteInfectiousWaste(record.id);
-  //               message.success("ลบข้อมูลสำเร็จ");
-  //               setLoading(true);
-  //             } catch (error) {
-  //               console.error("Error deleting waste:", error);
-  //               message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-  //             }
-  //           }}
-  //           okText="ใช่"
-  //           cancelText="ยกเลิก"
-  //         >
-  //           <Button danger size="small">
-  //             ลบ
-  //           </Button>
-  //         </Popconfirm>
-
-  //         <Button size="small" onClick={() => editRecord(record)}>
-  //           แก้ไข
-  //         </Button>
-  //       </Space>
-  //     ),
-  //   },
-  // ];
+  // 6. Wrapper function สำหรับส่งให้ลูก (เพื่อให้ Type ตรงกับ Promise<void> และจัดการ Loading Manual)
+  const fetchData = async () => {
+    setManualLoading(true);
+    await mutate();
+    setManualLoading(false);
+  };
 
   const items: TabsProps["items"] = [
     {
@@ -111,21 +58,36 @@ export default function Page() {
         <ThrowAwayWasteTable
           data={dataInfectiousWaste}
           loading={loading}
-          setLoading={setLoading}
+          setLoading={setManualLoading} // ใช้ manualLoading แทน
         />
       ),
     },
     {
       key: "2",
-      label: `ทิ้งขยะติดเชื้อ`,
-      children: (
-        <ThrowAwayWaste setLoading={setLoading} fetchData={fetchData} />
-      ),
+      label: `กราฟขยะติดเชื้อ`,
+      children: <InfectiousWasteChart data={dataInfectiousWaste} />,
     },
     {
       key: "3",
-      label: `กราฟขยะติดเชื้อ`,
-      children: <InfectiousWasteChart data={dataInfectiousWaste} />,
+      label: `ทิ้งขยะติดเชื้อ`,
+      children: (
+        <Card>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "24px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            แบบฟอร์มบันทึกการทิ้งขยะติดเชื้อ
+          </div>
+
+          <ThrowAwayWaste setLoading={setManualLoading} fetchData={fetchData} />
+        </Card>
+      ),
     },
   ];
 

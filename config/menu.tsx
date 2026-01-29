@@ -161,30 +161,7 @@ export const MenuSider: IMenu[] = [
       },
     ],
   },
-  {
-    key: "visit-home",
-    label: `ระบบเยี่ยมบ้าน`,
-    // roles: [group.admin, group.user, group.pharmacy, group.asset],
-    icon: <HomeOutlined />,
-    children: [
-      {
-        key: "visitHome",
-        label: "การเยี่ยบ้าน",
-        roles: [group.admin, group.home],
-      },
-      {
-        key: "dataVisitHome",
-        label: "ข้อมูลการเยี่ยบ้าน",
-        roles: [
-          group.admin,
-          group.user,
-          group.pharmacy,
-          group.asset,
-          group.home,
-        ],
-      },
-    ],
-  },
+
   {
     key: "ma-drug",
     label: `ระบบยา`,
@@ -204,44 +181,14 @@ export const MenuSider: IMenu[] = [
       {
         key: "manageDrug",
         label: "จัดการเบิกจ่ายยา",
-        roles: [group.admin, group.pharmacy],
+        roles: [group.admin],
       },
     ],
   },
-  {
-    key: "durable-article",
-    label: `ระบบครุภัณฑ์`,
-    // roles: [group.admin, group.asset],
-    icon: <HddOutlined />,
-    children: [
-      {
-        key: "durableArticle",
-        label: "ข้อมูลครุภัณฑ์",
-        roles: [
-          group.admin,
-          group.user,
-          group.pharmacy,
-          group.asset,
-          group.home,
-        ],
-      },
-      {
-        key: "supportingResource",
-        label: "วัสดุสนับสนุน",
-        roles: [
-          group.admin,
-          group.user,
-          group.pharmacy,
-          group.asset,
-          group.home,
-        ],
-      },
-    ],
-  },
+
   {
     key: "medical-equipment",
     label: `เครื่องมือแพทย์`,
-    // roles: [group.admin, group.user, group.pharmacy, group.asset],
     icon: <TruckOutlined />,
     children: [
       {
@@ -257,14 +204,45 @@ export const MenuSider: IMenu[] = [
       },
       {
         key: "maMedicalEquipment",
-        label: "จัดการข้อมมูลเครื่องมือแพทย์",
+        label: "จัดการข้อมูลเครื่องมือแพทย์",
         roles: [group.admin],
       },
     ],
   },
+
+  {
+    key: "visit-home",
+    label: `เยี่ยมบ้าน`,
+    // roles: [group.admin, group.user, group.pharmacy, group.asset],
+    icon: <HomeOutlined />,
+    children: [
+      {
+        key: "visitHome",
+        label: "การเยี่ยมบ้าน",
+        roles: [group.admin, group.home],
+      },
+      {
+        key: "dataVisitHome",
+        label: "ข้อมูลการเยี่ยมบ้าน",
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
+      },
+    ],
+  },
+  {
+    key: "durable-article",
+    label: `ครุภัณฑ์`,
+    // roles: [group.admin, group.asset],
+    icon: <HddOutlined />,
+  },
   {
     key: "infectious-waste",
-    label: `ทิ้งขยะ`,
+    label: `ทิ้งขยะติดเชื้อ`,
     // roles: [group.admin, group.user, group.pharmacy, group.asset],
     icon: <DeleteOutlined />,
   },

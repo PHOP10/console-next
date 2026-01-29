@@ -1,40 +1,63 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { visitHomeServices } from "../services/visitHome.service";
 import VisitHomeForm from "../components/visitHomeForm";
 import { MasterPatientType, VisitHomeType } from "../../common";
 import MasterPatientTable from "../components/masterPatientTable";
+import useSWR from "swr"; // 1. Import SWR
 
 export default function VisitHomePage() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = visitHomeServices(intraAuth);
 
-  const [loading, setLoading] = useState<boolean>(true);
+  // 2. แยก manualLoading สำหรับการกดปุ่มต่างๆ (เช่น บันทึก/แก้ไข)
+  const [manualLoading, setManualLoading] = useState<boolean>(false);
+
+  // 3. คง useState ไว้สำหรับ dataMasterPatient เพราะต้องส่ง setter ให้ Component ลูก
   const [data, setData] = useState<VisitHomeType[]>([]);
   const [dataMasterPatient, setDataMasterPatient] = useState<
     MasterPatientType[]
   >([]);
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await intraAuthService.getVisitHomeQuery();
-      const dataMasterPatients = await intraAuthService.getMasterPatientQuery();
+  // 4. สร้าง Fetcher Function
+  const fetcher = async () => {
+    const intraAuthService = visitHomeServices(intraAuth);
 
-      setData(res.data);
-      setDataMasterPatient(dataMasterPatients);
-    } catch (err) {
-      message.error("ไม่สามารถดึงข้อมูลการเยี่ยมบ้านได้");
-    } finally {
-      setLoading(false);
-    }
-  }, [intraAuthService]);
+    // ดึงข้อมูลพร้อมกัน
+    const [resVisitHome, resMasterPatient] = await Promise.all([
+      intraAuthService.getVisitHomeQuery(),
+      intraAuthService.getMasterPatientQuery(),
+    ]);
 
+    return {
+      visitHome: resVisitHome.data, // อิงตามโค้ดเดิมที่ใช้ res.data
+      masterPatient: resMasterPatient,
+    };
+  };
+
+  // 5. เรียกใช้ SWR
+  const { data: swrData, isLoading: isSwrLoading } = useSWR(
+    "visitHomePage", // Key
+    fetcher,
+    {
+      refreshInterval: 5000,
+      revalidateOnFocus: true,
+      onError: () => message.error("ไม่สามารถดึงข้อมูลการเยี่ยมบ้านได้"),
+    },
+  );
+
+  // 6. Sync ข้อมูลจาก SWR เข้า State (เพื่อให้ส่ง props setDataMasterPatient ได้เหมือนเดิม)
   useEffect(() => {
-    if (loading) fetchData();
-  }, [loading, fetchData]);
+    if (swrData) {
+      setData(swrData.visitHome);
+      setDataMasterPatient(swrData.masterPatient);
+    }
+  }, [swrData]);
+
+  // รวม Loading
+  const loading = isSwrLoading || manualLoading;
 
   const items: TabsProps["items"] = [
     {
@@ -42,6 +65,18 @@ export default function VisitHomePage() {
       label: `การเยี่ยมบ้าน`,
       children: (
         <Card>
+          <div
+            style={{
+              textAlign: "center",
+              color: "#0683e9",
+              fontWeight: "bold",
+              fontSize: "24px",
+              marginTop: "-8px",
+              marginBottom: "15px",
+            }}
+          >
+            แบบฟอร์มบันทึกการดูแลผู้ป่วยที่บ้าน
+          </div>
           <VisitHomeForm />
         </Card>
       ),
@@ -53,8 +88,8 @@ export default function VisitHomePage() {
         <Card>
           <MasterPatientTable
             dataMasterPatient={dataMasterPatient}
-            setDataMasterPatient={setDataMasterPatient}
-            setLoading={setLoading}
+            setDataMasterPatient={setDataMasterPatient} // ส่ง state setter ได้ปกติ
+            setLoading={setManualLoading} // ใช้ manualLoading แทน
           />
         </Card>
       ),

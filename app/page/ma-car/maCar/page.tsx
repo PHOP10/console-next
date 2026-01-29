@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
@@ -9,49 +9,77 @@ import MaCarCalendar from "../components/maCarCalendar";
 import { useSession } from "next-auth/react";
 import { userService } from "../../user/services/user.service";
 import { MaCarType, MasterCarType, UserType } from "../../common";
+import useSWR from "swr"; // 1. Import SWR
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
-  const intraAuthService = maCarService(intraAuth);
-  const intraAuthUserService = userService(intraAuth);
   const { data: session } = useSession();
-  const [loading, setLoading] = useState<boolean>(false);
-  const [data, setData] = useState<MaCarType[]>([]);
-  const [dataUser, setDataUser] = useState<UserType[]>([]);
-  const [cars, setCars] = useState<MasterCarType[]>([]);
-  const [maCarUser, setMaCarUser] = useState<MaCarType[]>([]);
-  // ฟังก์ชันดึงข้อมูล
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const res = await intraAuthService.getMaCarQuery();
-      const resCars = await intraAuthService.getMasterCarQuery();
-      const resUsers = await intraAuthUserService.getUserQuery();
-      const resMaCar = await intraAuthService.getMaCarQuery();
-      const resMaCarUser = resMaCar.filter(
-        (car: any) => car.createdById === session?.user?.userId
-      );
-      // console.log("maCarUser", maCarUser);
-      setData(res);
-      setCars(resCars);
-      setMaCarUser(resMaCarUser);
-      setDataUser(resUsers);
-    } catch (err) {
-      console.error(err);
-      message.error("ไม่สามารถดึงข้อมูลรถได้");
-    } finally {
-      setLoading(false);
-    }
+
+  // 2. แยก manualLoading สำหรับการกดปุ่มต่างๆ ในตาราง (เช่น อนุมัติ/ไม่อนุมัติ)
+  const [manualLoading, setManualLoading] = useState<boolean>(false);
+
+  // 3. สร้าง Fetcher Function
+  const fetcher = async () => {
+    // Instantiate Services
+    const intraAuthService = maCarService(intraAuth);
+    const intraAuthUserService = userService(intraAuth);
+    const userId = session?.user?.userId;
+
+    // ใช้ Promise.all ดึง API 3 ตัวพร้อมกัน (เร็วกว่าเดิม)
+    const [resMaCar, resCars, resUsers] = await Promise.all([
+      intraAuthService.getMaCarQuery(), // ดึงข้อมูลการจองรถ (ดึงครั้งเดียวพอ)
+      intraAuthService.getMasterCarQuery(), // ดึงข้อมูลรถ
+      intraAuthUserService.getUserQuery(), // ดึงข้อมูล User
+    ]);
+
+    // Filter ข้อมูลการจองของ User ปัจจุบัน (ใช้ข้อมูลจาก resMaCar ได้เลย ไม่ต้องยิง API ใหม่)
+    const resMaCarUser = resMaCar.filter(
+      (car: any) => car.createdById === userId,
+    );
+
+    return {
+      data: resMaCar,
+      cars: resCars,
+      users: resUsers,
+      maCarUser: resMaCarUser,
+    };
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  // 4. เรียกใช้ SWR
+  const {
+    data: swrData,
+    isLoading: isSwrLoading,
+    mutate,
+  } = useSWR(
+    session?.user?.userId ? ["maCarPage", session.user.userId] : null,
+    fetcher,
+    {
+      refreshInterval: 5000, // อัปเดตข้อมูลทุก 5 วินาที
+      revalidateOnFocus: true,
+      onError: () => {
+        message.error("ไม่สามารถดึงข้อมูลรถได้");
+      },
+    },
+  );
+
+  // 5. Map ข้อมูลกลับมาเป็นตัวแปร (ใช้ค่าว่างป้องกัน Error)
+  const data: MaCarType[] = swrData?.data || [];
+  const cars: MasterCarType[] = swrData?.cars || [];
+  const dataUser: UserType[] = swrData?.users || [];
+  const maCarUser: MaCarType[] = swrData?.maCarUser || [];
+
+  // รวม Loading state
+  const loading = isSwrLoading || manualLoading;
+
+  // 6. Wrapper function สำหรับส่งให้ลูก (เพื่อให้ Type ตรงกับ Promise<void>)
+  const fetchData = async () => {
+    await mutate();
+  };
 
   const items: TabsProps["items"] = [
     {
       key: "1",
-      label: "ข้อมูลปฏิทินรายการรถ",
+      label: "ข้อมูลปฏิทินจองรถ",
       children: (
         <Card>
           <MaCarCalendar
@@ -72,6 +100,8 @@ export default function MaCarPage() {
           <MaCarTable
             data={data}
             loading={loading}
+            // ถ้า Child Component มีการใช้ setLoading ให้ส่ง setManualLoading ไปแทน
+            // setLoading={setManualLoading}
             fetchData={fetchData}
             dataUser={dataUser}
             cars={cars}
