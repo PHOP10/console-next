@@ -41,7 +41,7 @@ export default function MaDrugTableDetail({
         );
       case "completed":
         return (
-          <Tag color="geekblue" className={baseStyle}>
+          <Tag color="default" className={baseStyle}>
             รับยาแล้ว
           </Tag>
         );

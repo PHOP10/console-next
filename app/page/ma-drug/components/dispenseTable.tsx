@@ -145,7 +145,7 @@ export default function DispenseTable({
             text = "อนุมัติแล้ว";
             break;
           case "completed":
-            color = "gray";
+            color = "default";
             text = "จ่ายยาสำเร็จ";
             break;
           case "canceled":

@@ -287,6 +287,10 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             color = "orange";
             text = "รอแก้ไข";
             break;
+          case "success":
+            color = "default";
+            text = "สำเร็จ";
+            break;
           case "cancel":
             color = "red";
             text = "ยกเลิก";
@@ -494,7 +498,6 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
           รายการขอไปราชการ
         </h2>
-        {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
 

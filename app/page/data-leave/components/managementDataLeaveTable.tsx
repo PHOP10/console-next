@@ -253,7 +253,7 @@ export default function ManagementDataLeaveTable({
             text = "อนุมัติ";
             break;
           case "success":
-            color = "gray";
+            color = "default";
             text = "เสร็จสิ้น";
             break;
           case "cancel":

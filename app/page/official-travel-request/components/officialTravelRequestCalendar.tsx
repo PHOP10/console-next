@@ -69,8 +69,10 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         return "#3b82f6";
       case "edit":
         return "#f97316";
+      case "success":
+        return "#6b7280";
       default:
-        return "#3b82f6";
+        return "#fafafa";
     }
   };
 
@@ -80,7 +82,6 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
           ปฏิทินคำขอไปราขการ
         </h2>
-        {/* เส้น Divider */}
         <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
       </div>
 

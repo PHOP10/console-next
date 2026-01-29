@@ -212,7 +212,7 @@ export default function MaDispenseTable({
             text = "อนุมัติแล้ว";
             break;
           case "completed":
-            color = "success";
+            color = "default";
             text = "จ่ายสำเร็จ";
             break;
           case "canceled":

@@ -221,7 +221,7 @@ export default function ManageDrugTable({
             text = "อนุมัติแล้ว";
             break;
           case "completed":
-            color = "gray";
+            color = "default";
             text = "รับยาแล้ว";
             break;
           case "cancel":

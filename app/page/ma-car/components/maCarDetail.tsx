@@ -63,6 +63,12 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
             รอแก้ไข
           </Tag>
         );
+      case "success":
+        return (
+          <Tag color="default" className={baseStyle}>
+            สำเร็จ
+          </Tag>
+        );
       case "return":
         return (
           <Tag color="purple" className={baseStyle}>
