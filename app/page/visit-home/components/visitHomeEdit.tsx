@@ -28,8 +28,6 @@ import {
   MedicineBoxOutlined,
   CalendarOutlined,
   EditOutlined,
-  SaveOutlined,
-  CloseOutlined,
 } from "@ant-design/icons";
 
 const { Option } = Select;
@@ -60,7 +58,6 @@ export default function VisitHomeEdit({
   const intraAuthService = visitHomeServices(intraAuth);
   const [mode, setMode] = useState<"view" | "edit">(initialMode);
 
-  // --- Logic เดิม (Encryption/Decryption) ---
   const decryptData = (ciphertext: string | null | undefined) => {
     if (!ciphertext) return "";
     if (!ciphertext.toString().startsWith("U2F")) return ciphertext;
@@ -99,6 +96,16 @@ export default function VisitHomeEdit({
         hn: decryptData(record.hn),
         cid: decryptData(record.cid),
         phone: decryptData(record.phone),
+        hhcNo: decryptData(record.hhcNo),
+        allergies: decryptData(record.allergies),
+        bloodPressure: decryptData(record.bloodPressure),
+        initialHistory: decryptData(record.initialHistory),
+        symptoms: decryptData(record.symptoms),
+        diagnosis: decryptData(record.diagnosis),
+        medication: decryptData(record.medication),
+        medicalEquipment: decryptData(record.medicalEquipment),
+        careNeeds: decryptData(record.careNeeds),
+        notes: decryptData(record.notes),
         visitDate: record.visitDate ? dayjs(record.visitDate) : null,
         referralDate: record.referralDate ? dayjs(record.referralDate) : null,
         dob: record.dob ? dayjs(record.dob) : null,
@@ -133,8 +140,6 @@ export default function VisitHomeEdit({
         id: record.id,
         patientTypeId: values.patientTypeId || null,
         age: values.age ? Number(values.age) : null,
-        hhcNo: values.hhcNo || null,
-        allergies: values.allergies || null,
         visitDate: values.visitDate ? values.visitDate.toISOString() : null,
         referralDate: values.referralDate
           ? values.referralDate.toISOString()
@@ -153,14 +158,16 @@ export default function VisitHomeEdit({
         pulseRate: values.pulseRate ? Number(values.pulseRate) : null,
         respRate: values.respRate ? Number(values.respRate) : null,
         oxygenSat: values.oxygenSat ? Number(values.oxygenSat) : null,
-        bloodPressure: values.bloodPressure || null,
-        initialHistory: values.initialHistory || null,
-        symptoms: values.symptoms || null,
-        diagnosis: values.diagnosis || null,
-        medication: values.medication || null,
-        medicalEquipment: values.medicalEquipment || null,
-        careNeeds: values.careNeeds || null,
-        notes: values.notes || null,
+        hhcNo: encryptData(values.hhcNo),
+        allergies: encryptData(values.allergies),
+        bloodPressure: encryptData(values.bloodPressure),
+        initialHistory: encryptData(values.initialHistory),
+        symptoms: encryptData(values.symptoms),
+        diagnosis: encryptData(values.diagnosis),
+        medication: encryptData(values.medication),
+        medicalEquipment: encryptData(values.medicalEquipment),
+        careNeeds: encryptData(values.careNeeds),
+        notes: encryptData(values.notes),
         firstName: encryptData(firstNameRaw),
         lastName: encryptData(lastNameRaw),
         fullName: encryptData(fullNameStr),
@@ -182,8 +189,6 @@ export default function VisitHomeEdit({
     }
   };
 
-  // --- Styles Constants ---
-  // ใช้ h-10 เพื่อความ Compact ใน Modal
   const inputStyle =
     "w-full h-10 rounded-lg border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm";
 
@@ -219,7 +224,7 @@ export default function VisitHomeEdit({
         width={1000}
         centered
         maskClosable={true}
-        footer={null} // Custom Footer ด้านล่างฟอร์มแทน
+        footer={null}
         styles={{
           content: { borderRadius: "20px", padding: "24px" },
           header: {
@@ -235,7 +240,6 @@ export default function VisitHomeEdit({
           disabled={mode === "view"}
           className="compact-form"
         >
-          {/* ---------------- Section 1: ข้อมูลผู้ป่วย ---------------- */}
           <SectionHeader icon={<UserOutlined />} title="ข้อมูลผู้ป่วย" />
           <Row gutter={[12, 4]}>
             <Col xs={12} md={4}>
@@ -276,7 +280,6 @@ export default function VisitHomeEdit({
               </Form.Item>
             </Col>
 
-            {/* แถว 2 */}
             <Col xs={12} md={2}>
               <Form.Item name="age" label="อายุ (ปี)">
                 <InputNumber className={`${inputStyle} w-full pt-1`} min={0} />
@@ -306,7 +309,6 @@ export default function VisitHomeEdit({
               </Form.Item>
             </Col>
 
-            {/* แถว 3 */}
             <Col xs={24} md={8}>
               <Form.Item name="allergies" label="ประวัติแพ้ยา/อาหาร">
                 <Input className={`${inputStyle} text-red-600 font-medium`} />
@@ -325,7 +327,6 @@ export default function VisitHomeEdit({
 
           <Divider dashed style={{ margin: "12px 0" }} />
 
-          {/* ---------------- Section 2: สัญญาณชีพ & ประวัติ ---------------- */}
           <SectionHeader icon={<HeartOutlined />} title="ประวัติและสัญญาณชีพ" />
           <Row gutter={[12, 4]}>
             <Col xs={12} md={4}>
@@ -354,7 +355,6 @@ export default function VisitHomeEdit({
             </Col>
           </Row>
 
-          {/* Vital Signs Bar */}
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-4">
             <Row gutter={[12, 0]} align="middle">
               <Col xs={24} md={2}>
@@ -426,9 +426,7 @@ export default function VisitHomeEdit({
 
           <Divider dashed style={{ margin: "12px 0" }} />
 
-          {/* ---------------- Section 3: Split Layout ---------------- */}
           <Row gutter={24}>
-            {/* Left: Assessment */}
             <Col xs={24} md={12}>
               <SectionHeader icon={<FileTextOutlined />} title="การประเมิน" />
               <Form.Item name="symptoms" label="อาการปัจจุบัน">
@@ -451,7 +449,6 @@ export default function VisitHomeEdit({
               </Form.Item>
             </Col>
 
-            {/* Right: Treatment */}
             <Col
               xs={24}
               md={12}
@@ -478,7 +475,6 @@ export default function VisitHomeEdit({
 
           <Divider dashed style={{ margin: "12px 0" }} />
 
-          {/* ---------------- Section 4: Footer (Appointment) ---------------- */}
           <SectionHeader icon={<CalendarOutlined />} title="การนัดหมาย" />
           <Row gutter={[12, 4]} align="bottom">
             <Col xs={12} md={5}>
@@ -508,7 +504,6 @@ export default function VisitHomeEdit({
             </Col>
           </Row>
 
-          {/* --- Buttons Area --- */}
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
             {mode === "view" ? (
               <Button

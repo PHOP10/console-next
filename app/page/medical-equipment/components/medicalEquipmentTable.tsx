@@ -1,27 +1,9 @@
 "use client";
 
-import {
-  Table,
-  Button,
-  Space,
-  Tag,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  message,
-  Popconfirm,
-  Select,
-  Tooltip,
-  Card,
-  Col,
-  Row,
-} from "antd";
+import { Space, Tag, Tooltip, Card, message } from "antd";
 import React, { useState } from "react";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import {
   MaMedicalEquipmentType,
   MedicalEquipmentType,
@@ -35,10 +17,10 @@ import {
   RollbackOutlined,
 } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
-import MaMedicalEquipmentEditModal from "./maMedicalEquipmentEditModal"; // ✅ 1. Import Component ใหม่
+import MaMedicalEquipmentEditModal from "./maMedicalEquipmentEditModal";
+// ✅ 1. Import Return Modal
+import MaMedicalEquipmentReturnModal from "./maMedicalEquipmentReturnModal";
 
-const { Option } = Select;
-const { TextArea } = Input;
 dayjs.locale("th");
 
 type Props = {
@@ -56,34 +38,31 @@ export default function MedicalEquipmentTable({
   dataEQ,
   fetchData,
 }: Props) {
-  const intraAuth = useAxiosAuth();
-  const intraAuthService = maMedicalEquipmentServices(intraAuth);
   const { data: session } = useSession();
 
   // --- States ---
+  // Edit Modal
   const [editingItem, setEditingItem] = useState<MaMedicalEquipmentType | null>(
     null,
   );
   const [editModalVisible, setEditModalVisible] = useState(false);
 
-  // Return Modal States
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formReturn] = Form.useForm();
+  // Return Modal (เหลือแค่ State เปิดปิดและข้อมูล)
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [recordReturn, setRecordReturn] = useState<any>(null);
 
-  // Detail Modal States
+  // Detail Modal
   const [openDetails, setOpenDetails] = useState(false);
   const [recordDetails, setRecordDetails] = useState<any>(null);
 
   // --- Handlers ---
-
   const handleEdit = (item: MaMedicalEquipmentType) => {
     setEditingItem(item);
     setEditModalVisible(true);
   };
 
   const handleEditSuccess = async () => {
-    setLoading(true); // Refresh Data
+    setLoading(true);
     setEditModalVisible(false);
     setEditingItem(null);
     await fetchData();
@@ -91,46 +70,15 @@ export default function MedicalEquipmentTable({
 
   const handleOpenModalReturn = (record: any) => {
     setRecordReturn(record);
-    formReturn.setFieldsValue({
-      id: record.id,
-      sentDate: record.sentDate ? dayjs(record.sentDate) : null,
-      status:
-        record.status === "pending"
-          ? "รออนุมัติ"
-          : record.status === "approve"
-            ? "อนุมัติ"
-            : record.status === "cancel"
-              ? "ยกเลิก"
-              : record.status === "return"
-                ? "รับคืนแล้ว"
-                : "",
-      note: record.note,
-    });
-    setIsModalOpen(true);
+    setIsReturnModalOpen(true);
   };
 
-  const handleConfirmReturn = async () => {
-    if (!recordReturn) return;
-    try {
-      setLoading(true); // ✅ เริ่มโหลด
-      await intraAuthService.updateMaMedicalEquipment({
-        id: recordReturn.id,
-        status: "return",
-        returnName: session?.user?.fullName,
-        returndAt: new Date().toISOString(),
-        note: formReturn.getFieldValue("note"),
-      });
-
-      message.success("รับคืนอุปกรณ์เรียบร้อยแล้ว");
-      setIsModalOpen(false);
-      setRecordReturn(null);
-
-      await fetchData(); // ✅ ดึงข้อมูลใหม่เพื่อรีเฟรชตาราง
-    } catch (error) {
-      console.error("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์:", error);
-      message.error("ไม่สามารถรับคืนอุปกรณ์ได้");
-      setLoading(false); // ❌ อย่าลืมปิด loading กรณี error
-    }
+  // ✅ 2. Handle Success ของการคืน (แค่โหลดข้อมูลใหม่)
+  const handleReturnSuccess = async () => {
+    setIsReturnModalOpen(false);
+    setRecordReturn(null);
+    setLoading(true);
+    await fetchData();
   };
 
   const handleOpenModalDetails = (record: any) => {
@@ -263,7 +211,7 @@ export default function MedicalEquipmentTable({
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
         return (
           <Tooltip title={text}>
-            <li>{shortText}</li>
+            <span>{shortText || "-"}</span>
           </Tooltip>
         );
       },
@@ -295,7 +243,6 @@ export default function MedicalEquipmentTable({
             </Tooltip>
           )}
 
-          {/* Return Button */}
           <Tooltip title="รับคืน">
             <RollbackOutlined
               style={{
@@ -332,19 +279,6 @@ export default function MedicalEquipmentTable({
     },
   ];
 
-  const columnsReturn = [
-    {
-      title: "ชื่ออุปกรณ์",
-      dataIndex: ["medicalEquipment", "equipmentName"],
-      key: "equipmentName",
-    },
-    {
-      title: "จำนวน",
-      dataIndex: "quantity",
-      key: "quantity",
-    },
-  ];
-
   return (
     <Card
       bordered
@@ -376,7 +310,7 @@ export default function MedicalEquipmentTable({
         scroll={{ x: "max-content" }}
       />
 
-      {/* ✅ 2. เรียกใช้ MaMedicalEquipmentEditModal แทน Modal เดิม */}
+      {/* ✅ 3. เรียกใช้ Modal แยกที่สร้างขึ้นมา */}
       <MaMedicalEquipmentEditModal
         open={editModalVisible}
         onClose={() => setEditModalVisible(false)}
@@ -385,75 +319,12 @@ export default function MedicalEquipmentTable({
         dataEQ={dataEQ}
       />
 
-      {/* Modal รายละเอียดการรับคืน (ยังคงไว้เหมือนเดิม หรือจะแยกไฟล์ก็ได้ถ้าต้องการ) */}
-      <Modal
-        title="รายละเอียดการรับคืนอุปกรณ์"
-        open={isModalOpen}
-        onOk={handleConfirmReturn}
-        onCancel={() => setIsModalOpen(false)}
-        okText="รับคืน"
-        cancelText="ยกเลิก"
-        width={700}
-      >
-        <Form form={formReturn} layout="vertical">
-          <Form.Item label="รายการอุปกรณ์ที่ส่ง">
-            <CustomTable
-              dataSource={recordReturn?.items || []}
-              columns={columnsReturn}
-              rowKey="id"
-              pagination={false}
-              size="small"
-            />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="วันที่ส่ง"
-                name="sentDate"
-                rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
-              >
-                <DatePicker
-                  disabled
-                  format="DD/MM/YYYY"
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="สถานะ" name="status">
-                <div>
-                  {recordReturn?.status === "pending" && (
-                    <Tag color="gold">รออนุมัติ</Tag>
-                  )}
-                  {recordReturn?.status === "approve" && (
-                    <Tag color="green">อนุมัติ</Tag>
-                  )}
-                  {recordReturn?.status === "cancel" && (
-                    <Tag color="red">ยกเลิก</Tag>
-                  )}
-                  {recordReturn?.status === "return" && (
-                    <Tag color="blue">รับคืนแล้ว</Tag>
-                  )}
-                  {recordReturn?.status === "verified" && (
-                    <Tag color="purple">ตรวจรับคืนแล้ว</Tag>
-                  )}
-                </div>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="หมายเหตุ" name="note">
-                <Input.TextArea
-                  disabled
-                  rows={3}
-                  placeholder="หมายเหตุเพิ่มเติม"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-      </Modal>
+      <MaMedicalEquipmentReturnModal
+        open={isReturnModalOpen}
+        onClose={() => setIsReturnModalOpen(false)}
+        onSuccess={handleReturnSuccess}
+        record={recordReturn}
+      />
 
       <MedicalEquipmentTableDetails
         record={recordDetails}

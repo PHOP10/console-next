@@ -30,7 +30,6 @@ import {
   MedicineBoxOutlined,
 } from "@ant-design/icons";
 import "./Form.css";
-import { ExperimentOutlined } from "@ant-design/icons"; /* ตัวอย่างข้อมูล */
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -65,9 +64,18 @@ export default function VisitHomeForm() {
 
   const handleFinish = async (values: any) => {
     try {
+      // Logic แยกชื่อ-นามสกุลอัตโนมัติ (เหมือนที่เคยทำในหน้า Edit)
+      const fullNameStr = values.fullName || "";
+      const nameParts = fullNameStr.trim().split(/\s+/);
+      const firstNameRaw = nameParts[0] || "";
+      const lastNameRaw = nameParts.slice(1).join(" ") || "";
+
       const payload = {
+        // --- ข้อมูลทั่วไป (ไม่เข้ารหัส) ---
         patientTypeId: values.patientTypeId || null,
         age: values.age ? Number(values.age) : null,
+
+        // --- วันที่ (แปลงเป็น ISO) ---
         visitDate: values.visitDate
           ? dayjs(values.visitDate).toISOString()
           : null,
@@ -84,27 +92,34 @@ export default function VisitHomeForm() {
         nextAppointment: values.nextAppointment
           ? dayjs(values.nextAppointment).toISOString()
           : null,
+
+        // --- Vital Signs (ตัวเลข - ไม่เข้ารหัส เพื่อให้คำนวณได้) ---
+        // หากต้องการเข้ารหัสตัวเลข ต้องเปลี่ยน DB column เป็น String ก่อน
         temperature: values.temperature ? Number(values.temperature) : null,
         pulseRate: values.pulseRate ? Number(values.pulseRate) : null,
         respRate: values.respRate ? Number(values.respRate) : null,
         oxygenSat: values.oxygenSat ? Number(values.oxygenSat) : null,
-        bloodPressure: values.bloodPressure || null,
-        hhcNo: values.hhcNo || null,
-        allergies: values.allergies || null,
-        initialHistory: values.initialHistory || null,
-        symptoms: values.symptoms || null,
-        diagnosis: values.diagnosis || null,
-        medication: values.medication || null,
-        medicalEquipment: values.medicalEquipment || null,
-        careNeeds: values.careNeeds || null,
-        notes: values.notes || null,
-        firstName: encryptData(values.firstName),
-        lastName: encryptData(values.lastName),
-        fullName: encryptData(values.fullName),
-        hn: encryptData(values.hn),
-        cid: encryptData(values.cid),
-        phone: encryptData(values.phone),
-        address: encryptData(values.address),
+
+        // --- PDPA: ข้อมูลส่วนบุคคลทั่วไป (เข้ารหัสทั้งหมด) ---
+        hhcNo: encryptData(values.hhcNo), // เลขที่เยี่ยมบ้าน
+        firstName: encryptData(firstNameRaw), // ชื่อจริง
+        lastName: encryptData(lastNameRaw), // นามสกุล
+        fullName: encryptData(fullNameStr), // ชื่อเต็ม
+        hn: encryptData(values.hn), // HN
+        cid: encryptData(values.cid), // เลขบัตร ปชช.
+        phone: encryptData(values.phone), // เบอร์โทร
+        address: encryptData(values.address), // ที่อยู่
+
+        // --- PDPA: ข้อมูลสุขภาพ/Sensitive Data (เข้ารหัสทั้งหมด) ---
+        bloodPressure: encryptData(values.bloodPressure), // ความดัน (String)
+        allergies: encryptData(values.allergies), // ประวัติแพ้
+        initialHistory: encryptData(values.initialHistory), // ประวัติแรกรับ
+        symptoms: encryptData(values.symptoms), // อาการ
+        diagnosis: encryptData(values.diagnosis), // วินิจฉัย
+        medication: encryptData(values.medication), // ยา
+        medicalEquipment: encryptData(values.medicalEquipment), // อุปกรณ์
+        careNeeds: encryptData(values.careNeeds), // ความต้องการดูแล
+        notes: encryptData(values.notes), // หมายเหตุ
       };
 
       await intraAuthService.createVisitHomeWaste(payload);
@@ -116,7 +131,7 @@ export default function VisitHomeForm() {
     }
   };
 
-  // --- Master Template Styles (Premium Look) ---
+  // ... (Styles and Render remain the same) ...
   const inputStyle =
     "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
@@ -126,131 +141,11 @@ export default function VisitHomeForm() {
   const selectStyle =
     "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
 
-  // Header ของแต่ละ Section
   const SectionHeader = ({ icon, title }: { icon: any; title: string }) => (
     <div className="flex items-center gap-2 text-[#0683e9] font-bold text-lg mb-4 mt-2 border-b border-blue-50 pb-2">
       {icon} {title}
     </div>
   );
-
-  // --------------------------------------------------------ข้อมูลตัวอย่าง---------------------------//
-  const getRandomInt = (min: number, max: number) =>
-    Math.floor(Math.random() * (max - min + 1)) + min;
-
-  const getRandomElement = (arr: any[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
-
-  const handleAutoFill = () => {
-    // A. ข้อมูลผู้ป่วย (Mock Data)
-    const firstNames = ["สมชาย", "วิชัย", "กานดา", "มานี", "สมศรี", "อำนวย"];
-    const lastNames = ["ใจดี", "รักชาติ", "มีสุข", "เจริญพร", "มั่นคง"];
-    const addresses = [
-      "123 ม.1 ต.เชียงทอง",
-      "55 ม.4 ต.วังเจ้า",
-      "88/9 ถ.พหลโยธิน",
-    ];
-    const diagnosisList = [
-      "Stroke with Hemiparesis",
-      "Diabetes Mellitus type 2",
-      "Hypertension with complications",
-      "COPD with acute exacerbation",
-      "Bedridden patient",
-    ];
-    const symptomsList = [
-      "มีอาการอ่อนแรงซีกซ้าย",
-      "แผลกดทับที่ก้นกบ ระดับ 2",
-      "หายใจเหนื่อยหอบเล็กน้อย",
-      "รับประทานอาหารได้น้อยลง",
-      "ระดับน้ำตาลในเลือดสูง",
-    ];
-    const medicationList = [
-      "Metformin 500mg 1x3 pc",
-      "Amlodipine 5mg 1x1 pc",
-      "ASA 81mg 1x1 pc",
-      "Omeprazole 20mg 1x2 ac",
-    ];
-    const equipmentList = [
-      "Foley Catheter",
-      "NG Tube",
-      "Oxygen Cannula",
-      "Wheelchair",
-      "-",
-    ];
-
-    // B. สุ่มข้อมูลทั่วไป
-    const randAge = getRandomInt(40, 90);
-    const randCID = Array(13)
-      .fill(0)
-      .map(() => getRandomInt(0, 9))
-      .join("");
-    const randPhone =
-      "08" +
-      Array(8)
-        .fill(0)
-        .map(() => getRandomInt(0, 9))
-        .join("");
-    const randHN = getRandomInt(100000, 999999).toString();
-
-    // C. สุ่มวันที่
-    const today = dayjs();
-    const admitDate = today.subtract(getRandomInt(5, 30), "day");
-    const dischargeDate = admitDate.add(getRandomInt(3, 10), "day");
-    const referralDate = today.subtract(getRandomInt(0, 5), "day");
-
-    // D. สุ่มสัญญาณชีพ (Vital Signs) - ให้ค่าอยู่ในเกณฑ์ปกติถึงปานกลาง
-    const temp = (getRandomInt(360, 375) / 10).toFixed(1); // 36.0 - 37.5
-    const pulse = getRandomInt(70, 100);
-    const resp = getRandomInt(18, 24);
-    const bpSystolic = getRandomInt(110, 150);
-    const bpDiastolic = getRandomInt(70, 90);
-    const o2sat = getRandomInt(95, 100);
-
-    // E. สุ่มประเภทผู้ป่วย (จาก Master Data ที่มี)
-    let randPatientTypeId = undefined;
-    if (masterPatients && masterPatients.length > 0) {
-      randPatientTypeId = getRandomElement(masterPatients).id;
-    }
-
-    // ✅ F. ใส่ค่าลง Form
-    form.setFieldsValue({
-      // ข้อมูลทั่วไป
-      hhcNo: `HHC-${getRandomInt(100, 999)}`,
-      referralDate: referralDate,
-      patientTypeId: randPatientTypeId,
-      fullName: `${getRandomElement(firstNames)} ${getRandomElement(lastNames)}`,
-      age: randAge,
-      cid: randCID,
-      hn: randHN,
-      dob: dayjs()
-        .year(dayjs().year() - randAge)
-        .startOf("year"), // วันเกิดคร่าวๆ ตามอายุ
-      phone: randPhone,
-      allergies: Math.random() > 0.8 ? "Penicillin" : "-", // สุ่มแพ้ยา 20%
-      address: getRandomElement(addresses),
-
-      // ประวัติ & Vital Signs
-      admissionDate: admitDate,
-      dischargeDate: dischargeDate,
-      initialHistory: "ผู้ป่วยเข้ารับการรักษาด้วยอาการ...",
-      temperature: temp,
-      pulseRate: pulse,
-      respRate: resp,
-      bloodPressure: `${bpSystolic}/${bpDiastolic}`,
-      oxygenSat: o2sat,
-
-      // การประเมิน & รักษา
-      symptoms: getRandomElement(symptomsList),
-      diagnosis: getRandomElement(diagnosisList),
-      careNeeds: "ต้องการการดูแลแผลและกายภาพบำบัด",
-      medication: getRandomElement(medicationList),
-      medicalEquipment: getRandomElement(equipmentList),
-
-      // นัดหมาย
-      visitDate: today,
-      nextAppointment: today.add(getRandomInt(7, 30), "day"),
-      notes: Math.random() > 0.5 ? "ทดสอบระบบ (Auto-fill)" : "",
-    });
-  };
 
   return (
     <Card>
@@ -272,7 +167,7 @@ export default function VisitHomeForm() {
                 <Form.Item name="referralDate" label="วันที่ส่ง">
                   <DatePicker
                     format="DD MMMM YYYY"
-                    className={`${inputStyle} pt-2`}
+                    className={`${inputStyle}  w-full`}
                     style={{ width: "100%" }}
                   />
                 </Form.Item>
@@ -293,7 +188,6 @@ export default function VisitHomeForm() {
                 </Form.Item>
               </Col>
 
-              {/* บรรทัด 2 */}
               <Col xs={24} md={12}>
                 <Form.Item
                   name="fullName"
@@ -312,6 +206,7 @@ export default function VisitHomeForm() {
                     className={`${inputStyle} pt-1`}
                     style={{ width: "100%" }}
                     min={0}
+                    placeholder="อายุ (ปี)"
                   />
                 </Form.Item>
               </Col>
@@ -319,37 +214,45 @@ export default function VisitHomeForm() {
                 <Form.Item
                   name="cid"
                   label="เลขบัตรประชาชน"
-                  rules={[{ required: true }]}
+                  rules={[
+                    { required: true, message: "กรุณาระบุเลขบัตรประชาชน" },
+                  ]}
+                  normalize={(value) => (value || "").replace(/[^0-9]/g, "")}
                 >
                   <Input
                     maxLength={13}
                     className={inputStyle}
                     placeholder="13 หลัก"
+                    inputMode="numeric"
                   />
                 </Form.Item>
               </Col>
 
-              {/* บรรทัด 3 */}
               <Col xs={24} md={6}>
                 <Form.Item name="hn" label="HN">
-                  <Input className={inputStyle} />
+                  <Input className={inputStyle} placeholder="ระบุ HN" />
                 </Form.Item>
               </Col>
               <Col xs={24} md={6}>
                 <Form.Item name="dob" label="วันเกิด">
                   <DatePicker
                     format="DD MMMM YYYY"
-                    className={`${inputStyle} pt-2`}
+                    className={`${inputStyle}  w-full`}
                     style={{ width: "100%" }}
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={6}>
-                <Form.Item name="phone" label="เบอร์โทรศัพท์">
+                <Form.Item
+                  name="phone"
+                  label="เบอร์โทรศัพท์"
+                  normalize={(value) => (value || "").replace(/[^0-9]/g, "")}
+                >
                   <Input
                     maxLength={10}
                     className={inputStyle}
                     placeholder="08x-xxx-xxxx"
+                    inputMode="numeric"
                   />
                 </Form.Item>
               </Col>
@@ -362,7 +265,6 @@ export default function VisitHomeForm() {
                 </Form.Item>
               </Col>
 
-              {/* ที่อยู่ เต็มแถว */}
               <Col span={24}>
                 <Form.Item
                   name="address"
@@ -379,7 +281,6 @@ export default function VisitHomeForm() {
 
             <Divider className="my-6 border-gray-100" />
 
-            {/* ---------------- Section 2: ประวัติ & สัญญาณชีพ ---------------- */}
             <SectionHeader
               icon={<HeartOutlined />}
               title="ประวัติและสัญญาณชีพ"
@@ -390,7 +291,7 @@ export default function VisitHomeForm() {
                 <Form.Item name="admissionDate" label="วันที่รับรักษา">
                   <DatePicker
                     format="DD MMMM YYYY"
-                    className={`${inputStyle} pt-2`}
+                    className={`${inputStyle}  w-full`}
                     style={{ width: "100%" }}
                   />
                 </Form.Item>
@@ -399,7 +300,7 @@ export default function VisitHomeForm() {
                 <Form.Item name="dischargeDate" label="วันที่จำหน่าย">
                   <DatePicker
                     format="DD MMMM YYYY"
-                    className={`${inputStyle} pt-2`}
+                    className={`${inputStyle}  w-full`}
                     style={{ width: "100%" }}
                   />
                 </Form.Item>
@@ -417,7 +318,6 @@ export default function VisitHomeForm() {
               </Col>
             </Row>
 
-            {/* Vital Signs Bar */}
             <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 mt-2 mb-4">
               <Row gutter={[16, 12]} align="middle">
                 <Col xs={24} md={2}>
@@ -496,7 +396,6 @@ export default function VisitHomeForm() {
 
             <Divider className="my-6 border-gray-100" />
 
-            {/* ---------------- Section 3: Layout 2 คอลัมน์ ---------------- */}
             <Row gutter={48}>
               <Col xs={24} lg={12}>
                 <SectionHeader
@@ -554,7 +453,6 @@ export default function VisitHomeForm() {
 
             <Divider className="my-6 border-gray-100" />
 
-            {/* ---------------- Section 4: นัดหมาย ---------------- */}
             <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100">
               <SectionHeader icon={<CalendarOutlined />} title="การนัดหมาย" />
               <Row gutter={[20, 12]} align="bottom">
@@ -566,7 +464,7 @@ export default function VisitHomeForm() {
                   >
                     <DatePicker
                       format="DD MMMM YYYY"
-                      className={`${inputStyle} pt-2`}
+                      className={`${inputStyle}  w-full`}
                       style={{ width: "100%" }}
                     />
                   </Form.Item>
@@ -575,7 +473,7 @@ export default function VisitHomeForm() {
                   <Form.Item name="nextAppointment" label="นัดครั้งถัดไป">
                     <DatePicker
                       format="DD MMMM YYYY"
-                      className={`${inputStyle} pt-2`}
+                      className={`${inputStyle}  w-full`}
                       style={{ width: "100%" }}
                     />
                   </Form.Item>
@@ -595,18 +493,9 @@ export default function VisitHomeForm() {
               <Button
                 type="primary"
                 htmlType="submit"
-                icon={<SaveOutlined />}
                 className="h-10 px-8 rounded-lg text-sm font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-r from-[#0683e9] to-[#2593fc] border-0 flex items-center"
               >
                 บันทึกข้อมูลการเยี่ยมบ้าน
-              </Button>
-
-              <Button
-                onClick={handleAutoFill}
-                icon={<ExperimentOutlined />}
-                className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
-              >
-                สุ่มข้อมูลตัวอย่าง
               </Button>
             </div>
           </Form>

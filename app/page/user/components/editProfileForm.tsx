@@ -162,12 +162,7 @@ export default function EditProfileForm({
         >
           ยกเลิก
         </Button>
-        <Button
-          type="primary"
-          htmlType="submit"
-          loading={submitting}
-          icon={<SaveOutlined />}
-        >
+        <Button type="primary" htmlType="submit" loading={submitting}>
           บันทึกข้อมูล
         </Button>
       </div>

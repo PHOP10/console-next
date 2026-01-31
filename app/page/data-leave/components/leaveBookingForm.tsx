@@ -28,7 +28,6 @@ import { DataLeaveService } from "../services/dataLeave.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import CustomTable from "../../common/CustomTable";
 import { useRouter } from "next/navigation";
-import { ExperimentOutlined, SaveOutlined } from "@ant-design/icons";
 dayjs.locale("th");
 
 interface LeaveBookingFormProps {
@@ -497,10 +496,8 @@ export default function LeaveBookingForm({
                         marginBottom: 8,
                       }}
                     >
-                      {/* ✅ ใช้ Flexbox จัดปุ่มให้อยู่กึ่งกลางและวางคู่กัน */}
                       <div className="flex justify-center items-center gap-3">
                         <Button
-                          icon={<SaveOutlined />}
                           type="primary"
                           htmlType="submit"
                           className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] border-0 flex items-center"

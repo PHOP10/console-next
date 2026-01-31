@@ -19,7 +19,6 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import th_TH from "antd/locale/th_TH";
 import { useSession } from "next-auth/react";
-import { SaveOutlined } from "@ant-design/icons";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -433,8 +432,7 @@ export default function DurableArticleForm({
               <Button
                 type="primary"
                 htmlType="submit"
-                loading={loading} // ผูกสถานะ loading กับปุ่มด้วย
-                icon={<SaveOutlined />}
+                loading={loading}
                 className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center border-none"
               >
                 บันทึก

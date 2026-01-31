@@ -13,7 +13,7 @@ import {
   Row,
   Col,
   Tooltip,
-  DatePicker, // ตรวจสอบว่ามี import DatePicker
+  DatePicker,
   ConfigProvider,
 } from "antd";
 import dayjs from "dayjs";
@@ -34,14 +34,28 @@ import CustomTable from "../../common/CustomTable";
 import "dayjs/locale/th";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import thTH from "antd/es/locale/th_TH";
+
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
 
 const { Option } = Select;
-const { RangePicker } = DatePicker; // 1. ดึง RangePicker ออกมาใช้
+const { RangePicker } = DatePicker;
 
 const SECRET_KEY =
   process.env.NEXT_PUBLIC_ENCRYPTION_KEY || "MY_SUPER_SECRET_KEY_1234";
+
+// สร้าง Config ภาษาไทยฉบับแก้ไขปี พ.ศ. (เพื่อให้ Header ปฏิทินแสดงเป็น พ.ศ.)
+const thaiYearLocale: any = {
+  ...thTH,
+  DatePicker: {
+    ...thTH.DatePicker,
+    lang: {
+      ...thTH.DatePicker?.lang,
+      yearFormat: "BBBB",
+      cellYearFormat: "BBBB",
+    },
+  },
+};
 
 interface VisitHomeTableProps {
   data: VisitHomeType[];
@@ -85,10 +99,14 @@ export default function VisitHomeTable({
 
   // Filter Logic
   const filteredData = data.filter((item) => {
+    // ถอดรหัสข้อมูลก่อนการค้นหา
     const firstName = decryptData(item.firstName || "").toLowerCase();
     const lastName = decryptData(item.lastName || "").toLowerCase();
     const fullName = decryptData(item.fullName || "").toLowerCase();
     const address = decryptData(item.address || "").toLowerCase();
+    // เพิ่มการถอดรหัสอาการ เพื่อให้ค้นหาได้
+    const symptoms = decryptData(item.symptoms || "").toLowerCase();
+
     const search = searchText.toLowerCase();
 
     // กรองด้วย Text
@@ -97,15 +115,13 @@ export default function VisitHomeTable({
       lastName.includes(search) ||
       fullName.includes(search) ||
       address.includes(search) ||
-      item.symptoms?.toLowerCase().includes(search) ||
+      symptoms.includes(search) || // ค้นหาจากอาการที่ถอดรหัสแล้ว
       (item.age !== undefined && item.age.toString().includes(search));
 
-    // กรองด้วยประเภทผู้ป่วย
     const matchesPatientType = filterPatientType
       ? item.patientType?.id === filterPatientType
       : true;
 
-    // 3. กรองด้วยวันที่ (เปรียบเทียบ string YYYY-MM-DD เพื่อความแม่นยำ)
     let matchesDate = true;
     if (filterDate && filterDate[0] && filterDate[1] && item.visitDate) {
       const visitDateStr = dayjs(item.visitDate).format("YYYY-MM-DD");
@@ -166,9 +182,8 @@ export default function VisitHomeTable({
       key: "visitDate",
       width: 120,
       align: "center",
-      sorter: (a, b) => dayjs(a.visitDate).unix() - dayjs(b.visitDate).unix(),
       render: (value: string) =>
-        value ? dayjs(value).format("DD MMMM YYYY") : "-",
+        value ? dayjs(value).format("D MMM BBBB") : "-",
     },
     {
       title: "ที่อยู่",
@@ -188,6 +203,7 @@ export default function VisitHomeTable({
       key: "symptoms",
       width: 200,
       ellipsis: true,
+      render: (text) => decryptData(text),
     },
     {
       title: "ยาที่ได้รับ",
@@ -195,6 +211,7 @@ export default function VisitHomeTable({
       key: "medication",
       width: 150,
       ellipsis: true,
+      render: (text) => decryptData(text),
     },
     {
       title: "นัดถัดไป",
@@ -205,11 +222,8 @@ export default function VisitHomeTable({
       render: (text: string) => {
         if (!text) return "-";
         const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        // แสดงวันที่แบบภาษาไทย
+        return dayjs(date).format("D MMM BBBB");
       },
     },
     {
@@ -241,7 +255,7 @@ export default function VisitHomeTable({
 
           <Popconfirm
             title="ยืนยันการลบ?"
-            description="ข้อมูลนี้จะหายไปจากระบบ"
+            description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
             onConfirm={() => handleDelete(record.id)}
             okText="ลบ"
             cancelText="ยกเลิก"
@@ -288,12 +302,12 @@ export default function VisitHomeTable({
             </div>
           </Col>
 
-          {/* Filter Controls */}
           <Col xs={24} md={16} style={{ textAlign: "right" }}>
             <Space wrap>
-              <ConfigProvider locale={thTH}>
+              {/* ใช้ thaiYearLocale เพื่อให้ Header ปฏิทินเป็น พ.ศ. */}
+              <ConfigProvider locale={thaiYearLocale}>
                 <RangePicker
-                  format="D/MMM/YYYY"
+                  format="D/MMM/BBBB" // แสดงเป็น 13/ม.ค./2569
                   placeholder={["วันที่เริ่ม", "วันที่สิ้นสุด"]}
                   value={filterDate}
                   onChange={(dates) => setFilterDate(dates)}
@@ -315,7 +329,7 @@ export default function VisitHomeTable({
               </Select>
 
               <Input
-                placeholder="ค้นหาชื่อ, ที่อยู่..."
+                placeholder="ค้นหาชื่อ, อาการ, ที่อยู่..."
                 prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
@@ -328,7 +342,7 @@ export default function VisitHomeTable({
                 onClick={() => {
                   setSearchText("");
                   setFilterPatientType(null);
-                  setFilterDate(null); // 5. ล้างค่าวันที่เมื่อกดปุ่ม
+                  setFilterDate(null);
                   fetchData();
                 }}
               >

@@ -475,12 +475,10 @@ export default function MaDrugForm({
 
           <Form.Item className="mt-8 mb-2">
             <div className="flex justify-center items-center gap-3">
-              {/* ปุ่มบันทึก (สีฟ้า) */}
               <Button
                 type="primary"
                 htmlType="submit"
                 loading={loading}
-                icon={<SaveOutlined />}
                 className="h-11 px-8 rounded-xl text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center"
               >
                 บันทึกการเบิกจ่าย

@@ -18,8 +18,7 @@ import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import th_TH from "antd/locale/th_TH";
-
-import { SaveOutlined, ExperimentOutlined } from "@ant-design/icons"; /* ข้อมูลตัวอย่าง */
+import { ExperimentOutlined } from "@ant-design/icons";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -442,28 +441,23 @@ export default function SupportingResourceForm({ setLoading, loading }: Props) {
             </Col>
           </Row>
 
-          {/* หมายเหตุ */}
           <Form.Item label="หมายเหตุ" name="note">
             <Input.TextArea rows={2} className={textAreaStyle} />
           </Form.Item>
 
-          {/* ปุ่มบันทึก และ ปุ่มสุ่มข้อมูล */}
           <Form.Item style={{ textAlign: "center", marginTop: "24px" }}>
             <div className="flex justify-center items-center gap-3">
-              {/* ปุ่มบันทึก (สีฟ้า) */}
               <Button
                 type="primary"
                 htmlType="submit"
-                icon={<SaveOutlined />} // อย่าลืม import
                 className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center border-none"
               >
                 บันทึก
               </Button>
 
-              {/* ✅ ปุ่มสุ่มข้อมูลตัวอย่าง (สีเหลือง) */}
               <Button
                 onClick={handleAutoFill}
-                icon={<ExperimentOutlined />} // อย่าลืม import
+                icon={<ExperimentOutlined />}
                 className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
               >
                 สุ่มข้อมูลตัวอย่าง

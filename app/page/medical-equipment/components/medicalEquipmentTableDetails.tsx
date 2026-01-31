@@ -188,7 +188,7 @@ export default function MedicalEquipmentTableDetails({
                 rowKey="id"
                 pagination={false}
                 size="small"
-                bordered={false} // ลบเส้นขอบตารางออกเพื่อให้ดูคลีน
+                bordered={false}
                 rowClassName="hover:bg-slate-50 transition-colors"
                 components={{
                   header: {
@@ -207,15 +207,13 @@ export default function MedicalEquipmentTableDetails({
               />
             </div>
 
-            {/* 🔹 Card 3: รายละเอียดเพิ่มเติม (Note) */}
             {record.note && (
               <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
-                <Label>รายละเอียด / หมายเหตุ :</Label>
+                <Label>หมายเหตุ :</Label>
                 <InfoBox text={record.note} />
               </div>
             )}
 
-            {/* 🔹 Footer: System Info (Approval/Return/Cancel) */}
             <div className="bg-slate-200/50 p-4 rounded-xl text-sm border border-slate-200">
               <Row gutter={[16, 12]}>
                 {/* กรณีอนุมัติ */}
@@ -281,7 +279,6 @@ export default function MedicalEquipmentTableDetails({
                       <span className="text-slate-700 font-medium">
                         {formatDate(record.createdAt)}
                       </span>
-                      {/* Note: ปกติควรเป็น cancelAt ถ้ามี field นี้ */}
                     </Col>
                     {record.cancelReason && (
                       <Col span={24} className="mt-2">

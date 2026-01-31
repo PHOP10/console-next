@@ -19,7 +19,6 @@ import th_TH from "antd/locale/th_TH";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
-import { SaveOutlined } from "@ant-design/icons";
 
 interface DurableArticleEditModalProps {
   open: boolean;
@@ -453,7 +452,6 @@ export default function DurableArticleEditModal({
               type="primary"
               htmlType="submit"
               loading={loading}
-              icon={<SaveOutlined />}
               className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0 flex items-center"
             >
               บันทึกแก้ไข

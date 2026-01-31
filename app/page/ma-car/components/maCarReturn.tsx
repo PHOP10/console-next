@@ -19,11 +19,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { useSession } from "next-auth/react";
 import dayjs from "dayjs";
 import th_TH from "antd/locale/th_TH";
-import {
-  SaveOutlined,
-  CheckCircleOutlined,
-  DashboardOutlined, // ไอคอนสำหรับเลขไมล์
-} from "@ant-design/icons";
+import { DashboardOutlined } from "@ant-design/icons";
 import "dayjs/locale/th";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 
