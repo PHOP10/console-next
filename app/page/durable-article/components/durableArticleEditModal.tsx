@@ -19,10 +19,11 @@ import th_TH from "antd/locale/th_TH";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import { DurableArticleType } from "../../common";
+import { buddhistLocale } from "@/app/common";
 
 interface DurableArticleEditModalProps {
   open: boolean;
-  onClose: () => void; // ใช้ฟังก์ชันนี้ฟังก์ชันเดียวในการปิด
+  onClose: () => void;
   record: DurableArticleType | null;
   fetchData: () => Promise<void>;
 }
@@ -38,7 +39,6 @@ export default function DurableArticleEditModal({
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
 
-  // Refs สำหรับปิด Select Dropdown
   const categoryRef = useRef<any>(null);
   const acquisitionRef = useRef<any>(null);
 
@@ -49,13 +49,12 @@ export default function DurableArticleEditModal({
         acquiredDate: record.acquiredDate ? dayjs(record.acquiredDate) : null,
       });
     }
-    // ไม่ต้อง resetFields ใน else เพราะเราใช้ key ที่ Parent จัดการล้างค่าให้แล้ว
   }, [open, record, form]);
 
   const handleUpdate = async (values: any) => {
     if (!record) return;
 
-    setLoading(true); // หมุนปุ่ม
+    setLoading(true);
 
     try {
       const payload = {
@@ -66,25 +65,21 @@ export default function DurableArticleEditModal({
           : null,
       };
 
-      // 1. ยิง API บันทึก (ถ้าพังจะกระโดดไป catch)
       await intraAuthService.updateDurableArticle(payload);
 
       message.success("แก้ไขข้อมูลสำเร็จ");
     } catch (error) {
       console.error("Error updating:", error);
       message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
-      setLoading(false); // หยุดหมุนเฉพาะเมื่อ Error
-      return; // จบการทำงาน ไม่ปิด Modal
+      setLoading(false);
+      return;
     }
     onClose();
-    // 3. สั่ง Refresh ข้อมูลเงียบๆ ข้างหลัง
     try {
       await fetchData();
     } catch (refreshError) {
       console.warn("Refresh failed:", refreshError);
     }
-
-    // ไม่ต้อง setLoading(false) เพราะ Modal ถูกปิดไปแล้ว (Unmount)
   };
 
   const formatBuddhist = (value: dayjs.Dayjs | null) => {
@@ -96,54 +91,66 @@ export default function DurableArticleEditModal({
     return `${day} ${month} ${year}`;
   };
 
-  // --- Style Constants ---
+  // ปรับ Style ให้เหมาะกับมือถือมากขึ้น (ลดขนาด font เล็กน้อยถ้าจำเป็น)
   const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
   const textAreaStyle =
-    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
   const selectStyle =
-    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+    "h-10 sm:h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400 text-sm";
 
   return (
     <Modal
       title={
-        <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+        <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
           แก้ไขข้อมูลครุภัณฑ์
         </div>
       }
       open={open}
-      onCancel={onClose} // กดปุ่ม X หรือคลิกข้างนอก ก็เรียก onClose
+      onCancel={onClose}
       footer={null}
       width={900}
+      style={{ maxWidth: "100%", padding: "0" }} // ลด Padding Modal ให้เต็มจอมือถือ
       centered
       destroyOnClose
       styles={{
-        content: { borderRadius: "20px", padding: "24px" },
+        content: { borderRadius: "16px", padding: "16px 20px" }, // ลด Padding ภายใน
         header: {
-          marginBottom: "16px",
+          marginBottom: "12px",
           borderBottom: "1px solid #f0f0f0",
-          paddingBottom: "12px",
+          paddingBottom: "8px",
         },
       }}
     >
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={handleUpdate}>
-          {/* --- Row 1 --- */}
-          <Row gutter={24}>
-            <Col span={8}>
+          {/* ปรับ Gutter (ระยะห่าง) 
+             แนวนอน: มือถือห่าง 10px / จอใหญ่ห่าง 24px
+             แนวตั้ง: มือถือห่าง 6px / จอใหญ่ห่าง 16px
+          */}
+          <Row
+            gutter={[
+              { xs: 10, sm: 24 },
+              { xs: 6, sm: 16 },
+            ]}
+          >
+            {/* --- Row 1 --- */}
+            {/* ปรับ xs={12} คือแบ่งครึ่งจอซ้ายขวา */}
+            <Col xs={12} md={8}>
               <Form.Item
                 label="รหัส"
                 name="code"
                 rules={[
-                  { required: true, message: "กรุณากรอกรหัสครุภัณฑ์" },
+                  { required: true, message: "ระบุรหัส" }, // ย่อข้อความ Error ให้สั้นลง
                   {
                     pattern: /^[0-9/-]{13,17}$/,
-                    message: "กรุณากรอกเฉพาะ 0-9, /, -",
+                    message: "กรอกเฉพาะ 0-9, /, -",
                   },
                 ]}
+                className="mb-1 sm:mb-6" // ลดระยะห่างด้านล่างบนมือถือ
               >
                 <Input
-                  placeholder="เช่น xxxx-xxx-xxxx"
+                  placeholder="xxxx-xxx-xxxx"
                   maxLength={17}
                   className={inputStyle}
                   onKeyPress={(e) => {
@@ -152,79 +159,78 @@ export default function DurableArticleEditModal({
                 />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={12} md={8}>
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentId"
                 rules={[
-                  { required: true, message: "กรุณากรอกเลขที่เอกสาร" },
+                  { required: true, message: "ระบุเลขที่เอกสาร" },
                   {
                     pattern: /^[ก-ฮA-Za-z0-9./\s]+$/,
-                    message: "กรอกได้เฉพาะตัวอักษร ตัวเลข จุด และ /",
+                    message: "ตัวอักษร ตัวเลข . /",
                   },
                 ]}
+                className="mb-1 sm:mb-6"
               >
                 <Input
-                  placeholder="กรอกเลขที่เอกสาร"
+                  placeholder="เลขที่เอกสาร"
                   maxLength={14}
                   className={inputStyle}
                 />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            {/* หมายเลขทะเบียน ให้เต็มจอ (24) หรือครึ่งจอ (12) ก็ได้ แต่ถ้าเต็มจะสวยกว่าเพราะมันเป็นเศษ */}
+            <Col xs={24} md={8}>
               <Form.Item
                 label="หมายเลขและทะเบียน"
                 name="registrationNumber"
-                rules={[{ required: true, message: "กรุณาหมายเลขและทะเบียน" }]}
+                rules={[{ required: true, message: "ระบุหมายเลข" }]}
+                className="mb-1 sm:mb-6"
               >
-                <Input
-                  placeholder="กรอกหมายเลขและทะเบียน"
-                  className={inputStyle}
-                />
+                <Input placeholder="หมายเลขและทะเบียน" className={inputStyle} />
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* --- Row 2 --- */}
-          <Row gutter={24}>
-            <Col span={12}>
+            {/* --- Row 2 (TextArea ควรเต็มจอเสมอ เพื่อให้พิมพ์สะดวก) --- */}
+            <Col xs={24} md={12}>
               <Form.Item
-                label="ชื่อ ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
+                label="ชื่อ ยี่ห้อ ชนิด แบบ ขนาด"
                 name="description"
-                rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
+                rules={[{ required: true, message: "ระบุรายละเอียด" }]}
+                className="mb-1 sm:mb-6"
               >
                 <Input.TextArea
                   rows={1}
                   className={textAreaStyle}
                   maxLength={200}
                   style={{ minHeight: "44px" }}
-                  placeholder="กรอกชื่อ ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
+                  placeholder="รายละเอียดครุภัณฑ์"
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="สถานที่ตั้ง/ที่อยู่"
                 name="location"
-                rules={[{ required: true, message: "กรุณาระบุสถานที่ตั้ง" }]}
+                rules={[{ required: true, message: "ระบุสถานที่" }]}
+                className="mb-1 sm:mb-6"
               >
                 <Input.TextArea
-                  placeholder="กรอกสถานที่ตั้ง/ที่อยู่"
+                  placeholder="สถานที่ตั้ง"
                   className={inputStyle}
                   maxLength={150}
                   style={{ minHeight: "44px" }}
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* --- Row 3 --- */}
-          <Row gutter={24}>
-            <Col span={12}>
+            {/* --- Row 3 (แบ่งครึ่งซ้ายขวา) --- */}
+            <Col xs={12} md={12}>
               <Form.Item
                 label="ประเภท"
                 name="category"
-                rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
+                rules={[{ required: true, message: "เลือกประเภท" }]}
+                className="mb-1 sm:mb-6"
               >
                 <Select
                   ref={categoryRef}
@@ -235,8 +241,8 @@ export default function DurableArticleEditModal({
                       {menu}
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
-                          placeholder="กรอกประเภทอื่นๆ"
-                          className="rounded-lg"
+                          placeholder="อื่นๆ"
+                          className="rounded-lg text-sm"
                           onPressEnter={(e) => {
                             e.preventDefault();
                             form.setFieldValue(
@@ -258,75 +264,74 @@ export default function DurableArticleEditModal({
                   )}
                 >
                   <Select.Option value="ครุภัณฑ์งานบ้านงานครัว">
-                    ครุภัณฑ์งานบ้านงานครัว
+                    งานบ้านงานครัว
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์วิทยาศาสตร์การแพทย์">
-                    ครุภัณฑ์วิทยาศาสตร์การแพทย์
+                    วิทยาศาสตร์การแพทย์
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์สำนักงาน">
-                    ครุภัณฑ์สำนักงาน
+                    สำนักงาน
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์ยานพาหนะและขนส่ง">
-                    ครุภัณฑ์ยานพาหนะและขนส่ง
+                    ยานพาหนะ
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์ไฟฟ้าและวิทยุ">
-                    ครุภัณฑ์ไฟฟ้าและวิทยุ
+                    ไฟฟ้าและวิทยุ
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์โฆษณาและเผยแพร่">
-                    ครุภัณฑ์โฆษณาและเผยแพร่
+                    โฆษณา
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์คอมพิวเตอร์">
-                    ครุภัณฑ์คอมพิวเตอร์
+                    คอมพิวเตอร์
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์การแพทย์">
-                    ครุภัณฑ์การแพทย์
+                    การแพทย์
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์ก่อสร้าง">
-                    ครุภัณฑ์ก่อสร้าง
+                    ก่อสร้าง
                   </Select.Option>
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={12} md={12}>
               <Form.Item
-                label="ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+                label="ผู้ขาย/ผู้บริจาค"
                 name="responsibleAgency"
                 rules={[
                   {
                     required: true,
-                    message: "กรุณากรอก ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค",
+                    message: "ระบุผู้ขาย/ผู้บริจาค",
                   },
                 ]}
+                className="mb-1 sm:mb-6"
               >
-                <Input.TextArea
+                <Input
                   className={inputStyle}
-                  placeholder="ระบุชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+                  placeholder="ชื่อผู้ขาย"
                   maxLength={150}
-                  style={{ minHeight: "44px" }}
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* --- Row 4 --- */}
-          <Row gutter={24}>
-            <Col span={12}>
+            {/* --- Row 4 (แบ่งครึ่งซ้ายขวา) --- */}
+            <Col xs={12} md={12}>
               <Form.Item
                 name="acquisitionType"
                 label="วิธีการได้มา"
-                rules={[{ required: true, message: "กรุณาเลือกวิธีการได้มา" }]}
+                rules={[{ required: true, message: "เลือกวิธีได้มา" }]}
+                className="mb-1 sm:mb-6"
               >
                 <Select
                   ref={acquisitionRef}
-                  placeholder="เลือกงบประมาณ"
+                  placeholder="เลือก"
                   className={selectStyle}
                   dropdownRender={(menu) => (
                     <>
                       {menu}
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
-                          placeholder="กรอกงบประมาณอื่นๆ"
-                          className="rounded-lg"
+                          placeholder="อื่นๆ"
+                          className="rounded-lg text-sm"
                           onPressEnter={(e) => {
                             e.preventDefault();
                             form.setFieldValue(
@@ -350,35 +355,36 @@ export default function DurableArticleEditModal({
                   <Select.Option value="งบประมาณ">งบประมาณ</Select.Option>
                   <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
                   <Select.Option value="เงินงบประมาณ ตกลงราคา">
-                    เงินงบประมาณ ตกลงราคา
+                    ตกลงราคา
                   </Select.Option>
                   <Select.Option value="สนับสนุน">สนับสนุน</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={12} md={12}>
               <Form.Item
                 label="วันที่ได้มา"
                 name="acquiredDate"
-                rules={[{ required: true, message: "กรุณาเลือกวันที่ได้มา" }]}
+                rules={[{ required: true, message: "เลือกวันที่" }]}
+                className="mb-1 sm:mb-6"
               >
                 <DatePicker
+                  locale={buddhistLocale}
                   style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
+                  placeholder="วว/ดด/ปป"
                   format={(value) => formatBuddhist(value as dayjs.Dayjs)}
                   className={`${inputStyle} pt-2`}
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* --- Row 5 --- */}
-          <Row gutter={24}>
-            <Col span={8}>
+            {/* --- Row 5 (ตัวเลข แบ่ง 3 ส่วน หรือ ซ้ายขวาผสม) --- */}
+            <Col xs={12} md={8}>
               <Form.Item
                 label="ราคาต่อหน่วย"
                 name="unitPrice"
-                rules={[{ required: true, message: "กรุณากรอกราคาต่อหน่วย" }]}
+                rules={[{ required: true, message: "ระบุราคา" }]}
+                className="mb-1 sm:mb-6"
               >
                 <InputNumber
                   min={0}
@@ -394,13 +400,17 @@ export default function DurableArticleEditModal({
                 />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={12} md={8}>
               <Form.Item
-                label="ค่าเสื่อมราคาต่อเดือน"
+                label="ค่าเสื่อม/เดือน"
                 name="monthlyDepreciation"
                 rules={[
-                  { required: true, message: "กรุณากรอกค่าเสื่อมราคาต่อเดือน" },
+                  {
+                    required: true,
+                    message: "ระบุค่าเสื่อม",
+                  },
                 ]}
+                className="mb-1 sm:mb-6"
               >
                 <InputNumber
                   min={0}
@@ -416,11 +426,12 @@ export default function DurableArticleEditModal({
                 />
               </Form.Item>
             </Col>
-            <Col span={8}>
+            <Col xs={24} md={8}>
               <Form.Item
                 label="อายุการใช้งาน (ปี)"
                 name="usageLifespanYears"
-                rules={[{ required: true, message: "กรุณากรอกอายุการใช้งาน" }]}
+                rules={[{ required: true, message: "ระบุอายุ" }]}
+                className="mb-1 sm:mb-6"
               >
                 <InputNumber
                   min={1}
@@ -430,21 +441,24 @@ export default function DurableArticleEditModal({
                 />
               </Form.Item>
             </Col>
+
+            {/* --- Row 6 (หมายเหตุ) --- */}
+            <Col span={24}>
+              <Form.Item label="หมายเหตุ" name="note" className="mb-2">
+                <Input.TextArea
+                  rows={2}
+                  className={textAreaStyle}
+                  placeholder="หมายเหตุ (ถ้ามี)"
+                />
+              </Form.Item>
+            </Col>
           </Row>
 
-          {/* --- Row 6 --- */}
-          <Form.Item label="หมายเหตุ" name="note">
-            <Input.TextArea
-              rows={2}
-              className={textAreaStyle}
-              placeholder="กรอกหมายเหตุ (ถ้ามี)"
-            />
-          </Form.Item>
-
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
+          {/* ปุ่มด้านล่าง */}
+          <div className="flex flex-row justify-end gap-3 mt-4 pt-4 border-t border-gray-100">
             <Button
               onClick={onClose}
-              className="h-10 px-6 rounded-lg text-gray-600 hover:bg-gray-100 border-gray-300"
+              className="h-10 flex-1 sm:flex-none px-6 rounded-lg text-gray-600 hover:bg-gray-100 border-gray-300"
             >
               ยกเลิก
             </Button>
@@ -452,9 +466,9 @@ export default function DurableArticleEditModal({
               type="primary"
               htmlType="submit"
               loading={loading}
-              className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0 flex items-center"
+              className="h-10 flex-1 sm:flex-none px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
             >
-              บันทึกแก้ไข
+              บันทึก
             </Button>
           </div>
         </Form>

@@ -29,6 +29,7 @@ import {
   CalendarOutlined,
   EditOutlined,
 } from "@ant-design/icons";
+import { buddhistLocale } from "@/app/common";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -250,7 +251,8 @@ export default function VisitHomeEdit({
             <Col xs={12} md={4}>
               <Form.Item name="referralDate" label="วันที่ส่ง">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -298,7 +300,8 @@ export default function VisitHomeEdit({
             <Col xs={12} md={6}>
               <Form.Item name="dob" label="วันเกิด">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -332,7 +335,8 @@ export default function VisitHomeEdit({
             <Col xs={12} md={4}>
               <Form.Item name="admissionDate" label="วันรับรักษา">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -340,7 +344,8 @@ export default function VisitHomeEdit({
             <Col xs={12} md={4}>
               <Form.Item name="dischargeDate" label="วันจำหน่าย">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -484,7 +489,8 @@ export default function VisitHomeEdit({
                 rules={[{ required: true }]}
               >
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -492,7 +498,8 @@ export default function VisitHomeEdit({
             <Col xs={12} md={5}>
               <Form.Item name="nextAppointment" label="นัดถัดไป">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>

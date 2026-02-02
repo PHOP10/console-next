@@ -15,11 +15,11 @@ import {
   Col,
   Tag,
   ConfigProvider,
+  Grid,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
-// หากไฟล์ common ยังไม่ได้อัปเดต Type ให้แก้ที่ไฟล์นั้น หรือถ้าจะแก้ด่วนให้ใช้ type ด้านล่างนี้แทนการ import
 import { DurableArticleType } from "../../common";
 import DurableArticleDetail from "./durableArticleDetail";
 import { exportDurableArticles } from "./exportDurableArticles";
@@ -30,8 +30,6 @@ import {
   EditOutlined,
   FileSearchOutlined,
   SearchOutlined,
-  FilterOutlined,
-  ClearOutlined,
 } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
 import DurableArticleEditModal from "./durableArticleEditModal";
@@ -39,11 +37,14 @@ import dayjs from "dayjs";
 import "dayjs/locale/th";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import thTH from "antd/es/locale/th_TH";
+import { buddhistLocale } from "@/app/common";
+
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
 
 const { RangePicker } = DatePicker;
 const { Option } = Select;
+const { useBreakpoint } = Grid;
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -65,16 +66,22 @@ export default function DurableArticleTable({
   // --- State สำหรับ Filter ---
   const [searchText, setSearchText] = useState("");
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
+  // 1. เพิ่ม State สำหรับวิธีการได้มา
+  const [filterAcquisitionType, setFilterAcquisitionType] = useState<
+    string | null
+  >(null);
   const [filterAgency, setFilterAgency] = useState<string | null>(null);
   const [filterDateRange, setFilterDateRange] = useState<
     [dayjs.Dayjs | null, dayjs.Dayjs | null] | null
   >(null);
 
-  // --- State สำหรับ Modal/Selection ---
+  // --- State อื่นๆ ---
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [editRecord, setEditRecord] = useState<DurableArticleType | null>(null);
+
+  const screens = useBreakpoint();
 
   // --- Handlers ---
   const handleEdit = (record: DurableArticleType) => {
@@ -100,30 +107,37 @@ export default function DurableArticleTable({
   const handleClearFilters = () => {
     setSearchText("");
     setFilterCategory(null);
+    setFilterAcquisitionType(null); // เคลียร์ค่าวิธีการได้มา
     setFilterAgency(null);
     setFilterDateRange(null);
   };
 
+  // --- Prepare Options ---
   const categoryOptions = useMemo(() => {
-    // Cast item เป็น any เพื่อข้ามการเช็ค Type ชั่วคราว
     const categories = data
       .map((item: any) => item.category)
       .filter((item): item is string => !!item);
-    // เปลี่ยนจาก [...new Set()] เป็น Array.from(new Set())
     return Array.from(new Set(categories));
   }, [data]);
 
-  // const agencyOptions = useMemo(() => {
-  //   const agencies = data
-  //     .map((item: any) => item.responsibleAgency)
-  //     .filter((item): item is string => !!item);
-  //   return Array.from(new Set(agencies));
-  // }, [data]);
+  // 2. ดึงข้อมูลวิธีการได้มา ที่มีอยู่จริงในตาราง เพื่อมาทำ Dropdown
+  const acquisitionOptions = useMemo(() => {
+    const types = data
+      .map((item: any) => item.acquisitionType)
+      .filter((item): item is string => !!item);
+    return Array.from(new Set(types));
+  }, [data]);
+
+  const agencyOptions = useMemo(() => {
+    const agencies = data
+      .map((item: any) => item.responsibleAgency)
+      .filter((item): item is string => !!item);
+    return Array.from(new Set(agencies));
+  }, [data]);
 
   // --- Filter Logic ---
   const filteredData = useMemo(() => {
     return data.filter((item) => {
-      // Cast item เป็น any เพื่อให้เข้าถึง property ที่อาจจะยังไม่อยู่ใน Type หลักได้
       const itemAny = item as any;
 
       // 1. Text Search
@@ -138,7 +152,6 @@ export default function DurableArticleTable({
           "responsibleAgency",
           "acquisitionType",
         ].some((key) => {
-          // ใช้ itemAny เพื่อความชัวร์ว่าเข้าถึง key ได้
           const value = itemAny[key];
           return value?.toString().toLowerCase().includes(searchLower);
         });
@@ -147,11 +160,16 @@ export default function DurableArticleTable({
       const matchCategory =
         !filterCategory || itemAny.category === filterCategory;
 
-      // 3. Agency Filter
+      // 3. Acquisition Type Filter (เพิ่มใหม่)
+      const matchAcquisition =
+        !filterAcquisitionType ||
+        itemAny.acquisitionType === filterAcquisitionType;
+
+      // 4. Agency Filter
       const matchAgency =
         !filterAgency || itemAny.responsibleAgency === filterAgency;
 
-      // 4. Date Range Filter
+      // 5. Date Range Filter
       let matchDate = true;
       if (filterDateRange && filterDateRange[0] && filterDateRange[1]) {
         const itemDate = dayjs(item.acquiredDate);
@@ -163,43 +181,68 @@ export default function DurableArticleTable({
           (itemDate.isSame(end) || itemDate.isBefore(end));
       }
 
-      return matchText && matchCategory && matchAgency && matchDate;
+      return (
+        matchText &&
+        matchCategory &&
+        matchAcquisition &&
+        matchAgency &&
+        matchDate
+      );
     });
-  }, [data, searchText, filterCategory, filterAgency, filterDateRange]);
+  }, [
+    data,
+    searchText,
+    filterCategory,
+    filterAcquisitionType, // dependency ใหม่
+    filterAgency,
+    filterDateRange,
+  ]);
 
   // --- Columns Definition ---
   const columns: ColumnsType<DurableArticleType> = [
     {
-      title: "เลขที่หรือรหัส",
+      title: "รหัส",
       dataIndex: "code",
       key: "code",
       align: "center",
-      render: (text) => <span className="font-semibold">{text}</span>,
+      width: 100,
+      render: (text) => (
+        <span className="font-normal text-xs sm:text-sm">{text}</span>
+      ),
     },
     {
-      title: "วันที่ได้รับ",
+      title: "วันที่",
       dataIndex: "acquiredDate",
       key: "acquiredDate",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden text-xs font-normal">
+              {dateObj.format("D/M/BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
       title: "รายการ",
       dataIndex: "description",
       key: "description",
-      // width: 200,
+      width: 150,
       render: (text: string) => {
         if (!text) return "-";
         return (
           <Tooltip placement="topLeft" title={text}>
-            <div className="truncate w-full max-w-[300px]">{text}</div>
+            <div className="truncate w-full max-w-[150px] sm:max-w-[300px] font-normal">
+              {text}
+            </div>
           </Tooltip>
         );
       },
@@ -209,25 +252,28 @@ export default function DurableArticleTable({
       dataIndex: "category",
       key: "category",
       align: "center",
+      width: 120,
       responsive: ["md"],
       render: (text) => (text ? <Tag color="cyan">{text}</Tag> : "-"),
     },
     {
-      title: "ราคาต่อหน่วย",
+      title: "ราคา",
       dataIndex: "unitPrice",
       key: "unitPrice",
       align: "center",
-
+      width: 100,
+      responsive: ["lg"],
       render: (value) =>
         value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ||
         "0.00",
     },
     {
-      title: "มูลค่าสุทธิ ",
+      title: "สุทธิ",
       dataIndex: "netValue",
       key: "netValue",
       align: "center",
-
+      width: 100,
+      responsive: ["lg"],
       render: (value) =>
         value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ||
         "0.00",
@@ -236,42 +282,30 @@ export default function DurableArticleTable({
       title: "จัดการ",
       key: "action",
       align: "center",
-      fixed: "right",
       width: 140,
       render: (_, record) => (
         <Space size="small">
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ color: "#1677ff", fontSize: 18, cursor: "pointer" }}
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
+          <div style={{ display: "inline-block", transform: "scale(0.9)" }}>
+            <DurableArticleExportWord record={record} />
+          </div>
           {(session?.user?.role === "asset" ||
             session?.user?.role === "admin") && (
             <Tooltip title="แก้ไข">
-              <Button
-                type="text"
-                icon={
-                  <EditOutlined style={{ color: "#faad14", fontSize: 22 }} />
-                }
+              <EditOutlined
                 onClick={() => handleEdit(record)}
+                style={{ color: "#faad14", fontSize: 18, cursor: "pointer" }}
               />
             </Tooltip>
           )}
 
-          <Tooltip title="รายละเอียด">
-            <Button
-              type="text"
-              icon={
-                <FileSearchOutlined
-                  style={{ color: "#1677ff", fontSize: 22 }}
-                />
-              }
-              onClick={() => handleShowDetail(record)}
-            />
-          </Tooltip>
-
-          <div style={{ display: "inline-block" }}>
-            <DurableArticleExportWord record={record} />
-          </div>
-
           <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่?"
+            title="ลบข้อมูล?"
             onConfirm={async () => {
               try {
                 await intraAuthService.deleteDurableArticle(record.id);
@@ -282,17 +316,13 @@ export default function DurableArticleTable({
                 message.error("ลบไม่สำเร็จ");
               }
             }}
-            okText="ลบ"
-            okButtonProps={{ danger: true }}
+            okText="ใช่"
             cancelText="ยกเลิก"
+            okButtonProps={{ danger: true }}
           >
             <Tooltip title="ลบ">
-              <Button
-                type="text"
-                danger
-                icon={
-                  <DeleteOutlined style={{ color: "#ff4d4f", fontSize: 22 }} />
-                }
+              <DeleteOutlined
+                style={{ color: "#ff4d4f", fontSize: 18, cursor: "pointer" }}
               />
             </Tooltip>
           </Popconfirm>
@@ -309,21 +339,24 @@ export default function DurableArticleTable({
       >
         <div
           style={{
-            fontSize: "24px",
             textAlign: "center",
             fontWeight: "bold",
             color: "#0683e9",
             padding: "16px",
             borderBottom: "1px solid #f0f0f0",
+            fontSize: "clamp(18px, 4vw, 24px)",
           }}
         >
           ข้อมูลครุภัณฑ์
         </div>
 
-        <div className="p-6">
-          {/* --- Section: Advanced Search Filter --- */}
-          <Card className="mb-6 bg-blue-50 border-blue-100" size="small">
+        <div className="p-2 sm:p-6">
+          <Card
+            className="mb-4 sm:mb-6 bg-blue-50 border-blue-100"
+            size="small"
+          >
             <div className="flex flex-col gap-4">
+              {/* Row 1: Search, Date, Buttons */}
               <Row gutter={[16, 16]}>
                 <Col xs={24} md={8}>
                   <div className="flex flex-col gap-1">
@@ -332,7 +365,7 @@ export default function DurableArticleTable({
                     </span>
                     <Input
                       prefix={<SearchOutlined className="text-gray-400" />}
-                      placeholder="พิมพ์รหัส, ชื่อ หรือรายละเอียด..."
+                      placeholder="พิมพ์รหัส, ชื่อ..."
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
                       allowClear
@@ -344,42 +377,46 @@ export default function DurableArticleTable({
                     <span className="text-xs text-gray-500 font-medium">
                       ช่วงวันที่ได้รับ
                     </span>
-                    <ConfigProvider locale={thTH}>
+                    <ConfigProvider locale={buddhistLocale}>
                       <RangePicker
+                        locale={buddhistLocale}
                         style={{ width: "100%" }}
                         value={filterDateRange}
                         onChange={(dates) => setFilterDateRange(dates as any)}
-                        format="DD/MMM/YYYY"
-                        placeholder={["วันที่เริ่มต้น", "วันที่สิ้นสุด"]}
+                        format="DD MMM YYYY"
+                        placeholder={["เริ่มต้น", "สิ้นสุด"]}
                       />
                     </ConfigProvider>
                   </div>
                 </Col>
-                <Col xs={24} md={8} className="flex items-end justify-end">
-                  <Space>
+                <Col xs={24} md={8} className="flex flex-col justify-end">
+                  <div className="flex flex-col sm:flex-row gap-2 w-full justify-end">
                     <Button
-                      type="primary" // <--- เพิ่มบรรทัดนี้ เพื่อให้เป็นสีฟ้า
+                      type="primary"
                       onClick={handleClearFilters}
                       disabled={
                         !searchText &&
                         !filterCategory &&
+                        !filterAcquisitionType &&
                         !filterAgency &&
                         !filterDateRange
                       }
+                      className="w-full sm:w-auto"
                     >
                       ล้างตัวกรอง
                     </Button>
                     <Button
                       type="primary"
                       onClick={() => exportDurableArticles(filteredData)}
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
                     >
-                      ดาวน์โหลด Excel ({filteredData.length})
+                      ดาวน์โหลดครุภัณฑ์ ({filteredData.length})
                     </Button>
-                  </Space>
+                  </div>
                 </Col>
               </Row>
 
+              {/* Row 2: Category, Acquisition Type (New) */}
               <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12} md={6}>
                   <div className="flex flex-col gap-1">
@@ -403,13 +440,37 @@ export default function DurableArticleTable({
                     </Select>
                   </div>
                 </Col>
+
+                {/* 3. เพิ่ม UI สำหรับเลือก วิธีการได้มา */}
+                <Col xs={24} sm={12} md={6}>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-xs text-gray-500 font-medium">
+                      วิธีการได้มา
+                    </span>
+                    <Select
+                      placeholder="ทั้งหมด"
+                      style={{ width: "100%" }}
+                      allowClear
+                      showSearch
+                      value={filterAcquisitionType}
+                      onChange={setFilterAcquisitionType}
+                      optionFilterProp="children"
+                    >
+                      {acquisitionOptions.map((type) => (
+                        <Option key={type} value={type}>
+                          {type}
+                        </Option>
+                      ))}
+                    </Select>
+                  </div>
+                </Col>
               </Row>
             </div>
           </Card>
 
-          <div className="flex justify-between mb-2">
-            <span className="text-gray-500 text-sm">
-              พบข้อมูลทั้งหมด {filteredData.length} รายการ
+          <div className="flex justify-between mb-2 px-1">
+            <span className="text-gray-500 text-xs sm:text-sm">
+              พบ {filteredData.length} รายการ
             </span>
           </div>
 
@@ -419,12 +480,12 @@ export default function DurableArticleTable({
             dataSource={filteredData}
             loading={loading}
             bordered
-            scroll={{ x: 1200 }}
-            size="middle"
+            scroll={{ x: "max-content" }}
+            size="small"
             pagination={{
               pageSize: 10,
-              showSizeChanger: true,
-              showTotal: (total) => `ทั้งหมด ${total} รายการ`,
+              showSizeChanger: false,
+              simple: true,
             }}
           />
         </div>

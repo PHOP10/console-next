@@ -28,6 +28,7 @@ import { DataLeaveService } from "../services/dataLeave.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import CustomTable from "../../common/CustomTable";
 import { useRouter } from "next/navigation";
+import { buddhistLocale } from "@/app/common";
 dayjs.locale("th");
 
 interface LeaveBookingFormProps {
@@ -329,7 +330,8 @@ export default function LeaveBookingForm({
                           ]}
                         >
                           <DatePicker
-                            format="DD/MM/YYYY"
+                            locale={buddhistLocale}
+                            format="D MMMM BBBB"
                             style={{ width: "100%" }}
                             placeholder="เลือกวันที่"
                             className={`${inputStyle} pt-2`}
@@ -367,7 +369,8 @@ export default function LeaveBookingForm({
                           ]}
                         >
                           <DatePicker
-                            format="DD/MM/YYYY"
+                            locale={buddhistLocale}
+                            format="D MMMM BBBB"
                             style={{ width: "100%" }}
                             className={`${inputStyle} pt-2`}
                             placeholder={

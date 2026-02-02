@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { MaCarType } from "../../common";
+import { buddhistLocale } from "@/app/common";
 
 dayjs.locale("th");
 dayjs.extend(isBetween);
@@ -380,6 +381,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 style={{ marginBottom: 0 }}
               >
                 <DatePicker
+                  locale={buddhistLocale}
                   showTime={{ format: "HH:mm" }}
                   style={{ width: "100%" }}
                   format="DD/MM/YYYY HH:mm"
@@ -460,6 +462,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                       style={{ marginBottom: 0 }}
                     >
                       <DatePicker
+                        locale={buddhistLocale}
                         showTime={{ format: "HH:mm" }}
                         style={{ width: "100%" }}
                         format="DD/MM/YYYY HH:mm"

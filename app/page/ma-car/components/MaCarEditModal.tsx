@@ -26,6 +26,7 @@ import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { MaCarType } from "../../common";
 import "dayjs/locale/th";
 import isBetween from "dayjs/plugin/isBetween";
+import { buddhistLocale } from "@/app/common";
 
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
@@ -273,6 +274,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                   rules={[{ required: true }]}
                 >
                   <DatePicker
+                    locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
                     format="DD/MM/YYYY HH:mm"
                     className={`${inputStyle} pt-2`}
@@ -287,6 +289,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                   rules={[{ required: true }]}
                 >
                   <DatePicker
+                    locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
                     format="DD/MM/YYYY HH:mm"
                     className={`${inputStyle} pt-2`}

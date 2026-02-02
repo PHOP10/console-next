@@ -11,7 +11,6 @@ import {
   DatePicker,
   message,
   Popconfirm,
-  Select,
   Popover,
   Typography,
   Tooltip,
@@ -38,7 +37,7 @@ import {
 import { useSession } from "next-auth/react";
 import MedicalEquipmentTableDetails from "./medicalEquipmentTableDetails";
 import CustomTable from "../../common/CustomTable";
-import MaMedicalEquipmentEditModal from "./maMedicalEquipmentEditModal"; // Import Component ใหม่
+import MaMedicalEquipmentEditModal from "./maMedicalEquipmentEditModal";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -63,9 +62,9 @@ export default function MaMedicalEquipmentTable({
   );
   const [editModalVisible, setEditModalVisible] = useState(false);
 
-  // States อื่นๆ (Cancel, Approve, Return, Detail)
+  // States อื่นๆ
   const [form] = Form.useForm();
-  const [isModalOpen, setIsModalOpen] = useState(false); // ใช้ร่วมกัน Cancel/Return (ควรแยกถ้าทำได้ แต่ตามโค้ดเดิมใช้ร่วมกัน)
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] =
     useState<MaMedicalEquipmentType | null>(null);
   const [openDetails, setOpenDetails] = useState(false);
@@ -81,12 +80,12 @@ export default function MaMedicalEquipmentTable({
   };
 
   const handleEditSuccess = () => {
-    setLoading(true); // Refresh Data
+    setLoading(true);
     setEditModalVisible(false);
     setEditingItem(null);
   };
 
-  // --- Other Handlers (Cancel, Approve, Return) ---
+  // --- Other Handlers ---
   const handleCancel = async (values: any) => {
     if (!selectedRecord) return;
     try {
@@ -191,8 +190,9 @@ export default function MaMedicalEquipmentTable({
       title: "ลำดับ",
       dataIndex: "id",
       key: "id",
-      width: 45,
+      width: 60,
       align: "center",
+      responsive: ["md"], // ซ่อนบนมือถือ
     },
     {
       title: "รายการ",
@@ -206,7 +206,7 @@ export default function MaMedicalEquipmentTable({
         const displayItems = hasMore ? items.slice(0, maxToShow) : items;
 
         return (
-          <ul style={{ paddingLeft: 20, margin: 0 }}>
+          <ul style={{ paddingLeft: 20, margin: 0, textAlign: "left" }}>
             {displayItems?.map((item, index) => (
               <li key={index}>{item.medicalEquipment?.equipmentName}</li>
             ))}
@@ -226,15 +226,15 @@ export default function MaMedicalEquipmentTable({
     {
       title: "จำนวน",
       dataIndex: "items",
-      key: "items",
-      width: 140,
+      key: "items_qty",
+      width: 90,
       align: "center",
       render: (items: any[]) => {
         if (!items || items.length === 0) return null;
         const firstThree = items.slice(0, 2);
         const rest = items.slice(2);
         return (
-          <ul style={{ paddingLeft: 20, margin: 0 }}>
+          <ul style={{ paddingLeft: 20, margin: 0, textAlign: "left" }}>
             {firstThree.map((item, index) => (
               <li key={index}>{item.quantity}</li>
             ))}
@@ -255,9 +255,22 @@ export default function MaMedicalEquipmentTable({
       dataIndex: "sentDate",
       key: "sentDate",
       align: "center",
+      width: 120,
       render: (date: string) => {
         if (!date) return "-";
-        return dayjs(date).format("D MMMM BBBB");
+        const dateObj = dayjs(date);
+        return (
+          <>
+            {/* แสดงบนมือถือ */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่ */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -265,12 +278,15 @@ export default function MaMedicalEquipmentTable({
       dataIndex: "createdBy",
       key: "createdBy",
       align: "center",
+      width: 120,
+      responsive: ["lg"], // แสดงเฉพาะจอใหญ่
     },
     {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = "";
@@ -294,7 +310,7 @@ export default function MaMedicalEquipmentTable({
           case "verified":
             color = "cyan";
             text = "ตรวจรับคืนแล้ว";
-            break; // ปรับสีให้ชัดขึ้น
+            break;
           default:
             text = status;
         }
@@ -302,16 +318,18 @@ export default function MaMedicalEquipmentTable({
       },
     },
     {
-      title: "หมายเหตุเพิ่มเติม",
+      title: "หมายเหตุ",
       dataIndex: "note",
       key: "note",
       align: "center",
+      width: 150,
+      responsive: ["xl"], // แสดงเฉพาะจอใหญ่มาก
       render: (text: string) => {
         const shortText =
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
         return (
           <Tooltip title={text}>
-            <span>{shortText}</span>
+            <span>{shortText || "-"}</span>
           </Tooltip>
         );
       },
@@ -320,59 +338,10 @@ export default function MaMedicalEquipmentTable({
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 160,
+      // ไม่ใช้ fixed ตามข้อ 5
       render: (_, record) => (
-        <Space size="middle">
-          {/* Delete */}
-          <Popconfirm
-            title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteMaMedicalEquipment(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                setLoading(true);
-              } catch (error) {
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-          >
-            <Tooltip title="ลบ">
-              <DeleteOutlined
-                style={{ fontSize: 20, color: "#ff4d4f", cursor: "pointer" }}
-              />
-            </Tooltip>
-          </Popconfirm>
-
-          {/* Edit */}
-          <Tooltip title="แก้ไข">
-            <EditOutlined
-              style={{
-                fontSize: 20,
-                color: record.status === "pending" ? "#faad14" : "#d9d9d9",
-                cursor: record.status === "pending" ? "pointer" : "not-allowed",
-              }}
-              onClick={() => {
-                if (record.status === "pending") handleEdit(record);
-              }}
-            />
-          </Tooltip>
-
-          {/* Verify Return */}
-          <Tooltip title="ยืนยันรับคืน">
-            <RollbackOutlined
-              style={{
-                fontSize: 20,
-                color: record.status === "return" ? "#722ed1" : "#d9d9d9",
-                cursor: record.status === "return" ? "pointer" : "not-allowed",
-              }}
-              onClick={() => {
-                if (record.status === "return") handleOpenModalReturn(record);
-              }}
-            />
-          </Tooltip>
-
+        <Space size="small">
           {/* Approve Popover */}
           <Popover
             trigger="click"
@@ -417,7 +386,7 @@ export default function MaMedicalEquipmentTable({
             >
               <CheckCircleOutlined
                 style={{
-                  fontSize: 20,
+                  fontSize: 18, // ขนาด 18 ตามข้อ 3
                   color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
                   cursor:
                     record.status === "pending" ? "pointer" : "not-allowed",
@@ -430,13 +399,64 @@ export default function MaMedicalEquipmentTable({
             </Tooltip>
           </Popover>
 
+          {/* Verify Return */}
+          <Tooltip title="ยืนยันรับคืน">
+            <RollbackOutlined
+              style={{
+                fontSize: 18,
+                color: record.status === "return" ? "#722ed1" : "#d9d9d9",
+                cursor: record.status === "return" ? "pointer" : "not-allowed",
+              }}
+              onClick={() => {
+                if (record.status === "return") handleOpenModalReturn(record);
+              }}
+            />
+          </Tooltip>
+
           {/* Details */}
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
               onClick={() => handleOpenModalDetails(record)}
-              style={{ fontSize: 20, color: "#1677ff", cursor: "pointer" }}
+              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }}
             />
           </Tooltip>
+
+          {/* Edit */}
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              style={{
+                fontSize: 18,
+                color: record.status === "pending" ? "#faad14" : "#d9d9d9",
+                cursor: record.status === "pending" ? "pointer" : "not-allowed",
+              }}
+              onClick={() => {
+                if (record.status === "pending") handleEdit(record);
+              }}
+            />
+          </Tooltip>
+
+          {/* Delete */}
+          <Popconfirm
+            title="ยืนยันการลบ"
+            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+            onConfirm={async () => {
+              try {
+                await intraAuthService.deleteMaMedicalEquipment(record.id);
+                message.success("ลบข้อมูลสำเร็จ");
+                setLoading(true);
+              } catch (error) {
+                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+              }
+            }}
+            okText="ใช่"
+            cancelText="ยกเลิก"
+          >
+            <Tooltip title="ลบ">
+              <DeleteOutlined
+                style={{ fontSize: 18, color: "#ff4d4f", cursor: "pointer" }}
+              />
+            </Tooltip>
+          </Popconfirm>
         </Space>
       ),
     },
@@ -448,12 +468,13 @@ export default function MaMedicalEquipmentTable({
         <div
           style={{
             textAlign: "center",
-            fontSize: "24px",
+            // Responsive font size
+            fontSize: "clamp(18px, 4vw, 24px)",
             fontWeight: "bold",
             color: "#0683e9",
           }}
         >
-          รายการส่งเครื่องมือแพทย์
+          จัดการการเบิก-จ่าย
         </div>
       }
       bordered
@@ -469,11 +490,12 @@ export default function MaMedicalEquipmentTable({
         dataSource={data}
         loading={loading}
         bordered
-        pagination={{ pageSize: 10 }}
+        // ใช้ size small บนมือถือ
+        size="small"
+        pagination={{ pageSize: 10, size: "small" }}
         scroll={{ x: "max-content" }}
       />
 
-      {/* เรียกใช้ Edit Modal ตัวใหม่ */}
       <MaMedicalEquipmentEditModal
         open={editModalVisible}
         onClose={() => setEditModalVisible(false)}
@@ -482,10 +504,10 @@ export default function MaMedicalEquipmentTable({
         dataEQ={dataEQ}
       />
 
-      {/* Modal ยกเลิก (ถ้าจะแยกอีกก็ทำได้ในอนาคต) */}
+      {/* Modal ยกเลิก */}
       <Modal
         title="กรอกเหตุผลการยกเลิกรายการนี้"
-        open={isModalOpen && !recordReturn} // เช็คว่าไม่ใช่ Modal Return
+        open={isModalOpen && !recordReturn}
         onOk={() => form.submit()}
         onCancel={() => {
           setIsModalOpen(false);
@@ -493,6 +515,9 @@ export default function MaMedicalEquipmentTable({
         }}
         okText="ยืนยัน"
         cancelText="ยกเลิก"
+        centered
+        // Responsive Modal
+        style={{ maxWidth: "95%" }}
       >
         <Form form={form} layout="vertical" onFinish={handleCancel}>
           <Form.Item
@@ -516,6 +541,8 @@ export default function MaMedicalEquipmentTable({
         okText="ยืนยันรับคืน"
         cancelText="ยกเลิก"
         width={700}
+        centered
+        style={{ maxWidth: "95%" }}
       >
         <Form form={formReturn} layout="vertical">
           <Form.Item label="รายการอุปกรณ์ที่ส่ง">
@@ -525,10 +552,11 @@ export default function MaMedicalEquipmentTable({
               rowKey="id"
               pagination={false}
               size="small"
+              scroll={{ x: "max-content" }}
             />
           </Form.Item>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item label="วันที่ส่ง" name="sentDate">
                 <DatePicker
                   disabled
@@ -537,19 +565,19 @@ export default function MaMedicalEquipmentTable({
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item label="สถานะ" name="status">
                 <Input disabled />
               </Form.Item>
             </Col>
           </Row>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item label="หมายเหตุ" name="note">
                 <Input.TextArea disabled rows={3} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item label="ผู้รับคืน" name="returnName">
                 <Input disabled />
               </Form.Item>

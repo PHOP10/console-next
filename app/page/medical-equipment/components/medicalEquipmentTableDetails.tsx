@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Modal, Table, Row, Col, Tag, Divider } from "antd";
+import { Modal, Row, Col, Tag, Divider } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import type { ColumnsType } from "antd/es/table";
@@ -24,12 +24,13 @@ export default function MedicalEquipmentTableDetails({
     includeTime = false,
   ) => {
     if (!dateString) return "-";
-    const format = includeTime ? "DD MMMM YYYY HH:mm น." : "DD MMMM YYYY";
+    const format = includeTime ? "DD MMM YY HH:mm น." : "DD MMM YYYY"; // ปรับ Format ให้สั้นลงเล็กน้อยถ้ามีเวลา
     return dayjs(dateString).locale("th").format(format);
   };
 
   const getStatusTag = (status: string) => {
-    const baseStyle = "px-3 py-1 rounded-full text-sm font-medium border-0";
+    const baseStyle =
+      "px-3 py-1 rounded-full text-xs sm:text-sm font-medium border-0";
     switch (status) {
       case "pending":
         return (
@@ -71,7 +72,7 @@ export default function MedicalEquipmentTableDetails({
     {
       title: "ลำดับ",
       key: "index",
-      width: 60,
+      width: 50, // ลดความกว้างลง
       align: "center",
       render: (_, __, index) => (
         <span className="text-slate-400">{index + 1}</span>
@@ -82,7 +83,9 @@ export default function MedicalEquipmentTableDetails({
       dataIndex: ["medicalEquipment", "equipmentName"],
       key: "equipmentName",
       render: (text: string) => (
-        <span className="font-medium text-slate-700">{text}</span>
+        <span className="font-medium text-slate-700 text-sm sm:text-base">
+          {text}
+        </span>
       ),
     },
     {
@@ -90,10 +93,10 @@ export default function MedicalEquipmentTableDetails({
       dataIndex: "quantity",
       key: "quantity",
       align: "center",
-      width: 120,
+      width: 80,
       render: (quantity: number) => (
-        <span className="bg-blue-50 text-blue-600 border border-blue-100 px-3 py-1 rounded-full text-xs font-semibold">
-          {quantity} ชิ้น
+        <span className="bg-blue-50 text-blue-600 border border-blue-100 px-2 sm:px-3 py-1 rounded-full text-xs font-semibold">
+          {quantity}
         </span>
       ),
     },
@@ -136,7 +139,8 @@ export default function MedicalEquipmentTableDetails({
       footer={null}
       width={750}
       centered
-      style={{ maxWidth: "100%", paddingBottom: 0 }}
+      // ปรับให้เต็มจอในมือถือ
+      style={{ maxWidth: "95%", paddingBottom: 0 }}
       modalRender={(modal) => (
         <div className="bg-slate-100/50 rounded-2xl overflow-hidden shadow-2xl font-sans">
           {modal}
@@ -150,36 +154,38 @@ export default function MedicalEquipmentTableDetails({
       {record && (
         <div className="flex flex-col">
           {/* 🔹 Header */}
-          <div className="bg-white px-6 py-5 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10">
+          <div className="bg-white px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center sticky top-0 z-10 gap-2">
             <div>
-              <h2 className="text-xl font-bold text-slate-800 m-0">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800 m-0">
                 รายละเอียดการส่งเครื่องมือ
               </h2>
-              <div className="text-slate-500 text-sm mt-1">
-                ตรวจสอบรายการเครื่องมือแพทย์ที่ส่ง
+              <div className="text-slate-500 text-xs sm:text-sm mt-1">
+                รหัสรายการ: #{record.id}
               </div>
             </div>
-            <div className="text-right">{getStatusTag(record.status)}</div>
+            <div className="self-end sm:self-auto">
+              {getStatusTag(record.status)}
+            </div>
           </div>
 
-          <div className="p-6 overflow-y-auto max-h-[75vh]">
-            {/* 🔹 Card 1: ข้อมูลทั่วไป (ผู้ส่ง, วันที่) */}
-            <div className="bg-white  rounded-xl shadow-sm border border-slate-100 mb-4">
-              <Row gutter={[24, 20]}>
-                <Col xs={24} sm={12}>
+          <div className="p-4 sm:p-6 overflow-y-auto max-h-[75vh]">
+            {/* 🔹 Card 1: ข้อมูลทั่วไป */}
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+              <Row gutter={[16, 16]}>
+                <Col xs={12} sm={12}>
                   <Label>ผู้ส่ง :</Label>
                   <Value isBold>{record.createdBy || "-"}</Value>
                 </Col>
-                <Col xs={24} sm={12}>
+                <Col xs={12} sm={12}>
                   <Label>วันที่ส่ง :</Label>
                   <Value isBold>{formatDate(record.sentDate)}</Value>
                 </Col>
               </Row>
             </div>
 
-            {/* 🔹 Card 2: ตารางรายการ (Table Section) */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4 overflow-hidden">
-              <h3 className="text-slate-800 font-semibold mb-4 text-base pl-2 border-l-4 border-blue-500">
+            {/* 🔹 Card 2: ตารางรายการ */}
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4 overflow-hidden">
+              <h3 className="text-slate-800 font-semibold mb-3 text-sm sm:text-base pl-2 border-l-4 border-blue-500">
                 รายการอุปกรณ์
               </h3>
               <CustomTable
@@ -189,6 +195,8 @@ export default function MedicalEquipmentTableDetails({
                 pagination={false}
                 size="small"
                 bordered={false}
+                // เพิ่ม scroll แนวนอน
+                scroll={{ x: "max-content" }}
                 rowClassName="hover:bg-slate-50 transition-colors"
                 components={{
                   header: {
@@ -199,6 +207,7 @@ export default function MedicalEquipmentTableDetails({
                           backgroundColor: "#f8fafc",
                           color: "#64748b",
                           fontWeight: 600,
+                          fontSize: "13px",
                         }}
                       />
                     ),
@@ -208,53 +217,53 @@ export default function MedicalEquipmentTableDetails({
             </div>
 
             {record.note && (
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+              <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
                 <Label>หมายเหตุ :</Label>
                 <InfoBox text={record.note} />
               </div>
             )}
 
-            <div className="bg-slate-200/50 p-4 rounded-xl text-sm border border-slate-200">
+            <div className="bg-slate-200/50 p-4 rounded-xl text-xs sm:text-sm border border-slate-200">
               <Row gutter={[16, 12]}>
                 {/* กรณีอนุมัติ */}
                 {record.approveBy && (
                   <>
-                    <Col xs={24} sm={12}>
-                      <span className="text-slate-500 block text-xs">
-                        ผู้อนุมัติ
+                    <Col xs={12} sm={12}>
+                      <span className="text-slate-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1">
+                        Approved By
                       </span>
-                      <span className="text-slate-700 font-medium">
+                      <span className="text-slate-700 font-medium block">
                         {record.approveBy}
                       </span>
                     </Col>
-                    <Col xs={24} sm={12}>
-                      <span className="text-slate-500 block text-xs">
-                        วันที่อนุมัติ
+                    <Col xs={12} sm={12}>
+                      <span className="text-slate-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1">
+                        Date
                       </span>
-                      <span className="text-slate-700 font-medium">
+                      <span className="text-slate-700 font-medium block">
                         {formatDate(record.approveAt)}
                       </span>
                     </Col>
-                    <Divider className="my-2 bg-slate-300 col-span-2" />
+                    <Divider className="my-2 bg-slate-300 col-span-2 opacity-50" />
                   </>
                 )}
 
                 {/* กรณีรับคืน */}
                 {(record.returnName || record.returndAt) && (
                   <>
-                    <Col xs={24} sm={12}>
-                      <span className="text-blue-600 block text-xs font-semibold">
-                        ผู้รับคืน
+                    <Col xs={12} sm={12}>
+                      <span className="text-blue-600 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
+                        Received By
                       </span>
-                      <span className="text-slate-700 font-medium">
+                      <span className="text-slate-700 font-medium block">
                         {record.returnName || "-"}
                       </span>
                     </Col>
-                    <Col xs={24} sm={12}>
-                      <span className="text-blue-600 block text-xs font-semibold">
-                        วันที่รับคืน
+                    <Col xs={12} sm={12}>
+                      <span className="text-blue-600 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
+                        Date
                       </span>
-                      <span className="text-slate-700 font-medium">
+                      <span className="text-slate-700 font-medium block">
                         {formatDate(record.returndAt)}
                       </span>
                     </Col>
@@ -264,26 +273,26 @@ export default function MedicalEquipmentTableDetails({
                 {/* กรณียกเลิก */}
                 {(record.nameReason || record.cancelReason) && (
                   <>
-                    <Col xs={24} sm={12}>
-                      <span className="text-red-500 block text-xs font-semibold">
-                        ผู้ยกเลิก
+                    <Col xs={12} sm={12}>
+                      <span className="text-red-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
+                        Cancelled By
                       </span>
-                      <span className="text-slate-700 font-medium">
+                      <span className="text-slate-700 font-medium block">
                         {record.nameReason || "-"}
                       </span>
                     </Col>
-                    <Col xs={24} sm={12}>
-                      <span className="text-red-500 block text-xs font-semibold">
-                        วันที่ยกเลิก
+                    <Col xs={12} sm={12}>
+                      <span className="text-red-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
+                        Date
                       </span>
-                      <span className="text-slate-700 font-medium">
+                      <span className="text-slate-700 font-medium block">
                         {formatDate(record.createdAt)}
                       </span>
                     </Col>
                     {record.cancelReason && (
-                      <Col span={24} className="mt-2">
-                        <div className="bg-white p-2 rounded border border-red-100 text-red-600 text-xs">
-                          เหตุผล: {record.cancelReason}
+                      <Col span={24} className="mt-1">
+                        <div className="bg-red-50 p-2 rounded border border-red-100 text-red-700 text-xs">
+                          Reason: {record.cancelReason}
                         </div>
                       </Col>
                     )}

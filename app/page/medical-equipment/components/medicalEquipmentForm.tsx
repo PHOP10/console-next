@@ -16,6 +16,7 @@ import {
   Typography,
   Modal,
   Space,
+  ConfigProvider,
 } from "antd";
 import {
   PlusOutlined,
@@ -27,10 +28,10 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MaMedicalEquipmentType, MedicalEquipmentType } from "../../common";
 import { useSession } from "next-auth/react";
+import { buddhistLocale } from "@/app/common";
 import dayjs from "dayjs";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import "dayjs/locale/th";
-import th_TH from "antd/es/date-picker/locale/th_TH";
 
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
@@ -193,14 +194,17 @@ export default function CreateMedicalEquipmentForm({
   // 3. UI Components (Columns)
   // ---------------------------------------------------------------------------
 
-  // Columns ของ Modal (เลือกของ)
+  // // Columns ของ Modal (เลือกของ)
   const modalColumns = [
     {
       title: "ชื่อเครื่องมือ",
       dataIndex: "equipmentName",
       render: (text: string, record: any) => (
         <span>
-          {text} {record.remainingQuantity === 0 && <Tag color="red">หมด</Tag>}
+          {text}{" "}
+          {record.remainingQuantity === 0 && (
+            <Tag color="orange">ดำเนินการอยู่</Tag>
+          )}
         </span>
       ),
     },
@@ -319,23 +323,17 @@ export default function CreateMedicalEquipmentForm({
               rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
             >
               <DatePicker
-                locale={th_TH}
+                locale={buddhistLocale}
                 format="D MMMM BBBB"
                 className="w-full h-11 rounded-xl"
                 disabledDate={(current) => {
                   if (!current) return false;
-
-                  // 1. ห้ามเลือกวันในอดีต
                   const today = dayjs().startOf("day");
                   if (current.isBefore(today)) return true;
 
-                  // 2. ห้ามเลือกวันที่ซ้ำกับที่มีอยู่แล้ว (check duplicate)
                   const isDuplicate = data.some((item) => {
-                    // ถ้าไม่มีวันที่ หรือ รายการนั้นถูก "ยกเลิก" ไปแล้ว -> ไม่นับว่าซ้ำ (เลือกได้)
                     if (!item.sentDate || item.status === "cancel")
                       return false;
-
-                    // เช็คว่าวันที่ตรงกันหรือไม่
                     return dayjs(item.sentDate).isSame(current, "day");
                   });
 
@@ -395,7 +393,7 @@ export default function CreateMedicalEquipmentForm({
           }}
           dataSource={modalDataSource}
           columns={modalColumns}
-          pagination={{ pageSize: 5 }}
+          pagination={{ pageSize: 10 }}
           size="small"
           scroll={{ y: 300 }} // Fix ความสูงถ้ามีของเยอะ
         />

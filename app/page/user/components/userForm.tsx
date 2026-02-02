@@ -14,6 +14,7 @@ import {
 } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../services/user.service";
+import { buddhistLocale } from "@/app/common";
 
 interface UserFormProps {
   fetchData: () => Promise<void>;
@@ -145,9 +146,10 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
               rules={[{ required: true, message: "กรุณาเลือกวันเริ่มงาน" }]}
             >
               <DatePicker
+                locale={buddhistLocale}
+                format="D MMMM BBBB"
                 style={{ width: "100%" }}
                 placeholder="เลือกวันที่เริ่มงาน"
-                format="DD/MM/YYYY"
                 className="h-11 shadow-sm rounded-xl border-gray-300 hover:border-blue-400"
               />
             </Form.Item>

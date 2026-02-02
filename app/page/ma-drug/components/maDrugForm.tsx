@@ -27,6 +27,7 @@ import { DrugType, MaDrugType } from "../../common";
 import { useSession } from "next-auth/react";
 import CustomTable from "../../common/CustomTable";
 import dayjs from "dayjs";
+import { buddhistLocale } from "@/app/common";
 
 interface DrugItemRow {
   key: string;
@@ -338,7 +339,8 @@ export default function MaDrugForm({
                 ]}
               >
                 <DatePicker
-                  format="YYYY-MM-DD"
+                  locale={buddhistLocale}
+                  format="D MMMM BBBB"
                   placeholder="เลือกวันที่"
                   style={{ width: "100%" }}
                   className={`${inputStyle} pt-2`}
@@ -371,6 +373,7 @@ export default function MaDrugForm({
                   min={1}
                   style={{ width: "100%" }}
                   className={`${inputStyle} pt-1`}
+                  placeholder="กรอกเบิกครั้งที่"
                 />
               </Form.Item>
             </Col>

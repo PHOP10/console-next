@@ -27,6 +27,7 @@ import {
 import th_TH from "antd/locale/th_TH";
 import "dayjs/locale/th";
 import isBetween from "dayjs/plugin/isBetween";
+import { buddhistLocale } from "@/app/common";
 
 dayjs.locale("th");
 dayjs.extend(isBetween);
@@ -329,6 +330,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                   style={{ marginBottom: 0 }}
                 >
                   <DatePicker
+                    locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
                     style={{ width: "100%" }}
                     format={formatBuddhist}
@@ -426,6 +428,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                         style={{ marginBottom: 0 }}
                       >
                         <DatePicker
+                          locale={buddhistLocale}
                           showTime={{ format: "HH:mm" }}
                           style={{ width: "100%" }}
                           format={formatBuddhist}

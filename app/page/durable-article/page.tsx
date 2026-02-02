@@ -68,9 +68,10 @@ export default function Page() {
       label: "ข้อมูลครุภัณฑ์",
       children: (
         <DurableArticleTable
-          setLoading={setManualLoading} // ใช้ manualLoading แทน
+          setLoading={setManualLoading}
           loading={loading}
           data={data}
+          fetchData={fetchData}
         />
       ),
     },

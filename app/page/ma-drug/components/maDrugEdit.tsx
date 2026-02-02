@@ -23,6 +23,7 @@ import { MaDrugType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import th_TH from "antd/locale/th_TH";
+import { buddhistLocale } from "@/app/common";
 
 interface MaDrugEditProps {
   visible: boolean;
@@ -273,7 +274,8 @@ export default function MaDrugEdit({
                 ]}
               >
                 <DatePicker
-                  format="YYYY-MM-DD"
+                  locale={buddhistLocale}
+                  format="D MMMM BBBB"
                   className={`${inputStyle} pt-2 w-full`}
                   disabledDate={disabledDate} // ห้ามเลือกย้อนหลัง
                 />

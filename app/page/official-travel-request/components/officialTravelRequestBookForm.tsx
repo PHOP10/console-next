@@ -34,6 +34,7 @@ dayjs.locale("th");
 dayjs.extend(isBetween);
 
 import { useRouter } from "next/navigation";
+import { buddhistLocale } from "@/app/common";
 
 interface Props {
   dataUser: UserType[];
@@ -331,6 +332,7 @@ export default function OfficialTravelRequestBookForm({
                   style={{ marginBottom: 0 }}
                 >
                   <DatePicker
+                    locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
                     style={{ width: "100%" }}
                     placeholder="เลือกวันและเวลาเริ่ม"
@@ -439,6 +441,7 @@ export default function OfficialTravelRequestBookForm({
                         style={{ marginBottom: 0 }}
                       >
                         <DatePicker
+                          locale={buddhistLocale}
                           showTime={{ format: "HH:mm" }}
                           style={{ width: "100%" }}
                           placeholder={

@@ -21,7 +21,7 @@ export default function MaDrugTableDetail({
   // --- Helper Functions ---
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
-    return dayjs(dateString).locale("th").format("DD MMM YYYY HH:mm น.");
+    return dayjs(dateString).locale("th").format("DD MMMM YYYY");
   };
 
   const getStatusTag = (status: string) => {

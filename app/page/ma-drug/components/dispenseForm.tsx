@@ -31,6 +31,7 @@ import { useSession } from "next-auth/react";
 import CustomTable from "../../common/CustomTable";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import { buddhistLocale } from "@/app/common";
 
 interface DispenseItemRow {
   key: string;
@@ -334,7 +335,8 @@ export default function DispenseForm({
                 ]}
               >
                 <DatePicker
-                  format="DD/MM/YYYY"
+                  locale={buddhistLocale}
+                  format="D MMMM BBBB"
                   className={`${inputStyle} pt-2 w-full`}
                   placeholder="เลือกวันที่"
                   disabledDate={disabledDate}

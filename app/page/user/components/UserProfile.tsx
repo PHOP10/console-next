@@ -12,17 +12,20 @@ import {
   message,
   Skeleton,
   Tag,
+  Grid, // เพิ่ม Grid เพื่อใช้ useBreakpoint
 } from "antd";
-import { UserOutlined, EditOutlined, KeyOutlined } from "@ant-design/icons";
+import { UserOutlined, EditOutlined } from "@ant-design/icons";
 import { useSession } from "next-auth/react";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../services/user.service";
 import { UserType } from "../../common";
 
-// Import Components ที่แยกออกมา
+// Import Components
 import EditProfileForm from "./editProfileForm";
 import ChangePasswordForm from "./changePasswordForm";
+
+const { useBreakpoint } = Grid;
 
 export default function UserProfile() {
   const { data: session } = useSession();
@@ -33,6 +36,9 @@ export default function UserProfile() {
     "view",
   );
   const [userData, setUserData] = useState<UserType | null>(null);
+
+  // Hook สำหรับเช็คขนาดหน้าจอ
+  const screens = useBreakpoint();
 
   const fetchUserData = async () => {
     if (!session?.user?.userId) return;
@@ -63,7 +69,7 @@ export default function UserProfile() {
       case "password":
         return <span className="text-[#0683e9]">เปลี่ยนรหัสผ่าน</span>;
       default:
-        return <span className="text-[#0683e9]">ข้อมูลส่วนตัว</span>;
+        return <span className="text-[#0683e9]">ข้อมูลผู้ใช้งาน</span>;
     }
   };
 
@@ -75,12 +81,14 @@ export default function UserProfile() {
     );
   }
 
-  // --- Style สำหรับ Label (หัวข้อ) ให้เป็นสีฟ้าอ่อน ---
+  // --- Style ปรับแต่งตามขนาดหน้าจอ ---
   const descriptionLabelStyle: React.CSSProperties = {
-    backgroundColor: "#f0f5ff", // สีฟ้าอ่อน
+    backgroundColor: "#f0f5ff",
     fontWeight: "600",
-    color: "#1d39c4", // สีตัวหนังสือโทนน้ำเงินเข้ม
-    width: "180px", // กำหนดความกว้างให้เท่ากันสวยงาม
+    color: "#1d39c4",
+    // ถ้าเป็นมือถือ (screens.md เป็น false) ให้ width เป็น auto
+    // ถ้าเป็นจอคอม ให้ width เป็น 180px เหมือนเดิม
+    width: screens.md ? "180px" : "auto",
     verticalAlign: "middle",
   };
 
@@ -91,7 +99,8 @@ export default function UserProfile() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    // ปรับ Padding: มือถือ 10px, จอคอม 20px
+    <div style={{ padding: screens.md ? "20px" : "10px" }}>
       <Row gutter={[24, 24]} justify="center">
         {/* Left Side: Profile Picture */}
         <Col xs={24} md={8} lg={6}>
@@ -109,7 +118,7 @@ export default function UserProfile() {
                 size={120}
                 icon={<UserOutlined />}
                 style={{
-                  backgroundColor: "#0683e9", // สีฟ้าหลักของแอป
+                  backgroundColor: "#0683e9",
                   fontSize: "48px",
                   boxShadow: "0 4px 10px rgba(6, 131, 233, 0.3)",
                 }}
@@ -150,9 +159,14 @@ export default function UserProfile() {
               borderRadius: "16px",
               minHeight: "100%",
             }}
+            // ใช้ styles.header เพื่อปรับ title บนมือถือถ้าจำเป็น
+            styles={{
+              header: { padding: screens.md ? "16px 24px" : "12px 16px" },
+            }}
             extra={
               editMode === "view" && (
-                <Space>
+                <Space wrap>
+                  {/* wrap={true} ช่วยให้ปุ่มขึ้นบรรทัดใหม่ถ้าจอเล็กมาก */}
                   <Button
                     onClick={() => setEditMode("password")}
                     style={{ borderRadius: "8px" }}
@@ -176,7 +190,7 @@ export default function UserProfile() {
           >
             {editMode === "profile" && userData && (
               <EditProfileForm
-                userData={userData} // ถ้า error ตรงนี้ให้แก้ UserEditModalProps ให้รับ record หรือ userData ให้ตรงกัน
+                userData={userData}
                 onCancel={() => setEditMode("view")}
                 onSuccess={() => {
                   setEditMode("view");
@@ -196,9 +210,10 @@ export default function UserProfile() {
             {editMode === "view" && (
               <Descriptions
                 bordered
+                // column=1 อยู่แล้ว แต่มือถือควรเป็น vertical เพื่อความสวยงาม
+                layout={screens.md ? "horizontal" : "vertical"}
                 column={{ xxl: 2, xl: 2, lg: 1, md: 1, sm: 1, xs: 1 }}
-                size="middle"
-                // --- ใส่ Style ตรงนี้ ---
+                size={screens.md ? "middle" : "small"} // มือถือใช้ size small
                 labelStyle={descriptionLabelStyle}
                 contentStyle={descriptionContentStyle}
               >

@@ -17,6 +17,7 @@ import th_TH from "antd/locale/th_TH";
 import { UserType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../services/user.service";
+import { buddhistLocale } from "@/app/common";
 
 interface UserEditModalProps {
   open: boolean;
@@ -190,12 +191,14 @@ export default function UserEditModal({
               rules={[{ required: true, message: "กรุณาเลือกวันเริ่มงาน" }]}
             >
               <DatePicker
+                locale={buddhistLocale}
+                // format="D MMMM BBBB"
                 style={{ width: "100%" }}
                 className="h-11 shadow-sm rounded-xl border-gray-300 hover:border-blue-400"
                 placeholder="เลือกวันที่เริ่มงาน"
                 format={(value) =>
                   value
-                    ? `${value.format("DD / MMMM")} / ${value.year() + 543}`
+                    ? `${value.format("DD  MMMM")}  ${value.year() + 543}`
                     : ""
                 }
               />

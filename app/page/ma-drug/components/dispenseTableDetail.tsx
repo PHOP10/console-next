@@ -21,7 +21,7 @@ export default function DispenseTableDetail({
   // --- Helper Functions ---
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
-    return dayjs(dateString).locale("th").format("DD MMM YYYY ");
+    return dayjs(dateString).locale("th").format("DD MMMM YYYY ");
   };
 
   const getStatusTag = (status: string) => {
@@ -184,12 +184,12 @@ export default function DispenseTableDetail({
           <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mb-4">
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={8}>
-                <Label>วันที่ทำรายการ</Label>
-                <Value isBold>{formatDate(data.dispenseDate)}</Value>
-              </Col>
-              <Col xs={24} sm={8}>
                 <Label>ผู้จ่ายยา</Label>
                 <Value>{data.dispenserName || "-"}</Value>
+              </Col>{" "}
+              <Col xs={24} sm={8}>
+                <Label>วันที่ทำรายการ</Label>
+                <Value isBold>{formatDate(data.dispenseDate)}</Value>
               </Col>
             </Row>
           </div>

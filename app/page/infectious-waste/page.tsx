@@ -58,7 +58,8 @@ export default function Page() {
         <ThrowAwayWasteTable
           data={dataInfectiousWaste}
           loading={loading}
-          setLoading={setManualLoading} // ใช้ manualLoading แทน
+          setLoading={setManualLoading}
+          fetchData={fetchData}
         />
       ),
     },

@@ -19,6 +19,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { infectiousWasteServices } from "../services/durableArticle.service";
 import th_TH from "antd/locale/th_TH";
 import { useSession } from "next-auth/react";
+import { buddhistLocale } from "@/app/common";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -36,7 +37,6 @@ export default function DurableArticleForm({
   const intraAuthService = infectiousWasteServices(intraAuth);
   const { data: session } = useSession();
 
-  // สร้าง Ref แยกกันสำหรับ Select 2 ตัว เพื่อสั่งปิด Dropdown อิสระต่อกัน
   const categoryRef = useRef<any>(null);
   const acquisitionRef = useRef<any>(null);
 
@@ -52,12 +52,11 @@ export default function DurableArticleForm({
         createdName: session?.user?.fullName || null,
       };
 
-      setLoading(true); // เริ่ม Loading
+      setLoading(true);
       await intraAuthService.createDurableArticle(payload);
 
       message.success("บันทึกข้อมูลครุภัณฑ์สำเร็จ");
 
-      // *** สำคัญ: รอให้ fetchData เสร็จก่อน ***
       await fetchData();
 
       form.resetFields();
@@ -65,7 +64,6 @@ export default function DurableArticleForm({
       console.error(error);
       message.error("บันทึกข้อมูลไม่สำเร็จ");
     } finally {
-      // ปิด Loading เสมอ ไม่ว่าจะสำเร็จหรือพัง
       setLoading(false);
     }
   };
@@ -81,16 +79,19 @@ export default function DurableArticleForm({
 
   // --- Style Constants ---
   const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
 
   const textAreaStyle =
-    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
 
   const selectStyle =
-    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+    "h-10 sm:h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400 text-sm";
 
   return (
-    <Card>
+    <Card
+      className="shadow-md rounded-2xl border-gray-100"
+      bodyStyle={{ padding: "16px 20px" }}
+    >
       <ConfigProvider locale={th_TH}>
         <Form
           form={form}
@@ -102,22 +103,30 @@ export default function DurableArticleForm({
             monthlyDepreciation: 0,
           }}
         >
-          {/* --- Row 1: รหัส | เลขที่เอกสาร | หมายเลขและทะเบียน --- */}
-          <Row gutter={24}>
-            <Col xs={24} md={8}>
+          {/* ใช้ Gutter แบบเดียวกับหน้า Edit เพื่อความสมดุล */}
+          <Row
+            gutter={[
+              { xs: 10, sm: 24 },
+              { xs: 6, sm: 16 },
+            ]}
+          >
+            {/* --- Row 1: รหัส | เลขที่เอกสาร | ทะเบียน --- */}
+            {/* แบ่งครึ่งบนมือถือ (xs=12) */}
+            <Col xs={12} md={8}>
               <Form.Item
                 label="รหัส"
                 name="code"
                 rules={[
-                  { required: true, message: "กรุณากรอกรหัสครุภัณฑ์" },
+                  { required: true, message: "ระบุรหัส" },
                   {
                     pattern: /^[0-9/-]{13,17}$/,
-                    message: "กรุณากรอกเฉพาะ 0-9, /, -",
+                    message: "กรอกเฉพาะ 0-9, /, -",
                   },
                 ]}
+                className="mb-1 sm:mb-6"
               >
                 <Input
-                  placeholder="เช่น xxxx-xxx-xxxx"
+                  placeholder="xxxx-xxx-xxxx"
                   maxLength={17}
                   className={inputStyle}
                   onKeyPress={(e) => {
@@ -130,20 +139,21 @@ export default function DurableArticleForm({
               </Form.Item>
             </Col>
 
-            <Col xs={24} md={8}>
+            <Col xs={12} md={8}>
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentId"
                 rules={[
-                  { required: true, message: "กรุณากรอกเลขที่เอกสาร" },
+                  { required: true, message: "ระบุเลขที่เอกสาร" },
                   {
                     pattern: /^[ก-ฮA-Za-z0-9./\s]+$/,
-                    message: "กรอกได้เฉพาะตัวอักษร ตัวเลข จุด และ /",
+                    message: "อักษร ตัวเลข . /",
                   },
                 ]}
+                className="mb-1 sm:mb-6"
               >
                 <Input
-                  placeholder="กรอกเลขที่เอกสาร"
+                  placeholder="เลขที่เอกสาร"
                   maxLength={14}
                   className={inputStyle}
                 />
@@ -151,22 +161,25 @@ export default function DurableArticleForm({
             </Col>
 
             <Col xs={24} md={8}>
-              <Form.Item label="หมายเลขและทะเบียน" name="registrationNumber">
+              <Form.Item
+                label="หมายเลขและทะเบียน"
+                name="registrationNumber"
+                className="mb-1 sm:mb-6"
+              >
                 <Input
                   placeholder="กรอกหมายเลขและทะเบียน"
                   className={inputStyle}
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* --- Row 2: ชื่อ ยี่ห้อ... | สถานที่ตั้ง --- */}
-          <Row gutter={24}>
+            {/* --- Row 2: รายละเอียด | สถานที่ (TextArea เต็มจอ) --- */}
             <Col xs={24} md={12}>
               <Form.Item
                 label="ชื่อ ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
                 name="description"
-                rules={[{ required: true, message: "กรุณากรอกรายละเอียด" }]}
+                rules={[{ required: true, message: "ระบุรายละเอียด" }]}
+                className="mb-1 sm:mb-6"
               >
                 <Input.TextArea
                   rows={1}
@@ -182,7 +195,8 @@ export default function DurableArticleForm({
               <Form.Item
                 label="สถานที่ตั้ง/ที่อยู่"
                 name="location"
-                rules={[{ required: true, message: "กรุณาระบุสถานที่ตั้ง" }]}
+                rules={[{ required: true, message: "ระบุสถานที่ตั้ง" }]}
+                className="mb-1 sm:mb-6"
               >
                 <Input.TextArea
                   placeholder="กรอกสถานที่ตั้ง/ที่อยู่"
@@ -192,18 +206,17 @@ export default function DurableArticleForm({
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* --- Row 3: ประเภท | ชื่อผู้ขาย... --- */}
-          <Row gutter={24}>
-            <Col xs={24} md={12}>
+            {/* --- Row 3: ประเภท | ผู้ขาย (จุดที่เคยเอียง) --- */}
+            <Col xs={12} md={12}>
               <Form.Item
                 label="ประเภท"
                 name="category"
-                rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
+                rules={[{ required: true, message: "เลือกประเภท" }]}
+                className="mb-1 sm:mb-6"
               >
                 <Select
-                  ref={categoryRef} // ใช้ ref
+                  ref={categoryRef}
                   placeholder="เลือกประเภท"
                   className={selectStyle}
                   dropdownRender={(menu) => (
@@ -211,15 +224,15 @@ export default function DurableArticleForm({
                       {menu}
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
-                          placeholder="กรอกประเภทอื่นๆ"
-                          className="rounded-lg"
+                          placeholder="อื่นๆ"
+                          className="rounded-lg text-sm"
                           onPressEnter={(e) => {
                             e.preventDefault();
                             form.setFieldValue(
                               "category",
                               e.currentTarget.value,
                             );
-                            categoryRef.current?.blur(); // ปิด Dropdown
+                            categoryRef.current?.blur();
                           }}
                           onBlur={(e) => {
                             if (e.currentTarget.value) {
@@ -235,85 +248,90 @@ export default function DurableArticleForm({
                   )}
                 >
                   <Select.Option value="ครุภัณฑ์งานบ้านงานครัว">
-                    ครุภัณฑ์งานบ้านงานครัว
+                    งานบ้านงานครัว
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์วิทยาศาสตร์การแพทย์">
-                    ครุภัณฑ์วิทยาศาสตร์การแพทย์
+                    วิทยาศาสตร์การแพทย์
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์สำนักงาน">
-                    ครุภัณฑ์สำนักงาน
+                    สำนักงาน
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์ยานพาหนะและขนส่ง">
-                    ครุภัณฑ์ยานพาหนะและขนส่ง
+                    ยานพาหนะ
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์ไฟฟ้าและวิทยุ">
-                    ครุภัณฑ์ไฟฟ้าและวิทยุ
+                    ไฟฟ้าและวิทยุ
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์โฆษณาและเผยแพร่">
-                    ครุภัณฑ์โฆษณาและเผยแพร่
+                    โฆษณา
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์คอมพิวเตอร์">
-                    ครุภัณฑ์คอมพิวเตอร์
+                    คอมพิวเตอร์
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์การแพทย์">
-                    ครุภัณฑ์การแพทย์
+                    การแพทย์
                   </Select.Option>
                   <Select.Option value="ครุภัณฑ์ก่อสร้าง">
-                    ครุภัณฑ์ก่อสร้าง
+                    ก่อสร้าง
                   </Select.Option>
                 </Select>
               </Form.Item>
             </Col>
 
-            <Col xs={24} md={12}>
+            <Col xs={12} md={12}>
               <Form.Item
-                label="ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+                label={
+                  <div
+                    style={{
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: "100%",
+                      display: "block",
+                    }}
+                    title="ผู้ขาย/ผู้บริจาค"
+                  >
+                    ผู้ขาย/ผู้บริจาค
+                  </div>
+                }
                 name="responsibleAgency"
-                rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอก ชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค",
-                  },
-                ]}
+                rules={[{ required: true, message: "ระบุผู้ขาย" }]}
+                className="mb-1 sm:mb-6"
               >
-                <Input.TextArea
+                <Input
                   className={inputStyle}
-                  placeholder="ระบุชื่อผู้ขาย/ผู้รับจ้าง/ผู้บริจาค"
+                  placeholder="ชื่อผู้ขาย/ผู้บริจาค"
                   maxLength={150}
-                  style={{ minHeight: "44px" }}
                 />
               </Form.Item>
             </Col>
-          </Row>
-
-          {/* --- Row 4: วิธีการได้มา | วันที่ได้มา --- */}
-          <Row gutter={24}>
-            <Col xs={24} md={12}>
+            {/* --- Row 4: วิธีการได้มา | วันที่ --- */}
+            <Col xs={12} md={12}>
               <Form.Item
                 name="acquisitionType"
                 label="วิธีการได้มา"
-                rules={[{ required: true, message: "กรุณาเลือกวิธีการได้มา" }]}
+                rules={[{ required: true, message: "เลือกวิธีได้มา" }]}
+                className="mb-1 sm:mb-6"
               >
                 <Select
-                  ref={acquisitionRef} // ใช้ ref แยกต่างหาก
-                  placeholder="เลือกงบประมาณ"
+                  ref={acquisitionRef}
+                  placeholder="เลือก"
                   className={selectStyle}
                   dropdownRender={(menu) => (
                     <>
                       {menu}
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
-                          placeholder="กรอกงบประมาณอื่นๆ"
-                          className="rounded-lg"
+                          placeholder="อื่นๆ"
+                          className="rounded-lg text-sm"
                           onPressEnter={(e) => {
                             e.preventDefault();
                             form.setFieldValue(
                               "acquisitionType",
                               e.currentTarget.value,
                             );
-                            acquisitionRef.current?.blur(); // ปิด Dropdown
+                            acquisitionRef.current?.blur();
                           }}
-                          // เพิ่ม onBlur เพื่อเซ็ตค่ากรณีพิมพ์แล้วคลิกออกเลย
                           onBlur={(e) => {
                             if (e.currentTarget.value) {
                               form.setFieldValue(
@@ -330,36 +348,37 @@ export default function DurableArticleForm({
                   <Select.Option value="งบประมาณ">งบประมาณ</Select.Option>
                   <Select.Option value="เงินบำรุง">เงินบำรุง</Select.Option>
                   <Select.Option value="เงินงบประมาณ ตกลงราคา">
-                    เงินงบประมาณ ตกลงราคา
+                    ตกลงราคา
                   </Select.Option>
                   <Select.Option value="สนับสนุน">สนับสนุน</Select.Option>
                 </Select>
               </Form.Item>
             </Col>
 
-            <Col xs={24} md={12}>
+            <Col xs={12} md={12}>
               <Form.Item
                 label="วันที่ได้มา"
                 name="acquiredDate"
-                rules={[{ required: true, message: "กรุณาเลือกวันที่ได้มา" }]}
+                rules={[{ required: true, message: "เลือกวันที่" }]}
+                className="mb-1 sm:mb-6"
               >
                 <DatePicker
+                  locale={buddhistLocale}
                   style={{ width: "100%" }}
-                  placeholder="เลือกวันที่"
+                  placeholder="วว/ดด/ปป"
                   format={(value) => formatBuddhist(value as dayjs.Dayjs)}
                   className={`${inputStyle} pt-2`}
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* --- Row 5: ราคา | ค่าเสื่อม | อายุการใช้งาน --- */}
-          <Row gutter={24}>
-            <Col xs={24} md={8}>
+            {/* --- Row 5: ราคา | ค่าเสื่อม | อายุ --- */}
+            <Col xs={12} md={8}>
               <Form.Item
                 label="ราคาต่อหน่วย"
                 name="unitPrice"
-                rules={[{ required: true, message: "กรุณากรอกราคาต่อหน่วย" }]}
+                rules={[{ required: true, message: "ระบุราคา" }]}
+                className="mb-1 sm:mb-6"
               >
                 <InputNumber
                   min={0}
@@ -376,16 +395,12 @@ export default function DurableArticleForm({
               </Form.Item>
             </Col>
 
-            <Col xs={24} md={8}>
+            <Col xs={12} md={8}>
               <Form.Item
-                label="ค่าเสื่อมราคาต่อเดือน"
+                label="ค่าเสื่อม/เดือน"
                 name="monthlyDepreciation"
-                rules={[
-                  {
-                    required: true,
-                    message: "กรุณากรอกค่าเสื่อมราคาต่อเดือน",
-                  },
-                ]}
+                rules={[{ required: true, message: "ระบุค่าเสื่อม" }]}
+                className="mb-1 sm:mb-6"
               >
                 <InputNumber
                   min={0}
@@ -406,7 +421,8 @@ export default function DurableArticleForm({
               <Form.Item
                 label="อายุการใช้งาน (ปี)"
                 name="usageLifespanYears"
-                rules={[{ required: true, message: "กรุณากรอกอายุการใช้งาน" }]}
+                rules={[{ required: true, message: "ระบุอายุ" }]}
+                className="mb-1 sm:mb-6"
               >
                 <InputNumber
                   min={1}
@@ -416,16 +432,18 @@ export default function DurableArticleForm({
                 />
               </Form.Item>
             </Col>
-          </Row>
 
-          {/* --- Row 6: หมายเหตุ --- */}
-          <Form.Item label="หมายเหตุ" name="note">
-            <Input.TextArea
-              rows={2}
-              className={textAreaStyle}
-              placeholder="กรอกหมายเหตุ (ถ้ามี)"
-            />
-          </Form.Item>
+            {/* --- Row 6: หมายเหตุ --- */}
+            <Col span={24}>
+              <Form.Item label="หมายเหตุ" name="note" className="mb-2">
+                <Input.TextArea
+                  rows={2}
+                  className={textAreaStyle}
+                  placeholder="กรอกหมายเหตุ (ถ้ามี)"
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
           <Form.Item style={{ textAlign: "center", marginTop: 24 }}>
             <div className="flex justify-center items-center gap-3">

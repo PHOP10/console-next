@@ -17,6 +17,7 @@ import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import th_TH from "antd/locale/th_TH";
 import isBetween from "dayjs/plugin/isBetween";
+import { buddhistLocale } from "@/app/common";
 
 dayjs.extend(isBetween);
 
@@ -237,7 +238,8 @@ export default function DataLeaveEdit({
                   style={{ marginBottom: 0 }}
                 >
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    locale={buddhistLocale}
+                    format="D MMMM BBBB"
                     style={{ width: "100%" }}
                     placeholder="เลือกวันที่เริ่มลา"
                     className={`${inputStyle} pt-2`}
@@ -279,7 +281,8 @@ export default function DataLeaveEdit({
                   style={{ marginBottom: 0 }}
                 >
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    locale={buddhistLocale}
+                    format="D MMMM BBBB"
                     style={{ width: "100%" }}
                     className={`${inputStyle} pt-2`}
                     placeholder={

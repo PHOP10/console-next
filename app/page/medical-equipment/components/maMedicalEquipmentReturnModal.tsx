@@ -18,7 +18,7 @@ import { useSession } from "next-auth/react";
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSuccess: () => void; // Callback เมื่อรับคืนสำเร็จ
+  onSuccess: () => void;
   record: any;
 }
 
@@ -34,7 +34,6 @@ export default function MaMedicalEquipmentReturnModal({
   const { data: session } = useSession();
   const [returnNote, setReturnNote] = useState("");
 
-  // Reset note เมื่อเปิด modal ใหม่
   useEffect(() => {
     if (open && record) {
       setReturnNote(record.note || "");
@@ -42,11 +41,6 @@ export default function MaMedicalEquipmentReturnModal({
   }, [open, record]);
 
   // --- Helper Functions ---
-  const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return "-";
-    return dayjs(dateString).locale("th").format("DD MMMM YYYY");
-  };
-
   const getStatusTag = (status: string) => {
     const baseStyle = "px-3 py-1 rounded-full text-sm font-medium border-0";
     switch (status) {
@@ -85,21 +79,20 @@ export default function MaMedicalEquipmentReturnModal({
     }
   };
 
-  // --- Handle Confirm Return ---
   const handleConfirmReturn = async () => {
     if (!record) return;
     try {
       setLoading(true);
       await intraAuthService.updateMaMedicalEquipment({
         id: record.id,
-        status: "return", // เปลี่ยนสถานะเป็น return
-        returnName: session?.user?.fullName, // บันทึกชื่อคนรับคืน
-        returndAt: new Date().toISOString(), // บันทึกเวลารับคืน
-        note: returnNote, // บันทึกหมายเหตุล่าสุด
+        status: "return",
+        returnName: session?.user?.fullName,
+        returndAt: new Date().toISOString(),
+        note: returnNote,
       });
 
       message.success("รับคืนอุปกรณ์เรียบร้อยแล้ว");
-      onSuccess(); // แจ้ง Parent ให้ Refresh
+      onSuccess();
       onClose();
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์:", error);
@@ -114,7 +107,7 @@ export default function MaMedicalEquipmentReturnModal({
     {
       title: "ลำดับ",
       key: "index",
-      width: 60,
+      width: 50,
       align: "center",
       render: (_, __, index) => (
         <span className="text-slate-400">{index + 1}</span>
@@ -133,7 +126,7 @@ export default function MaMedicalEquipmentReturnModal({
       dataIndex: "quantity",
       key: "quantity",
       align: "center",
-      width: 120,
+      width: 100,
       render: (quantity: number) => (
         <span className="bg-blue-50 text-blue-600 border border-blue-100 px-3 py-1 rounded-full text-xs font-semibold">
           {quantity} ชิ้น
@@ -142,14 +135,14 @@ export default function MaMedicalEquipmentReturnModal({
     },
   ];
 
-  // --- Styled Components (เหมือน Details) ---
+  // --- Styled Components ---
   const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="text-slate-500 text-xs sm:text-sm font-medium mb-1">
+    <div className="text-slate-500 text-xs sm:text-sm font-medium mb-1 flex items-center gap-2">
       {children}
     </div>
   );
   const Value: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-    <div className="text-slate-800 text-sm sm:text-base break-words font-semibold">
+    <div className="text-slate-800 text-sm sm:text-base break-words font-semibold pl-1">
       {children}
     </div>
   );
@@ -162,7 +155,8 @@ export default function MaMedicalEquipmentReturnModal({
       footer={null}
       width={700}
       centered
-      style={{ maxWidth: "100%", paddingBottom: 0 }}
+      // ปรับ Modal ให้ Responsive ไม่ล้นจอ
+      style={{ maxWidth: "95%", paddingBottom: 0 }}
       modalRender={(modal) => (
         <div className="bg-slate-100/50 rounded-2xl overflow-hidden shadow-2xl font-sans">
           {modal}
@@ -176,40 +170,61 @@ export default function MaMedicalEquipmentReturnModal({
       {record && (
         <div className="flex flex-col">
           {/* Header */}
-          <div className="bg-white px-6 py-5 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10">
+          <div className="bg-white px-4 sm:px-6 py-4 sm:py-5 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center sticky top-0 z-10 gap-2">
             <div>
-              <h2 className="text-xl font-bold text-[#0683e9] m-0 flex items-center gap-2">
+              <h2 className="text-lg sm:text-xl font-bold text-[#0683e9] m-0 flex items-center gap-2">
                 ยืนยันการรับคืนอุปกรณ์
               </h2>
-              <div className="text-slate-500 text-sm mt-1">
+              <div className="text-slate-500 text-xs sm:text-sm mt-1">
                 กรุณาตรวจสอบสภาพของและจำนวนก่อนยืนยัน
               </div>
             </div>
-            <div className="text-right">{getStatusTag(record.status)}</div>
+            <div className="self-end sm:self-auto">
+              {getStatusTag(record.status)}
+            </div>
           </div>
 
-          <div className="p-6 overflow-y-auto max-h-[70vh]">
+          <div className="p-4 sm:p-6 overflow-y-auto max-h-[70vh]">
             {/* Info Card */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
-              <Row gutter={[24, 20]}>
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+              <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12}>
                   <Label>
-                    <UserOutlined /> ผู้ส่งเครื่องมือ :
+                    <UserOutlined style={{ fontSize: "18px" }} />{" "}
+                    ผู้ส่งเครื่องมือ :
                   </Label>
                   <Value>{record.createdBy || "-"}</Value>
                 </Col>
                 <Col xs={24} sm={12}>
                   <Label>
-                    <CalendarOutlined /> วันที่ส่ง :
+                    <CalendarOutlined style={{ fontSize: "18px" }} /> วันที่ส่ง
+                    :
                   </Label>
-                  <Value>{formatDate(record.sentDate)}</Value>
+                  <Value>
+                    {record.sentDate ? (
+                      <>
+                        {/* แสดงวันที่แบบย่อบนมือถือ */}
+                        <span className="md:hidden font-normal">
+                          {dayjs(record.sentDate).format("D MMM BB")}
+                        </span>
+                        {/* แสดงวันที่แบบเต็มบนจอใหญ่ */}
+                        <span className="hidden md:block font-normal">
+                          {dayjs(record.sentDate)
+                            .locale("th")
+                            .format("DD MMMM YYYY")}
+                        </span>
+                      </>
+                    ) : (
+                      "-"
+                    )}
+                  </Value>
                 </Col>
               </Row>
             </div>
 
             {/* Table Card */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4 overflow-hidden">
-              <h3 className="text-slate-800 font-semibold mb-4 text-base pl-2 border-l-4 border-blue-500">
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4 overflow-hidden">
+              <h3 className="text-slate-800 font-semibold mb-4 text-sm sm:text-base pl-2 border-l-4 border-blue-500">
                 รายการอุปกรณ์ที่ต้องรับคืน
               </h3>
               <CustomTable
@@ -219,6 +234,8 @@ export default function MaMedicalEquipmentReturnModal({
                 pagination={false}
                 size="small"
                 bordered={false}
+                // เพิ่ม Scroll แนวนอนรองรับมือถือ
+                scroll={{ x: "max-content" }}
                 rowClassName="hover:bg-slate-50 transition-colors"
                 components={{
                   header: {
@@ -237,21 +254,21 @@ export default function MaMedicalEquipmentReturnModal({
               />
             </div>
 
-            {/* Note Input (Editable) */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+            {/* Note Input */}
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
               <Label>หมายเหตุ / สภาพของที่รับคืน :</Label>
               <Input.TextArea
                 rows={3}
                 placeholder="ระบุหมายเหตุเพิ่มเติม เช่น อุปกรณ์ครบถ้วน, สภาพสมบูรณ์"
                 value={returnNote}
                 onChange={(e) => setReturnNote(e.target.value)}
-                className="rounded-xl border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 mt-2"
+                className="rounded-xl border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 mt-2 text-sm"
               />
             </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="bg-white px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+          <div className="bg-white px-4 sm:px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
             <Button
               onClick={onClose}
               className="h-10 px-6 rounded-lg text-slate-600 hover:bg-slate-100 border-slate-300"
