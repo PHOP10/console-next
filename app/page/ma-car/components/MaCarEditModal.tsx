@@ -40,7 +40,7 @@ interface MaCarEditModalProps {
   cars: any[];
   dataUser: any[];
   fetchData: () => void;
-  data: any[]; // รายการจองทั้งหมดเพื่อเช็คซ้ำ
+  data: any[];
   maCarUser: MaCarType[];
 }
 
@@ -76,7 +76,6 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
     try {
       const { carId, dateStart, dateEnd } = values;
 
-      // ตรวจสอบการจองซ้ำ (Logic เดียวกับหน้าจอง)
       const isOverlap = data?.some((booking) => {
         if (booking.id === record?.id || booking.status === "cancel")
           return false;
@@ -119,17 +118,18 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
 
   // --- Style Constants ---
   const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 transition-all duration-300";
+    "w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 transition-all duration-300 text-sm";
   const textAreaStyle =
-    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 transition-all duration-300";
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 transition-all duration-300 text-sm";
   const selectStyle =
-    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 hover:[&>.ant-select-selector]:!border-blue-400";
-  const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
+    "h-10 sm:h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 hover:[&>.ant-select-selector]:!border-blue-400 text-sm";
+  const optionGroupStyle =
+    "bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200";
 
   return (
     <Modal
       title={
-        <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+        <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
           แก้ไขการจองรถ
         </div>
       }
@@ -138,7 +138,9 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
       footer={null}
       width={800}
       centered
-      styles={{ content: { borderRadius: "20px", padding: "24px" } }}
+      // Responsive Modal
+      style={{ maxWidth: "100%", top: 20, paddingBottom: 0 }}
+      styles={{ content: { borderRadius: "16px", padding: "16px sm:24px" } }}
     >
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
@@ -155,17 +157,18 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
             ]}
           >
             <Checkbox.Group className={`${optionGroupStyle} w-full`}>
-              <Row gutter={[16, 16]}>
-                <Col span={6}>
+              {/* ปรับให้เป็น 2 คอลัมน์บนมือถือ */}
+              <Row gutter={[8, 8]}>
+                <Col xs={12} sm={6}>
                   <Checkbox value="ในจังหวัด">ในจังหวัด</Checkbox>
                 </Col>
-                <Col span={6}>
+                <Col xs={12} sm={6}>
                   <Checkbox value="นอกจังหวัด">นอกจังหวัด</Checkbox>
                 </Col>
-                <Col span={6}>
+                <Col xs={12} sm={6}>
                   <Checkbox value="แผนปกติ">แผนปกติ</Checkbox>
                 </Col>
-                <Col span={6}>
+                <Col xs={12} sm={6}>
                   <Checkbox value="แผนด่วน">แผนด่วน</Checkbox>
                 </Col>
               </Row>
@@ -173,8 +176,8 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
           </Form.Item>
 
           {/* Section 2: ข้อมูลพื้นฐาน */}
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="recipient"
                 label="เรียน"
@@ -187,7 +190,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="budget"
                 label="งบประมาณ"
@@ -202,8 +205,8 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
             </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="purpose"
                 label="วัตถุประสงค์"
@@ -217,7 +220,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="destination"
                 label="สถานที่"
@@ -233,21 +236,23 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
             </Col>
           </Row>
 
-          {/* Section 3: ข้อมูลรถและคนขับ (3 Column ตามความต้องการใหม่) */}
+          {/* Section 3: ข้อมูลรถและคนขับ */}
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="พนักงานขับรถ"
                 name="driver"
                 rules={[{ required: true }]}
               >
-                <Radio.Group className={`${optionGroupStyle} py-2 w-full`}>
+                <Radio.Group
+                  className={`${optionGroupStyle} py-2 w-full flex justify-around`}
+                >
                   <Radio value="yes">ขอ</Radio>
                   <Radio value="no">ไม่ขอ</Radio>
                 </Radio.Group>
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 name="carId"
                 label="เลือกรถ"
@@ -265,9 +270,9 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
           </Row>
 
           {/* Section 4: วันเวลาเดินทาง */}
-          <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100 mb-4">
-            <Row gutter={24}>
-              <Col span={12}>
+          <div className="bg-blue-50/30 p-3 sm:p-4 rounded-xl border border-blue-100 mb-4">
+            <Row gutter={16}>
+              <Col xs={24} sm={12}>
                 <Form.Item
                   name="dateStart"
                   label="ตั้งแต่วันที่"
@@ -277,12 +282,12 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                     locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
                     format="DD/MM/YYYY HH:mm"
-                    className={`${inputStyle} pt-2`}
+                    className={`${inputStyle} pt-1 w-full`}
                     onChange={() => form.setFieldValue("dateEnd", null)}
                   />
                 </Form.Item>
               </Col>
-              <Col span={12}>
+              <Col xs={24} sm={12}>
                 <Form.Item
                   name="dateEnd"
                   label="ถึงวันที่"
@@ -292,7 +297,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                     locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
                     format="DD/MM/YYYY HH:mm"
-                    className={`${inputStyle} pt-2`}
+                    className={`${inputStyle} pt-1 w-full`}
                     disabled={!form.getFieldValue("dateStart")}
                   />
                 </Form.Item>
@@ -301,8 +306,8 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
           </div>
 
           {/* Section 5: ผู้โดยสาร */}
-          <Row gutter={24}>
-            <Col span={6}>
+          <Row gutter={16}>
+            <Col xs={24} sm={6}>
               <Form.Item
                 name="passengers"
                 label="จำนวนผู้โดยสาร"
@@ -315,7 +320,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                 />
               </Form.Item>
             </Col>
-            <Col span={18}>
+            <Col xs={24} sm={18}>
               <Form.Item
                 name="passengerNames"
                 label="ชื่อผู้โดยสาร"
@@ -342,13 +347,16 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
           </Form.Item>
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
-            <Button onClick={onClose} className="rounded-lg h-10 px-6">
+            <Button
+              onClick={onClose}
+              className="rounded-lg h-10 px-6 w-full sm:w-auto"
+            >
               ยกเลิก
             </Button>
             <Button
               type="primary"
               htmlType="submit"
-              className="rounded-lg h-10 px-6 bg-[#0683e9]"
+              className="rounded-lg h-10 px-6 bg-[#0683e9] w-full sm:w-auto"
             >
               บันทึกการแก้ไข
             </Button>

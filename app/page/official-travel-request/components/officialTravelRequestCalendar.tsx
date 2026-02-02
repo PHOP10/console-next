@@ -103,7 +103,6 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
           )}
           style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
           onSelectEvent={onSelectEvent}
-          // ✅ ปรับช่องวันให้เป็นสีขาวปกติ มีเส้นขอบ
           eventPropGetter={(event) => {
             const color = getStatusColor(event.status);
             return {
@@ -181,11 +180,14 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
           align-items: center;
           justify-content: space-between;
           margin-bottom: 10px;
+          flex-wrap: wrap; /* Allow wrapping */
+          gap: 8px;
         }
         .rbc-toolbar-label {
           font-size: 1.5rem;
           font-weight: 700;
           color: #1e293b;
+          text-align: center;
         }
 
         /* Buttons */
@@ -196,6 +198,7 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
           padding: 6px 14px;
           font-size: 0.9rem;
           transition: all 0.2s;
+          white-space: nowrap;
         }
         .rbc-btn-group > button:first-child {
           border-top-left-radius: 8px;
@@ -250,12 +253,55 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
           justify-content: center;
         }
 
+        /* --- Mobile Responsive Styles --- */
         @media (max-width: 768px) {
+          /* Stack Toolbar */
           .rbc-toolbar {
             flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
           }
+
           .rbc-toolbar-label {
-            margin: 10px 0;
+            margin: 0;
+            font-size: 1.25rem;
+            order: -1; /* Title on top */
+          }
+
+          /* Full width button groups */
+          .rbc-btn-group {
+            display: flex;
+            width: 100%;
+          }
+
+          .rbc-btn-group button {
+            flex: 1;
+            padding: 8px 4px;
+            font-size: 0.85rem;
+            justify-content: center;
+          }
+
+          /* Adjust Headers */
+          .rbc-header {
+            font-size: 0.75rem;
+            font-weight: normal; /* กฎข้อ 4 */
+            padding: 4px 0;
+            text-overflow: ellipsis;
+            overflow: hidden;
+          }
+
+          /* Adjust Date Cells */
+          .rbc-date-cell {
+            font-size: 0.8rem;
+            padding: 2px 4px;
+            font-weight: normal; /* กฎข้อ 4 */
+          }
+
+          /* Adjust Events */
+          .rbc-event {
+            font-size: 0.7rem !important;
+            padding: 1px 4px !important;
+            line-height: 1.2;
           }
         }
       `}</style>
@@ -264,7 +310,6 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         open={modalOpen}
         onClose={handleCloseModal}
         record={selected}
-        dataUser={dataUser}
       />
     </>
   );

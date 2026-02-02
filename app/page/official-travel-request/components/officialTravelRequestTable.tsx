@@ -18,6 +18,13 @@ import {
 } from "@ant-design/icons";
 import OfficialTravelExportWord from "./officialTravelRequestExport";
 import CustomTable from "../../common/CustomTable";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+
+// Setup dayjs
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
 
 interface Props {
   data: OfficialTravelRequestType[];
@@ -55,7 +62,6 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   };
 
   const handleEdit = (record: any) => {
-    // if (record.status !== "pending") return;
     setEditRecord(record);
     setEditModalOpen(true);
   };
@@ -66,23 +72,20 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   };
 
   const columns: ColumnsType<OfficialTravelRequestType> = [
-    // {
-    //   title: "ผู้ยื่นคำขอ",
-    //   dataIndex: "createdName",
-    //   key: "createdName",
-    // },
     {
       title: "เลขที่เอกสาร",
       dataIndex: "documentNo",
       key: "documentNo",
       align: "center",
+      width: 120,
     },
     {
       title: "วัตถุประสงค์",
       dataIndex: "missionDetail",
       key: "missionDetail",
       align: "center",
-      // ellipsis: true,
+      width: 150,
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -100,7 +103,8 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "location",
       key: "location",
       align: "center",
-      // ellipsis: true,
+      width: 150,
+      responsive: ["lg"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -118,13 +122,22 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "startDate",
       key: "startDate",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -132,13 +145,20 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "endDate",
       key: "endDate",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -146,6 +166,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status: string) => {
         let color = "default";
         let text = status;
@@ -174,7 +195,6 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
             text = status;
             break;
         }
-
         return <Tag color={color}>{text}</Tag>;
       },
     },
@@ -183,7 +203,9 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "note",
       key: "note",
       align: "center",
+      width: 150,
       ellipsis: true,
+      responsive: ["xl"], // ซ่อนบนมือถือและจอเล็ก
       render: (text: string) => {
         const maxLength = 15;
         if (!text) return "-";
@@ -200,12 +222,22 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 140, // เพิ่มความกว้างเล็กน้อยสำหรับปุ่ม
+      // เอา fixed ออกตามข้อ 5
       render: (_, record) => (
-        <Space>
+        <Space size="small">
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
+          <OfficialTravelExportWord record={record} />
+
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 22,
+                fontSize: 18, // ขนาด 18px
                 color:
                   record.status === "pending" || record.status === "edit"
                     ? "#faad14"
@@ -226,14 +258,6 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
               }}
             />
           </Tooltip>
-
-          <Tooltip title="รายละเอียด">
-            <FileSearchOutlined
-              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
-              onClick={() => handleShowDetail(record)}
-            />
-          </Tooltip>
-          <OfficialTravelExportWord record={record} />
         </Space>
       ),
     },
@@ -243,9 +267,8 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
-          รายการคำขอไปราชการของผู้ใช้
+          ตารางคำขอไปราชการ
         </h2>
-        {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
 
@@ -254,8 +277,11 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
         columns={columns}
         dataSource={filteredData}
         loading={loading}
-        scroll={{ x: "max-content" }}
         bordered
+        // Responsive config
+        scroll={{ x: "max-content" }}
+        size="small" // ใช้ size small บนมือถือ
+        pagination={{ pageSize: 10, size: "small" }}
       />
 
       <OfficialTravelRequestDetail

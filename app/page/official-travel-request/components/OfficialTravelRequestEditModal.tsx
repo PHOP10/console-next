@@ -153,17 +153,18 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
 
   // --- Style Constants ---
   const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
   const textAreaStyle =
-    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
   const selectStyle =
-    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
-  const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
+    "h-10 sm:h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400 text-sm";
+  const optionGroupStyle =
+    "bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200";
 
   return (
     <Modal
       title={
-        <div className="text-xl font-bold text-[#0683e9] text-center w-full mb-4">
+        <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full mb-4">
           แก้ไขคำขอไปราชการ
         </div>
       }
@@ -172,16 +173,18 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
       footer={null}
       width={900}
       centered
+      // Responsive Modal
+      style={{ maxWidth: "100%", top: 20, paddingBottom: 0 }}
       styles={{
-        content: { borderRadius: "20px", padding: "24px" },
+        content: { borderRadius: "16px", padding: "16px sm:24px" },
         header: { borderBottom: "1px solid #f0f0f0", marginBottom: "16px" },
       }}
     >
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
           {/* Section 1: ข้อมูลเอกสาร */}
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentNo"
@@ -193,7 +196,6 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                   { pattern: /^[ก-ฮ0-9./\s]+$/, message: "รูปแบบไม่ถูกต้อง" },
                   {
                     validator: (_, value) => {
-                      // เติม ?. และ || [] เพื่อกัน Error
                       if (
                         value &&
                         dataOTR?.some(
@@ -217,7 +219,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="เรียน"
                 name="recipient"
@@ -251,8 +253,8 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
             </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="วัตถุประสงค์"
                 name="missionDetail"
@@ -261,7 +263,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                 <Input.TextArea rows={2} className={textAreaStyle} />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="สถานที่"
                 name="location"
@@ -272,15 +274,15 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
             </Col>
           </Row>
 
-          {/* Section 2: วันเวลาเดินทาง (แก้ไข Logic Validator) */}
-          <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100 mb-6 mt-2">
-            <Row gutter={24}>
-              {/* --- 1. วันที่เริ่มต้น (Start Date) --- */}
-              <Col span={12}>
+          {/* Section 2: วันเวลาเดินทาง */}
+          <div className="bg-blue-50/30 p-3 sm:p-4 rounded-xl border border-blue-100 mb-6 mt-2">
+            <Row gutter={16}>
+              {/* --- 1. วันที่เริ่มต้น --- */}
+              <Col xs={24} sm={12}>
                 <Form.Item
                   label="ตั้งแต่วันที่-เวลา"
                   name="startDate"
-                  dependencies={["carId", "travelType"]} // รีรัน validator เมื่อ 2 ค่านี้เปลี่ยน
+                  dependencies={["carId", "travelType"]}
                   rules={[
                     {
                       required: true,
@@ -289,31 +291,22 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                     {
                       validator: (_, value) => {
                         if (!value) return Promise.resolve();
-
-                        // ดึงค่าสดๆ จาก Form เพื่อความชัวร์
                         const currentTravelType =
                           form.getFieldValue("travelType");
                         const currentCarId = form.getFieldValue("carId");
 
-                        // Logic: เช็คว่ารถว่างไหม (เฉพาะรถราชการ)
                         if (currentTravelType === "official" && currentCarId) {
-                          // ✅ ป้องกัน dataOTR เป็น undefined ด้วย || []
                           const isCarBusy = (dataOTR || []).some((booking) => {
-                            // ข้ามรายการที่ยกเลิก หรือ รายการที่เป็นตัวเอง (Edit Mode)
                             if (
                               booking.status === "cancel" ||
                               booking.id === record?.id
                             )
                               return false;
-
-                            // ข้ามถ้ารถคนละคัน
                             if (Number(booking.carId) !== Number(currentCarId))
                               return false;
 
                             const bStart = dayjs(booking.startDate);
                             const bEnd = dayjs(booking.endDate);
-
-                            // เช็คว่าจุดเริ่มต้นของเรา ไปแทรกอยู่ในช่วงเวลาของคนอื่นไหม
                             return value.isBetween(bStart, bEnd, null, "[]");
                           });
 
@@ -336,17 +329,16 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                     format={formatBuddhist}
                     className={`${inputStyle} pt-1`}
                     placeholder="เลือกวันและเวลาเริ่ม"
-                    onChange={() => form.setFieldValue("endDate", null)} // เคลียร์วันจบเมื่อเปลี่ยนวันเริ่ม
+                    onChange={() => form.setFieldValue("endDate", null)}
                     disabledDate={(current) => {
-                      // ห้ามเลือกวันย้อนหลัง (แต่วันปัจจุบันเลือกได้ เพื่อระบุเวลา)
                       return current && current < dayjs().startOf("day");
                     }}
                   />
                 </Form.Item>
               </Col>
 
-              {/* --- 2. วันที่สิ้นสุด (End Date) --- */}
-              <Col span={12}>
+              {/* --- 2. วันที่สิ้นสุด --- */}
+              <Col xs={24} sm={12}>
                 <Form.Item
                   noStyle
                   shouldUpdate={(prev, cur) =>
@@ -371,11 +363,9 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                             validator: (_, value) => {
                               if (!value || !dateStart)
                                 return Promise.resolve();
-
                               const currentStart = dayjs(dateStart);
                               const currentEnd = dayjs(value);
 
-                              // 1. เช็ค Logic พื้นฐาน: เวลาจบ ต้องหลัง เวลาเริ่ม
                               if (
                                 currentEnd.isBefore(currentStart) ||
                                 currentEnd.isSame(currentStart)
@@ -387,12 +377,10 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                                 );
                               }
 
-                              // 2. เช็ครถว่าง (Overlap Check)
                               const travelType = getFieldValue("travelType");
                               const carId = getFieldValue("carId");
 
                               if (travelType === "official" && carId) {
-                                // ✅ ป้องกัน dataOTR เป็น undefined
                                 const isCarOverlap = (dataOTR || []).some(
                                   (booking) => {
                                     if (
@@ -400,14 +388,11 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                                       booking.id === record?.id
                                     )
                                       return false;
-
                                     if (Number(booking.carId) !== Number(carId))
                                       return false;
 
                                     const bStart = dayjs(booking.startDate);
                                     const bEnd = dayjs(booking.endDate);
-
-                                    // สูตร Overlap: (StartA < EndB) && (EndA > StartB)
                                     return (
                                       currentStart.isBefore(bEnd) &&
                                       currentEnd.isAfter(bStart)
@@ -438,14 +423,12 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                           }
                           disabled={!dateStart}
                           disabledDate={(current) => {
-                            // ห้ามเลือกวันก่อนวันเริ่ม
                             if (
                               dateStart &&
                               current < dayjs(dateStart).startOf("day")
                             ) {
                               return true;
                             }
-                            // ห้ามเลือกวันย้อนหลัง
                             return current && current < dayjs().startOf("day");
                           }}
                         />
@@ -462,7 +445,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
             <div className="mb-2 font-bold text-gray-700">ลักษณะการเดินทาง</div>
             <div className={optionGroupStyle}>
               <Row gutter={24} align="top">
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="travelType"
                     noStyle
@@ -481,8 +464,8 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                 </Col>
 
                 {/* Dynamic Inputs */}
-                <Col span={12}>
-                  <div className="flex items-center h-full pl-6 border-l border-gray-200">
+                <Col xs={24} sm={12}>
+                  <div className="flex items-center h-full pl-0 sm:pl-6 border-l-0 sm:border-l border-gray-200 mt-4 sm:mt-0">
                     <div className="w-full">
                       {selectedTravelType === "official" && (
                         <Form.Item
@@ -533,7 +516,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
 
                       {!selectedTravelType && (
                         <div className="text-gray-400 text-center">
-                          กรุณาเลือกประเภทด้านซ้าย
+                          กรุณาเลือกประเภทด้านซ้าย/ด้านบน
                         </div>
                       )}
                     </div>
@@ -544,8 +527,8 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
           </div>
 
           {/* Section 4: ผู้โดยสารและงบประมาณ */}
-          <Row gutter={24}>
-            <Col span={6}>
+          <Row gutter={16}>
+            <Col xs={24} sm={6}>
               <Form.Item
                 label="จำนวน"
                 name="passengers"
@@ -559,7 +542,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                 />
               </Form.Item>
             </Col>
-            <Col span={18}>
+            <Col xs={24} sm={18}>
               <Form.Item label="รายชื่อผู้โดยสาร" name="passengerNames">
                 <Select
                   mode="multiple"
@@ -577,8 +560,8 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
             </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={6}>
+          <Row gutter={16}>
+            <Col xs={24} sm={6}>
               <Form.Item
                 label="งบประมาณ"
                 name="budget"
@@ -593,7 +576,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={18}>
+            <Col xs={24} sm={18}>
               <Form.Item label="หมายเหตุ" name="note">
                 <Input.TextArea rows={1} className={textAreaStyle} />
               </Form.Item>
@@ -601,14 +584,17 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
           </Row>
 
           <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-            <Button onClick={onClose} className="h-10 px-6 rounded-lg">
+            <Button
+              onClick={onClose}
+              className="h-10 px-6 rounded-lg w-full sm:w-auto"
+            >
               ยกเลิก
             </Button>
             <Button
               type="primary"
               htmlType="submit"
               loading={submitting}
-              className="h-10 px-6 rounded-lg bg-[#0683e9]"
+              className="h-10 px-6 rounded-lg bg-[#0683e9] w-full sm:w-auto"
             >
               บันทึกการแก้ไข
             </Button>

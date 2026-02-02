@@ -55,7 +55,6 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
   };
 
   const onSelectEvent = (event: CustomEvent) => {
-    // ✅ ใช้ ID หาข้อมูลเต็มจาก Props data แทนการฝังไปใน Event
     const item = data.find((d) => d.id === event.id);
     if (item) {
       setSelected(item);
@@ -75,7 +74,6 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
       <div className="modern-calendar-wrapper">
         <Calendar<CustomEvent>
           localizer={localizer}
-          // ✅ 2. Map เฉพาะสิ่งที่จำเป็นต้องโชว์
           events={data.map((item) => ({
             id: item.id,
             title: getUserName(item.createdName),
@@ -83,6 +81,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
             end: new Date(item.dateEnd),
             status: item.status,
           }))}
+          // ปรับความสูงให้ Responsive นิดหน่อย แต่ยังคงค่าหลักไว้
           style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
           onSelectEvent={onSelectEvent}
           dayPropGetter={() => ({
@@ -95,7 +94,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
             const color = getStatusColor(event.status);
             return {
               style: {
-                backgroundColor: `${color}1A`, // Opacity 10%
+                backgroundColor: `${color}1A`,
                 color: color,
                 border: `1px solid ${color}4D`,
                 borderTop: "1px solid #e2e8f0",
@@ -162,17 +161,20 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           border-bottom: 2px solid #e9d5ff;
         }
 
-        /* Toolbar */
+        /* Toolbar Styles */
         .rbc-toolbar {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 10px;
+          flex-wrap: wrap; /* Allow wrapping */
+          gap: 8px;
         }
         .rbc-toolbar-label {
           font-size: 1.5rem;
           font-weight: 700;
           color: #1e293b;
+          text-align: center;
         }
 
         /* Buttons */
@@ -183,6 +185,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           padding: 6px 14px;
           font-size: 0.9rem;
           transition: all 0.2s;
+          white-space: nowrap; /* Prevent text wrap in buttons */
         }
         .rbc-btn-group > button:first-child {
           border-top-left-radius: 8px;
@@ -206,7 +209,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           background-color: #fff;
         }
         .rbc-header {
-          padding: 12px 0;
+          padding: 8px 0;
           font-size: 0.95rem;
           font-weight: 700;
         }
@@ -237,12 +240,54 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           justify-content: center;
         }
 
+        /* --- Mobile Responsive Enhancements --- */
         @media (max-width: 768px) {
+          /* Toolbar Stack */
           .rbc-toolbar {
             flex-direction: column;
+            align-items: stretch; /* Stretch to full width */
+            gap: 12px;
           }
+
           .rbc-toolbar-label {
-            margin: 10px 0;
+            margin: 0;
+            font-size: 1.25rem; /* Smaller title */
+            order: -1; /* Move title to top if needed, or keep standard flow */
+          }
+
+          /* Button Groups Full Width */
+          .rbc-btn-group {
+            display: flex;
+            width: 100%;
+          }
+
+          .rbc-btn-group button {
+            flex: 1; /* Equal width buttons */
+            padding: 8px 4px; /* Smaller padding */
+            font-size: 0.85rem;
+            justify-content: center;
+          }
+
+          /* Header Text */
+          .rbc-header {
+            font-size: 0.75rem; /* Smaller day names */
+            font-weight: normal; /* ตามกฎข้อ 4 */
+            padding: 4px 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          /* Date Cells */
+          .rbc-date-cell {
+            font-size: 0.8rem;
+            padding: 2px 4px;
+            font-weight: normal; /* ตามกฎข้อ 4 */
+          }
+
+          /* Event Text */
+          .rbc-event {
+            font-size: 0.7rem !important; /* Smaller events */
+            line-height: 1.2;
           }
         }
       `}</style>

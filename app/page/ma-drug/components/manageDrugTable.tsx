@@ -23,7 +23,6 @@ import {
   ExclamationCircleOutlined,
   FileSearchOutlined,
   EditOutlined,
-  FormOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -34,6 +33,11 @@ import { useSession } from "next-auth/react";
 import MaDrugTableDetail from "./maDrugDetail";
 import MaDrugEdit from "./maDrugEdit";
 import CustomTable from "../../common/CustomTable";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+
+// Set locale globally
+dayjs.locale("th");
 
 interface ManageDrugTableProps {
   data: MaDrugType[];
@@ -49,7 +53,6 @@ export default function ManageDrugTable({
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
   const { data: session } = useSession();
-  // const [data, setData] = useState<MaDrugType[]>([]);
   const [loading, setLoading] = useState(false);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelingId, setCancelingId] = useState<number | null>(null);
@@ -77,7 +80,6 @@ export default function ManageDrugTable({
     setEditVisible(true);
   };
 
-  // --- ฟังก์ชันลบข้อมูล ---
   const handleDelete = async (id: number) => {
     try {
       setLoading(true);
@@ -94,10 +96,10 @@ export default function ManageDrugTable({
 
   const handleApprove = async (id: number) => {
     try {
-      setLoading(true); // show loading
+      setLoading(true);
       await intraAuthService.updateMaDrug({ id, status: "approved" });
       message.success("อนุมัติรายการเรียบร้อย");
-      setOpenPopoverId(null); // ปิด Popover
+      setOpenPopoverId(null);
       fetchData();
     } catch (error) {
       console.error(error);
@@ -107,7 +109,6 @@ export default function ManageDrugTable({
     }
   };
 
-  // --- ยืนยันการยกเลิก (Submit Cancel) ---
   const handleCancelSubmit = async () => {
     if (!cancelReason.trim()) {
       message.warning("กรุณาระบุเหตุผลในการยกเลิก");
@@ -153,34 +154,43 @@ export default function ManageDrugTable({
       dataIndex: "requestNumber",
       key: "requestNumber",
       align: "center",
-      width: 120,
+      width: 100,
     },
     {
       title: "หน่วยงาน",
       dataIndex: "requestUnit",
       key: "requestUnit",
       align: "center",
+      responsive: ["sm"], // ซ่อนบนมือถือเล็กมาก
     },
     {
       title: "ผู้ขอเบิก",
       dataIndex: "requesterName",
       key: "requesterName",
       align: "center",
+      responsive: ["md"], // ซ่อนบนมือถือ
     },
     {
       title: "วันที่ขอเบิก",
       dataIndex: "requestDate",
       key: "requestDate",
       align: "center",
-      width: 140,
+      width: 120,
       render: (text: string) => {
         if (!text) return "-";
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        const dateObj = dayjs(text);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -188,6 +198,7 @@ export default function ManageDrugTable({
       dataIndex: "quantityUsed",
       key: "quantityUsed",
       align: "center",
+      width: 90,
       render: (val) => `${val || 0} รายการ`,
     },
     {
@@ -195,6 +206,7 @@ export default function ManageDrugTable({
       dataIndex: "totalPrice",
       key: "totalPrice",
       align: "center",
+      width: 100,
       render: (val) => (
         <span className="text-blue-600 font-semibold">
           {val
@@ -208,6 +220,7 @@ export default function ManageDrugTable({
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = "-";
@@ -224,7 +237,7 @@ export default function ManageDrugTable({
             color = "default";
             text = "รับยาแล้ว";
             break;
-          case "cancel":
+          case "canceled":
           case "cancel":
             color = "red";
             text = "ยกเลิก";
@@ -243,34 +256,8 @@ export default function ManageDrugTable({
       render: (_, record) => {
         const isPending = record.status === "pending";
         return (
-          <Space>
-            <Tooltip title="ดูรายละเอียด">
-              <Button
-                type="text"
-                icon={
-                  <FileSearchOutlined
-                    style={{ fontSize: 22, color: "#1677ff" }}
-                  />
-                }
-                onClick={() => handleViewDetail(record)}
-              />
-            </Tooltip>
-
-            <Tooltip title="แก้ไขข้อมูล">
-              <EditOutlined
-                type="primary"
-                shape="circle"
-                style={{
-                  fontSize: 22,
-                  color: record.status === "pending" ? "#faad14" : "#d9d9d9",
-                  cursor:
-                    record.status === "pending" ? "pointer" : "not-allowed",
-                  transition: "color 0.2s",
-                }}
-                onClick={() => handleEdit(record)}
-              />
-            </Tooltip>
-
+          <Space size="small">
+            {/* 1. ปุ่มอนุมัติ */}
             <Popover
               trigger={isPending ? "click" : []}
               open={isPending && openPopoverId === record.id}
@@ -307,15 +294,15 @@ export default function ManageDrugTable({
               <Tooltip title={isPending ? "ตรวจสอบและอนุมัติ" : ""}>
                 <Button
                   type="text"
+                  shape="circle" // ใช้ shape circle เพื่อให้สวยงาม
                   style={{
-                    padding: 4,
-                    pointerEvents: isPending ? "auto" : "none",
+                    color: isPending ? "#52c41a" : "#ccc",
+                    cursor: isPending ? "pointer" : "not-allowed",
                   }}
                   icon={
                     <CheckCircleOutlined
                       style={{
-                        fontSize: 22,
-                        color: isPending ? "#52c41a" : "#ccc",
+                        fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
                         opacity: isPending ? 1 : 0.5,
                       }}
                     />
@@ -330,7 +317,53 @@ export default function ManageDrugTable({
               </Tooltip>
             </Popover>
 
-            {/* 3. ปุ่มลบ */}
+            {/* 2. ดูรายละเอียด */}
+            <Tooltip title="ดูรายละเอียด">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <FileSearchOutlined
+                    style={{ fontSize: 18, color: "#1677ff" }} // ปรับขนาดไอคอนเป็น 18px
+                  />
+                }
+                onClick={() => handleViewDetail(record)}
+              />
+            </Tooltip>
+
+            {/* 3. ปุ่ม Export Excel */}
+            <Tooltip title="พิมพ์ใบเบิก (Excel)">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <FileExcelOutlined
+                    style={{ fontSize: 18, color: "#217346" }} // ปรับขนาดไอคอนเป็น 18px
+                  />
+                }
+                onClick={() => handleExport(record)}
+              />
+            </Tooltip>
+
+            {/* 4. ปุ่มแก้ไข */}
+            <Tooltip title="แก้ไขข้อมูล">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <EditOutlined
+                    style={{
+                      fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                      color: isPending ? "#faad14" : "#d9d9d9",
+                    }}
+                  />
+                }
+                disabled={!isPending}
+                onClick={() => isPending && handleEdit(record)}
+              />
+            </Tooltip>
+
+            {/* 5. ปุ่มลบ */}
             <Tooltip title="ลบรายการ">
               <Popconfirm
                 title="ยืนยันการลบ"
@@ -342,23 +375,14 @@ export default function ManageDrugTable({
               >
                 <Button
                   type="text"
-                  danger
-                  icon={<DeleteOutlined style={{ fontSize: 22 }} />}
+                  shape="circle"
+                  icon={
+                    <DeleteOutlined
+                      style={{ fontSize: 18, color: "#ff4d4f" }} // ปรับขนาดไอคอนเป็น 18px
+                    />
+                  }
                 />
               </Popconfirm>
-            </Tooltip>
-
-            {/* 4. ปุ่ม Export Excel */}
-            <Tooltip title="พิมพ์ใบเบิก (Excel)">
-              <FileExcelOutlined
-                style={{
-                  fontSize: 22,
-                  color: "#217346",
-                  cursor: "pointer",
-                  transition: "color 0.2s",
-                }}
-                onClick={() => handleExport(record)}
-              />
             </Tooltip>
           </Space>
         );
@@ -370,19 +394,20 @@ export default function ManageDrugTable({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
-          ข้อมูลรายการเบิกยา
+          อนุมัติการเบิกยา
         </h2>
-
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
+
       <CustomTable
         rowKey="id"
         columns={columns}
         dataSource={data}
         loading={loading}
         bordered
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 900 }}
+        size="small" // ใช้ size small บนมือถือ
+        pagination={{ pageSize: 10, size: "small" }}
+        scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
       />
 
       <MaDrugTableDetail
@@ -403,6 +428,8 @@ export default function ManageDrugTable({
         okText="ยืนยันการยกเลิก"
         cancelText="ปิด"
         okButtonProps={{ danger: true, loading: cancelLoading }}
+        centered
+        style={{ maxWidth: "95%" }} // Responsive Modal
       >
         <p>กรุณาระบุเหตุผลที่ต้องการยกเลิกรายการนี้:</p>
         <Input.TextArea
@@ -413,6 +440,7 @@ export default function ManageDrugTable({
           autoFocus
         />
       </Modal>
+
       <MaDrugEdit
         visible={editVisible}
         onClose={() => setEditVisible(false)}

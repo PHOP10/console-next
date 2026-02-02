@@ -20,6 +20,13 @@ import {
 } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
 import MaCarReturn from "./maCarReturn";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+
+// Setup dayjs
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -77,18 +84,20 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
     setReturnModalOpen(true);
   };
 
-  // const handleUpdate = async (values: any) => {
-  //   await intraAuthService.updateMaCar(values);
-  //   fetchData();
-  // };
-
   const columns: ColumnsType<MaCarType> = [
-    // { title: "ผู้ขอใช้รถ", dataIndex: "requesterName", key: "requesterName" },
+    {
+      title: "ผู้ขอใช้รถ",
+      dataIndex: "createdName",
+      key: "createdName",
+      align: "center",
+      width: 150,
+    },
     {
       title: "วัตถุประสงค์",
       dataIndex: "purpose",
       key: "purpose",
       align: "center",
+      width: 150,
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -106,6 +115,8 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "destination",
       key: "destination",
       align: "center",
+      width: 150,
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 20;
         if (!text) return "-";
@@ -123,13 +134,22 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "dateStart",
       key: "dateStart",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -137,13 +157,20 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "dateEnd",
       key: "dateEnd",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -151,6 +178,8 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "masterCar",
       key: "masterCar",
       align: "center",
+      width: 150,
+      responsive: ["lg"], // ซ่อนบนมือถือ
       render: (masterCar) =>
         masterCar ? `${masterCar.carName} (${masterCar.licensePlate})` : "-",
     },
@@ -159,6 +188,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = "";
@@ -196,11 +226,13 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       },
     },
     {
-      title: "หมมายเหตุ",
+      title: "หมายเหตุ", // แก้คำผิดจาก "หมมายเหตุ"
       dataIndex: "note",
       key: "note",
       align: "center",
+      width: 150,
       ellipsis: true,
+      responsive: ["xl"], // ซ่อนบนมือถือและจอเล็ก
       render: (text: string) => {
         const maxLength = 15;
         if (!text) return "-";
@@ -217,12 +249,14 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 140, // เพิ่มความกว้างเล็กน้อยสำหรับปุ่ม
+      // เอา fixed ออกตามข้อ 5
       render: (_, record) => (
-        <Space>
+        <Space size="small">
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 22,
+                fontSize: 18, // ขนาด 18px
                 color:
                   record.status === "pending" || record.status === "edit"
                     ? "#faad14"
@@ -247,8 +281,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
           <Tooltip title="คืนรถ">
             <CarOutlined
               style={{
-                fontSize: 22,
-                // ใช้สีม่วงหรือสีเขียวที่สื่อถึงการเสร็จสิ้น
+                fontSize: 18, // ขนาด 18px
                 color: record.status === "approve" ? "#722ed1" : "#d9d9d9",
                 cursor: record.status === "approve" ? "pointer" : "not-allowed",
                 opacity: record.status === "approve" ? 1 : 0.6,
@@ -261,7 +294,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
 
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
-              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }}
               onClick={() => handleShowDetail(record, dataUser)}
             />
           </Tooltip>
@@ -274,20 +307,21 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
   return (
     <>
       <div className="mb-6 -mt-7">
-        <h2 className="text-2xl font-bold text-blue-500 text-center mb-2 tracking-tight">
-          รายการจองรถของผู้ใช้
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          ตารางการการจองรถ
         </h2>
-        {/* เส้น Divider จางๆ แบบเดียวกับปฏิทิน */}
-        <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
+        <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
       </div>
-
       <CustomTable
         columns={columns}
         dataSource={filteredData}
         rowKey="id"
         loading={loading}
-        scroll={{ x: "max-content" }}
         bordered
+        // Responsive config
+        scroll={{ x: "max-content" }}
+        size="small"
+        pagination={{ pageSize: 10, size: "small" }}
       />
       <MaCarDetail
         open={detailModalOpen}
@@ -301,7 +335,6 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
         record={editRecord}
         cars={cars}
         dataUser={dataUser}
-        // onUpdate={handleUpdate}
         fetchData={fetchData}
         data={data}
         maCarUser={maCarUser}

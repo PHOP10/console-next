@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Table,
   Button,
   Space,
   Popconfirm,
@@ -12,7 +11,7 @@ import {
   Form,
   Input,
   InputNumber,
-  Select, // ✅ เพิ่ม Select
+  Select,
   Tag,
   AutoComplete,
   Row,
@@ -47,7 +46,6 @@ export default function DrugTable({
   const [form] = Form.useForm();
   const [masterDrugs, setMasterDrugs] = useState<MasterDrugType[]>([]);
 
-  // ✅ โหลดข้อมูล MasterDrug เมื่อ Component เริ่มทำงาน
   useEffect(() => {
     const fetchMasterDrugs = async () => {
       try {
@@ -63,7 +61,6 @@ export default function DrugTable({
     fetchMasterDrugs();
   }, []);
 
-  // --- Functions ---
   const handleDelete = async (id: number) => {
     try {
       setLoading(true);
@@ -72,7 +69,6 @@ export default function DrugTable({
       setData((prev) => prev.filter((item) => item.id !== id));
     } catch (error: any) {
       console.error("Delete Error:", error);
-
       const status = error.response?.status;
       const errorMessage = error.response?.data?.message || "";
       if (
@@ -137,7 +133,6 @@ export default function DrugTable({
     }
   };
 
-  // --- Columns ---
   const columns: ColumnsType<DrugType> = [
     {
       title: "รหัสยา",
@@ -155,21 +150,20 @@ export default function DrugTable({
       width: 200,
     },
     {
-      title: "ประเภทยา", // ✅ เปลี่ยนหัวข้อ
+      title: "ประเภทยา",
       dataIndex: "drugTypeId",
       key: "drugTypeId",
       align: "center",
       width: 150,
-      // ✅ ใช้ render เพื่อเทียบ ID กับ list masterDrugs
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (id) => {
-        // หา object ใน masterDrugs ที่มี drugTypeId ตรงกับ id ของแถวนี้
         const match = masterDrugs.find(
           (m) => m.drugTypeId === id || m.id === id,
         );
         return match ? (
-          <Tag color="blue">{match.drugType}</Tag> // เจอ: แสดงชื่อ (ใส่ Tag สวยๆ)
+          <Tag color="blue">{match.drugType}</Tag>
         ) : (
-          <span style={{ color: "gray" }}>{id}</span> // ไม่เจอ: แสดง ID เดิมไปก่อน
+          <span style={{ color: "gray" }}>{id}</span>
         );
       },
     },
@@ -178,12 +172,16 @@ export default function DrugTable({
       dataIndex: "packagingSize",
       key: "packagingSize",
       align: "center",
+      width: 100,
+      responsive: ["sm"], // ซ่อนบนมือถือเล็กมาก
     },
     {
       title: "ราคา/หน่วย",
       dataIndex: "price",
       key: "price",
       align: "center",
+      width: 100,
+      responsive: ["sm"], // ซ่อนบนมือถือเล็กมาก
       render: (value) =>
         Number(value).toLocaleString("th-TH", {
           style: "currency",
@@ -195,6 +193,7 @@ export default function DrugTable({
       dataIndex: "quantity",
       key: "quantity",
       align: "center",
+      width: 80,
       render: (value) => (
         <span
           style={{
@@ -204,20 +203,19 @@ export default function DrugTable({
         >
           {Number(value).toLocaleString()}
         </span>
-      ), // เพิ่มลูกเล่น ถ้าเหลือน้อยกว่า 10 ให้ตัวแดง
+      ),
     },
     {
       title: "จัดการ",
       key: "action",
       align: "center",
-      width: 150,
+      width: 120,
       render: (_, record) => (
-        <Space size="middle">
-          {/* ส่วนแก้ไข */}
+        <Space size="small">
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 22,
+                fontSize: 18, // ขนาด 18px
                 color: "#faad14",
                 cursor: "pointer",
                 transition: "color 0.2s",
@@ -226,7 +224,6 @@ export default function DrugTable({
             />
           </Tooltip>
 
-          {/* ส่วนลบ */}
           <Popconfirm
             title="ลบข้อมูล"
             description="ต้องการลบยานี้หรือไม่?"
@@ -238,7 +235,7 @@ export default function DrugTable({
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 22,
+                  fontSize: 18, // ขนาด 18px
                   color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
@@ -253,42 +250,42 @@ export default function DrugTable({
 
   return (
     <>
-      <Card
-        title={
-          <div
-            style={{
-              textAlign: "center",
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#0683e9",
-            }}
-          >
-            รายการยาในคลัง
-          </div>
-        }
-        bordered={false}
-        className="shadow-sm"
-      >
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
+          รายการยาในคลัง
+        </h2>
+        <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
+      </div>
+
+      <Card bordered={false} className="shadow-sm" bodyStyle={{ padding: 0 }}>
         <CustomTable
           rowKey="id"
           columns={columns}
           dataSource={data}
           loading={loading}
           bordered
-          pagination={{ pageSize: 10 }}
-          scroll={{ x: 1000 }}
+          size="small" // ใช้ size small บนมือถือ
+          pagination={{ pageSize: 10, size: "small" }}
+          scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
         />
       </Card>
 
       <Modal
-        title="✏️ แก้ไขข้อมูลยา"
+        title={
+          <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
+            แก้ไขข้อมูลยา
+          </div>
+        }
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
         onOk={() => form.submit()}
-        okText="บันทึกการแก้ไข"
+        okText="บันทึก"
         cancelText="ยกเลิก"
         destroyOnClose
-        width={700} // เพิ่มความกว้าง Modal นิดหน่อยเพื่อให้จัด Layout สวย
+        centered
+        width={700}
+        // Responsive Modal
+        style={{ maxWidth: "95%", top: 20 }}
       >
         <Form
           form={form}
@@ -298,7 +295,7 @@ export default function DrugTable({
         >
           {/* แถวที่ 1: รหัสยา และ ประเภทยา */}
           <Row gutter={16}>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="Working Code (รหัสยา)"
                 name="workingCode"
@@ -307,7 +304,7 @@ export default function DrugTable({
                 <Input placeholder="เช่น W-001" />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="ประเภทยา"
                 name="drugTypeId"
@@ -317,7 +314,7 @@ export default function DrugTable({
                   placeholder="เลือกประเภทยา"
                   options={masterDrugs.map((d) => ({
                     label: d.drugType,
-                    value: d.drugTypeId, // ✅ ใช้ drugTypeId ตามที่แก้ไปก่อนหน้า
+                    value: d.drugTypeId,
                   }))}
                   showSearch
                   optionFilterProp="label"
@@ -336,8 +333,12 @@ export default function DrugTable({
           </Form.Item>
 
           {/* แถวที่ 3: ขนาดบรรจุ, ราคา, คงเหลือ (แบ่ง 3 ส่วนเท่ากัน) */}
-          <Row gutter={16}>
+          <Row gutter={[12, 12]}>
+            {" "}
+            {/* ลด gutter ลงนิดหน่อย */}
             <Col span={8}>
+              {" "}
+              {/* span 8 = 1/3 ของ 24 */}
               <Form.Item
                 label="ขนาดบรรจุ"
                 name="packagingSize"
@@ -345,7 +346,7 @@ export default function DrugTable({
               >
                 <AutoComplete
                   options={packingOptions}
-                  placeholder="เช่น แผง/กล่อง"
+                  placeholder="หน่วย"
                   filterOption={(inputValue, option) =>
                     option!.value
                       .toUpperCase()
@@ -357,7 +358,7 @@ export default function DrugTable({
             </Col>
             <Col span={8}>
               <Form.Item
-                label="ราคาต่อหน่วย"
+                label="ราคา/หน่วย"
                 name="price"
                 rules={[{ required: true }]}
               >
@@ -365,27 +366,20 @@ export default function DrugTable({
                   style={{ width: "100%" }}
                   min={0}
                   step={0.01}
-                  formatter={(value) =>
-                    `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
-                  parser={(value: any) =>
-                    value?.replace(/\฿\s?|(,*)/g, "") || ""
-                  }
+                  placeholder="0.00"
                 />
               </Form.Item>
             </Col>
             <Col span={8}>
               <Form.Item
-                label="จำนวนคงเหลือ"
+                label="คงเหลือ"
                 name="quantity"
                 rules={[{ required: true }]}
               >
                 <InputNumber
                   style={{ width: "100%" }}
                   min={0}
-                  formatter={(value) =>
-                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
+                  placeholder="0"
                 />
               </Form.Item>
             </Col>

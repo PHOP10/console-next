@@ -36,7 +36,7 @@ interface Props {
 const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
-  // Helper Function
+
   const getUserName = (idOrName: string) => {
     if (!idOrName) return "-";
     const user = dataUser.find((u) => u.userId === idOrName);
@@ -66,7 +66,6 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
     const item = data.find((d) => d.id === event.id);
     if (item) {
       setSelectedRecord({ ...item, dataUser });
-
       setModalOpen(true);
     }
   };
@@ -81,7 +80,6 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
           ปฏิทินการจองรถ
         </h2>
-        {/* เส้น Divider */}
         <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
       </div>
 
@@ -104,19 +102,17 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
           )}
           style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
           onSelectEvent={onSelectEvent}
-          // ✅ พื้นหลังวันสีขาว
           dayPropGetter={() => ({
             style: {
               backgroundColor: "#ffffff",
               border: "1px solid #e2e8f0",
             },
           })}
-          // ✅ ปรับสี Event ให้ตรงกับปฏิทินเดินทาง (Pending = สีฟ้า)
           eventPropGetter={(event) => {
             const color = getStatusColor(event.status);
             return {
               style: {
-                backgroundColor: `${color}1A`, // Opacity 10%
+                backgroundColor: `${color}1A`,
                 color: color,
                 border: `1px solid ${color}4D`,
                 borderTop: "1px solid #e2e8f0",
@@ -189,11 +185,14 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
           align-items: center;
           justify-content: space-between;
           margin-bottom: 10px;
+          flex-wrap: wrap; /* Allow wrapping */
+          gap: 8px;
         }
         .rbc-toolbar-label {
           font-size: 1.5rem;
           font-weight: 700;
           color: #1e293b;
+          text-align: center;
         }
 
         /* Buttons */
@@ -204,6 +203,7 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
           padding: 6px 14px;
           font-size: 0.9rem;
           transition: all 0.2s;
+          white-space: nowrap;
         }
         .rbc-btn-group > button:first-child {
           border-top-left-radius: 8px;
@@ -258,12 +258,55 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
           justify-content: center;
         }
 
+        /* --- Mobile Responsive Styles --- */
         @media (max-width: 768px) {
+          /* Stack Toolbar */
           .rbc-toolbar {
             flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
           }
+
           .rbc-toolbar-label {
-            margin: 10px 0;
+            margin: 0;
+            font-size: 1.25rem;
+            order: -1; /* Title on top */
+          }
+
+          /* Full width button groups */
+          .rbc-btn-group {
+            display: flex;
+            width: 100%;
+          }
+
+          .rbc-btn-group button {
+            flex: 1;
+            padding: 8px 4px;
+            font-size: 0.85rem;
+            justify-content: center;
+          }
+
+          /* Adjust Headers */
+          .rbc-header {
+            font-size: 0.75rem;
+            font-weight: normal; /* กฎข้อ 4 */
+            padding: 4px 0;
+            text-overflow: ellipsis;
+            overflow: hidden;
+          }
+
+          /* Adjust Date Cells */
+          .rbc-date-cell {
+            font-size: 0.8rem;
+            padding: 2px 4px;
+            font-weight: normal; /* กฎข้อ 4 */
+          }
+
+          /* Adjust Events */
+          .rbc-event {
+            font-size: 0.7rem !important;
+            padding: 1px 4px !important;
+            line-height: 1.2;
           }
         }
       `}</style>
@@ -272,7 +315,6 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
         open={modalOpen}
         onClose={handleCloseModal}
         record={selectedRecord}
-        dataUser={dataUser}
       />
     </>
   );

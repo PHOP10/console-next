@@ -11,7 +11,6 @@ import {
   Modal,
   Form,
   Input,
-  Select,
   DatePicker,
   Popover,
   Typography,
@@ -24,7 +23,6 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveDetail from "./dataLeaveDetail";
 import { useSession } from "next-auth/react";
-import isBetween from "dayjs/plugin/isBetween";
 import DataLeaveEdit from "./dataLeaveEdit";
 import {
   CheckCircleOutlined,
@@ -33,9 +31,12 @@ import {
   ExclamationCircleOutlined,
   FileSearchOutlined,
   RollbackOutlined,
-  UndoOutlined,
 } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
+import "dayjs/locale/th";
+
+// Set locale globally
+dayjs.locale("th");
 
 interface Props {
   dataLeave: DataLeaveType[];
@@ -63,21 +64,16 @@ export default function ManagementDataLeaveTable({
   const [currentRecord, setCurrentRecord] = useState<DataLeaveType | null>(
     null,
   );
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [form] = Form.useForm();
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
   const { data: session } = useSession();
-  const { RangePicker } = DatePicker;
-  const { TextArea } = Input;
-  const [open, setOpen] = useState(false);
   const [modalCancelOpen, setModalCancelOpen] = useState(false);
   const [selectedCancelRecord, setSelectedCancelRecord] =
     useState<DataLeaveType | null>(null);
-  const [cancelReason, setCancelReason] = useState("");
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
-  const [formEdit] = Form.useForm();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [formEdit] = Form.useForm();
 
   const openEditModal = (record: DataLeaveType) => {
     setCurrentRecord(record);
@@ -127,7 +123,6 @@ export default function ManagementDataLeaveTable({
         approvedDate: new Date().toISOString(),
       });
       message.success("อนุมัติรายการนี้แล้ว");
-      // setLoading(true);
       fetchData();
       setOpenPopoverId(null);
     } catch (error) {
@@ -161,7 +156,7 @@ export default function ManagementDataLeaveTable({
 
       message.success("ยกเลิกเรียบร้อย");
       setModalCancelOpen(false);
-      form.resetFields(); // รีเซ็ต Form
+      form.resetFields();
     } catch (err) {
       console.error(err);
       message.error("เกิดข้อผิดพลาด");
@@ -184,12 +179,15 @@ export default function ManagementDataLeaveTable({
       dataIndex: "createdName",
       key: "createdName",
       align: "center",
+      width: 150,
     },
     {
-      title: "เหตุผลการลา",
+      title: "เหตุผล",
       dataIndex: "reason",
       key: "reason",
       align: "center",
+      width: 150,
+      responsive: ["lg"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -207,13 +205,20 @@ export default function ManagementDataLeaveTable({
       dataIndex: "dateStart",
       key: "dateStart",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {dateObj.locale("th").format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -221,13 +226,20 @@ export default function ManagementDataLeaveTable({
       dataIndex: "dateEnd",
       key: "dateEnd",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {dateObj.locale("th").format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -235,10 +247,10 @@ export default function ManagementDataLeaveTable({
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = "";
-
         switch (status) {
           case "pending":
             color = "blue";
@@ -263,26 +275,31 @@ export default function ManagementDataLeaveTable({
           default:
             text = status;
         }
-
         return <Tag color={color}>{text}</Tag>;
       },
     },
-
     {
-      title: "หมายเหตุเพิ่มเติม",
+      title: "หมายเหตุ",
       dataIndex: "details",
       key: "details",
       align: "center",
+      width: 150,
+      responsive: ["xl"],
       ellipsis: true,
       render: (text: string) => {
         const maxLength = 15;
         if (!text) return "-";
+        const truncatedText =
+          text.length > maxLength ? text.slice(0, maxLength) + "..." : text;
+        const content = (
+          <span style={{ fontWeight: "normal" }}>{truncatedText}</span>
+        );
         return text.length > maxLength ? (
           <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
+            {content}
           </Tooltip>
         ) : (
-          text
+          content
         );
       },
     },
@@ -290,18 +307,14 @@ export default function ManagementDataLeaveTable({
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 180,
+
       render: (_, record) => (
-        <Space>
+        <Space size="small">
+          {/* Approve Popover */}
           <Popover
-            trigger="click"
-            title={
-              <Space>
-                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
-              </Space>
-            }
             content={
-              <Space style={{ display: "flex", marginTop: 13 }}>
+              <Space>
                 <Button
                   type="primary"
                   size="small"
@@ -315,98 +328,109 @@ export default function ManagementDataLeaveTable({
                   onClick={() => {
                     setSelectedCancelRecord(record);
                     setModalCancelOpen(true);
-                    // setPopoverOpen(false);
                     setOpenPopoverId(null);
                   }}
                 >
-                  ยกเลิก
+                  ไม่อนุมัติ
                 </Button>
               </Space>
             }
+            title={
+              <Space>
+                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
+                <Typography.Text strong>จัดการคำขอ</Typography.Text>
+              </Space>
+            }
+            trigger="click"
             open={openPopoverId === record.id}
-            onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
+            onOpenChange={(visible) => {
+              if (record.status === "pending") {
+                setOpenPopoverId(visible ? record.id : null);
+              }
+            }}
           >
-            <Tooltip title="อนุมัติ">
+            <Tooltip title="อนุมัติ / ไม่อนุมัติ">
               <CheckCircleOutlined
                 style={{
-                  fontSize: 22,
-                  color: record.status !== "pending" ? "#ccc" : "#52c41a", // เทาเมื่อ disable, เขียวเมื่อ active
+                  fontSize: 18, // ขนาด 18px
+                  color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
                   cursor:
-                    record.status !== "pending" ? "not-allowed" : "pointer",
-                  opacity: record.status !== "pending" ? 0.5 : 1,
+                    record.status === "pending" ? "pointer" : "not-allowed",
                 }}
-                onClick={() => {
-                  if (record.status === "pending") {
-                    setOpenPopoverId(record.id);
+                onClick={(e) => {
+                  if (record.status !== "pending") {
+                    e.stopPropagation();
                   }
                 }}
               />
             </Tooltip>
           </Popover>
 
+          {/* Return Edit */}
           <Popconfirm
-            title="ยืนยันการส่งคืนเพื่อแก้ไข"
-            okText="ยืนยัน"
-            cancelText="ยกเลิก"
+            title="ส่งคืนเพื่อแก้ไข?"
             onConfirm={() => returnEdit(record)}
+            okText="ใช่"
+            cancelText="ไม่"
             disabled={record.status !== "approve"}
           >
-            <Tooltip title="ส่งคืนเพื่อแก้ไข">
+            <Tooltip title="ส่งคืนแก้ไข">
               <RollbackOutlined
                 style={{
-                  fontSize: 22,
-                  color: record.status === "approve" ? "orange" : "#d9d9d9",
+                  fontSize: 18, // ขนาด 18px
+                  color: record.status === "approve" ? "#faad14" : "#d9d9d9",
                   cursor:
                     record.status === "approve" ? "pointer" : "not-allowed",
-                  transition: "color 0.2s",
                 }}
               />
             </Tooltip>
           </Popconfirm>
 
+          {/* Detail */}
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
-              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }}
               onClick={() => handleShowDetail(record)}
             />
           </Tooltip>
 
+          {/* Edit */}
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 22,
-                // ใช้สีส้ม (#faad14) เมื่อสถานะเป็น pending, นอกนั้นสีเทา
-                color: record.status === "pending" ? "#faad14" : "#d9d9d9",
-                cursor: record.status === "pending" ? "pointer" : "not-allowed",
-                transition: "color 0.2s",
+                fontSize: 18, // ขนาด 18px
+                color:
+                  record.status === "pending" || record.status === "edit"
+                    ? "#faad14"
+                    : "#d9d9d9",
+                cursor:
+                  record.status === "pending" || record.status === "edit"
+                    ? "pointer"
+                    : "not-allowed",
               }}
               onClick={() => {
-                // ต้องเช็คสถานะก่อนเปิด Modal เพราะ Icon ไม่มี prop disabled เหมือน Button
-                if (record.status === "pending") {
+                if (record.status === "pending" || record.status === "edit") {
                   openEditModal(record);
                 }
               }}
             />
           </Tooltip>
 
+          {/* Delete */}
           <Popconfirm
-            title="ยืนยันการลบ"
-            // description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?" // ควรใส่ description เพิ่มเพื่อความชัดเจน (ถ้าต้องการ)
-            okText="ใช่"
-            cancelText="ยกเลิก"
+            title="ยืนยันการลบ?"
             onConfirm={() => handleDelete(record)}
+            okText="ลบ"
+            cancelText="ยกเลิก"
+            okButtonProps={{ danger: true }}
           >
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 22,
-                  color: "#ff4d4f", // สีแดง Danger
+                  fontSize: 18, // ขนาด 18px
+                  color: "#ff4d4f",
                   cursor: "pointer",
-                  transition: "color 0.2s",
                 }}
-                // (Optional) เพิ่มลูกเล่นให้สีเข้มขึ้นตอนเอาเมาส์ชี้
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
               />
             </Tooltip>
           </Popconfirm>
@@ -419,10 +443,23 @@ export default function ManagementDataLeaveTable({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
-          รายการการลา
+          จัดการข้อมูลการลา
         </h2>
         <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
       </div>
+
+      <CustomTable
+        rowKey="id"
+        columns={columns}
+        dataSource={dataLeave}
+        loading={loading}
+        bordered
+        // ใช้ size small บนมือถือ
+        size="small"
+        pagination={{ pageSize: 10, size: "small" }}
+        // Scroll แนวนอนอัตโนมัติ
+        scroll={{ x: "max-content" }}
+      />
 
       <DataLeaveDetail
         open={detailModalOpen}
@@ -430,23 +467,12 @@ export default function ManagementDataLeaveTable({
         record={selectedRecord}
         user={user}
       />
-      <CustomTable
-        rowKey="id"
-        columns={columns}
-        dataSource={dataLeave}
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: "max-content" }}
-        bordered
-      />
 
       <DataLeaveEdit
         open={isEditOpen}
         record={currentRecord}
         masterLeaves={masterLeave}
-        onClose={() => {
-          setIsEditOpen(false);
-        }}
+        onClose={() => setIsEditOpen(false)}
         onUpdate={handleUpdate}
         fetchData={fetchData}
         leaveByUserId={leaveByUserId}
@@ -455,24 +481,23 @@ export default function ManagementDataLeaveTable({
       />
 
       <Modal
-        title="ยกเลิกการลา"
+        title="ยกเลิกรายการ"
         open={modalCancelOpen}
         onOk={() => form.submit()}
         onCancel={() => setModalCancelOpen(false)}
         okText="ยืนยัน"
-        cancelText="ยกเลิก"
+        cancelText="ปิด"
+        centered
+        // Responsive Modal
+        style={{ maxWidth: "95%" }}
       >
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={(values) => handleConfirmCancel(values)}
-        >
+        <Form form={form} layout="vertical" onFinish={handleConfirmCancel}>
           <Form.Item
-            label="เหตุผลการยกเลิก"
             name="cancelReason"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+            label="เหตุผลการยกเลิก"
+            rules={[{ required: true, message: "โปรดระบุเหตุผล" }]}
           >
-            <Input.TextArea placeholder="กรุณากรอกเหตุผลการยกเลิก" rows={4} />
+            <Input.TextArea rows={3} placeholder="ระบุเหตุผล..." />
           </Form.Item>
         </Form>
       </Modal>

@@ -250,7 +250,7 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
     >
       <FileWordOutlined
         style={{
-          fontSize: 22,
+          fontSize: 18,
           // 1. กำหนดสี: ถ้า approved ใช้สีฟ้า Word ถ้ายังไม่ approved (เช่น pending) ใช้สีเทาจางๆ
           color: record.status === "approve" ? "#1677ff" : "#d9d9d9",
 

@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import {
   Button,
@@ -24,8 +26,6 @@ import {
   DeleteOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
-  FileDoneOutlined,
-  FileProtectOutlined,
   FileSearchOutlined,
   RollbackOutlined,
 } from "@ant-design/icons";
@@ -33,6 +33,12 @@ import MaCarDetail from "./maCarDetail";
 import MaCarEditModal from "./MaCarEditModal";
 import CustomTable from "../../common/CustomTable";
 import MaCarReturn from "./maCarReturn";
+import "dayjs/locale/th";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+
+// Setup dayjs
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
 
 interface MaCarTableProps {
   data: MaCarType[];
@@ -68,8 +74,6 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   const [selectedAckRecord, setSelectedAckRecord] = useState<MaCarType | null>(
     null,
   );
-
-  // const handleEdit = (record: MaCarType) => {
 
   const handleShowDetail = (record: any, dataUser: any) => {
     setSelectedRecord({ ...record, dataUser });
@@ -158,12 +162,15 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "createdName",
       key: "createdName",
       align: "center",
+      width: 150,
     },
     {
       title: "วัตถุประสงค์",
       dataIndex: "purpose",
       key: "purpose",
       align: "center",
+      width: 150,
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -181,6 +188,8 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "destination",
       key: "destination",
       align: "center",
+      width: 150,
+      responsive: ["lg"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 20;
         if (!text) return "-";
@@ -198,13 +207,22 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "dateStart",
       key: "dateStart",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -212,13 +230,20 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "dateEnd",
       key: "dateEnd",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -226,15 +251,17 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       dataIndex: "masterCar",
       key: "masterCar",
       align: "center",
+      width: 150,
+      responsive: ["xl"], // ซ่อนบนมือถือ
       render: (masterCar) =>
         masterCar ? `${masterCar.carName} (${masterCar.licensePlate})` : "-",
     },
-    // ... ในส่วน columns
     {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = "";
@@ -272,41 +299,21 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       },
     },
     {
-      title: "หมมายเหตุ",
-      dataIndex: "note",
-      key: "note",
-      align: "center",
-      ellipsis: true,
-      render: (text: string) => {
-        const maxLength = 15;
-        if (!text) return "-";
-        return text.length > maxLength ? (
-          <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
-          </Tooltip>
-        ) : (
-          text
-        );
-      },
-    },
-    {
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 180, // เพิ่มความกว้างให้ปุ่มเรียงสวย
       render: (_, record) => {
-        // Logic สำหรับควบคุมการเปิด-ปิดปุ่ม
         const isPending = record.status === "pending";
         const isApprove = record.status === "approve";
         const isEdit = record.status === "edit";
         const isReturn = record.status === "return";
 
         return (
-          <Space>
-            {/* 1. ปุ่มแก้ไข: กดได้เฉพาะตอนรออนุมัติหรือรอแก้ไข */}
-
-            {/* 2. ปุ่มอนุมัติ (Popover): กดได้เฉพาะตอนรออนุมัติเท่านั้น */}
+          <Space size="small">
+            {/* 1. ปุ่มอนุมัติ (Popover) */}
             <Popover
-              trigger={isPending ? "click" : []} // ถ้าไม่เป็น pending จะไม่แสดง Popover
+              trigger={isPending ? "click" : []}
               title={
                 <Space>
                   <ExclamationCircleOutlined style={{ color: "#faad14" }} />
@@ -341,18 +348,18 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               <Tooltip title={isPending ? "อนุมัติ/ปฏิเสธ" : "ดำเนินการแล้ว"}>
                 <CheckCircleOutlined
                   style={{
-                    fontSize: 20,
+                    fontSize: 18, // ขนาด 18px
                     color: isPending ? "#52c41a" : "#d9d9d9",
                     cursor: isPending ? "pointer" : "not-allowed",
                   }}
-                  onClick={() => {
+                  onClick={(e) => {
                     if (isPending) setOpenPopoverId(record.id);
                   }}
                 />
               </Tooltip>
             </Popover>
 
-            {/* 3. ปุ่มส่งคืนแก้ไข: กดได้เฉพาะรายการที่อนุมัติแล้วแต่ต้องการให้แก้ใหม่ */}
+            {/* 2. ปุ่มส่งคืนแก้ไข */}
             <Tooltip
               title={isApprove ? "ส่งคืนให้ผู้ใช้แก้ไข" : "ส่งคืนไม่ได้"}
             >
@@ -365,7 +372,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               >
                 <RollbackOutlined
                   style={{
-                    fontSize: 20,
+                    fontSize: 18, // ขนาด 18px
                     color: isApprove ? "orange" : "#d9d9d9",
                     cursor: isApprove ? "pointer" : "not-allowed",
                   }}
@@ -373,6 +380,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               </Popconfirm>
             </Tooltip>
 
+            {/* 3. ปุ่มรับทราบการคืนรถ */}
             <Tooltip
               title={
                 record.status === "return"
@@ -398,21 +406,22 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               >
                 <CarOutlined
                   style={{
-                    fontSize: 24, // ปรับขนาดให้ใหญ่เห็นชัด
+                    fontSize: 18, // ขนาด 18px
                     color: record.status === "return" ? "#722ed1" : "#d9d9d9",
                   }}
                 />
               </div>
             </Tooltip>
 
-            {/* 5. ปุ่มรายละเอียด: กดได้ทุกสถานะ */}
+            {/* 4. ปุ่มรายละเอียด */}
             <Tooltip title="รายละเอียดทั้งหมด">
               <FileSearchOutlined
-                style={{ fontSize: 20, color: "#1677ff", cursor: "pointer" }}
+                style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }} // ขนาด 18px
                 onClick={() => handleShowDetail(record, dataUser)}
               />
             </Tooltip>
 
+            {/* 5. ปุ่มแก้ไข */}
             <Tooltip
               title={
                 isPending || isEdit ? "แก้ไข" : "ไม่สามารถแก้ไขได้ในสถานะนี้"
@@ -420,7 +429,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             >
               <EditOutlined
                 style={{
-                  fontSize: 20,
+                  fontSize: 18, // ขนาด 18px
                   color: isPending || isEdit ? "#faad14" : "#d9d9d9",
                   cursor: isPending || isEdit ? "pointer" : "not-allowed",
                 }}
@@ -430,10 +439,10 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               />
             </Tooltip>
 
-            {/* 6. ปุ่มลบ: ลบได้ทุกสถานะ (หรือปรับตามนโยบาย) */}
+            {/* 6. ปุ่มลบ */}
             <Popconfirm
               title="ยืนยันการลบ"
-              description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?" // (Optional) เพิ่มคำอธิบายเพื่อให้ชัดเจนขึ้น
+              description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
               onConfirm={async () => {
                 try {
                   await intraAuthService.deleteMaCar(record.id);
@@ -449,7 +458,11 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             >
               <Tooltip title="ลบรายการ">
                 <DeleteOutlined
-                  style={{ fontSize: 20, color: "#ff4d4f", cursor: "pointer" }}
+                  style={{
+                    fontSize: 18, // ขนาด 18px
+                    color: "#ff4d4f",
+                    cursor: "pointer",
+                  }}
                 />
               </Tooltip>
             </Popconfirm>
@@ -465,7 +478,6 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
           รายการการจองรถ
         </h2>
-
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
 
@@ -474,12 +486,17 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         dataSource={data}
         rowKey="id"
         loading={loading}
+        bordered
+        // Responsive config
         scroll={{ x: "max-content" }}
+        size="small" // ใช้ size small บนมือถือ
+        pagination={{ pageSize: 10, size: "small" }}
       />
       <MaCarDetail
         open={detailModalOpen}
         onClose={handleCloseDetail}
         record={selectedRecord}
+        dataUser={dataUser}
       />
 
       <Modal
@@ -489,6 +506,8 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         onCancel={() => setModalCancelOpen(false)}
         okText="ยืนยัน"
         cancelText="ยกเลิก"
+        centered
+        style={{ maxWidth: "95%" }} // Responsive Modal
       >
         <Form
           form={formCancel}
@@ -520,7 +539,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         onClose={() => setAckModalOpen(false)}
         record={selectedAckRecord}
         fetchData={fetchData}
-        mode="admin_ack" // สำคัญมาก: ใส่ mode นี้เพื่อให้เป็นหน้าจอรับรถ
+        mode="admin_ack"
       />
     </>
   );
