@@ -1,11 +1,13 @@
 "use client";
 
 import React from "react";
-import { Modal, Row, Col, Tag, Divider, Table } from "antd";
+import { Modal, Row, Col, Tag, Divider, Table, Grid } from "antd";
 import { MaDrugType } from "../../common";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import type { ColumnsType } from "antd/es/table";
+
+const { useBreakpoint } = Grid;
 
 interface MaDrugTableDetailProps {
   visible: boolean;
@@ -18,6 +20,7 @@ export default function MaDrugTableDetail({
   onClose,
   data,
 }: MaDrugTableDetailProps) {
+  const screens = useBreakpoint();
   // --- Helper Functions ---
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
@@ -218,15 +221,22 @@ export default function MaDrugTableDetail({
               columns={drugColumns}
               rowKey="id"
               size="small"
-              // Scroll แนวนอน + แนวตั้ง
               scroll={{ x: "max-content", y: 400 }}
               pagination={{ pageSize: 10, size: "small" }}
               summary={() => {
+                const labelColSpan = screens.md ? 4 : 3;
+                const priceColSpan = screens.md ? 2 : 1;
+
                 return (
                   <Table.Summary.Row className="bg-blue-50/50 font-bold text-xs sm:text-sm">
-                    <Table.Summary.Cell index={0} colSpan={3} align="right">
+                    <Table.Summary.Cell
+                      index={0}
+                      colSpan={labelColSpan}
+                      align="right"
+                    >
                       รวมทั้งสิ้น
                     </Table.Summary.Cell>
+
                     <Table.Summary.Cell index={1} align="center">
                       <span className="text-blue-600">
                         {data.maDrugItems
@@ -234,8 +244,12 @@ export default function MaDrugTableDetail({
                           .toLocaleString()}
                       </span>
                     </Table.Summary.Cell>
-                    {/* ปรับ colSpan ตาม Responsive Column ที่ซ่อนไป */}
-                    <Table.Summary.Cell index={2} colSpan={3} align="right">
+
+                    <Table.Summary.Cell
+                      index={2}
+                      colSpan={priceColSpan}
+                      align="right"
+                    >
                       <span className="text-blue-600 text-sm sm:text-lg">
                         {data.totalPrice?.toLocaleString(undefined, {
                           minimumFractionDigits: 2,

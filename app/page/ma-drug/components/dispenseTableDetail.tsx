@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Modal, Row, Col, Tag, Table } from "antd";
+import { Modal, Row, Col, Tag, Table, Grid } from "antd";
 import { DispenseType } from "../../common";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
@@ -13,6 +13,8 @@ interface DispenseTableDetailProps {
   data: DispenseType | null;
 }
 
+const { useBreakpoint } = Grid;
+
 export default function DispenseTableDetail({
   visible,
   onClose,
@@ -23,6 +25,8 @@ export default function DispenseTableDetail({
     if (!dateString) return "-";
     return dayjs(dateString).locale("th").format("DD MMMM YYYY ");
   };
+
+  const screens = useBreakpoint();
 
   const getStatusTag = (status: string) => {
     const baseStyle =
@@ -206,15 +210,23 @@ export default function DispenseTableDetail({
               columns={drugColumns}
               rowKey="id"
               size="small"
-              // Scroll แนวนอน + แนวตั้ง
               scroll={{ x: "max-content", y: 400 }}
               pagination={{ pageSize: 10, size: "small" }}
               summary={() => {
+                const labelColSpan = screens.md ? 4 : 3;
+                const priceColSpan = screens.md ? 2 : 1;
+
                 return (
                   <Table.Summary.Row className="bg-blue-50/50 font-bold text-xs sm:text-sm">
-                    <Table.Summary.Cell index={0} colSpan={3} align="right">
+                    {/* 1. ชื่อ "รวมทั้งสิ้น" */}
+                    <Table.Summary.Cell
+                      index={0}
+                      colSpan={labelColSpan}
+                      align="right"
+                    >
                       รวมทั้งสิ้น
                     </Table.Summary.Cell>
+
                     <Table.Summary.Cell index={1} align="center">
                       <span className="text-red-600">
                         {data.dispenseItems
@@ -222,8 +234,12 @@ export default function DispenseTableDetail({
                           .toLocaleString()}
                       </span>
                     </Table.Summary.Cell>
-                    {/* ปรับ colSpan ตาม Responsive Column ที่ซ่อนไป */}
-                    <Table.Summary.Cell index={2} colSpan={3} align="right">
+
+                    <Table.Summary.Cell
+                      index={2}
+                      colSpan={priceColSpan}
+                      align="right"
+                    >
                       <span className="text-blue-600 text-sm sm:text-lg">
                         {data.totalPrice?.toLocaleString(undefined, {
                           minimumFractionDigits: 2,

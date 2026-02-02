@@ -145,9 +145,40 @@ export default function LeaveBookingForm({
 
   const columns = [
     { title: "ประเภทการลา", dataIndex: "leaveType", key: "leaveType" },
-    { title: "ลามาแล้ว (วัน)", dataIndex: "usedDays", key: "usedDays" },
-    { title: "ลาครั้งนี้ (วัน)", dataIndex: "currentDays", key: "currentDays" },
-    { title: "รวมการลา (วัน)", dataIndex: "totalDays", key: "totalDays" },
+    {
+      title: "ลามาแล้ว (วัน)",
+      dataIndex: "usedDays",
+      key: "usedDays",
+      align: "center" as const,
+    },
+    {
+      title: "ลาครั้งนี้ (วัน)",
+      dataIndex: "currentDays",
+      key: "currentDays",
+      align: "center" as const,
+    },
+    {
+      title: "รวมการลา (วัน)",
+      dataIndex: "totalDays",
+      key: "totalDays",
+      align: "center" as const,
+      render: (val: number, record: any) => {
+        const limits: Record<number, number> = {
+          1: 60,
+          2: 45,
+          3: 90,
+        };
+
+        const limit = limits[record.key];
+        const isOverLimit = limit && val > limit;
+
+        return (
+          <span className={isOverLimit ? "text-red-500 font-bold" : ""}>
+            {val}
+          </span>
+        );
+      },
+    },
   ];
 
   const uploadFile = async (file: File) => {

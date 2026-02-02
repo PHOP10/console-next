@@ -233,6 +233,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   rows={1} // เริ่มต้น 1 บรรทัด จะขยายเอง
                   className={textAreaStyle}
                   style={{ minHeight: "44px" }}
+                  maxLength={200}
                 />
               </Form.Item>
             </Col>
@@ -250,6 +251,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   rows={1}
                   className={textAreaStyle}
                   style={{ minHeight: "44px" }}
+                  maxLength={200}
                 />
               </Form.Item>
             </Col>
@@ -338,7 +340,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             <Col span={12}>
               <Form.Item
                 name="dateStart"
-                label="ตั้งแต่วันที่"
+                label="ตั้งแต่วันที่-เวลา"
                 dependencies={["carId"]} // ✅ เพิ่ม: ให้เช็คใหม่เมื่อเปลี่ยนรถ
                 rules={[
                   { required: true, message: "กรุณาเลือกวันเวลาเริ่ม" },
@@ -384,7 +386,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   locale={buddhistLocale}
                   showTime={{ format: "HH:mm" }}
                   style={{ width: "100%" }}
-                  format="DD/MM/YYYY HH:mm"
+                  format="DD MMMM YYYY เวลา HH:mm น."
                   placeholder="เลือกวันเวลาเริ่ม"
                   className={`${inputStyle} pt-2`}
                   onChange={() => form.setFieldValue("dateEnd", null)}
@@ -408,7 +410,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   return (
                     <Form.Item
                       name="dateEnd"
-                      label="ถึงวันที่"
+                      label="ถึงวันที่-เวลา"
                       dependencies={["dateStart", "carId"]}
                       rules={[
                         { required: true, message: "กรุณาเลือกวันเวลาสิ้นสุด" },
@@ -465,7 +467,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                         locale={buddhistLocale}
                         showTime={{ format: "HH:mm" }}
                         style={{ width: "100%" }}
-                        format="DD/MM/YYYY HH:mm"
+                        format="DD MMMM YYYY เวลา HH:mm น."
                         placeholder={
                           dateStart
                             ? "เลือกวันเวลาสิ้นสุด"
@@ -546,6 +548,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               placeholder="หมายเหตุเพิ่มเติม"
               rows={2}
               className={textAreaStyle}
+              maxLength={200}
             />
           </Form.Item>
 

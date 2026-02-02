@@ -10,7 +10,12 @@ interface MaCarDetailProps {
   dataUser?: UserType[];
 }
 
-const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
+const MaCarDetail: React.FC<MaCarDetailProps> = ({
+  open,
+  onClose,
+  record,
+  dataUser,
+}) => {
   const formatDateTime = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
     const date = new Date(dateString);
@@ -276,18 +281,24 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                   <div className="flex flex-wrap gap-2">
                     {record.passengerNames &&
                     record.passengerNames.length > 0 ? (
-                      record.passengerNames.map(
-                        (name: string, index: number) => (
+                      record.passengerNames.map((uid: string) => {
+                        const user = dataUser?.find(
+                          (u: any) => u.userId === uid,
+                        );
+                        return (
                           <div
-                            key={index}
-                            className="bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-lg text-xs sm:text-sm"
+                            key={uid}
+                            className="flex items-center gap-2 bg-blue-50/50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-lg text-xs sm:text-sm"
                           >
-                            {name}
+                            <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-400"></div>
+                            {user ? `${user.firstName} ${user.lastName}` : uid}
                           </div>
-                        ),
-                      )
+                        );
+                      })
                     ) : (
-                      <span className="text-slate-400 text-sm">-</span>
+                      <span className="text-slate-400 text-sm">
+                        - ไม่มีข้อมูลผู้โดยสาร -
+                      </span>
                     )}
                   </div>
                 </Col>
@@ -339,7 +350,7 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                   <>
                     <Col xs={24} sm={12}>
                       <span className="text-slate-500 block text-xs">
-                        ผู้ดำเนินการ
+                        ผู้อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium">
                         {record.approvedByName}
@@ -347,7 +358,7 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({ open, onClose, record }) => {
                     </Col>
                     <Col xs={24} sm={12}>
                       <span className="text-slate-500 block text-xs">
-                        วันที่ดำเนินการ
+                        วันที่อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium">
                         {formatDateOnly(record.approvedAt)}

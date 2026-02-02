@@ -68,7 +68,7 @@ export default function MaCarPage() {
   // 6. Wrapper function สำหรับส่งให้ลูก (Mimic พฤติกรรมเดิมที่ Loading จะหมุนเมื่อเรียก fetchData)
   const fetchData = async () => {
     setManualLoading(true); // สั่ง Loading หมุน
-    await mutate(); // รอ SWR ดึงข้อมูลใหม่
+    await mutate();
     setManualLoading(false); // หยุดหมุน
   };
 

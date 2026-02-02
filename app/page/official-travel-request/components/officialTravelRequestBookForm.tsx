@@ -23,6 +23,7 @@ import {
   UserType,
   MasterCarType,
   OfficialTravelRequestType,
+  MaCarType,
 } from "../../common";
 import { useSession } from "next-auth/react";
 import th_TH from "antd/locale/th_TH";
@@ -41,6 +42,7 @@ interface Props {
   cars: MasterCarType[];
   oTRUser: OfficialTravelRequestType[];
   dataOTR: OfficialTravelRequestType[];
+  maCars?: MaCarType[];
 }
 
 export default function OfficialTravelRequestBookForm({
@@ -48,6 +50,7 @@ export default function OfficialTravelRequestBookForm({
   cars,
   oTRUser,
   dataOTR,
+  maCars,
 }: Props) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
@@ -90,6 +93,31 @@ export default function OfficialTravelRequestBookForm({
         return;
       }
 
+      // ---------------------------------------------------------
+      const isMaCarOverlaps =
+        maCars &&
+        maCars.some((booking) => {
+          // ข้ามถ้ายกเลิก
+          if (booking.status === "cancel") return false;
+
+          if (travelType !== "official") return false;
+
+          if (!carId || Number(booking.carId) !== Number(carId)) {
+            return false;
+          }
+
+          const bStart = dayjs(booking.dateStart);
+          const bEnd = dayjs(booking.dateEnd);
+          return currentStart.isBefore(bEnd) && currentEnd.isAfter(bStart);
+        });
+
+      if (isMaCarOverlaps) {
+        message.warning("รถคันนี้ไม่ว่างในช่วงเวลานี้ (ชนกับการจองรถ)");
+        setSubmitting(false);
+        return;
+      }
+      // ---------------------------------------------------------
+
       const payload = {
         ...values,
         recipient: values.recipient || null,
@@ -115,7 +143,7 @@ export default function OfficialTravelRequestBookForm({
     } catch (err) {
       console.error(err);
       message.error("บันทึกคำขอไม่สำเร็จ");
-      setSubmitting(false); // หยุด Loading เมื่อเกิด Error
+      setSubmitting(false);
     }
   };
 
@@ -191,7 +219,7 @@ export default function OfficialTravelRequestBookForm({
                 rules={[{ required: true, message: "กรุณากรอกเรียน..." }]}
               >
                 <Select
-                  placeholder="กรอกเรียน"
+                  placeholder="ระบุเรียน"
                   className={selectStyle}
                   onChange={(value) => {
                     form.setFieldValue(
@@ -238,7 +266,12 @@ export default function OfficialTravelRequestBookForm({
                 name="missionDetail"
                 rules={[{ required: true, message: "กรุณากรอกวัตถุประสงค์" }]}
               >
-                <Input.TextArea rows={2} className={textAreaStyle} />
+                <Input.TextArea
+                  rows={2}
+                  className={textAreaStyle}
+                  placeholder="กรอกวัตถุประสงค์"
+                  maxLength={200}
+                />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
@@ -247,7 +280,12 @@ export default function OfficialTravelRequestBookForm({
                 name="location"
                 rules={[{ required: true, message: "กรุณากรอกสถานที่" }]}
               >
-                <Input.TextArea rows={2} className={textAreaStyle} />
+                <Input.TextArea
+                  rows={2}
+                  className={textAreaStyle}
+                  placeholder="กรอกสถานที่"
+                  maxLength={200}
+                />
               </Form.Item>
             </Col>
           </Row>

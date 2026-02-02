@@ -105,7 +105,7 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
     <Modal
       title={
         <div
-          className={`text-xl font-bold text-center w-full ${isAdmin ? "text-purple-600" : "text-[#0683e9]"}`}
+          className={`text-xl font-bold text-center w-full ${isAdmin ? "text-purple-600" : "text-purple-600"}`}
         >
           {isAdmin ? "ตรวจสอบและรับรถคืน" : "บันทึกการคืนรถ"}
         </div>
@@ -120,22 +120,19 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
       <ConfigProvider locale={th_TH}>
         {record && (
           <div className="flex flex-col gap-4">
-            {/* ✅ ส่วนรายละเอียด พร้อมแถบสีทางซ้าย */}
             <div
               className={`relative overflow-hidden p-5 rounded-2xl border shadow-sm ${
                 isAdmin
                   ? "bg-purple-50/50 border-purple-100"
-                  : "bg-blue-50/50 border-blue-100"
+                  : "bg-purple-50/50 border-purple-100"
               }`}
             >
-              {/* แถบสีด้านซ้าย */}
               <div
                 className={`absolute left-0 top-0 bottom-0 w-1.5 ${
-                  isAdmin ? "bg-purple-500" : "bg-blue-500"
+                  isAdmin ? "bg-purple-500" : "bg-purple-500"
                 }`}
               ></div>
 
-              {/* รายละเอียดรถ */}
               <div className="pl-2">
                 <div className="flex items-start gap-3 mb-3">
                   <div>
@@ -147,7 +144,6 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                   </div>
                 </div>
 
-                {/* แสดงเลขไมล์เริ่มต้น */}
                 <div className="flex items-center gap-2 mb-3 bg-white/60 p-2 rounded-lg border border-gray-100 w-fit">
                   <DashboardOutlined className="text-gray-400" />
                   <div>
@@ -190,11 +186,11 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                     </div>
                     <div className="font-medium text-gray-700">
                       {record.dateStart
-                        ? `${dayjs(record.dateStart).add(543, "year").format("DD/MMMM/BBBB HH:mm")} น.`
+                        ? `${dayjs(record.dateStart).format("DD/MMMM/BBBB เวลา HH:mm")} น.`
                         : "-"}
                       {" - "}
                       {record.dateEnd
-                        ? `${dayjs(record.dateEnd).add(543, "year").format("DD/MMMM/BBBB HH:mm")} น.`
+                        ? `${dayjs(record.dateEnd).format("DD/MMMM/BBBB เวลา HH:mm")} น.`
                         : "-"}
                     </div>
                   </div>
@@ -220,10 +216,7 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                     </div>
                     <div className="text-[10px] text-gray-400 mt-2 text-right">
                       คืนโดย: {record.returnByName} เมื่อ{" "}
-                      {dayjs(record.returnAt)
-                        .add(543, "year")
-                        .format("DD/MM/BBBB HH:mm")}{" "}
-                      น.
+                      {dayjs(record.returnAt).format("DD/MM/BBBB HH:mm")} น.
                     </div>
                   </div>
                 )}
@@ -235,7 +228,6 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
             <Form form={form} layout="vertical" onFinish={handleAction}>
               {!isAdmin && (
                 <>
-                  {/* ✅ เพิ่มช่องกรอกเลขไมล์ */}
                   <Row gutter={16}>
                     <Col span={12}>
                       <Form.Item
@@ -324,7 +316,7 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                   className={`rounded-lg h-10 px-6 border-0 ${
                     isAdmin
                       ? "bg-purple-600 hover:bg-purple-500"
-                      : "bg-[#0683e9] hover:bg-blue-600"
+                      : "bg-purple-600 hover:bg-purple-600"
                   }`}
                 >
                   {isAdmin ? "ยืนยันรับรถคืน" : "ยืนยันการคืนรถ"}

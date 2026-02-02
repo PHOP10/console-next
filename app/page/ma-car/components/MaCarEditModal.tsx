@@ -217,6 +217,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                   rows={1}
                   className={textAreaStyle}
                   style={{ minHeight: "44px" }}
+                  maxLength={200}
                 />
               </Form.Item>
             </Col>
@@ -231,6 +232,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                   rows={1}
                   className={textAreaStyle}
                   style={{ minHeight: "44px" }}
+                  maxLength={200}
                 />
               </Form.Item>
             </Col>
@@ -275,13 +277,13 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
               <Col xs={24} sm={12}>
                 <Form.Item
                   name="dateStart"
-                  label="ตั้งแต่วันที่"
+                  label="ตั้งแต่วันที่-เวลา"
                   rules={[{ required: true }]}
                 >
                   <DatePicker
                     locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
-                    format="DD/MM/YYYY HH:mm"
+                    format="DD MMMM YYYY เวลา HH:mm น."
                     className={`${inputStyle} pt-1 w-full`}
                     onChange={() => form.setFieldValue("dateEnd", null)}
                   />
@@ -290,13 +292,13 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
               <Col xs={24} sm={12}>
                 <Form.Item
                   name="dateEnd"
-                  label="ถึงวันที่"
+                  label="ถึงวันที่-เวลา"
                   rules={[{ required: true }]}
                 >
                   <DatePicker
                     locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
-                    format="DD/MM/YYYY HH:mm"
+                    format="DD MMMM YYYY เวลา HH:mm น."
                     className={`${inputStyle} pt-1 w-full`}
                     disabled={!form.getFieldValue("dateStart")}
                   />
@@ -343,6 +345,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
               placeholder="หมายเหตุเพิ่มเติม"
               rows={2}
               className={textAreaStyle}
+              maxLength={200}
             />
           </Form.Item>
 

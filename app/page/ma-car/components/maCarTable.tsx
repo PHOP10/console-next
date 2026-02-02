@@ -253,31 +253,6 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       // เอา fixed ออกตามข้อ 5
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="แก้ไข">
-            <EditOutlined
-              style={{
-                fontSize: 18, // ขนาด 18px
-                color:
-                  record.status === "pending" || record.status === "edit"
-                    ? "#faad14"
-                    : "#d9d9d9",
-                cursor:
-                  record.status === "pending" || record.status === "edit"
-                    ? "pointer"
-                    : "not-allowed",
-                opacity:
-                  record.status === "pending" || record.status === "edit"
-                    ? 1
-                    : 0.6,
-              }}
-              onClick={() => {
-                if (record.status === "pending" || record.status === "edit") {
-                  handleEdit(record);
-                }
-              }}
-            />
-          </Tooltip>
-
           <Tooltip title="คืนรถ">
             <CarOutlined
               style={{
@@ -299,6 +274,30 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
             />
           </Tooltip>
           <MaCarExportWord record={record} />
+          <Tooltip title="แก้ไข">
+            <EditOutlined
+              style={{
+                fontSize: 18,
+                color:
+                  record.status === "pending" || record.status === "edit"
+                    ? "#faad14"
+                    : "#d9d9d9",
+                cursor:
+                  record.status === "pending" || record.status === "edit"
+                    ? "pointer"
+                    : "not-allowed",
+                opacity:
+                  record.status === "pending" || record.status === "edit"
+                    ? 1
+                    : 0.6,
+              }}
+              onClick={() => {
+                if (record.status === "pending" || record.status === "edit") {
+                  handleEdit(record);
+                }
+              }}
+            />
+          </Tooltip>
         </Space>
       ),
     },
