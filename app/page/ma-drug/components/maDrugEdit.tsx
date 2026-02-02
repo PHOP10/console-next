@@ -49,7 +49,7 @@ export default function MaDrugEdit({
   const summary = useMemo(() => {
     const totalItems = items.length;
     const totalPrice = items.reduce((sum, item) => {
-      const price = item.drug?.price || 0;
+      const price = item.price ?? item.drug?.price ?? 0;
       return sum + (item.quantity || 0) * price;
     }, 0);
     return { totalItems, totalPrice };
@@ -72,7 +72,7 @@ export default function MaDrugEdit({
             key: item.id,
             drugName: item.drug?.name,
             packagingSize: item.drug?.packagingSize,
-            price: item.drug?.price,
+            price: item.price ?? item.drug?.price,
             stockQty: item.drug?.quantity,
           })),
         );
@@ -123,6 +123,7 @@ export default function MaDrugEdit({
           id: item.id,
           drugId: item.drugId,
           quantity: item.quantity,
+          price: item.price,
         })),
       };
 
@@ -271,7 +272,7 @@ export default function MaDrugEdit({
                 name="requestUnit"
                 rules={[{ required: true }]}
               >
-                <Input className={inputStyle} />
+                <Input className={inputStyle} maxLength={85} />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
@@ -293,6 +294,7 @@ export default function MaDrugEdit({
               rows={2}
               className="rounded-xl"
               placeholder="ระบุหมายเหตุเพิ่มเติม (ถ้ามี)"
+              maxLength={200}
             />
           </Form.Item>
 
@@ -302,7 +304,7 @@ export default function MaDrugEdit({
               <span className="font-bold text-gray-700 text-base">
                 รายการยา ({summary.totalItems})
               </span>
-              <span className="text-red-500 font-bold text-base sm:text-lg bg-red-50 px-3 py-1 rounded-lg">
+              <span className="text-blue-500 font-bold text-base sm:text-lg bg-blue-50 px-3 py-1 rounded-lg">
                 รวม {summary.totalPrice.toLocaleString()} บาท
               </span>
             </div>

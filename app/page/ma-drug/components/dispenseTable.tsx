@@ -187,19 +187,6 @@ export default function DispenseTable({
               </Tooltip>
             )}
 
-            {isEditable && (
-              <Tooltip title="แก้ไข">
-                <Button
-                  type="text"
-                  shape="circle"
-                  icon={
-                    <EditOutlined style={{ fontSize: 18, color: "#faad14" }} />
-                  }
-                  onClick={() => handleEdit(record)}
-                />
-              </Tooltip>
-            )}
-
             <Tooltip title="ดูรายละเอียด">
               <Button
                 type="text"
@@ -221,6 +208,22 @@ export default function DispenseTable({
                   transition: "color 0.2s",
                 }}
                 onClick={() => handleExport(record)}
+              />
+            </Tooltip>
+            <Tooltip title="แก้ไข">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <EditOutlined
+                    style={{
+                      fontSize: 18,
+                      color: isEditable ? "#faad14" : "#d9d9d9",
+                    }}
+                  />
+                }
+                disabled={!isEditable}
+                onClick={() => isEditable && handleEdit(record)}
               />
             </Tooltip>
           </Space>

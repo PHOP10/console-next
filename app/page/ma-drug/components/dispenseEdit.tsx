@@ -28,6 +28,7 @@ import { MaDrug } from "../services/maDrug.service";
 import th_TH from "antd/locale/th_TH";
 import CustomTable from "../../common/CustomTable";
 import { useSession } from "next-auth/react";
+import { buddhistLocale } from "@/app/common";
 
 interface DispenseEditProps {
   visible: boolean;
@@ -306,7 +307,8 @@ export default function DispenseEdit({
                   ]}
                 >
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    locale={buddhistLocale}
+                    format="D MMMM BBBB"
                     className={`${inputStyle} pt-2`}
                     disabledDate={disabledDate}
                   />

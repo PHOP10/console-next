@@ -187,66 +187,47 @@ export default function MaMedicalEquipmentTable({
 
   const columns: ColumnsType<MaMedicalEquipmentType> = [
     {
-      title: "ลำดับ",
-      dataIndex: "id",
-      key: "id",
-      width: 60,
-      align: "center",
-      responsive: ["md"], // ซ่อนบนมือถือ
-    },
-    {
-      title: "รายการ",
+      title: "รายการเครื่องมือแพทย์",
       dataIndex: "items",
       key: "items",
-      width: 140,
       align: "center",
+      width: 150,
       render: (items: any[]) => {
-        const maxToShow = 2;
-        const hasMore = items?.length > maxToShow;
-        const displayItems = hasMore ? items.slice(0, maxToShow) : items;
+        if (!items?.length) return "-";
+        const content = (
+          <div
+            style={{ maxHeight: "300px", overflowY: "auto", minWidth: "200px" }}
+          >
+            {items.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "4px 0",
+                  borderBottom: "1px solid #f0f0f0",
+                }}
+              >
+                <span>{item.medicalEquipment?.equipmentName}</span>
+                <b style={{ marginLeft: 16 }}>x {item.quantity}</b>
+              </div>
+            ))}
+          </div>
+        );
 
         return (
-          <ul style={{ paddingLeft: 20, margin: 0, textAlign: "left" }}>
-            {displayItems?.map((item, index) => (
-              <li key={index}>{item.medicalEquipment?.equipmentName}</li>
-            ))}
-            {hasMore && (
-              <Tooltip
-                title={items
-                  .map((item) => item.medicalEquipment?.equipmentName)
-                  .join(", ")}
-              >
-                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
-              </Tooltip>
-            )}
-          </ul>
-        );
-      },
-    },
-    {
-      title: "จำนวน",
-      dataIndex: "items",
-      key: "items_qty",
-      width: 90,
-      align: "center",
-      render: (items: any[]) => {
-        if (!items || items.length === 0) return null;
-        const firstThree = items.slice(0, 2);
-        const rest = items.slice(2);
-        return (
-          <ul style={{ paddingLeft: 20, margin: 0, textAlign: "left" }}>
-            {firstThree.map((item, index) => (
-              <li key={index}>{item.quantity}</li>
-            ))}
-            {rest.length > 0 && (
-              <Tooltip
-                title={items.map((item) => item.quantity).join(", ")}
-                placement="top"
-              >
-                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
-              </Tooltip>
-            )}
-          </ul>
+          <Popover content={content} title="รายละเอียดรายการ" placement="right">
+            {/* แสดงแค่สรุปจำนวน */}
+            <span
+              style={{
+                color: "#1890ff",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              รวม {items.length} รายการ
+            </span>
+          </Popover>
         );
       },
     },
@@ -279,7 +260,7 @@ export default function MaMedicalEquipmentTable({
       key: "createdBy",
       align: "center",
       width: 120,
-      responsive: ["lg"], // แสดงเฉพาะจอใหญ่
+      responsive: ["lg"],
     },
     {
       title: "สถานะ",
@@ -292,7 +273,7 @@ export default function MaMedicalEquipmentTable({
         let text = "";
         switch (status) {
           case "pending":
-            color = "gold";
+            color = "blue";
             text = "รออนุมัติ";
             break;
           case "approve":
@@ -304,8 +285,8 @@ export default function MaMedicalEquipmentTable({
             text = "ยกเลิก";
             break;
           case "return":
-            color = "purple";
-            text = "คืนแล้ว";
+            color = "default";
+            text = "รับคืนแล้ว";
             break;
           case "verified":
             color = "cyan";
@@ -323,13 +304,13 @@ export default function MaMedicalEquipmentTable({
       key: "note",
       align: "center",
       width: 150,
-      responsive: ["xl"], // แสดงเฉพาะจอใหญ่มาก
+      responsive: ["md"],
       render: (text: string) => {
         const shortText =
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
         return (
           <Tooltip title={text}>
-            <span>{shortText || "-"}</span>
+            <span style={{ fontWeight: "normal" }}>{shortText || "-"}</span>
           </Tooltip>
         );
       },
@@ -358,15 +339,14 @@ export default function MaMedicalEquipmentTable({
               </Space>
             }
             content={
-              <Space style={{ display: "flex", marginTop: 13 }}>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => handleApprove(record)}
-                  style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
-                >
-                  อนุมัติ
-                </Button>
+              <Space
+                style={{
+                  display: "flex",
+                  marginTop: 13,
+                  justifyContent: "flex-end",
+                  width: "100%",
+                }}
+              >
                 <Button
                   danger
                   size="small"
@@ -377,6 +357,14 @@ export default function MaMedicalEquipmentTable({
                   }}
                 >
                   ยกเลิก
+                </Button>{" "}
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => handleApprove(record)}
+                  style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }}
+                >
+                  อนุมัติ
                 </Button>
               </Space>
             }
@@ -400,7 +388,7 @@ export default function MaMedicalEquipmentTable({
           </Popover>
 
           {/* Verify Return */}
-          <Tooltip title="ยืนยันรับคืน">
+          {/* <Tooltip title="ยืนยันรับคืน">
             <RollbackOutlined
               style={{
                 fontSize: 18,
@@ -411,7 +399,7 @@ export default function MaMedicalEquipmentTable({
                 if (record.status === "return") handleOpenModalReturn(record);
               }}
             />
-          </Tooltip>
+          </Tooltip> */}
 
           {/* Details */}
           <Tooltip title="รายละเอียด">
@@ -474,15 +462,11 @@ export default function MaMedicalEquipmentTable({
             color: "#0683e9",
           }}
         >
-          จัดการการเบิก-จ่าย
+          จัดการรายการส่งเครื่องมือแพทย์
         </div>
       }
       bordered
-      style={{
-        backgroundColor: "white",
-        borderRadius: "8px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-      }}
+      style={{ width: "100%" }}
     >
       <CustomTable
         rowKey="id"
@@ -506,7 +490,7 @@ export default function MaMedicalEquipmentTable({
 
       {/* Modal ยกเลิก */}
       <Modal
-        title="กรอกเหตุผลการยกเลิกรายการนี้"
+        title="ยืนยันการยกเลิกรายการ"
         open={isModalOpen && !recordReturn}
         onOk={() => form.submit()}
         onCancel={() => {
@@ -514,9 +498,9 @@ export default function MaMedicalEquipmentTable({
           setSelectedRecord(null);
         }}
         okText="ยืนยัน"
-        cancelText="ยกเลิก"
+        cancelButtonProps={{ style: { display: "none" } }}
         centered
-        // Responsive Modal
+         okButtonProps={{ danger: true, }}
         style={{ maxWidth: "95%" }}
       >
         <Form form={form} layout="vertical" onFinish={handleCancel}>
@@ -560,7 +544,7 @@ export default function MaMedicalEquipmentTable({
               <Form.Item label="วันที่ส่ง" name="sentDate">
                 <DatePicker
                   disabled
-                  format="DD/MM/YYYY"
+                  format="DD MMM YYYY"
                   style={{ width: "100%" }}
                 />
               </Form.Item>

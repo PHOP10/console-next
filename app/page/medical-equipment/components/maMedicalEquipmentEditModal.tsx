@@ -362,6 +362,7 @@ export default function MaMedicalEquipmentEditModal({
                   autoSize={{ minRows: 2, maxRows: 3 }}
                   placeholder="หมายเหตุเพิ่มเติม"
                   className={textAreaStyle}
+                  maxLength={150}
                 />
               </Form.Item>
             </Col>

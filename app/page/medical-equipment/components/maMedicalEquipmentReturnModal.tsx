@@ -36,7 +36,7 @@ export default function MaMedicalEquipmentReturnModal({
 
   useEffect(() => {
     if (open && record) {
-      setReturnNote(record.note || "");
+      setReturnNote(record.returnNote || "");
     }
   }, [open, record]);
 
@@ -88,7 +88,7 @@ export default function MaMedicalEquipmentReturnModal({
         status: "return",
         returnName: session?.user?.fullName,
         returndAt: new Date().toISOString(),
-        note: returnNote,
+        returnNote: returnNote,
       });
 
       message.success("รับคืนอุปกรณ์เรียบร้อยแล้ว");
@@ -188,26 +188,21 @@ export default function MaMedicalEquipmentReturnModal({
             {/* Info Card */}
             <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
               <Row gutter={[16, 16]}>
+                {/* --- ส่วนผู้ส่ง (ครึ่งซ้าย) --- */}
                 <Col xs={24} sm={12}>
-                  <Label>
-                    <UserOutlined style={{ fontSize: "18px" }} />{" "}
-                    ผู้ส่งเครื่องมือ :
-                  </Label>
+                  <Label>ผู้ส่งเครื่องมือ :</Label>
                   <Value>{record.createdBy || "-"}</Value>
                 </Col>
+
+                {/* --- ส่วนวันที่ (ครึ่งขวา) --- */}
                 <Col xs={24} sm={12}>
-                  <Label>
-                    <CalendarOutlined style={{ fontSize: "18px" }} /> วันที่ส่ง
-                    :
-                  </Label>
+                  <Label>วันที่ส่ง :</Label>
                   <Value>
                     {record.sentDate ? (
                       <>
-                        {/* แสดงวันที่แบบย่อบนมือถือ */}
                         <span className="md:hidden font-normal">
                           {dayjs(record.sentDate).format("D MMM BB")}
                         </span>
-                        {/* แสดงวันที่แบบเต็มบนจอใหญ่ */}
                         <span className="hidden md:block font-normal">
                           {dayjs(record.sentDate)
                             .locale("th")
@@ -217,6 +212,17 @@ export default function MaMedicalEquipmentReturnModal({
                     ) : (
                       "-"
                     )}
+                  </Value>
+                </Col>
+
+                {/* --- ส่วนหมายเหตุ (เต็มความกว้างด้านล่าง) --- */}
+                <Col xs={24} sm={24}>
+                  <Label>หมายเหตุ :</Label>
+                  <Value>
+                    {/* ✅ แก้ไข: สร้าง div ครอบข้างใน แล้วใส่ class ที่นี่แทน */}
+                    <div className="whitespace-pre-wrap break-words">
+                      {record.note || "-"}
+                    </div>
                   </Value>
                 </Col>
               </Row>
@@ -256,8 +262,9 @@ export default function MaMedicalEquipmentReturnModal({
 
             {/* Note Input */}
             <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
-              <Label>หมายเหตุ / สภาพของที่รับคืน :</Label>
+              <Label>หมายเหตุรับคืน :</Label>
               <Input.TextArea
+                maxLength={150}
                 rows={3}
                 placeholder="ระบุหมายเหตุเพิ่มเติม เช่น อุปกรณ์ครบถ้วน, สภาพสมบูรณ์"
                 value={returnNote}

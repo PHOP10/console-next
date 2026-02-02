@@ -76,7 +76,7 @@ export default function Page() {
       label: "ข้อมูลการส่งเครื่องมือแพทย์",
       children: (
         <MedicalEquipmentTable
-          setLoading={setManualLoading} // ใช้ manualLoading แทน
+          setLoading={setManualLoading}
           loading={loading}
           data={data}
           fetchData={fetchData}
@@ -100,7 +100,7 @@ export default function Page() {
               marginBottom: "15px",
             }}
           >
-            ส่งเครื่องมือแพทย์
+            แบบฟอร์มส่งเครื่องมือแพทย์
           </div>
 
           <CreateMedicalEquipmentForm

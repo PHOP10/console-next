@@ -83,7 +83,7 @@ export default function MaDrugForm({
 
   const onFinish = async (values: any) => {
     if (dataSource.length === 0) {
-      message.error("กรุณาเลือกรายการยาอย่างน้อย 1 รายการ");
+      message.warning("กรุณาเลือกรายการยาก่อน");
       return;
     }
 
@@ -104,6 +104,7 @@ export default function MaDrugForm({
           create: dataSource.map((item) => ({
             drugId: item.drugId,
             quantity: item.quantity,
+            price: item.price,
           })),
         },
       };
@@ -328,30 +329,7 @@ export default function MaDrugForm({
                 label="วันที่ขอเบิก"
                 name="requestDate"
                 validateTrigger={["onChange", "onBlur"]}
-                rules={[
-                  { required: true, message: "กรุณาเลือกวันที่" },
-                  () => ({
-                    validator(_, value) {
-                      if (!value) return Promise.resolve();
-                      const selectedDateStr = dayjs(value).format("YYYY-MM-DD");
-                      const isDuplicate = data.some((item) => {
-                        if (!item.requestDate) return false;
-                        return (
-                          dayjs(item.requestDate).format("YYYY-MM-DD") ===
-                          selectedDateStr
-                        );
-                      });
-                      if (isDuplicate) {
-                        return Promise.reject(
-                          new Error(
-                            "วันนี้มีการทำรายการเบิกไปแล้ว ไม่สามารถเบิกซ้ำได้",
-                          ),
-                        );
-                      }
-                      return Promise.resolve();
-                    },
-                  }),
-                ]}
+                rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}
               >
                 <DatePicker
                   locale={buddhistLocale}
@@ -359,7 +337,16 @@ export default function MaDrugForm({
                   placeholder="เลือกวันที่"
                   style={{ width: "100%" }}
                   className={`${inputStyle} pt-1`}
-                  disabledDate={disabledDate}
+                  disabledDate={(current) => {
+                    if (!current) return false;
+                    const isPast = current < dayjs().startOf("day");
+                    const isDuplicate = data.some((item) => {
+                      if (!item.requestDate) return false;
+                      return dayjs(item.requestDate).isSame(current, "day");
+                    });
+
+                    return isPast || isDuplicate;
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -375,7 +362,7 @@ export default function MaDrugForm({
                 <Input
                   placeholder="กรอกหน่วยงานที่เบิก"
                   className={inputStyle}
-                  maxLength={100}
+                  maxLength={85}
                 />
               </Form.Item>
             </Col>
@@ -435,6 +422,7 @@ export default function MaDrugForm({
 
           <Form.Item label="หมายเหตุ" name="note">
             <Input.TextArea
+              maxLength={200}
               rows={2}
               placeholder="กรอกหมายเหตุ (ถ้ามี)"
               className="w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300"
@@ -511,7 +499,7 @@ export default function MaDrugForm({
         <Modal
           title={
             <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
-              คลังรายการยา
+              รายการยา
             </div>
           }
           open={isModalOpen}

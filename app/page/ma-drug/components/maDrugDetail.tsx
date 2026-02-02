@@ -124,10 +124,12 @@ export default function MaDrugTableDetail({
     },
     {
       title: "ราคา/หน่วย",
-      dataIndex: ["drug", "price"],
+      // ❌ ของเดิม: dataIndex: ["drug", "price"],  <-- ผิด: ดึงราคาปัจจุบัน
+      // ✅ แก้เป็น: dataIndex: "price",             <-- ถูก: ดึงราคาที่บันทึกไว้ในรายการ
+      dataIndex: "price",
       width: 90,
       align: "right",
-      responsive: ["sm"], // ซ่อนบนมือถือ
+      responsive: ["sm"],
       render: (val) =>
         val?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "-",
     },
@@ -137,7 +139,7 @@ export default function MaDrugTableDetail({
       width: 100,
       align: "right",
       render: (_, record) => {
-        const total = (record.quantity || 0) * (record.drug?.price || 0);
+        const total = (record.quantity || 0) * (record.price || 0);
         return (
           <span className="font-semibold text-sm">
             {total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -173,10 +175,10 @@ export default function MaDrugTableDetail({
         <div className="bg-white px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-start sm:items-center shrink-0">
           <div>
             <h2 className="text-base sm:text-lg font-bold text-slate-800 m-0">
-              รายละเอียดใบเบิก
+              รายละเอียดใบเบิกยา
             </h2>
             <div className="text-slate-500 text-xs mt-1">
-              เลขที่:{" "}
+              เลขที่เบิก:{" "}
               <span className="text-blue-600 font-mono font-bold">
                 {data.requestNumber}
               </span>
@@ -254,6 +256,15 @@ export default function MaDrugTableDetail({
             </div>
           )}
         </div>
+
+        {/* {data.status === "cancel" && data.cancelReason && (
+          <div className="bg-red-50 p-3 rounded border border-red-200 text-xs sm:text-sm text-red-800">
+            <strong>สาเหตุที่ยกเลิก:</strong> {data.cancelReason} <br />
+            <span className="text-xs text-red-600">
+              (โดย: {data.cancelName || "-"})
+            </span>
+          </div>
+        )} */}
 
         {/* Footer */}
         <div className="bg-slate-50 px-4 sm:px-6 py-3 border-t border-slate-200 flex justify-end shrink-0">

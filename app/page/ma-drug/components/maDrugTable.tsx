@@ -28,8 +28,10 @@ import CustomTable from "../../common/CustomTable";
 import MaDrugReceiveModal from "./maDrugReceiveModal";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import buddhistEra from "dayjs/plugin/buddhistEra";
 
 // Set locale globally
+dayjs.extend(buddhistEra);
 dayjs.locale("th");
 
 interface MaDrugFormProps {
@@ -85,14 +87,25 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
       dataIndex: "requestUnit",
       key: "requestUnit",
       align: "center",
-      responsive: ["sm"], // ซ่อนบนมือถือเล็กมาก
+      width: 100,
+      responsive: ["sm"],
+      render: (text) => {
+        const shortText =
+          text && text.length > 20 ? text.substring(0, 30) + "..." : text;
+        return (
+          <Tooltip title={text}>
+            <span style={{ fontWeight: "normal" }}>{shortText || "-"}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "ผู้ขอเบิก",
       dataIndex: "requesterName",
       key: "requesterName",
       align: "center",
-      responsive: ["md"], // ซ่อนบนมือถือ
+      width: 100,
+      responsive: ["md"],
     },
     {
       title: "วันที่ขอเบิก",
@@ -116,6 +129,14 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
           </>
         );
       },
+    },
+    {
+      title: "รายการ",
+      dataIndex: "quantityUsed",
+      key: "quantityUsed",
+      align: "center",
+      width: 90,
+      render: (val) => `${val || 0} รายการ`,
     },
     {
       title: "ยอดรวม",
@@ -175,24 +196,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
 
         return (
           <Space size="small">
-            {/* 1. ปุ่มแก้ไข */}
-            <Tooltip title="แก้ไขข้อมูล">
-              <Button
-                type="text"
-                shape="circle"
-                icon={
-                  <EditOutlined
-                    style={{
-                      fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
-                      color: isPending ? "#faad14" : "#d9d9d9",
-                    }}
-                  />
-                }
-                disabled={!isPending}
-                onClick={() => isPending && handleEdit(record)}
-              />
-            </Tooltip>
-
             {/* 2. ปุ่มรับยา */}
             {canReceive && (
               <Tooltip title="ยืนยันรับยาเข้าคลัง">
@@ -216,7 +219,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
                 shape="circle"
                 icon={
                   <FileSearchOutlined
-                    style={{ fontSize: 18, color: "#1677ff" }} // ปรับขนาดไอคอนเป็น 18px
+                    style={{ fontSize: 18, color: "#1677ff" }}
                   />
                 }
                 onClick={() => handleViewDetail(record)}
@@ -230,10 +233,27 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
                 shape="circle"
                 icon={
                   <FileExcelOutlined
-                    style={{ fontSize: 18, color: "#217346" }} // ปรับขนาดไอคอนเป็น 18px
+                    style={{ fontSize: 18, color: "#217346" }}
                   />
                 }
                 onClick={() => handleExport(record)}
+              />
+            </Tooltip>
+            {/* 1. ปุ่มแก้ไข */}
+            <Tooltip title="แก้ไขข้อมูล">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <EditOutlined
+                    style={{
+                      fontSize: 18,
+                      color: isPending ? "#faad14" : "#d9d9d9",
+                    }}
+                  />
+                }
+                disabled={!isPending}
+                onClick={() => isPending && handleEdit(record)}
               />
             </Tooltip>
           </Space>

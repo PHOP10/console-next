@@ -99,10 +99,6 @@ export default function CreateMedicalEquipmentForm({
     item.equipmentName?.toLowerCase().includes(searchText.toLowerCase()),
   );
 
-  // ---------------------------------------------------------------------------
-  // 2. Event Handlers
-  // ---------------------------------------------------------------------------
-
   // เปิด Modal
   const handleOpenModal = () => {
     // ให้ Modal เลือกรายการที่มีอยู่แล้วไว้ก่อน (Pre-select)
@@ -349,6 +345,7 @@ export default function CreateMedicalEquipmentForm({
                 placeholder="รายละเอียดเพิ่มเติม"
                 className="rounded-xl"
                 style={{ minHeight: "44px" }}
+                maxLength={150}
               />
             </Form.Item>
           </Col>

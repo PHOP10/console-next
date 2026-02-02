@@ -422,7 +422,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Tooltip>
 
             {/* 5. ปุ่มแก้ไข */}
-            <Tooltip
+            {/* <Tooltip
               title={
                 isPending || isEdit ? "แก้ไข" : "ไม่สามารถแก้ไขได้ในสถานะนี้"
               }
@@ -437,10 +437,10 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
                   if (isPending || isEdit) handleEdit(record);
                 }}
               />
-            </Tooltip>
+            </Tooltip> */}
 
             {/* 6. ปุ่มลบ */}
-            <Popconfirm
+            {/* <Popconfirm
               title="ยืนยันการลบ"
               description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
               onConfirm={async () => {
@@ -465,7 +465,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
                   }}
                 />
               </Tooltip>
-            </Popconfirm>
+            </Popconfirm> */}
           </Space>
         );
       },
@@ -476,7 +476,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
-          รายการการจองรถ
+          จัดการรายการการจองรถ
         </h2>
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>

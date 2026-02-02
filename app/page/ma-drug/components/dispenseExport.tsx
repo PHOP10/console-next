@@ -214,17 +214,17 @@ export const exportDispenseToExcel = async (data: DispenseType) => {
 
         // รายการยาในกลุ่ม
         groupedItems[groupName].forEach((item) => {
-          const itemTotalPrice = (item.quantity || 0) * (item.drug?.price || 0);
+          const itemTotalPrice = (item.quantity || 0) * (item.price || 0);
 
           const row = worksheet.addRow([
             index++,
             item.drug?.workingCode || "-",
             item.drug?.name || "-",
             item.drug?.packagingSize || "-",
-            item.drug?.price || 0,
-            item.quantity || 0, // จำนวนจ่าย
-            itemTotalPrice, // รวมเงิน (Qty * Price)
-            item.note || "", // หมายเหตุของแต่ละรายการ
+            item.price || 0,
+            item.quantity || 0,
+            itemTotalPrice,
+            item.note || "",
           ]);
 
           row.eachCell((cell, colNumber) => {

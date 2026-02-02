@@ -171,13 +171,10 @@ export default function DispenseConfirmModal({
       dataIndex: "dispensedQty",
       align: "center" as const,
       width: 140,
-      render: (val: number, record: ConfirmItem, index: number) => (
-        <InputNumber
-          min={0}
-          value={val}
-          onChange={(v) => handleQtyChange(v, index)}
-          className="w-full border-blue-300 focus:border-blue-500 font-bold text-blue-700 text-center"
-        />
+      render: (val: number) => (
+        <span className="font-bold text-blue-500 text-slate-400">
+          {val ? val.toLocaleString() : "0"}
+        </span>
       ),
     },
     {
@@ -199,7 +196,7 @@ export default function DispenseConfirmModal({
     <Modal
       title={
         <div className="text-xl font-bold text-[#0683e9] flex items-center gap-2">
-          <CheckCircleOutlined /> ยืนยันการจ่ายยา (ตัดสต็อก)
+          <CheckCircleOutlined /> ยืนยันการจ่ายยา (ตัดสต็อกยา)
         </div>
       }
       open={visible}

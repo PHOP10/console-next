@@ -243,7 +243,7 @@ export interface MaDrugItemType {
   drugId: number;
   quantity: number;
   cancelReason?: string;
-
+  price?: number; // ราคายา ณ ขณะที่เบิก (Snapshot)
   // ความสัมพันธ์
   maDrug?: MaDrugType;
   drug?: DrugType;

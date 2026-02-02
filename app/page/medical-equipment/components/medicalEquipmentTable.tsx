@@ -1,6 +1,6 @@
 "use client";
 
-import { Space, Tag, Tooltip, Card, message } from "antd";
+import { Space, Tag, Tooltip, Card, message, Popover } from "antd";
 import React, { useState } from "react";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
@@ -87,65 +87,47 @@ export default function MedicalEquipmentTable({
   // --- Columns ---
   const columns: ColumnsType<MaMedicalEquipmentType> = [
     {
-      title: "ลำดับ",
-      dataIndex: "id",
-      key: "id",
-      align: "center",
-      width: 60,
-    },
-    {
-      title: "รายการ",
+      title: "รายการเครื่องมือแพทย์",
       dataIndex: "items",
       key: "items",
       align: "center",
-      width: 140,
+      width: 150,
       render: (items: any[]) => {
-        const maxToShow = 2;
-        const hasMore = items?.length > maxToShow;
-        const displayItems = hasMore ? items.slice(0, maxToShow) : items;
+        if (!items?.length) return "-";
+        const content = (
+          <div
+            style={{ maxHeight: "300px", overflowY: "auto", minWidth: "200px" }}
+          >
+            {items.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "4px 0",
+                  borderBottom: "1px solid #f0f0f0",
+                }}
+              >
+                <span>{item.medicalEquipment?.equipmentName}</span>
+                <b style={{ marginLeft: 16 }}>x {item.quantity}</b>
+              </div>
+            ))}
+          </div>
+        );
 
         return (
-          <ul style={{ paddingLeft: 20, margin: 0, textAlign: "left" }}>
-            {displayItems?.map((item, index) => (
-              <li key={index}>{item.medicalEquipment?.equipmentName}</li>
-            ))}
-            {hasMore && (
-              <Tooltip
-                title={items
-                  .map((item) => item.medicalEquipment?.equipmentName)
-                  .join(", ")}
-              >
-                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
-              </Tooltip>
-            )}
-          </ul>
-        );
-      },
-    },
-    {
-      title: "จำนวน",
-      dataIndex: "items",
-      key: "items_qty",
-      align: "center",
-      width: 90,
-      render: (items: any[]) => {
-        if (!items || items.length === 0) return null;
-        const firstThree = items.slice(0, 2);
-        const rest = items.slice(2);
-        return (
-          <ul style={{ paddingLeft: 20, margin: 0, textAlign: "left" }}>
-            {firstThree.map((item, index) => (
-              <li key={index}>{item.quantity}</li>
-            ))}
-            {rest.length > 0 && (
-              <Tooltip
-                title={items.map((item) => item.quantity).join(", ")}
-                placement="top"
-              >
-                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
-              </Tooltip>
-            )}
-          </ul>
+          <Popover content={content} title="รายละเอียดรายการ" placement="right">
+            {/* แสดงแค่สรุปจำนวน */}
+            <span
+              style={{
+                color: "#1890ff",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              รวม {items.length} รายการ
+            </span>
+          </Popover>
         );
       },
     },
@@ -191,7 +173,7 @@ export default function MedicalEquipmentTable({
         let text = "";
         switch (status) {
           case "pending":
-            color = "gold";
+            color = "blue";
             text = "รออนุมัติ";
             break;
           case "approve":
@@ -203,8 +185,8 @@ export default function MedicalEquipmentTable({
             text = "ยกเลิก";
             break;
           case "return":
-            color = "purple";
-            text = "คืนแล้ว";
+            color = "default";
+            text = "รับคืนแล้ว";
             break;
           case "verified":
             color = "cyan";
@@ -302,11 +284,7 @@ export default function MedicalEquipmentTable({
   return (
     <Card
       bordered
-      style={{
-        backgroundColor: "white",
-        borderRadius: "8px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-      }}
+      style={{ width: "100%" }}
       title={
         <div
           style={{
@@ -327,7 +305,6 @@ export default function MedicalEquipmentTable({
         dataSource={data}
         loading={loading}
         bordered
-        // ใช้ size small เพื่อให้ตารางกะทัดรัดขึ้นบนมือถือ
         size="small"
         pagination={{ pageSize: 10, size: "small" }}
         scroll={{ x: "max-content" }}

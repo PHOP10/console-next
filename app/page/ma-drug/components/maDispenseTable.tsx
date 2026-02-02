@@ -22,17 +22,19 @@ import {
   DeleteOutlined,
   ExclamationCircleOutlined,
   FileExcelOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { DispenseType } from "../../common";
+import { DispenseType, DrugType } from "../../common";
 import CustomTable from "../../common/CustomTable";
 import DispenseTableDetail from "./dispenseTableDetail";
 import { useSession } from "next-auth/react";
 import { exportDispenseToExcel } from "./dispenseExport";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import DispenseEdit from "./dispenseEdit";
 
 // Set locale globally
 dayjs.locale("th");
@@ -40,33 +42,44 @@ dayjs.locale("th");
 interface MaDispenseTableProps {
   data: DispenseType[];
   fetchData: () => void;
+  drugs: DrugType[];
 }
 
 export default function MaDispenseTable({
   data,
   fetchData,
+  drugs,
 }: MaDispenseTableProps) {
   const intraAuth = useAxiosAuth();
   const dispenseService = MaDrug(intraAuth);
   const { data: session } = useSession();
-
   const [loading, setLoading] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<DispenseType | null>(
     null,
   );
-
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelingId, setCancelingId] = useState<number | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
 
   const openCancelModal = (id: number) => {
     setCancelingId(id);
     setCancelReason("");
     setIsCancelModalOpen(true);
     setOpenPopoverId(null);
+  };
+
+  const handleViewDetail = (record: DispenseType) => {
+    setSelectedRecord(record);
+    setDetailVisible(true);
+  };
+
+  const handleEdit = (record: DispenseType) => {
+    setSelectedRecord(record);
+    setEditVisible(true);
   };
 
   const handleCancelSubmit = async () => {
@@ -126,11 +139,6 @@ export default function MaDispenseTable({
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleViewDetail = (record: DispenseType) => {
-    setSelectedRecord(record);
-    setDetailVisible(true);
   };
 
   const handleExport = (record: DispenseType) => {
@@ -261,20 +269,31 @@ export default function MaDispenseTable({
                 </Space>
               }
               content={
-                <Space style={{ display: "flex", marginTop: 10 }}>
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => handleApprove(record.id)}
-                  >
-                    อนุมัติ
-                  </Button>
+                <Space
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end", // จัดชิดขวา
+                    width: "100%", // ขยายเต็มความกว้าง
+                    marginTop: 13,
+                  }}
+                >
                   <Button
                     danger
                     size="small"
                     onClick={() => openCancelModal(record.id)}
                   >
                     ยกเลิก
+                  </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => handleApprove(record.id)}
+                    style={{
+                      backgroundColor: "#52c41a",
+                      borderColor: "#52c41a",
+                    }}
+                  >
+                    อนุมัติ
                   </Button>
                 </Space>
               }
@@ -333,6 +352,23 @@ export default function MaDispenseTable({
               />
             </Tooltip>
 
+            <Tooltip title="แก้ไข">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <EditOutlined
+                    style={{
+                      fontSize: 18,
+                      color: isPending ? "#faad14" : "#d9d9d9",
+                    }}
+                  />
+                }
+                disabled={!isPending}
+                onClick={() => isPending && handleEdit(record)}
+              />
+            </Tooltip>
+
             {/* 4. ปุ่มลบ */}
             <Tooltip title="ลบรายการ">
               <Popconfirm
@@ -365,7 +401,7 @@ export default function MaDispenseTable({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
-          อนุมัติรายการจ่ายยา
+          จัดการรายการจ่ายยา
         </h2>
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
@@ -389,28 +425,33 @@ export default function MaDispenseTable({
 
       <Modal
         title={
-          <div style={{ color: "#ff4d4f" }}>
-            <CloseCircleOutlined /> ยืนยันการยกเลิกรายการ
-          </div>
+          <div className="flex items-center gap-2">ยืนยันการยกเลิกรายการ</div>
         }
         open={isCancelModalOpen}
         onOk={handleCancelSubmit}
         onCancel={() => setIsCancelModalOpen(false)}
         okText="ยืนยันการยกเลิก"
-        cancelText="ปิด"
         okButtonProps={{ danger: true, loading: cancelLoading }}
         centered
-        style={{ maxWidth: "95%" }} // Responsive Modal
+        style={{ maxWidth: "95%" }}
       >
-        <p>กรุณาระบุเหตุผลที่ต้องการยกเลิกรายการนี้:</p>
         <Input.TextArea
           rows={4}
           value={cancelReason}
           onChange={(e) => setCancelReason(e.target.value)}
-          placeholder="เช่น คีย์ข้อมูลผิด, ยาไม่พอจ่าย, หรืออื่นๆ..."
+          placeholder="กรอกเหตุผลที่ยกเลิก..."
           autoFocus
         />
       </Modal>
+
+      <DispenseEdit
+        visible={editVisible}
+        onClose={() => setEditVisible(false)}
+        onSuccess={fetchData}
+        data={selectedRecord}
+        drugs={drugs}
+        existingData={data}
+      />
     </>
   );
 }

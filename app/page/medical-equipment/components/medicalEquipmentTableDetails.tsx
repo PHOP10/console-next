@@ -34,7 +34,7 @@ export default function MedicalEquipmentTableDetails({
     switch (status) {
       case "pending":
         return (
-          <Tag color="orange" className={baseStyle}>
+          <Tag color="blue" className={baseStyle}>
             รออนุมัติ
           </Tag>
         );
@@ -46,7 +46,7 @@ export default function MedicalEquipmentTableDetails({
         );
       case "return":
         return (
-          <Tag color="purple" className={baseStyle}>
+          <Tag color="default" className={baseStyle}>
             รับคืนแล้ว
           </Tag>
         );
@@ -159,9 +159,6 @@ export default function MedicalEquipmentTableDetails({
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 m-0">
                 รายละเอียดการส่งเครื่องมือ
               </h2>
-              <div className="text-slate-500 text-xs sm:text-sm mt-1">
-                รหัสรายการ: #{record.id}
-              </div>
             </div>
             <div className="self-end sm:self-auto">
               {getStatusTag(record.status)}
@@ -173,7 +170,7 @@ export default function MedicalEquipmentTableDetails({
             <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
               <Row gutter={[16, 16]}>
                 <Col xs={12} sm={12}>
-                  <Label>ผู้ส่ง :</Label>
+                  <Label>ผู้ส่งเครื่องมือ :</Label>
                   <Value isBold>{record.createdBy || "-"}</Value>
                 </Col>
                 <Col xs={12} sm={12}>
@@ -222,6 +219,12 @@ export default function MedicalEquipmentTableDetails({
                 <InfoBox text={record.note} />
               </div>
             )}
+            {record.returnNote && (
+              <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+                <Label>หมายเหตุรับคืน :</Label>
+                <InfoBox text={record.returnNote} />
+              </div>
+            )}
 
             <div className="bg-slate-200/50 p-4 rounded-xl text-xs sm:text-sm border border-slate-200">
               <Row gutter={[16, 12]}>
@@ -230,7 +233,7 @@ export default function MedicalEquipmentTableDetails({
                   <>
                     <Col xs={12} sm={12}>
                       <span className="text-slate-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1">
-                        Approved By
+                        ผู้อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium block">
                         {record.approveBy}
@@ -238,7 +241,7 @@ export default function MedicalEquipmentTableDetails({
                     </Col>
                     <Col xs={12} sm={12}>
                       <span className="text-slate-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1">
-                        Date
+                        วันที่อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium block">
                         {formatDate(record.approveAt)}
@@ -253,7 +256,7 @@ export default function MedicalEquipmentTableDetails({
                   <>
                     <Col xs={12} sm={12}>
                       <span className="text-blue-600 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
-                        Received By
+                        ผู้รับคืนเครื่องมือ
                       </span>
                       <span className="text-slate-700 font-medium block">
                         {record.returnName || "-"}
@@ -261,7 +264,7 @@ export default function MedicalEquipmentTableDetails({
                     </Col>
                     <Col xs={12} sm={12}>
                       <span className="text-blue-600 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
-                        Date
+                        วันที่รับคืน
                       </span>
                       <span className="text-slate-700 font-medium block">
                         {formatDate(record.returndAt)}
@@ -275,7 +278,7 @@ export default function MedicalEquipmentTableDetails({
                   <>
                     <Col xs={12} sm={12}>
                       <span className="text-red-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
-                        Cancelled By
+                        ผู้ยกเลิก
                       </span>
                       <span className="text-slate-700 font-medium block">
                         {record.nameReason || "-"}
@@ -283,7 +286,7 @@ export default function MedicalEquipmentTableDetails({
                     </Col>
                     <Col xs={12} sm={12}>
                       <span className="text-red-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
-                        Date
+                        วันที่ยกเลิก
                       </span>
                       <span className="text-slate-700 font-medium block">
                         {formatDate(record.createdAt)}
@@ -292,7 +295,7 @@ export default function MedicalEquipmentTableDetails({
                     {record.cancelReason && (
                       <Col span={24} className="mt-1">
                         <div className="bg-red-50 p-2 rounded border border-red-100 text-red-700 text-xs">
-                          Reason: {record.cancelReason}
+                          เหตุผลยกเลิกก: {record.cancelReason}
                         </div>
                       </Col>
                     )}

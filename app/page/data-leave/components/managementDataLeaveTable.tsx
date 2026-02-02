@@ -395,29 +395,9 @@ export default function ManagementDataLeaveTable({
           </Tooltip>
 
           {/* Edit */}
-          <Tooltip title="แก้ไข">
-            <EditOutlined
-              style={{
-                fontSize: 18, // ขนาด 18px
-                color:
-                  record.status === "pending" || record.status === "edit"
-                    ? "#faad14"
-                    : "#d9d9d9",
-                cursor:
-                  record.status === "pending" || record.status === "edit"
-                    ? "pointer"
-                    : "not-allowed",
-              }}
-              onClick={() => {
-                if (record.status === "pending" || record.status === "edit") {
-                  openEditModal(record);
-                }
-              }}
-            />
-          </Tooltip>
 
           {/* Delete */}
-          <Popconfirm
+          {/* <Popconfirm
             title="ยืนยันการลบ?"
             onConfirm={() => handleDelete(record)}
             okText="ลบ"
@@ -433,7 +413,7 @@ export default function ManagementDataLeaveTable({
                 }}
               />
             </Tooltip>
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       ),
     },

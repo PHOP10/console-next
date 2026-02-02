@@ -26,9 +26,9 @@ export default function Page() {
     const intraAuthService = MaDrug(intraAuth);
 
     const [drugsRes, maDrugsRes, dispenseRes] = await Promise.all([
-      intraAuthService.getDrugQuery?.(), // Master Drugs
-      intraAuthService.getMaDrugQuery(), // Stock In
-      intraAuthService.getDispenseQuery(), // ✅ Stock Out (ดึงข้อมูลจ่ายยา)
+      intraAuthService.getDrugQuery?.(),
+      intraAuthService.getMaDrugQuery(),
+      intraAuthService.getDispenseQuery(),
     ]);
 
     return {
@@ -56,7 +56,7 @@ export default function Page() {
   // 2. แยกข้อมูลออกมาใช้งาน
   const drugs: DrugType[] = swrData?.drugs || [];
   const maDrugData: MaDrugType[] = swrData?.maDrugs || [];
-  const dispenseData: DispenseType[] = swrData?.dispenses || []; // ✅ ข้อมูลสำหรับตารางจ่ายยา
+  const dispenseData: DispenseType[] = swrData?.dispenses || [];
 
   const fetchDrugs = async () => {
     setManualLoading(true);
@@ -76,7 +76,7 @@ export default function Page() {
     },
     {
       key: "2",
-      label: "ทำรายการเบิกยา",
+      label: "การเบิกยา",
       children: (
         <Card>
           <MaDrugForm
@@ -102,7 +102,7 @@ export default function Page() {
     },
     {
       key: "4",
-      label: "ทำรายการจ่ายยา",
+      label: "การจ่ายยา",
       children: (
         <Card>
           <DispenseForm

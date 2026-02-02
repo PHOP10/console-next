@@ -154,21 +154,32 @@ export default function ManageDrugTable({
       dataIndex: "requestNumber",
       key: "requestNumber",
       align: "center",
-      width: 100,
+      width: 120,
     },
     {
       title: "หน่วยงาน",
       dataIndex: "requestUnit",
       key: "requestUnit",
       align: "center",
-      responsive: ["sm"], // ซ่อนบนมือถือเล็กมาก
+      width: 100,
+      responsive: ["sm"],
+      render: (text) => {
+        const shortText =
+          text && text.length > 20 ? text.substring(0, 30) + "..." : text;
+        return (
+          <Tooltip title={text}>
+            <span style={{ fontWeight: "normal" }}>{shortText || "-"}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "ผู้ขอเบิก",
       dataIndex: "requesterName",
       key: "requesterName",
       align: "center",
-      responsive: ["md"], // ซ่อนบนมือถือ
+      width: 100,
+      responsive: ["md"],
     },
     {
       title: "วันที่ขอเบิก",
@@ -273,14 +284,14 @@ export default function ManageDrugTable({
                 </Space>
               }
               content={
-                <Space style={{ display: "flex", marginTop: 13 }}>
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => handleApprove(record.id)}
-                  >
-                    อนุมัติ
-                  </Button>
+                <Space
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end", // จัดชิดขวา
+                    width: "100%", // ขยายเต็มความกว้าง
+                    marginTop: 13,
+                  }}
+                >
                   <Button
                     danger
                     size="small"
@@ -288,13 +299,25 @@ export default function ManageDrugTable({
                   >
                     ยกเลิก
                   </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => handleApprove(record.id)}
+                    // เปลี่ยนสีปุ่มเป็นสีเขียว
+                    style={{
+                      backgroundColor: "#52c41a",
+                      borderColor: "#52c41a",
+                    }}
+                  >
+                    อนุมัติ
+                  </Button>
                 </Space>
               }
             >
               <Tooltip title={isPending ? "ตรวจสอบและอนุมัติ" : ""}>
                 <Button
                   type="text"
-                  shape="circle" // ใช้ shape circle เพื่อให้สวยงาม
+                  shape="circle"
                   style={{
                     color: isPending ? "#52c41a" : "#ccc",
                     cursor: isPending ? "pointer" : "not-allowed",
@@ -302,7 +325,7 @@ export default function ManageDrugTable({
                   icon={
                     <CheckCircleOutlined
                       style={{
-                        fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                        fontSize: 18,
                         opacity: isPending ? 1 : 0.5,
                       }}
                     />
@@ -353,7 +376,7 @@ export default function ManageDrugTable({
                 icon={
                   <EditOutlined
                     style={{
-                      fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                      fontSize: 18,
                       color: isPending ? "#faad14" : "#d9d9d9",
                     }}
                   />
@@ -394,7 +417,7 @@ export default function ManageDrugTable({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
-          อนุมัติการเบิกยา
+          จัดการรายการเบิกยา
         </h2>
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
@@ -417,26 +440,21 @@ export default function ManageDrugTable({
       />
 
       <Modal
-        title={
-          <div style={{ color: "#ff4d4f" }}>
-            <CloseCircleOutlined /> ยืนยันการยกเลิกรายการ
-          </div>
-        }
+        title={<div>ยืนยันการยกเลิกรายการ</div>}
         open={isCancelModalOpen}
         onOk={handleCancelSubmit}
         onCancel={() => setIsCancelModalOpen(false)}
         okText="ยืนยันการยกเลิก"
-        cancelText="ปิด"
+        cancelButtonProps={{ style: { display: "none" } }}
         okButtonProps={{ danger: true, loading: cancelLoading }}
         centered
-        style={{ maxWidth: "95%" }} // Responsive Modal
+        style={{ maxWidth: "95%" }}
       >
-        <p>กรุณาระบุเหตุผลที่ต้องการยกเลิกรายการนี้:</p>
         <Input.TextArea
           rows={4}
           value={cancelReason}
           onChange={(e) => setCancelReason(e.target.value)}
-          placeholder="เช่น สั่งผิดรายการ, ยาหมดสต็อก, หรืออื่นๆ..."
+          placeholder="กรอกเหตุผลที่ยกเลิก..."
           autoFocus
         />
       </Modal>

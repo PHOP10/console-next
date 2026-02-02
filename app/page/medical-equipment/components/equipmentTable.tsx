@@ -239,7 +239,13 @@ export default function EquipmentTable({
         bordered={true}
         style={{ width: "100%" }}
       >
-        <Space style={{ marginBottom: 16 }}>
+        <Space
+          style={{
+            marginBottom: 16,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
           <Button type="primary" onClick={() => setIsModalOpen(true)}>
             + เพิ่มเครื่องมือแพทย์
           </Button>

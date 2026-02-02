@@ -458,7 +458,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             />
           </Tooltip>
 
-          <Tooltip title="แก้ไข">
+          {/* <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
                 fontSize: 18, // ขนาด 18px
@@ -472,9 +472,9 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                 }
               }}
             />
-          </Tooltip>
+          </Tooltip> */}
 
-          <Popconfirm
+          {/* <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
             onConfirm={async () => {
@@ -500,7 +500,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                 }}
               />
             </Tooltip>
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       ),
     },
