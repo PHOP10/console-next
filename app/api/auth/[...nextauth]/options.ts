@@ -45,14 +45,23 @@ export const authOptions: NextAuthOptions = {
 
           return user;
         } catch (error: any) {
-          // ถ้าทั้งคู่ไม่สำเร็จ จะมาตกที่นี่
-          console.error(
-            "Login error (all attempts failed):",
-            error.response?.data || error.message,
-          );
+          console.error("Login error:", error.response?.data || error.message);
+
+          const status = error.response?.status;
+          const backendMessage = error.response?.data?.message;
+
+          if (backendMessage) {
+            throw new Error(backendMessage);
+          }
+
+          if (status === 404) {
+            throw new Error("User not found");
+          } else if (status === 401) {
+            throw new Error("Password incorrect");
+          }
+
           throw new Error(
-            error.response?.data?.message ||
-              "Login failed: Invalid credentials or server unreachable",
+            "Login failed: Invalid credentials or server unreachable",
           );
         }
       },

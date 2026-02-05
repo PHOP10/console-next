@@ -32,6 +32,7 @@ import { buddhistLocale } from "@/app/common";
 import dayjs from "dayjs";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import "dayjs/locale/th";
+import { useRouter } from "next/navigation";
 
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
@@ -56,26 +57,19 @@ export default function CreateMedicalEquipmentForm({
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
   const maService = maMedicalEquipmentServices(intraAuth);
-
-  // State สำหรับ Modal และการเลือก
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTools, setSelectedTools] = useState<any[]>([]); // รายการที่เลือกมาลงตารางหลัก
-  const [tempSelectedKeys, setTempSelectedKeys] = useState<React.Key[]>([]); // state ชั่วคราวใน Modal
+  const [selectedTools, setSelectedTools] = useState<any[]>([]);
+  const [tempSelectedKeys, setTempSelectedKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState("");
 
-  // ---------------------------------------------------------------------------
-  // 1. Logic แก้ไขการคำนวณ Stock (หัวใจสำคัญ)
-  // ---------------------------------------------------------------------------
   const stockData = useMemo(() => {
     return dataEQ.map((eq) => {
       const items = eq.items || [];
 
-      // คำนวณยอดที่ถูกจอง (ต้องเช็ค items ของ eq นั้นๆ)
       const reservedQuantity = items.reduce((sum: number, item: any) => {
-        // ต้องเช็คว่า maMedicalEquipment มีอยู่จริงไหมก่อนเรียก status
         const status = item.maMedicalEquipment?.status?.toLowerCase();
 
-        // ถ้าสถานะเป็น Pending หรือ Approve ถือว่าของถูกใช้อยู่
         if (status === "pending" || status === "approve") {
           return sum + (item.quantity || 0);
         }
@@ -87,14 +81,13 @@ export default function CreateMedicalEquipmentForm({
 
       return {
         ...eq,
-        key: eq.id, // ต้องมี key สำหรับ Table
+        key: eq.id,
         reservedQuantity,
-        remainingQuantity: remaining < 0 ? 0 : remaining, // ห้ามติดลบ
+        remainingQuantity: remaining < 0 ? 0 : remaining,
       };
     });
-  }, [dataEQ]); // คำนวณใหม่เมื่อ dataEQ เปลี่ยน
+  }, [dataEQ]);
 
-  // กรองข้อมูลใน Modal ตาม Search Text
   const modalDataSource = stockData.filter((item) =>
     item.equipmentName?.toLowerCase().includes(searchText.toLowerCase()),
   );
@@ -180,6 +173,7 @@ export default function CreateMedicalEquipmentForm({
       } else {
         message.error("ไม่สามารถบันทึกข้อมูลได้");
       }
+      router.push("/page/medical-equipment/medicalEquipment?tab=1");
     } catch (error) {
       console.error("เกิดข้อผิดพลาด:", error);
       message.error("ไม่สามารถบันทึกข้อมูลได้");

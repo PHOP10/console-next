@@ -317,11 +317,18 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               title={
                 <Space>
                   <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                  <Typography.Text strong>ยืนยันการดำเนินการ ?</Typography.Text>
+                  <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
                 </Space>
               }
               content={
-                <Space style={{ display: "flex", marginTop: 13 }}>
+                <Space
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    width: "100%",
+                    marginTop: 13,
+                  }}
+                >
                   <Button
                     danger
                     size="small"
@@ -329,14 +336,19 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
                       setSelectedCancelRecord(record);
                       setModalCancelOpen(true);
                       setOpenPopoverId(null);
+                      formCancel.resetFields();
                     }}
                   >
-                    ยกเลิกการจอง
+                    ยกเลิก
                   </Button>
                   <Button
                     type="primary"
                     size="small"
                     onClick={() => handleApprove(record)}
+                    style={{
+                      backgroundColor: "#52c41a",
+                      borderColor: "#52c41a",
+                    }}
                   >
                     อนุมัติ
                   </Button>
@@ -345,7 +357,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               open={openPopoverId === record.id}
               onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
             >
-              <Tooltip title={isPending ? "อนุมัติ/ปฏิเสธ" : "ดำเนินการแล้ว"}>
+              <Tooltip title={isPending ? "อนุมัติ" : "อนุมัติแล้ว"}>
                 <CheckCircleOutlined
                   style={{
                     fontSize: 18, // ขนาด 18px
@@ -440,7 +452,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Tooltip> */}
 
             {/* 6. ปุ่มลบ */}
-            {/* <Popconfirm
+            <Popconfirm
               title="ยืนยันการลบ"
               description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
               onConfirm={async () => {
@@ -465,7 +477,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
                   }}
                 />
               </Tooltip>
-            </Popconfirm> */}
+            </Popconfirm>
           </Space>
         );
       },
@@ -500,14 +512,15 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       />
 
       <Modal
-        title="ยกเลิกการจองรถ"
+        title="ยืนยันการยกเลิกรายการ"
         open={modalCancelOpen}
         onOk={() => formCancel.submit()}
         onCancel={() => setModalCancelOpen(false)}
-        okText="ยืนยัน"
-        cancelText="ยกเลิก"
+        okText="ยืนยันการยกเลิก"
+        cancelButtonProps={{ style: { display: "none" } }}
+        okButtonProps={{ danger: true }}
         centered
-        style={{ maxWidth: "95%" }} // Responsive Modal
+        style={{ maxWidth: "95%" }}
       >
         <Form
           form={formCancel}
@@ -519,10 +532,11 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             name="cancelReason"
             rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
           >
-            <Input.TextArea placeholder="กรุณากรอกเหตุผลการยกเลิก" rows={4} />
+            <Input.TextArea placeholder="กรอกเหตุผลที่ยกเลิก..." rows={4} />
           </Form.Item>
         </Form>
       </Modal>
+
       <MaCarEditModal
         open={editModalOpen}
         onClose={handleCloseEdit}

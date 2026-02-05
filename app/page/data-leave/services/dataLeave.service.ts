@@ -143,7 +143,7 @@ export const DataLeaveService = (axiosInstance: AxiosInstance) => {
 
     getFileUrl: (fileName: string) => {
       if (!fileName) return "";
-      return `http://localhost:4000/uploads/data-leave/${encodeURIComponent(
+      return `https://onm.arxencore.com/uploads/data-leave/${encodeURIComponent(
         fileName,
       )}`;
     },

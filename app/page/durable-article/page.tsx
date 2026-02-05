@@ -12,15 +12,20 @@ import useSWR from "swr";
 import { infectiousWasteServices } from "./services/durableArticle.service";
 import DurableArticleTable from "./components/durableArticleTable";
 import DurableArticleForm from "./components/durableArticleForm";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
-
-  // แยก manualLoading สำหรับ Action ต่างๆ (เช่น กดบันทึก)
   const [manualLoading, setManualLoading] = useState<boolean>(false);
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
+  const router = useRouter();
 
-  // สร้าง Fetcher Function
+  const handleTabChange = (key: string) => {
+    router.push(`/page/durable-article?tab=${key}`);
+  };
+
   const fetcher = async () => {
     const intraAuthService = infectiousWasteServices(intraAuth);
     const result = await intraAuthService.getDurableArticleQuery();
@@ -110,7 +115,12 @@ export default function Page() {
     <div>
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Tabs defaultActiveKey="1" items={items} destroyInactiveTabPane />
+          <Tabs
+            activeKey={activeTabKey}
+            items={items}
+            destroyInactiveTabPane
+            onChange={handleTabChange}
+          />
         </Col>
       </Row>
     </div>

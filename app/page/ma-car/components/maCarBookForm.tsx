@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Form,
   Input,
@@ -112,12 +112,27 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         await fetchData();
       }
 
-      router.push("/page/ma-car/maCar");
+      router.push("/page/ma-car/maCar?tab=2");
     } catch (err) {
       console.error("Booking Error:", err);
       message.error("เกิดข้อผิดพลาดจากระบบ ไม่สามารถดำเนินการได้");
     }
   };
+
+  useEffect(() => {
+    if (session?.user?.userId) {
+      const currentNames = form.getFieldValue("passengerNames") || [];
+
+      // ถ้ายังไม่มีชื่อตัวเองในรายการ ให้เพิ่มเข้าไปอัตโนมัติ
+      if (!currentNames.includes(session.user.userId)) {
+        const newNames = [...currentNames, session.user.userId];
+        form.setFieldsValue({
+          passengerNames: newNames,
+          passengers: newNames.length, // อัปเดตตัวเลขอัตโนมัติ
+        });
+      }
+    }
+  }, [session, form]);
 
   // --- Style Constants (Master Template) ---
   const inputStyle =
@@ -492,53 +507,59 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={24}>
-            <Col span={6}>
-              <Form.Item
-                name="passengers"
-                label="จำนวนผู้โดยสาร"
-                rules={[{ required: true, message: "กรุณากรอกจำนวน" }]}
-              >
+
+          <Row gutter={16}>
+            <Col xs={24} sm={6}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
                 <InputNumber
                   min={1}
                   max={10}
                   style={{ width: "100%" }}
-                  placeholder="ระบุจำนวน"
-                  className={`${inputStyle} pt-1`}
-                  onKeyDown={(e) => {
-                    if (
-                      !/[0-9]/.test(e.key) &&
-                      ![
-                        "Backspace",
-                        "Delete",
-                        "Tab",
-                        "ArrowLeft",
-                        "ArrowRight",
-                      ].includes(e.key)
-                    ) {
-                      e.preventDefault();
-                    }
-                  }}
+                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`}
+                  readOnly // ✅ ล็อกห้ามพิมพ์เอง
+                  controls={false} // ซ่อนปุ่ม +/-
                 />
               </Form.Item>
             </Col>
-            <Col span={18}>
+
+            <Col xs={24} sm={18}>
               <Form.Item
+                label="รายชื่อผู้โดยสาร"
                 name="passengerNames"
-                label="ชื่อผู้โดยสาร"
-                rules={[{ required: true, message: "กรุณาเลือกผู้ใช้รถ" }]}
+                rules={[{ required: true, message: "กรุณาเลือกผู้โดยสาร" }]}
               >
                 <Select
                   mode="multiple"
-                  placeholder="เลือกผู้ใช้รถ"
-                  loading={loading}
-                  className={selectStyle} // ใช้ Class เดิมแต่ Antd จะจัดการ multiple ให้เอง
+                  placeholder="เลือกผู้โดยสาร"
+                  optionFilterProp="children"
+                  className={selectStyle}
                   maxTagCount="responsive"
-                  options={dataUser.map((u) => ({
-                    label: `${u.firstName} ${u.lastName}`,
-                    value: u.userId,
-                  }))}
-                />
+                  // ✅ 1. เมื่อมีการเลือกชื่อเพิ่ม/ลด ให้อัปเดตตัวเลขจำนวนคนทันที
+                  onChange={(values) => {
+                    form.setFieldValue("passengers", values.length);
+                  }}
+                  // ✅ 2. ห้ามลบชื่อตัวเองออก (User Experience ที่ดีกว่า)
+                  onDeselect={(val) => {
+                    if (val === session?.user?.userId) {
+                      const current = form.getFieldValue("passengerNames");
+                      setTimeout(() => {
+                        const restored = [...current, val];
+                        // แก้ TypeScript Error ด้วย Array.from(new Set(...))
+                        const unique = Array.from(new Set(restored));
+
+                        form.setFieldValue("passengerNames", unique);
+                        form.setFieldValue("passengers", unique.length);
+                        message.warning("ผู้ยื่นคำขอต้องร่วมเดินทางด้วยเสมอ");
+                      }, 0);
+                    }
+                  }}
+                >
+                  {dataUser.map((user) => (
+                    <Select.Option key={user.userId} value={user.userId}>
+                      {user.firstName} {user.lastName}
+                    </Select.Option>
+                  ))}
+                </Select>
               </Form.Item>
             </Col>
           </Row>

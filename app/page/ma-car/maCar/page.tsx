@@ -10,29 +10,26 @@ import { useSession } from "next-auth/react";
 import { userService } from "../../user/services/user.service";
 import { MaCarType, MasterCarType, UserType } from "../../common";
 import useSWR from "swr"; // 1. Import SWR
+import { useSearchParams } from "next/navigation";
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
-
-  // 2. แยก manualLoading สำหรับการกดปุ่มต่างๆ ในตาราง (เช่น อนุมัติ/ไม่อนุมัติ)
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
   const [manualLoading, setManualLoading] = useState<boolean>(false);
 
   // 3. สร้าง Fetcher Function
   const fetcher = async () => {
-    // Instantiate Services
     const intraAuthService = maCarService(intraAuth);
     const intraAuthUserService = userService(intraAuth);
     const userId = session?.user?.userId;
-
-    // ใช้ Promise.all ดึง API 3 ตัวพร้อมกัน (เร็วกว่าเดิม)
     const [resMaCar, resCars, resUsers] = await Promise.all([
-      intraAuthService.getMaCarQuery(), // ดึงข้อมูลการจองรถ (ดึงครั้งเดียวพอ)
-      intraAuthService.getMasterCarQuery(), // ดึงข้อมูลรถ
-      intraAuthUserService.getUserQuery(), // ดึงข้อมูล User
+      intraAuthService.getMaCarQuery(),
+      intraAuthService.getMasterCarQuery(),
+      intraAuthUserService.getUserQuery(),
     ]);
 
-    // Filter ข้อมูลการจองของ User ปัจจุบัน (ใช้ข้อมูลจาก resMaCar ได้เลย ไม่ต้องยิง API ใหม่)
     const resMaCarUser = resMaCar.filter(
       (car: any) => car.createdById === userId,
     );
@@ -115,7 +112,7 @@ export default function MaCarPage() {
   return (
     <Row gutter={[16, 16]}>
       <Col span={24}>
-        <Tabs defaultActiveKey="1" items={items} />
+        <Tabs defaultActiveKey={activeTabKey} items={items} />
       </Col>
     </Row>
   );

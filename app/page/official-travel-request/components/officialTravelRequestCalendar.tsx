@@ -310,6 +310,7 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         open={modalOpen}
         onClose={handleCloseModal}
         record={selected}
+        dataUser={dataUser}
       />
     </>
   );

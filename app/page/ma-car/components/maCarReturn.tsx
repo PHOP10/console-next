@@ -237,7 +237,6 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                             เลขไมล์เมื่อคืนรถ (กม.)
                           </span>
                         }
-                        // ✅ เพิ่มข้อความแสดงเลขไมล์เริ่มต้นด้านล่าง เพื่อช่วยเตือนความจำ
                         extra={
                           <div className="text-xs text-gray-500 mt-1">
                             * เลขไมล์เริ่มต้น:{" "}
@@ -247,15 +246,23 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                             กม.
                           </div>
                         }
+                        // เพิ่ม validateTrigger เพื่อให้ตรวจสอบทันทีที่พิมพ์ หรือเมื่อเอาเมาส์ออก
+                        validateTrigger={["onChange", "onBlur"]}
                         rules={[
                           { required: true, message: "กรุณาระบุเลขไมล์" },
-                          // ✅ เพิ่ม validation ห้ามกรอกน้อยกว่าเลขเดิม
                           {
                             validator: (_, value) => {
                               const start = record?.startMileage || 0;
-                              if (value && value < start) {
+                              // ต้องเช็คด้วยว่ามี value เข้ามาไหม เพื่อไม่ให้ชนกับ rule required
+                              if (
+                                value !== null &&
+                                value !== undefined &&
+                                value < start
+                              ) {
                                 return Promise.reject(
-                                  new Error("เลขไมล์ต้องมากกว่าเลขเริ่มต้น"),
+                                  new Error(
+                                    "เลขไมล์ต้องมากกว่าหรือเท่ากับเลขเริ่มต้น",
+                                  ),
                                 );
                               }
                               return Promise.resolve();
@@ -267,8 +274,6 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                           style={{ width: "100%" }}
                           placeholder="เลขไมล์ปัจจุบัน"
                           className="rounded-xl h-10 pt-1"
-                          // ✅ กำหนดค่าต่ำสุดเท่ากับเลขไมล์เริ่มต้น
-                          min={record?.startMileage || 0}
                           formatter={(value) =>
                             `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                           }

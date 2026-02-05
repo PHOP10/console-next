@@ -312,16 +312,17 @@ export default function ManagementDataLeaveTable({
       render: (_, record) => (
         <Space size="small">
           {/* Approve Popover */}
+
           <Popover
             content={
-              <Space>
-                <Button
-                  type="primary"
-                  size="small"
-                  onClick={() => handleApprove(record)}
-                >
-                  อนุมัติ
-                </Button>
+              <Space
+                style={{
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  width: "100%",
+                  marginTop: 13,
+                }}
+              >
                 <Button
                   danger
                   size="small"
@@ -329,16 +330,28 @@ export default function ManagementDataLeaveTable({
                     setSelectedCancelRecord(record);
                     setModalCancelOpen(true);
                     setOpenPopoverId(null);
+                    form.resetFields();
                   }}
                 >
-                  ไม่อนุมัติ
+                  ยกเลิก
+                </Button>
+                <Button
+                  type="primary"
+                  size="small"
+                  onClick={() => handleApprove(record)}
+                  style={{
+                    backgroundColor: "#52c41a",
+                    borderColor: "#52c41a",
+                  }}
+                >
+                  อนุมัติ
                 </Button>
               </Space>
             }
             title={
               <Space>
                 <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                <Typography.Text strong>จัดการคำขอ</Typography.Text>
+                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
               </Space>
             }
             trigger="click"
@@ -349,7 +362,9 @@ export default function ManagementDataLeaveTable({
               }
             }}
           >
-            <Tooltip title="อนุมัติ / ไม่อนุมัติ">
+            <Tooltip
+              title={record.status === "pending" ? "อนุมัติ" : "อนุมัติแล้ว"}
+            >
               <CheckCircleOutlined
                 style={{
                   fontSize: 18, // ขนาด 18px
@@ -397,7 +412,7 @@ export default function ManagementDataLeaveTable({
           {/* Edit */}
 
           {/* Delete */}
-          {/* <Popconfirm
+          <Popconfirm
             title="ยืนยันการลบ?"
             onConfirm={() => handleDelete(record)}
             okText="ลบ"
@@ -413,7 +428,7 @@ export default function ManagementDataLeaveTable({
                 }}
               />
             </Tooltip>
-          </Popconfirm> */}
+          </Popconfirm>
         </Space>
       ),
     },
@@ -461,23 +476,23 @@ export default function ManagementDataLeaveTable({
       />
 
       <Modal
-        title="ยกเลิกรายการ"
+        title="ยืนยันการยกเลิกรายการ"
         open={modalCancelOpen}
         onOk={() => form.submit()}
         onCancel={() => setModalCancelOpen(false)}
-        okText="ยืนยัน"
-        cancelText="ปิด"
+        okText="ยืนยันการยกเลิก"
+        cancelButtonProps={{ style: { display: "none" } }}
         centered
-        // Responsive Modal
+        okButtonProps={{ danger: true }}
         style={{ maxWidth: "95%" }}
       >
         <Form form={form} layout="vertical" onFinish={handleConfirmCancel}>
           <Form.Item
             name="cancelReason"
             label="เหตุผลการยกเลิก"
-            rules={[{ required: true, message: "โปรดระบุเหตุผล" }]}
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
           >
-            <Input.TextArea rows={3} placeholder="ระบุเหตุผล..." />
+            <Input.TextArea rows={3} placeholder="กรอกเหตุผลที่ยกเลิก..." />
           </Form.Item>
         </Form>
       </Modal>

@@ -44,6 +44,7 @@ type Props = {
   loading: boolean;
   data: MaMedicalEquipmentType[];
   dataEQ: MedicalEquipmentType[];
+  fetchData?: () => Promise<void>;
 };
 
 export default function MaMedicalEquipmentTable({
@@ -51,18 +52,15 @@ export default function MaMedicalEquipmentTable({
   loading,
   data,
   dataEQ,
+  fetchData,
 }: Props) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = maMedicalEquipmentServices(intraAuth);
   const { data: session } = useSession();
-
-  // State
   const [editingItem, setEditingItem] = useState<MaMedicalEquipmentType | null>(
     null,
   );
   const [editModalVisible, setEditModalVisible] = useState(false);
-
-  // States อื่นๆ
   const [form] = Form.useForm();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] =
@@ -100,6 +98,7 @@ export default function MaMedicalEquipmentTable({
       message.success("ยกเลิกรายการแล้ว");
       setIsModalOpen(false);
       setSelectedRecord(null);
+      fetchData;
       setLoading(true);
     } catch (error) {
       console.error("เกิดข้อผิดพลาด:", error);
@@ -119,6 +118,7 @@ export default function MaMedicalEquipmentTable({
       message.success("อนุมัติรายการแล้ว");
       setLoading(true);
       setOpenPopoverId(null);
+      fetchData;
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการอนุมัติ:", error);
       message.error("ไม่สามารถอนุมัติได้");
@@ -166,6 +166,7 @@ export default function MaMedicalEquipmentTable({
       setIsModalOpen(false);
       setRecordReturn(null);
       setLoading(true);
+      fetchData;
     } catch (error) {
       console.error("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์:", error);
       message.error("ไม่สามารถรับคืนอุปกรณ์ได้");
@@ -354,6 +355,7 @@ export default function MaMedicalEquipmentTable({
                     setSelectedRecord(record);
                     setIsModalOpen(true);
                     setOpenPopoverId(null);
+                    form.resetFields();
                   }}
                 >
                   ยกเลิก
@@ -370,7 +372,7 @@ export default function MaMedicalEquipmentTable({
             }
           >
             <Tooltip
-              title={record.status === "pending" ? "อนุมัติ" : "ดำเนินการแล้ว"}
+              title={record.status === "pending" ? "อนุมัติ" : "อนุมัติแล้ว"}
             >
               <CheckCircleOutlined
                 style={{
@@ -497,18 +499,19 @@ export default function MaMedicalEquipmentTable({
           setIsModalOpen(false);
           setSelectedRecord(null);
         }}
-        okText="ยืนยัน"
+        okText="ยืนยันการยกเลิก"
         cancelButtonProps={{ style: { display: "none" } }}
         centered
-         okButtonProps={{ danger: true, }}
+        okButtonProps={{ danger: true }}
         style={{ maxWidth: "95%" }}
       >
         <Form form={form} layout="vertical" onFinish={handleCancel}>
           <Form.Item
             name="cancelReason"
-            rules={[{ required: true, message: "กรุณาระบุเหตุผลการยกเลิก" }]}
+            label="เหตุผลการยกเลิก"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
           >
-            <Input.TextArea rows={3} placeholder="ระบุเหตุผลการยกเลิก" />
+            <Input.TextArea rows={3} placeholder="กรอกเหตุผลการยกเลิก" />
           </Form.Item>
         </Form>
       </Modal>

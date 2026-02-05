@@ -12,11 +12,6 @@ import {
   MobileOutlined,
 } from "@ant-design/icons";
 
-// 1. ลบ useAxiosAuth ออก เพราะเรายังไม่มี Token
-// import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-
-// 2. Import axios จากไฟล์ Config ของคุณ (ตัวที่เป็น Public)
-// สมมติว่าไฟล์นี้ export default instance ออกมา
 import axiosPublic from "@/app/lib/axios/axios";
 import { indexService } from "../../services/indexServices";
 
@@ -37,14 +32,13 @@ export default function ForgotForm({
   const [loading, setLoading] = useState(false);
   const [tempData, setTempData] = useState({
     username: "",
-    resetToken: "", // เก็บ Token ที่ได้หลังจาก Verify OTP ผ่าน
+    resetToken: "",
   });
   const [form] = Form.useForm();
 
   const handleRequestOtp = async (values: any) => {
     setLoading(true);
     try {
-      // เรียก Service หน้าบ้าน (ตอนนี้เป็น Mock)
       await intraAuthService.requestOtp({
         username: values.username,
         contact: values.email,
@@ -60,7 +54,6 @@ export default function ForgotForm({
     }
   };
 
-  // --- Logic Step 2: Verify OTP ---
   const handleVerifyOtp = async (values: any) => {
     setLoading(true);
     try {
@@ -69,10 +62,9 @@ export default function ForgotForm({
         otp: values.otp,
       });
 
-      // สมมติว่า Verify ผ่านจะได้ resetToken กลับมา
       message.success("ยืนยันตัวตนสำเร็จ กรุณาตั้งรหัสผ่านใหม่");
       setTempData({ ...tempData, resetToken: res.resetToken });
-      setCurrentStep(3); // ไปหน้าตั้งรหัสผ่านใหม่
+      setCurrentStep(3);
     } catch (error) {
       message.error("รหัส OTP ไม่ถูกต้อง หรือหมดอายุ");
     } finally {
@@ -80,7 +72,6 @@ export default function ForgotForm({
     }
   };
 
-  // --- Logic Step 3: Reset Password ---
   const handleResetPassword = async (values: any) => {
     setLoading(true);
     try {
@@ -90,7 +81,7 @@ export default function ForgotForm({
       });
 
       message.success("เปลี่ยนรหัสผ่านสำเร็จ! กรุณาเข้าสู่ระบบใหม่");
-      onBackToLogin(); // เด้งกลับหน้า Login
+      onBackToLogin();
     } catch (error) {
       message.error("ไม่สามารถเปลี่ยนรหัสผ่านได้");
     } finally {
@@ -100,7 +91,6 @@ export default function ForgotForm({
 
   return (
     <div className="w-full">
-      {/* Header (แสดงเหมือนเดิมตลอด) */}
       <div className="flex flex-col items-center mb-6">
         <img
           src="/rpst.png"
@@ -119,7 +109,6 @@ export default function ForgotForm({
         </p>
       </div>
 
-      {/* --- Step 1: Form กรอก Username & Email/Phone --- */}
       {currentStep === 1 && (
         <Form
           form={form}
@@ -136,7 +125,7 @@ export default function ForgotForm({
             className="mb-4"
           >
             <Input
-              placeholder="Username"
+              placeholder="กรอกชื่อผู้ใช้"
               prefix={<UserOutlined className="text-gray-400 mr-2" />}
               size="large"
               style={inputStyle}
@@ -146,13 +135,11 @@ export default function ForgotForm({
           <Form.Item
             label={<span className="font-medium text-gray-600">อีเมล</span>}
             name="email"
-            rules={[
-              { required: true, message: "กรุณากรอกอีเมล หรือเบอร์โทร!" },
-            ]}
+            rules={[{ required: true, message: "กรุณากรอกอีเมล!" }]}
             className="mb-8"
           >
             <Input
-              placeholder="Email"
+              placeholder="กรอก Email"
               prefix={<MailOutlined className="text-gray-400 mr-2" />}
               size="large"
               style={inputStyle}

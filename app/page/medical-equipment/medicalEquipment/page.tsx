@@ -15,15 +15,20 @@ import { maMedicalEquipmentServices } from "../services/medicalEquipment.service
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import { userService } from "../../user/services/user.service";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
-
-  // 2. แยก manualLoading สำหรับ Action ต่างๆ จาก Component ลูก
   const [manualLoading, setManualLoading] = useState<boolean>(false);
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
+  const router = useRouter();
 
-  // 3. สร้าง Fetcher Function
+  const handleTabChange = (key: string) => {
+    router.push(`/page/medical-equipment/medicalEquipment?tab=${key}`);
+  };
+
   const fetcher = async () => {
     const intraAuthService = maMedicalEquipmentServices(intraAuth);
     const intraAuthUserService = userService(intraAuth);
@@ -134,7 +139,12 @@ export default function Page() {
     <div>
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Tabs defaultActiveKey="1" items={items} destroyInactiveTabPane />
+          <Tabs
+            activeKey={activeTabKey}
+            onChange={handleTabChange}
+            items={items}
+            destroyInactiveTabPane
+          />
         </Col>
       </Row>
     </div>

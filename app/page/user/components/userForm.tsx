@@ -141,9 +141,9 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
 
             {/* 4. StartDate */}
             <Form.Item
-              label="วันเริ่มงาน"
+              label="วันที่เริ่มงาน"
               name="startDate"
-              rules={[{ required: true, message: "กรุณาเลือกวันเริ่มงาน" }]}
+              rules={[{ required: true, message: "กรุณาเลือกวันที่เริ่มงาน" }]}
             >
               <DatePicker
                 locale={buddhistLocale}

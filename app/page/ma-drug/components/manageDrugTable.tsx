@@ -14,6 +14,7 @@ import {
   Input,
   Popover,
   Typography,
+  Form,
 } from "antd";
 import {
   DeleteOutlined,
@@ -62,12 +63,14 @@ export default function ManageDrugTable({
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<MaDrugType | null>(null);
   const [editVisible, setEditVisible] = useState(false);
+  const [formCancel] = Form.useForm();
 
   const openCancelModal = (id: number) => {
     setCancelingId(id);
     setCancelReason("");
     setIsCancelModalOpen(true);
     setOpenPopoverId(null);
+    formCancel.resetFields();
   };
 
   const handleViewDetail = (record: MaDrugType) => {
@@ -109,12 +112,7 @@ export default function ManageDrugTable({
     }
   };
 
-  const handleCancelSubmit = async () => {
-    if (!cancelReason.trim()) {
-      message.warning("กรุณาระบุเหตุผลในการยกเลิก");
-      return;
-    }
-
+  const handleCancelSubmit = async (values: any) => {
     if (!cancelingId) return;
 
     try {
@@ -122,7 +120,7 @@ export default function ManageDrugTable({
       const payload = {
         id: cancelingId,
         status: "cancel",
-        cancelReason: cancelReason,
+        cancelReason: values.cancelReason,
         cancelName: session?.user?.fullName || "ไม่ระบุตัวตน",
       };
 
@@ -287,8 +285,8 @@ export default function ManageDrugTable({
                 <Space
                   style={{
                     display: "flex",
-                    justifyContent: "flex-end", // จัดชิดขวา
-                    width: "100%", // ขยายเต็มความกว้าง
+                    justifyContent: "flex-end",
+                    width: "100%",
                     marginTop: 13,
                   }}
                 >
@@ -314,7 +312,7 @@ export default function ManageDrugTable({
                 </Space>
               }
             >
-              <Tooltip title={isPending ? "ตรวจสอบและอนุมัติ" : ""}>
+              <Tooltip title={isPending ? "อนุมัติ" : "อนุมัติแล้ว"}>
                 <Button
                   type="text"
                   shape="circle"
@@ -428,9 +426,9 @@ export default function ManageDrugTable({
         dataSource={data}
         loading={loading}
         bordered
-        size="small" // ใช้ size small บนมือถือ
+        size="small"
         pagination={{ pageSize: 10, size: "small" }}
-        scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
+        scroll={{ x: "max-content" }}
       />
 
       <MaDrugTableDetail
@@ -442,21 +440,23 @@ export default function ManageDrugTable({
       <Modal
         title={<div>ยืนยันการยกเลิกรายการ</div>}
         open={isCancelModalOpen}
-        onOk={handleCancelSubmit}
-        onCancel={() => setIsCancelModalOpen(false)}
+        onOk={() => formCancel.submit()}
         okText="ยืนยันการยกเลิก"
+        onCancel={() => setIsCancelModalOpen(false)}
         cancelButtonProps={{ style: { display: "none" } }}
         okButtonProps={{ danger: true, loading: cancelLoading }}
         centered
         style={{ maxWidth: "95%" }}
       >
-        <Input.TextArea
-          rows={4}
-          value={cancelReason}
-          onChange={(e) => setCancelReason(e.target.value)}
-          placeholder="กรอกเหตุผลที่ยกเลิก..."
-          autoFocus
-        />
+        <Form form={formCancel} layout="vertical" onFinish={handleCancelSubmit}>
+          <Form.Item
+            name="cancelReason"
+            label="เหตุผลการยกเลิก"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+          >
+            <Input.TextArea rows={4} placeholder="กรอกเหตุผลที่ยกเลิก..." />
+          </Form.Item>
+        </Form>
       </Modal>
 
       <MaDrugEdit

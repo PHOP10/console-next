@@ -12,7 +12,7 @@ import {
   message,
   Skeleton,
   Tag,
-  Grid, // เพิ่ม Grid เพื่อใช้ useBreakpoint
+  Grid,
 } from "antd";
 import { UserOutlined, EditOutlined } from "@ant-design/icons";
 import { useSession } from "next-auth/react";
@@ -37,7 +37,6 @@ export default function UserProfile() {
   );
   const [userData, setUserData] = useState<UserType | null>(null);
 
-  // Hook สำหรับเช็คขนาดหน้าจอ
   const screens = useBreakpoint();
 
   const fetchUserData = async () => {
@@ -81,13 +80,10 @@ export default function UserProfile() {
     );
   }
 
-  // --- Style ปรับแต่งตามขนาดหน้าจอ ---
   const descriptionLabelStyle: React.CSSProperties = {
     backgroundColor: "#f0f5ff",
     fontWeight: "600",
     color: "#1d39c4",
-    // ถ้าเป็นมือถือ (screens.md เป็น false) ให้ width เป็น auto
-    // ถ้าเป็นจอคอม ให้ width เป็น 180px เหมือนเดิม
     width: screens.md ? "180px" : "auto",
     verticalAlign: "middle",
   };
@@ -99,7 +95,6 @@ export default function UserProfile() {
   };
 
   return (
-    // ปรับ Padding: มือถือ 10px, จอคอม 20px
     <div style={{ padding: screens.md ? "20px" : "10px" }}>
       <Row gutter={[24, 24]} justify="center">
         {/* Left Side: Profile Picture */}
@@ -146,6 +141,11 @@ export default function UserProfile() {
                 {userData?.position || "ไม่ระบุตำแหน่ง"}
               </Tag>
             </div>
+
+            {/* [Optional] อาจจะเพิ่ม Username ตัวเล็กๆ ตรงนี้ด้วยก็ได้ */}
+            <div style={{ color: "#888", fontSize: "14px" }}>
+              {userData?.username}
+            </div>
           </Card>
         </Col>
 
@@ -159,14 +159,12 @@ export default function UserProfile() {
               borderRadius: "16px",
               minHeight: "100%",
             }}
-            // ใช้ styles.header เพื่อปรับ title บนมือถือถ้าจำเป็น
             styles={{
               header: { padding: screens.md ? "16px 24px" : "12px 16px" },
             }}
             extra={
               editMode === "view" && (
                 <Space wrap>
-                  {/* wrap={true} ช่วยให้ปุ่มขึ้นบรรทัดใหม่ถ้าจอเล็กมาก */}
                   <Button
                     onClick={() => setEditMode("password")}
                     style={{ borderRadius: "8px" }}
@@ -210,13 +208,19 @@ export default function UserProfile() {
             {editMode === "view" && (
               <Descriptions
                 bordered
-                // column=1 อยู่แล้ว แต่มือถือควรเป็น vertical เพื่อความสวยงาม
                 layout={screens.md ? "horizontal" : "vertical"}
                 column={{ xxl: 2, xl: 2, lg: 1, md: 1, sm: 1, xs: 1 }}
-                size={screens.md ? "middle" : "small"} // มือถือใช้ size small
+                size={screens.md ? "middle" : "small"}
                 labelStyle={descriptionLabelStyle}
                 contentStyle={descriptionContentStyle}
               >
+                {/* --- เพิ่ม Username ตรงนี้ --- */}
+                <Descriptions.Item label="ชื่อผู้ใช้">
+                  <span className="font-semibold text-gray-700">
+                    {userData?.username}
+                  </span>
+                </Descriptions.Item>
+
                 <Descriptions.Item label="ชื่อ-นามสกุล">
                   {userData?.firstName} {userData?.lastName}
                 </Descriptions.Item>
@@ -225,7 +229,9 @@ export default function UserProfile() {
                     ? "ชาย"
                     : userData?.gender === "female"
                       ? "หญิง"
-                      : userData?.gender || "-"}
+                      : userData?.gender === "miss"
+                        ? "หญิง"
+                        : userData?.gender || "-"}
                 </Descriptions.Item>
                 <Descriptions.Item label="อีเมล">
                   {userData?.email}
@@ -241,7 +247,7 @@ export default function UserProfile() {
                 </Descriptions.Item>
                 <Descriptions.Item label="วันที่เริ่มงาน">
                   {userData?.startDate
-                    ? dayjs(userData.startDate).format("DD/MM/YYYY")
+                    ? dayjs(userData.startDate).format("DD MMMM BBBB")
                     : "-"}
                 </Descriptions.Item>
               </Descriptions>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -139,7 +139,7 @@ export default function OfficialTravelRequestBookForm({
       await service.createOfficialTravelRequest(payload);
       message.success("บันทึกคำขอเรียบร้อยแล้ว");
       form.resetFields();
-      router.push("/page/official-travel-request/officialTravelRequest");
+      router.push("/page/official-travel-request/officialTravelRequest?tab=2");
     } catch (err) {
       console.error(err);
       message.error("บันทึกคำขอไม่สำเร็จ");
@@ -156,6 +156,22 @@ export default function OfficialTravelRequestBookForm({
       "HH:mm",
     )} น.`;
   };
+
+  useEffect(() => {
+    // 1. Set default state: Always include the current user
+    if (session?.user?.userId) {
+      const currentNames = form.getFieldValue("passengerNames") || [];
+
+      // If current user is not in the list, add them
+      if (!currentNames.includes(session.user.userId)) {
+        const newNames = [...currentNames, session.user.userId];
+        form.setFieldsValue({
+          passengerNames: newNames,
+          passengers: newNames.length, // ✅ Auto-update the count immediately
+        });
+      }
+    }
+  }, [session, form]);
 
   // --- Styles ---
   const inputStyle =
@@ -579,39 +595,59 @@ export default function OfficialTravelRequestBookForm({
           </div>
 
           {/* Section 4: ผู้โดยสารและงบประมาณ */}
+          {/* Section 4: Passengers (Auto-Calculation Logic) */}
           <Row gutter={16}>
             <Col xs={24} sm={6}>
               <Form.Item
                 label="จำนวนผู้โดยสาร"
                 name="passengers"
-                rules={[{ required: true, message: "ระบุจำนวน" }]}
+                // No rules needed, as it is controlled by the system
               >
                 <InputNumber
                   min={1}
                   max={10}
-                  maxLength={1}
-                  precision={0}
                   style={{ width: "100%" }}
-                  placeholder="0-9"
-                  className={`${inputStyle} pt-1`}
-                  parser={(value) => {
-                    const parsed = value?.replace(/\D/g, "").slice(0, 1);
-                    return parsed ? parseInt(parsed, 10) : "";
-                  }}
-                  onKeyPress={(e) => {
-                    if (!/[0-9]/.test(e.key)) e.preventDefault();
-                  }}
+                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`} // Add gray background to indicate read-only
+                  readOnly // ✅ Lock this field. User cannot type manually.
+                  controls={false} // Hide +/- buttons
                 />
               </Form.Item>
             </Col>
+
             <Col xs={24} sm={18}>
-              <Form.Item label="รายชื่อผู้โดยสาร" name="passengerNames">
+              <Form.Item
+                label="รายชื่อผู้โดยสาร"
+                name="passengerNames"
+                rules={[{ required: true, message: "กรุณาเลือกผู้โดยสาร" }]}
+              >
                 <Select
                   mode="multiple"
                   placeholder="เลือกผู้โดยสาร"
                   optionFilterProp="children"
                   className={selectStyle}
                   maxTagCount="responsive"
+                  // ✅ 1. When names change, automatically update the number
+                  onChange={(values) => {
+                    form.setFieldValue("passengers", values.length);
+                  }}
+                  // ✅ 2. Prevent removing self (Better UX than showing an error)
+                  onDeselect={(val) => {
+                    if (val === session?.user?.userId) {
+                      // If user tries to remove themselves, re-add them instantly
+                      const current = form.getFieldValue("passengerNames");
+                      // Use setTimeout to ensure state updates correctly after the deselect event
+                      setTimeout(() => {
+                        const restored = [...current, val];
+
+                        // 🛠️ แก้ตรงนี้: ใช้ Array.from แทน [...new Set] เพื่อแก้ Error TypeScript
+                        const unique = Array.from(new Set(restored));
+
+                        form.setFieldValue("passengerNames", unique);
+                        form.setFieldValue("passengers", unique.length);
+                        message.warning("ผู้ยื่นคำขอต้องร่วมเดินทางด้วยเสมอ");
+                      }, 0);
+                    }
+                  }}
                 >
                   {dataUser.map((user) => (
                     <Select.Option key={user.userId} value={user.userId}>

@@ -10,6 +10,7 @@ import buddhistEra from "dayjs/plugin/buddhistEra";
 import "dayjs/locale/th";
 import th_TH from "antd/es/date-picker/locale/th_TH";
 import { buddhistLocale } from "@/app/common";
+import { useRouter } from "next/navigation";
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
 
@@ -24,6 +25,7 @@ export default function ThrowAwayWasteForm({ setLoading, fetchData }: Props) {
   const { data: session } = useSession();
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
+  const router = useRouter();
 
   const handleSubmit = async (values: any) => {
     try {
@@ -41,6 +43,7 @@ export default function ThrowAwayWasteForm({ setLoading, fetchData }: Props) {
       fetchData();
       message.success("เพิ่มรายการขยะติดเชื้อสำเร็จ");
       form.resetFields();
+      router.push("/page/infectious-waste?tab=1");
     } catch (error) {
       console.error("Error creating waste:", error);
       message.error("เกิดข้อผิดพลาดในการเพิ่มข้อมูล");

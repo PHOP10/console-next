@@ -10,10 +10,13 @@ import { userService } from "../../user/services/user.service";
 import { MasterCarType, UserType } from "../../common";
 import { maCarService } from "../../ma-car/services/maCar.service";
 import useSWR from "swr";
+import { useSearchParams } from "next/navigation";
 
 export default function page() {
   const intraAuth = useAxiosAuth();
   const [manualLoading, setManualLoading] = useState<boolean>(false);
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
 
   const fetcher = async () => {
     const intraAuthService = officialTravelRequestService(intraAuth);
@@ -76,18 +79,15 @@ export default function page() {
       key: "2",
       label: "ข้อมูลตารางคำขอไปราชการ",
       children: (
-     
-          <Card>
-            <OfficialTravelRequestTable
-              data={data}
-              loading={loading}
-              fetchData={fetchData}
-              dataUser={dataUser}
-              cars={cars}
-            />
-          </Card>
-       
-      
+        <Card>
+          <OfficialTravelRequestTable
+            data={data}
+            loading={loading}
+            fetchData={fetchData}
+            dataUser={dataUser}
+            cars={cars}
+          />
+        </Card>
       ),
     },
   ];
@@ -95,7 +95,7 @@ export default function page() {
   return (
     <Row gutter={[16, 16]}>
       <Col span={24}>
-        <Tabs defaultActiveKey="1" items={items} />
+        <Tabs defaultActiveKey={activeTabKey} items={items} />
       </Col>
     </Row>
   );

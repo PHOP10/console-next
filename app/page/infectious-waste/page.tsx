@@ -8,16 +8,20 @@ import { InfectiousWasteType } from "./../common/index";
 import ThrowAwayWaste from "./components/throwAwayWasteForm";
 import InfectiousWasteChart from "./components/infectiousWasteChart";
 import ThrowAwayWasteTable from "./components/throwAwayWasteTable";
-import useSWR from "swr"; // 1. Import SWR
+import useSWR from "swr";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
-
-  // 2. แยก manualLoading สำหรับการกดปุ่มต่างๆ (เช่น บันทึก/ลบ)
   const [manualLoading, setManualLoading] = useState<boolean>(false);
-  const [activeTab, setActiveTab] = useState<string>("1");
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
+  const router = useRouter();
 
-  // 3. สร้าง Fetcher Function
+  const handleTabChange = (key: string) => {
+    router.push(`/page/infectious-waste?tab=${key}`);
+  };
+
   const fetcher = async () => {
     const intraAuthService = infectiousWasteServices(intraAuth);
     return await intraAuthService.getInfectiousWasteQuery();
@@ -37,13 +41,9 @@ export default function Page() {
     },
   });
 
-  // 5. Map ข้อมูล (ใช้ Array ว่างเป็น Default)
   const dataInfectiousWaste: InfectiousWasteType[] = swrData || [];
-
-  // รวม Loading state
   const loading = isSwrLoading || manualLoading;
 
-  // 6. Wrapper function สำหรับส่งให้ลูก (เพื่อให้ Type ตรงกับ Promise<void> และจัดการ Loading Manual)
   const fetchData = async () => {
     setManualLoading(true);
     await mutate();
@@ -97,9 +97,9 @@ export default function Page() {
       <Row gutter={[16, 16]}>
         <Col span={24}>
           <Tabs
-            defaultActiveKey="1"
+            activeKey={activeTabKey}
             items={items}
-            onChange={(key) => setActiveTab(key)}
+            onChange={handleTabChange}
           />
         </Col>
       </Row>

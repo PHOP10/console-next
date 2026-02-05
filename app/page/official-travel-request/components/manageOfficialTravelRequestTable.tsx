@@ -367,7 +367,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             title={
               <Space>
                 <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                <Typography.Text strong>ยืนยันผลการพิจารณา ?</Typography.Text>
+                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
               </Space>
             }
             content={
@@ -385,9 +385,10 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                     setSelectedCancelRecord(record);
                     setModalCancelOpen(true);
                     setOpenPopoverId(null);
+                    formCancel.resetFields();
                   }}
                 >
-                  ยกเลิกคำขอ
+                  ยกเลิก
                 </Button>
 
                 <Button
@@ -408,9 +409,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             }
           >
             <Tooltip
-              title={
-                record.status === "pending" ? "อนุมัติ" : "ไม่สามารถอนุมัติได้"
-              }
+              title={record.status === "pending" ? "อนุมัติ" : "อนุมัติแล้ว"}
             >
               <CheckCircleOutlined
                 style={{
@@ -474,7 +473,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             />
           </Tooltip> */}
 
-          {/* <Popconfirm
+          <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
             onConfirm={async () => {
@@ -500,7 +499,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                 }}
               />
             </Tooltip>
-          </Popconfirm> */}
+          </Popconfirm>
         </Space>
       ),
     },
@@ -605,14 +604,15 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       />
 
       <Modal
-        title="ยกเลิกคำขอไปราชการ"
+        title="ยืนยันการยกเลิกรายการ"
         open={modalCancelOpen}
         onOk={() => formCancel.submit()}
         onCancel={() => setModalCancelOpen(false)}
-        okText="ยืนยัน"
-        cancelText="ยกเลิก"
+        okText="ยืนยันการยกเลิก"
+        cancelButtonProps={{ style: { display: "none" } }}
         centered
-        style={{ maxWidth: "95%" }} // Responsive Modal
+        okButtonProps={{ danger: true }}
+        style={{ maxWidth: "95%" }}
       >
         <Form
           form={formCancel}

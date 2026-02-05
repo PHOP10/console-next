@@ -9,11 +9,13 @@ import DataLeaveTable from "../components/dataLeaveTable";
 import DataLeaveCalendar from "../components/dataLeaveCalendar";
 import { useSession } from "next-auth/react";
 import useSWR from "swr"; // 1. นำเข้า SWR
+import { useSearchParams } from "next/navigation";
 
 export default function DataLeavePage() {
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
-
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
   // 2. สร้าง local state สำหรับ loading กรณีที่ component ลูกสั่ง setLoading เอง (เช่น ตอนกดลบ หรือแก้ไข)
   const [manualLoading, setManualLoading] = useState<boolean>(false);
 
@@ -109,7 +111,11 @@ export default function DataLeavePage() {
   return (
     <Row gutter={[16, 16]}>
       <Col span={24}>
-        <Tabs defaultActiveKey="1" items={items} destroyInactiveTabPane />
+        <Tabs
+          defaultActiveKey={activeTabKey}
+          items={items}
+          destroyInactiveTabPane
+        />
       </Col>
     </Row>
   );

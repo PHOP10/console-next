@@ -48,7 +48,6 @@ export default function VisitHomePage() {
     },
   );
 
-  // 6. Sync ข้อมูลจาก SWR เข้า State (เพื่อให้ส่ง props setDataMasterPatient ได้เหมือนเดิม)
   useEffect(() => {
     if (swrData) {
       setData(swrData.visitHome);
@@ -88,8 +87,8 @@ export default function VisitHomePage() {
         <Card>
           <MasterPatientTable
             dataMasterPatient={dataMasterPatient}
-            setDataMasterPatient={setDataMasterPatient} // ส่ง state setter ได้ปกติ
-            setLoading={setManualLoading} // ใช้ manualLoading แทน
+            setDataMasterPatient={setDataMasterPatient}
+            setLoading={setManualLoading}
           />
         </Card>
       ),

@@ -86,7 +86,7 @@ export const MenuSider: IMenu[] = [
       },
       {
         key: "manageOfficialTravelRequest",
-        label: "จัดการการขอไปราชการ",
+        label: "จัดการคำขอ",
         roles: [group.admin],
       },
     ],
@@ -161,7 +161,6 @@ export const MenuSider: IMenu[] = [
       },
     ],
   },
-
   {
     key: "ma-drug",
     label: `ระบบยา`,
@@ -185,7 +184,6 @@ export const MenuSider: IMenu[] = [
       },
     ],
   },
-
   {
     key: "medical-equipment",
     label: `เครื่องมือแพทย์`,
@@ -193,7 +191,7 @@ export const MenuSider: IMenu[] = [
     children: [
       {
         key: "medicalEquipment",
-        label: "ข้อมูลเครื่องมือแพทย์",
+        label: "ข้อมูลเครื่องมือ",
         roles: [
           group.admin,
           group.user,
@@ -204,12 +202,11 @@ export const MenuSider: IMenu[] = [
       },
       {
         key: "maMedicalEquipment",
-        label: "จัดการข้อมูลเครื่องมือแพทย์",
+        label: "จัดการเครื่องมือ",
         roles: [group.admin],
       },
     ],
   },
-
   {
     key: "visit-home",
     label: `เยี่ยมบ้าน`,

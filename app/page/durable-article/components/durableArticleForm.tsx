@@ -20,6 +20,7 @@ import { infectiousWasteServices } from "../services/durableArticle.service";
 import th_TH from "antd/locale/th_TH";
 import { useSession } from "next-auth/react";
 import { buddhistLocale } from "@/app/common";
+import { useRouter } from "next/navigation";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -36,9 +37,9 @@ export default function DurableArticleForm({
   const intraAuth = useAxiosAuth();
   const intraAuthService = infectiousWasteServices(intraAuth);
   const { data: session } = useSession();
-
   const categoryRef = useRef<any>(null);
   const acquisitionRef = useRef<any>(null);
+  const router = useRouter();
 
   const onFinish = async (values: any) => {
     try {
@@ -54,12 +55,10 @@ export default function DurableArticleForm({
 
       setLoading(true);
       await intraAuthService.createDurableArticle(payload);
-
       message.success("บันทึกข้อมูลครุภัณฑ์สำเร็จ");
-
       await fetchData();
-
       form.resetFields();
+      router.push("/page/durable-article?tab=1");
     } catch (error) {
       console.error(error);
       message.error("บันทึกข้อมูลไม่สำเร็จ");

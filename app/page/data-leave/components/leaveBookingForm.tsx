@@ -233,7 +233,7 @@ export default function LeaveBookingForm({
       message.success("บันทึกใบลาสำเร็จ");
       form.resetFields();
       setFileList([]);
-      router.push("/page/data-leave/dataLeave");
+      router.push("/page/data-leave/dataLeave?tab=2");
     } catch (err: any) {
       console.error("Error in onFinish:", err);
       message.error(err.message || "ไม่สามารถบันทึกใบลาได้");

@@ -1,21 +1,29 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import Navigation from "@/components/Navigation";
-import { Layout, Menu, ConfigProvider, Spin } from "antd";
-import { menuSider } from "@/config/menu";
+import { Layout, Menu, ConfigProvider, Spin, Badge } from "antd"; // 1. เพิ่ม Badge
+// 2. เปลี่ยนจาก menuSider เป็น MenuSider (ตัวแปร Data) และ Interface
+import { MenuSider, IMenu, IMenuChild } from "@/config/menu";
 import { signIn, useSession } from "next-auth/react";
 import { UserProfileType } from "@/types";
 import config from "@/config";
 import { useRefreshToken } from "../lib/axios/hooks/useRefreshToken";
+import Link from "next/link"; // 3. เพิ่ม Link
+
+// 4. Import Hooks สำหรับแจ้งเตือน
+import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
+import { indexService } from "@/services/index.service";
+import { useNotificationSocket } from "@/app/lib/axios/hooks/useNotificationSocket";
 
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session } = useSession({
+  const { data: session, status } = useSession({
+    // เพิ่ม status
     required: true,
     onUnauthenticated() {
       signIn();
@@ -23,6 +31,45 @@ export default function MainLayout({
   });
 
   const refreshToken = useRefreshToken();
+
+  // ---------------------------------------------------------------------------
+  // ส่วนที่เพิ่ม: Logic แจ้งเตือน (Notification Logic)
+  // ---------------------------------------------------------------------------
+  const rawUserId = session?.user?.userId || (session?.user as any)?.id;
+  const userId = rawUserId ? String(rawUserId) : undefined;
+
+  const intraAuth = useAxiosAuth();
+  // ใช้ useMemo กัน service ถูกสร้างใหม่รัวๆ
+  const intraAuthService = useMemo(() => indexService(intraAuth), [intraAuth]);
+  const [counts, setCounts] = useState<{ [key: string]: number }>({});
+
+  const fetchNotificationCounts = useCallback(async () => {
+    if (status === "loading" || !userId) return;
+    try {
+      const res = await intraAuthService.getNotificationCounts(userId);
+      setCounts(res.menuCounts || {});
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  }, [userId, intraAuthService, status]);
+
+  // เชื่อมต่อ Socket
+  useNotificationSocket(userId, setCounts);
+
+  // กดแล้วเคลียร์เลข
+  const handleMenuClick = async (key: string) => {
+    setCounts((prev) => ({ ...prev, [key]: 0 }));
+    if (userId) {
+      await intraAuthService.markMenuRead(userId, key).catch(console.error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotificationCounts();
+    const interval = setInterval(fetchNotificationCounts, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotificationCounts]);
+  // ---------------------------------------------------------------------------
 
   useEffect(() => {
     if (session) {
@@ -39,10 +86,81 @@ export default function MainLayout({
   const { Content, Sider } = Layout;
   const pathname = usePathname();
   const currentPath = pathname.split("/")[2];
-  const menus = menuSider();
+
+  // ---------------------------------------------------------------------------
+  // ส่วนที่แก้: Map เมนูใหม่เพื่อใส่ Badge (แทนที่ const menus = menuSider())
+  // ---------------------------------------------------------------------------
+  const userRole = session?.user?.role ?? "user";
   const pathParts = pathname.split("/");
   const selectedKey = pathParts[3] || pathParts[2];
   const openKey = pathParts[2];
+
+  const filterByRole = (menu: IMenu) =>
+    !menu.roles || menu.roles.includes(userRole);
+
+  const mapMenu = MenuSider.filter(filterByRole).map((item: IMenu) => {
+    // กรณีเมนูหลัก (ไม่มีลูก)
+    if (!item.children) {
+      const count = counts[item.key] || 0;
+      return {
+        ...item,
+        label: (
+          <Link
+            href={`/page/${item.key}`}
+            onClick={() => handleMenuClick(item.key)}
+          >
+            <div className="flex justify-between items-center w-full">
+              <span>{item.label}</span>
+              {count > 0 && (
+                <Badge
+                  count={count}
+                  offset={[0, 0]}
+                  size="small"
+                  className="badge-pulse"
+                />
+              )}
+            </div>
+          </Link>
+        ),
+      };
+    }
+
+    // กรณีมีเมนูย่อย -> เช็คว่าลูกมีเลขไหม ถ้ามีให้แม่ขึ้น Dot
+    const childHasNotification = item.children.some(
+      (c) => (counts[c.key] || 0) > 0,
+    );
+
+    return {
+      ...item,
+      icon: (
+        <Badge dot={childHasNotification} offset={[5, 0]}>
+          {item.icon}
+        </Badge>
+      ),
+      children: item.children
+        ?.filter((child) => !child.roles || child.roles.includes(userRole))
+        .map((child: IMenuChild) => {
+          const count = counts[child.key] || 0;
+          return {
+            ...child,
+            label: (
+              <Link
+                href={`/page/${item.key}/${child.key}`}
+                onClick={() => handleMenuClick(child.key)}
+              >
+                <div className="flex justify-between items-center w-full pr-2">
+                  <span>{child.label}</span>
+                  {count > 0 && (
+                    <Badge count={count} size="small" className="badge-pulse" />
+                  )}
+                </div>
+              </Link>
+            ),
+          };
+        }),
+    };
+  });
+  // ---------------------------------------------------------------------------
 
   if (!session) {
     return (
@@ -99,11 +217,12 @@ export default function MainLayout({
                   itemHoverColor: "#ffffff",
                   itemHoverBg: "rgba(255, 255, 255, 0.15)",
                   itemSelectedColor: "#ffffff",
-                  itemSelectedBg: "#06b6d4", // สี Cyan ตามธีม
+                  itemSelectedBg: "#06b6d4",
                 },
               },
             }}
           >
+            {/* ✅ ใช้ mapMenu (ที่มี Badge) แทน menus เดิม */}
             <Menu
               mode="inline"
               selectedKeys={[selectedKey]}
@@ -113,7 +232,7 @@ export default function MainLayout({
                 background: "transparent",
                 padding: "0 8px",
               }}
-              items={menus}
+              items={mapMenu}
             />
           </ConfigProvider>
         </div>

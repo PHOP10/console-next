@@ -315,6 +315,7 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
         open={modalOpen}
         onClose={handleCloseModal}
         record={selectedRecord}
+        dataUser={dataUser}
       />
     </>
   );

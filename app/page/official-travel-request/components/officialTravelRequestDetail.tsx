@@ -261,7 +261,7 @@ const OfficialTravelRequestDetail: React.FC<
                   <>
                     <Col xs={24} sm={12}>
                       <span className="text-slate-500 block text-xs">
-                        ผู้ดำเนินการ
+                        ผู้อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium">
                         {record.approvedByName}
@@ -269,7 +269,7 @@ const OfficialTravelRequestDetail: React.FC<
                     </Col>
                     <Col xs={24} sm={12}>
                       <span className="text-slate-500 block text-xs">
-                        วันที่ดำเนินการ
+                        วันที่อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium">
                         {formatDate(record.approvedDate)}

@@ -29,6 +29,7 @@ import CustomTable from "../../common/CustomTable";
 import dayjs from "dayjs";
 import { buddhistLocale } from "@/app/common";
 import "dayjs/locale/th";
+import { useRouter } from "next/navigation";
 
 dayjs.locale("th");
 
@@ -60,10 +61,10 @@ export default function MaDrugForm({
   const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState<DrugItemRow[]>([]);
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState("");
+  const router = useRouter();
 
   const summary = useMemo(() => {
     const totalItems = dataSource.length;
@@ -115,6 +116,7 @@ export default function MaDrugForm({
       form.resetFields();
       setDataSource([]);
       refreshData();
+      router.push("/page/ma-drug/maDrug?tab=1");
     } catch (error) {
       console.error(error);
       message.error("บันทึกข้อมูลล้มเหลว");

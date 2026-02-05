@@ -5,7 +5,11 @@ npm
 
 ```npm install react-chartjs-2 chart.js````
 
-```npm install exceljs file-saver```
+``npm install exceljs file-saver```
 
-```npm install --save-dev @types/crypto-js```
-``npm install swr``
+``npm install --save-dev @types/crypto-js```
+``npm install swr```
+
+
+``npm install socket.io-client@4.6.1``
+``npm install --save @nestjs/schedule``

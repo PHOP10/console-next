@@ -31,6 +31,7 @@ import {
 import "./Form.css";
 import { buddhistLocale } from "@/app/common";
 import "dayjs/locale/th";
+import { useRouter } from "next/navigation";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -43,6 +44,7 @@ export default function VisitHomeForm() {
   const [masterPatients, setMasterPatients] = useState<MasterPatientType[]>([]);
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
+  const router = useRouter();
 
   const fetchMasterPatients = async () => {
     try {
@@ -115,6 +117,7 @@ export default function VisitHomeForm() {
       await intraAuthService.createVisitHomeWaste(payload);
       message.success("บันทึกข้อมูลสำเร็จ");
       form.resetFields();
+      router.push("/page/visit-home/dataVisitHome");
     } catch (error) {
       console.error(error);
       message.error("เกิดข้อผิดพลาดในการเชื่อมต่อ API");

@@ -26,6 +26,7 @@ import CustomTable from "../../common/CustomTable";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import { buddhistLocale } from "@/app/common";
+import { useRouter } from "next/navigation";
 
 interface DispenseItemRow {
   key: string;
@@ -58,6 +59,7 @@ export default function DispenseForm({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState("");
+  const router = useRouter();
 
   // คำนวณยอดรวม (Items & Price)
   const summary = useMemo(() => {
@@ -111,6 +113,7 @@ export default function DispenseForm({
 
       setDataSource([]);
       refreshData();
+      router.push("/page/ma-drug/maDrug?tab=3");
     } catch (error) {
       console.error(error);
       message.error("บันทึกข้อมูลล้มเหลว กรุณาลองใหม่อีกครั้ง");

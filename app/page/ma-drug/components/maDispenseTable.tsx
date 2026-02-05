@@ -14,6 +14,7 @@ import {
   Modal,
   Input,
   Card,
+  Form,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -64,12 +65,14 @@ export default function MaDispenseTable({
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
+  const [formCancel] = Form.useForm();
 
   const openCancelModal = (id: number) => {
     setCancelingId(id);
     setCancelReason("");
     setIsCancelModalOpen(true);
     setOpenPopoverId(null);
+    formCancel.resetFields();
   };
 
   const handleViewDetail = (record: DispenseType) => {
@@ -82,11 +85,7 @@ export default function MaDispenseTable({
     setEditVisible(true);
   };
 
-  const handleCancelSubmit = async () => {
-    if (!cancelReason.trim()) {
-      message.warning("กรุณาระบุเหตุผลในการยกเลิก");
-      return;
-    }
+  const handleCancelSubmit = async (values: any) => {
     if (!cancelingId) return;
 
     try {
@@ -94,7 +93,7 @@ export default function MaDispenseTable({
       const payload = {
         id: cancelingId,
         status: "canceled",
-        cancelReason: cancelReason,
+        cancelReason: values.cancelReason,
         cancelName: session?.user?.fullName || "Admin",
       };
 
@@ -110,7 +109,6 @@ export default function MaDispenseTable({
       setCancelLoading(false);
     }
   };
-
   const handleApprove = async (id: number) => {
     try {
       setLoading(true);
@@ -298,7 +296,7 @@ export default function MaDispenseTable({
                 </Space>
               }
             >
-              <Tooltip title={isPending ? "ตรวจสอบและอนุมัติ" : ""}>
+              <Tooltip title={isPending ? "อนุมัติ" : "อนุมัติแล้ว"}>
                 <Button
                   type="text"
                   shape="circle"
@@ -414,7 +412,7 @@ export default function MaDispenseTable({
         bordered
         size="small" // ใช้ size small บนมือถือ
         pagination={{ pageSize: 10, size: "small" }}
-        scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
+        scroll={{ x: "max-content" }}
       />
 
       <DispenseTableDetail
@@ -428,20 +426,28 @@ export default function MaDispenseTable({
           <div className="flex items-center gap-2">ยืนยันการยกเลิกรายการ</div>
         }
         open={isCancelModalOpen}
-        onOk={handleCancelSubmit}
+        // ✅ แก้ไข: เมื่อกดปุ่ม OK ให้สั่ง submit ฟอร์ม
+        onOk={() => formCancel.submit()}
         onCancel={() => setIsCancelModalOpen(false)}
         okText="ยืนยันการยกเลิก"
+        cancelButtonProps={{ style: { display: "none" } }} // ซ่อนปุ่ม Cancel ตามเดิม
         okButtonProps={{ danger: true, loading: cancelLoading }}
         centered
         style={{ maxWidth: "95%" }}
       >
-        <Input.TextArea
-          rows={4}
-          value={cancelReason}
-          onChange={(e) => setCancelReason(e.target.value)}
-          placeholder="กรอกเหตุผลที่ยกเลิก..."
-          autoFocus
-        />
+        {/* ✅ ใช้ Form เต็มรูปแบบ */}
+        <Form form={formCancel} layout="vertical" onFinish={handleCancelSubmit}>
+          <Form.Item
+            name="cancelReason"
+            label="เหตุผลการยกเลิก"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="กรอกเหตุผลที่ต้องการยกเลิก..."
+            />
+          </Form.Item>
+        </Form>
       </Modal>
 
       <DispenseEdit

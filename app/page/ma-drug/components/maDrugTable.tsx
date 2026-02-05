@@ -174,7 +174,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
             color = "default";
             text = "รับยาแล้ว";
             break;
-          case "canceled":
           case "cancel":
             color = "red";
             text = "ยกเลิก";

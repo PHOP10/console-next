@@ -89,6 +89,7 @@ export default function MaMedicalEquipmentReturnModal({
         returnName: session?.user?.fullName,
         returndAt: new Date().toISOString(),
         returnNote: returnNote,
+        actorId: session?.user?.userId,
       });
 
       message.success("รับคืนอุปกรณ์เรียบร้อยแล้ว");
