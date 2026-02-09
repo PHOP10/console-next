@@ -1,9 +1,13 @@
+import { UploadResponse } from "@/app/common";
 import { AxiosInstance } from "axios";
 
 export const DataLeaveService = (axiosInstance: AxiosInstance) => {
   const baseUrlApiDataLeave = "/dataLeave";
   const baseUrlApiMasterLeave = "/masterLeave";
   const baseUrlApiUser = "/user";
+
+  const FILE_BASE_URL =
+    process.env.NEXT_PUBLIC_FILE_URL || "https://onm.arxencore.com";
 
   return {
     getUserQuery: async () => {
@@ -50,22 +54,22 @@ export const DataLeaveService = (axiosInstance: AxiosInstance) => {
         });
     },
 
-    uploadDataLeaveFile: async (file: File) => {
+    uploadDataLeaveFile: async (file: File): Promise<UploadResponse> => {
       const formData = new FormData();
       formData.append("file", file);
 
       return await axiosInstance
-        .post(`${baseUrlApiDataLeave}/upload`, formData, {
+        .post<UploadResponse>(`${baseUrlApiDataLeave}/upload`, formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         })
         .then((res) => {
-          return res.data;
+          return res.data; // TypeScript จะรู้ทันทีว่า data คือ UploadResponse
         })
         .catch((err) => {
           console.error("Upload file error:", err);
-          throw err;
+          throw err; // โยน Error ออกไปให้หน้าบ้านจัดการ (ถูกต้องแล้ว)
         });
     },
 
@@ -143,9 +147,8 @@ export const DataLeaveService = (axiosInstance: AxiosInstance) => {
 
     getFileUrl: (fileName: string) => {
       if (!fileName) return "";
-      return `https://onm.arxencore.com/uploads/data-leave/${encodeURIComponent(
-        fileName,
-      )}`;
+      // ผลลัพธ์: https://onm.arxencore.com/uploads/data-leave/xxx.pdf
+      return `${FILE_BASE_URL}/uploads/data-leave/${encodeURIComponent(fileName)}`;
     },
   };
 };

@@ -89,12 +89,15 @@ export default function DataLeaveTable({
       key: "reason",
       align: "center",
       width: 150,
+      responsive: ["lg"],
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
         return text.length > maxLength ? (
           <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
+            <span style={{ fontWeight: "normal" }}>
+              {text.slice(0, maxLength) + "..."}
+            </span>
           </Tooltip>
         ) : (
           text
@@ -112,11 +115,10 @@ export default function DataLeaveTable({
         const dateObj = dayjs(text);
         return (
           <>
-            {/* แสดงบนมือถือ: D MMM BB */}
             <span className="md:hidden font-normal">
               {dateObj.format("D MMM BB")}
             </span>
-            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+
             <span className="hidden md:block font-normal">
               {dateObj.locale("th").format("D MMMM BBBB")}
             </span>
@@ -135,11 +137,9 @@ export default function DataLeaveTable({
         const dateObj = dayjs(text);
         return (
           <>
-            {/* แสดงบนมือถือ: D MMM BB */}
             <span className="md:hidden font-normal">
               {dateObj.format("D MMM BB")}
             </span>
-            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
             <span className="hidden md:block font-normal">
               {dateObj.locale("th").format("D MMMM BBBB")}
             </span>

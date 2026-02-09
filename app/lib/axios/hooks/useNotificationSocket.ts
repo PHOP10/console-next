@@ -32,9 +32,6 @@ export const useNotificationSocket = (
         // อัปเดต State ทันที! Badge จะเปลี่ยนเลขปุ๊บ
         setCounts(payload.counts.menuCounts || {});
       }
-
-      // กรณีที่ 2: มีการแจ้งเตือนใหม่ (new_notification)
-      // คุณอาจจะเพิ่ม Toast หรือเสียงแจ้งเตือนตรงนี้ได้
       if (payload.type === "new_notification") {
         // ตัวอย่าง: playSound();
       }

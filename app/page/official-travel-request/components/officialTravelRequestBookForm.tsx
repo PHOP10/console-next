@@ -158,16 +158,14 @@ export default function OfficialTravelRequestBookForm({
   };
 
   useEffect(() => {
-    // 1. Set default state: Always include the current user
     if (session?.user?.userId) {
       const currentNames = form.getFieldValue("passengerNames") || [];
 
-      // If current user is not in the list, add them
       if (!currentNames.includes(session.user.userId)) {
         const newNames = [...currentNames, session.user.userId];
         form.setFieldsValue({
           passengerNames: newNames,
-          passengers: newNames.length, // ✅ Auto-update the count immediately
+          passengers: newNames.length,
         });
       }
     }
@@ -222,7 +220,7 @@ export default function OfficialTravelRequestBookForm({
                 ]}
               >
                 <Input
-                  placeholder="เช่น ตก 0000.1.1/111"
+                  placeholder="กรอกเลขที่เอกสาร"
                   maxLength={15}
                   className={inputStyle}
                 />
@@ -584,7 +582,7 @@ export default function OfficialTravelRequestBookForm({
 
                       {!selectedTravelType && (
                         <div className="text-gray-400 text-center">
-                          กรุณาเลือกประเภทการเดินทางด้านซ้าย
+                          กรุณาเลือกประเภทการเดินทาง
                         </div>
                       )}
                     </div>
@@ -594,26 +592,7 @@ export default function OfficialTravelRequestBookForm({
             </div>
           </div>
 
-          {/* Section 4: ผู้โดยสารและงบประมาณ */}
-          {/* Section 4: Passengers (Auto-Calculation Logic) */}
           <Row gutter={16}>
-            <Col xs={24} sm={6}>
-              <Form.Item
-                label="จำนวนผู้โดยสาร"
-                name="passengers"
-                // No rules needed, as it is controlled by the system
-              >
-                <InputNumber
-                  min={1}
-                  max={10}
-                  style={{ width: "100%" }}
-                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`} // Add gray background to indicate read-only
-                  readOnly // ✅ Lock this field. User cannot type manually.
-                  controls={false} // Hide +/- buttons
-                />
-              </Form.Item>
-            </Col>
-
             <Col xs={24} sm={18}>
               <Form.Item
                 label="รายชื่อผู้โดยสาร"
@@ -626,20 +605,16 @@ export default function OfficialTravelRequestBookForm({
                   optionFilterProp="children"
                   className={selectStyle}
                   maxTagCount="responsive"
-                  // ✅ 1. When names change, automatically update the number
                   onChange={(values) => {
                     form.setFieldValue("passengers", values.length);
                   }}
-                  // ✅ 2. Prevent removing self (Better UX than showing an error)
                   onDeselect={(val) => {
                     if (val === session?.user?.userId) {
-                      // If user tries to remove themselves, re-add them instantly
                       const current = form.getFieldValue("passengerNames");
-                      // Use setTimeout to ensure state updates correctly after the deselect event
+
                       setTimeout(() => {
                         const restored = [...current, val];
 
-                        // 🛠️ แก้ตรงนี้: ใช้ Array.from แทน [...new Set] เพื่อแก้ Error TypeScript
                         const unique = Array.from(new Set(restored));
 
                         form.setFieldValue("passengerNames", unique);
@@ -655,6 +630,18 @@ export default function OfficialTravelRequestBookForm({
                     </Select.Option>
                   ))}
                 </Select>
+              </Form.Item>
+            </Col>
+            <Col xs={24} sm={6}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
+                <InputNumber
+                  min={1}
+                  max={10}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`}
+                  readOnly
+                  controls={false}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -682,7 +669,7 @@ export default function OfficialTravelRequestBookForm({
             <Col xs={24} sm={18}>
               <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
                 <Input.TextArea
-                  placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
+                  placeholder="กรอกหมายเหตุเพิ่มเติม"
                   rows={2}
                   className={textAreaStyle}
                 />

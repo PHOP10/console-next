@@ -185,7 +185,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
             break;
           case "success":
             color = "default";
-            text = "สำเร็จ";
+            text = "เสร็จสิ้น";
             break;
           case "cancel":
             color = "red";

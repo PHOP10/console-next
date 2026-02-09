@@ -56,7 +56,7 @@ const OfficialTravelRequestDetail: React.FC<
       case "success":
         return (
           <Tag color="default" className={baseStyle}>
-            สำเร็จ
+            เสร็จสิ้น
           </Tag>
         );
       default:
@@ -327,7 +327,7 @@ const OfficialTravelRequestDetail: React.FC<
               onClick={onClose}
               className="h-9 sm:h-10 px-4 sm:px-6 rounded-lg text-slate-600 hover:bg-slate-100 border-slate-300 w-full sm:w-auto"
             >
-              ปิดหน้าต่าง
+              ปิด
             </Button>
           </div>
         </div>

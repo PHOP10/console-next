@@ -43,7 +43,7 @@ export default function Login() {
         } else if (errorMsg.includes("user") || errorMsg.includes("found")) {
           message.error("ไม่พบชื่อผู้ใช้งานนี้ในระบบ");
         } else {
-          message.error("เข้าสู่ระบบไม่สำเร็จ: " + result.error);
+          message.error("เข้าสู่ระบบไม่สำเร็จ");
         }
       } else {
         message.success("เข้าสู่ระบบสำเร็จ");

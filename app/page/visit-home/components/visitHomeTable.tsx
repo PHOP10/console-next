@@ -24,6 +24,8 @@ import {
   DeleteOutlined,
   UserOutlined,
   FileSearchOutlined,
+  PrinterOutlined,
+  FileWordOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -34,6 +36,8 @@ import CustomTable from "../../common/CustomTable";
 import "dayjs/locale/th";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import thTH from "antd/es/locale/th_TH";
+import VisitHomeExportWord from "./visitHomeExportWord";
+import { useSession } from "next-auth/react";
 
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
@@ -84,7 +88,7 @@ export default function VisitHomeTable({
   );
   const [filterDate, setFilterDate] = useState<any>(null);
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");
-
+  const { data: session } = useSession();
   const decryptData = (ciphertext: string) => {
     if (!ciphertext) return "-";
     if (!ciphertext.toString().startsWith("U2F")) return ciphertext;
@@ -152,6 +156,7 @@ export default function VisitHomeTable({
       title: "ชื่อ-นามสกุล",
       dataIndex: "fullName",
       key: "fullName",
+      align: "center",
       width: 180,
       render: (text: string) => (
         <div
@@ -207,28 +212,67 @@ export default function VisitHomeTable({
       title: "ที่อยู่",
       dataIndex: "address",
       key: "address",
-      width: 200,
-      ellipsis: { showTitle: false },
+      width: 150,
       responsive: ["lg"],
-      render: (text) => decryptData(text),
+      // ลบ ellipsis: { showTitle: false } ออก เพราะเราจะคุมเอง
+      render: (text) => {
+        const decoded = decryptData(text);
+        const maxLength = 25; // กำหนดตัดคำที่ 20 ตัวอักษร
+
+        return (
+          <Tooltip placement="topLeft" title={decoded}>
+            <span style={{ fontWeight: "normal" }}>
+              {decoded.length > maxLength
+                ? `${decoded.substring(0, maxLength)}...`
+                : decoded}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "อาการ",
       dataIndex: "symptoms",
       key: "symptoms",
       width: 150,
-      ellipsis: true,
-      responsive: ["md"], // ซ่อนบนมือถือ
-      render: (text) => decryptData(text),
+      responsive: ["md"],
+      render: (text) => {
+        const decoded = decryptData(text);
+        const maxLength = 30;
+
+        return (
+          <Tooltip placement="topLeft" title={decoded}>
+            {/* ✅ เพิ่ม fontWeight: 'normal' เพื่อบังคับให้ตัวหนังสือบางปกติ */}
+            <span style={{ fontWeight: "normal" }}>
+              {decoded.length > maxLength
+                ? `${decoded.substring(0, maxLength)}...`
+                : decoded}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "ยาที่ได้รับ",
       dataIndex: "medication",
       key: "medication",
-      width: 150,
-      ellipsis: true,
-      responsive: ["xl"], // แสดงเฉพาะจอใหญ่มาก
-      render: (text) => decryptData(text),
+      width: 130,
+      responsive: ["xl"],
+      render: (text) => {
+        const decoded = decryptData(text);
+        const maxLength = 20; // ปรับจำนวนตัวอักษรที่ต้องการตัดตรงนี้
+
+        return (
+          <Tooltip placement="topLeft" title={decoded}>
+            {/* ✅ เพิ่ม fontWeight: 'normal' เช่นกัน */}
+            <span style={{ fontWeight: "normal" }}>
+              {decoded.length > maxLength
+                ? `${decoded.substring(0, maxLength)}...`
+                : decoded}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "นัดถัดไป",
@@ -236,7 +280,7 @@ export default function VisitHomeTable({
       key: "nextAppointment",
       width: 120,
       align: "center",
-      responsive: ["sm"], // ซ่อนบนมือถือเล็ก
+      responsive: ["sm"],
       render: (text: string) => {
         if (!text) return "-";
         const date = dayjs(text);
@@ -267,38 +311,44 @@ export default function VisitHomeTable({
               onClick={() => openModal(record, "view")}
             />
           </Tooltip>
+          <VisitHomeExportWord record={record} />
 
-          <Tooltip title="แก้ไข">
-            <EditOutlined
-              style={{
-                fontSize: 18,
-                color: "#faad14",
-                cursor: "pointer",
-                transition: "color 0.2s",
-              }}
-              onClick={() => openModal(record, "edit")}
-            />
-          </Tooltip>
-
-          <Popconfirm
-            title="ยืนยันการลบ?"
-            description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
-            onConfirm={() => handleDelete(record.id)}
-            okText="ลบ"
-            cancelText="ยกเลิก"
-            okButtonProps={{ danger: true }}
-          >
-            <Tooltip title="ลบ">
-              <DeleteOutlined
+          {(session?.user?.role === "admin" ||
+            session?.user?.role === "home") && (
+            <Tooltip title="แก้ไข">
+              <EditOutlined
                 style={{
                   fontSize: 18,
-                  color: "#ff4d4f",
+                  color: "#faad14",
                   cursor: "pointer",
                   transition: "color 0.2s",
                 }}
+                onClick={() => openModal(record, "edit")}
               />
             </Tooltip>
-          </Popconfirm>
+          )}
+          {(session?.user?.role === "admin" ||
+            session?.user?.role === "home") && (
+            <Popconfirm
+              title="ยืนยันการลบ?"
+              description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="ลบ"
+              cancelText="ยกเลิก"
+              okButtonProps={{ danger: true }}
+            >
+              <Tooltip title="ลบ">
+                <DeleteOutlined
+                  style={{
+                    fontSize: 18,
+                    color: "#ff4d4f",
+                    cursor: "pointer",
+                    transition: "color 0.2s",
+                  }}
+                />
+              </Tooltip>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -338,8 +388,8 @@ export default function VisitHomeTable({
                   placeholder={["วันที่เริ่ม", "วันที่สิ้นสุด"]}
                   value={filterDate}
                   onChange={(dates) => setFilterDate(dates)}
-                  style={{ width: "100%" }} // เต็มจอบนมือถือ
-                  className="sm:w-[260px]" // จอใหญ่ Fix width
+                  style={{ width: "100%" }}
+                  className="sm:w-[260px]"
                 />
               </ConfigProvider>
 
@@ -396,15 +446,15 @@ export default function VisitHomeTable({
           dataSource={filteredData}
           loading={loading}
           rowKey="id"
+          scroll={{ x: "max-content" }}
+          bordered
+          size="middle"
           pagination={{
             pageSize: 20,
             showTotal: (total) => `รวม ${total} รายการ`,
             position: ["bottomRight"],
             size: "small",
           }}
-          scroll={{ x: "max-content" }}
-          bordered
-          size="middle"
         />
       </Card>
 
@@ -417,12 +467,11 @@ export default function VisitHomeTable({
         onSuccess={() => {
           setModalVisible(false);
           setEditingRecord(null);
-          setLoading(true);
-          fetchData();
         }}
         record={editingRecord}
         masterPatients={masterPatients}
         initialMode={modalMode}
+        fetchData={fetchData}
       />
     </div>
   );

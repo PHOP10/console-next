@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import {
   Calendar,
+  Formats,
   momentLocalizer,
   Event as RbcEvent,
 } from "react-big-calendar";
@@ -11,6 +12,7 @@ import { MaCarType, MasterCarType, UserType } from "../../common";
 import moment from "moment";
 import "moment/locale/th";
 import MaCarDetail from "./maCarDetail";
+import { Tooltip } from "antd";
 
 const localizer = momentLocalizer(moment);
 
@@ -74,6 +76,25 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
     setModalOpen(false);
   };
 
+  const formats: Formats = {
+    monthHeaderFormat: (date: Date) => {
+      const mDate = moment(date);
+      return `${mDate.format("MMMM")} ${mDate.year() + 543}`;
+    },
+    dayRangeHeaderFormat: ({ start, end }: { start: Date; end: Date }) => {
+      const s = moment(start);
+      const e = moment(end);
+      if (s.year() === e.year()) {
+        return `${s.format("D MMM")} - ${e.format("D MMM")} ${e.year() + 543}`;
+      }
+      return `${s.format("D MMM")} ${s.year() + 543} - ${e.format("D MMM")} ${e.year() + 543}`;
+    },
+    dayHeaderFormat: (date: Date) => {
+      const mDate = moment(date);
+      return `${mDate.format("D MMMM")} ${mDate.year() + 543}`;
+    },
+  };
+
   return (
     <>
       <div className="mb-6 -mt-7">
@@ -86,6 +107,7 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
       <div className="modern-calendar-wrapper">
         <Calendar<CustomEvent>
           localizer={localizer}
+          formats={formats}
           events={data.map(
             (item): CustomEvent => ({
               id: item.id,
@@ -136,7 +158,47 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
             date: "วันที่",
             time: "เวลา",
             event: "การจอง",
-            showMore: (total) => `+ อีก ${total} รายการ`,
+           showMore: (total, remaining, events) => {
+              const content = (
+                <div className="flex flex-col gap-1 p-2 min-w-[160px]">
+                  {events.map((evt, idx) => {
+                    const color = getStatusColor(evt.status);
+                    return (
+                      <div
+                        key={idx}
+                        className="truncate text-xs px-2 py-1 rounded mb-1 last:mb-0"
+                        style={{
+                          backgroundColor: `${color}1A`,
+                          color: color,
+                          border: `1px solid ${color}4D`,
+                          textAlign: "left",
+                        }}
+                      >
+                        {evt.title}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+
+              return (
+                <Tooltip
+                  title={content}
+                  color="#ffffff"
+                  overlayInnerStyle={{
+                    color: "black",
+                    padding: 0,
+                    borderRadius: "8px",
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+                  }}
+                  mouseEnterDelay={0.1}
+                >
+                  <span className="cursor-pointer hover:bg-gray-100 px-2 py-0.5 rounded text-xs text-gray-500 font-medium transition-colors">
+                    + อีก {total} รายการ
+                  </span>
+                </Tooltip>
+              );
+            },
           }}
         />
       </div>

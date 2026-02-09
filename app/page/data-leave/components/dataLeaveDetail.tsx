@@ -65,7 +65,7 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
       case "success":
         return (
           <Tag color="default" className={baseStyle}>
-            สำเร็จ
+            เสร็จสิ้น
           </Tag>
         );
       default:

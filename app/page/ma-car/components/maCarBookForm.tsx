@@ -509,19 +509,6 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
           </Row>
 
           <Row gutter={16}>
-            <Col xs={24} sm={6}>
-              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
-                <InputNumber
-                  min={1}
-                  max={10}
-                  style={{ width: "100%" }}
-                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`}
-                  readOnly // ✅ ล็อกห้ามพิมพ์เอง
-                  controls={false} // ซ่อนปุ่ม +/-
-                />
-              </Form.Item>
-            </Col>
-
             <Col xs={24} sm={18}>
               <Form.Item
                 label="รายชื่อผู้โดยสาร"
@@ -534,17 +521,15 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   optionFilterProp="children"
                   className={selectStyle}
                   maxTagCount="responsive"
-                  // ✅ 1. เมื่อมีการเลือกชื่อเพิ่ม/ลด ให้อัปเดตตัวเลขจำนวนคนทันที
                   onChange={(values) => {
                     form.setFieldValue("passengers", values.length);
                   }}
-                  // ✅ 2. ห้ามลบชื่อตัวเองออก (User Experience ที่ดีกว่า)
                   onDeselect={(val) => {
                     if (val === session?.user?.userId) {
                       const current = form.getFieldValue("passengerNames");
                       setTimeout(() => {
                         const restored = [...current, val];
-                        // แก้ TypeScript Error ด้วย Array.from(new Set(...))
+
                         const unique = Array.from(new Set(restored));
 
                         form.setFieldValue("passengerNames", unique);
@@ -560,6 +545,18 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                     </Select.Option>
                   ))}
                 </Select>
+              </Form.Item>
+            </Col>{" "}
+            <Col xs={24} sm={6}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
+                <InputNumber
+                  min={1}
+                  max={10}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`}
+                  readOnly
+                  controls={false}
+                />
               </Form.Item>
             </Col>
           </Row>

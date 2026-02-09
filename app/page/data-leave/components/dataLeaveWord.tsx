@@ -3,7 +3,7 @@
 import PizZip from "pizzip";
 import Docxtemplater from "docxtemplater";
 import { saveAs } from "file-saver";
-import { Button, Tooltip } from "antd";
+import { Tooltip, message } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -11,9 +11,11 @@ import { DataLeaveService } from "../services/dataLeave.service";
 import { useEffect, useState } from "react";
 import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import { userService } from "../../user/services/user.service";
-import { ExportOutlined, FileWordOutlined } from "@ant-design/icons";
-
+import { FileWordOutlined } from "@ant-design/icons";
+import Holidays from "date-holidays";
 dayjs.locale("th");
+
+const hd = new Holidays("TH");
 
 interface DataLeaveWordProps {
   record: any;
@@ -45,21 +47,74 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (record.createdById) {
+      fetchData();
+    }
+  }, [record]);
 
-  // ฟังก์ชันคำนวณวันลา
-  const calculateDays = (start: string | Date, end: string | Date) => {
-    if (!start || !end) return 0;
-    return dayjs(end).endOf("day").diff(dayjs(start).startOf("day"), "day") + 1;
+  const isHoliday = (date: dayjs.Dayjs) => {
+    const holiday = hd.isHoliday(date.toDate());
+    if (holiday && holiday[0].type === "public") {
+      return true;
+    }
+    return false;
   };
 
-  // ฟังก์ชันคำนวณสรุปการลาตามประเภท
+  // ฟังก์ชันคำนวณจำนวนวัน
+  const calculateDays = (start: string | Date, end: string | Date) => {
+    if (!start || !end) return 0;
+
+    const startDate = dayjs(start).startOf("day");
+    const endDate = dayjs(end).endOf("day");
+
+    if (endDate.isBefore(startDate)) return 0;
+
+    let count = 0;
+    let current = startDate;
+
+    while (current.isBefore(endDate) || current.isSame(endDate, "day")) {
+      const dayOfWeek = current.day();
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+      if (!isWeekend && !isHoliday(current)) {
+        count++;
+      }
+      current = current.add(1, "day");
+    }
+    return count;
+  };
+
+  // ✅ ฟังก์ชันแปลงเป็นเลขไทย (ใช้กับวันที่ และส่วนอื่นๆ)
+  const toThaiNumber = (input: string | number | undefined | null): string => {
+    if (input === undefined || input === null || input === "") return "";
+    const thaiDigits = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
+    return input
+      .toString()
+      .replace(/[0-9]/g, (digit) => thaiDigits[parseInt(digit)]);
+  };
+
+  // ✅ เพิ่มฟังก์ชันจัดการเลขอารบิก (สำหรับเบอร์โทร และ ตาราง)
+  const toArabicNumber = (
+    input: string | number | undefined | null,
+  ): string => {
+    if (input === undefined || input === null || input === "") return "";
+    return input.toString(); // ส่งคืนเป็น string ปกติ (เลขอารบิก)
+  };
+
+  const formatThaiDate = (date: string | Date | undefined) => {
+    if (!date) return "....................";
+    const d = dayjs(date);
+    const day = toThaiNumber(d.format("D"));
+    const month = d.format("MMMM");
+    const year = toThaiNumber(d.year() + 543);
+    return `${day} ${month} ${year}`;
+  };
+
+  // Logic สถิติวันลา
   const getLeaveStats = (leaveTypeName: string) => {
     const leave = masterLeave.find((l) => l.leaveType === leaveTypeName);
     if (!leave) return { usedDays: 0, currentDays: 0, totalDays: 0 };
 
-    // ลามาแล้ว (approve แล้ว ไม่รวมครั้งปัจจุบัน)
     const usedDays = dataLeaveUser
       .filter(
         (item) =>
@@ -72,20 +127,22 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         0,
       );
 
-    // ลาครั้งนี้
     const currentDays =
       record.typeId === leave.id
         ? calculateDays(record.dateStart, record.dateEnd)
         : 0;
 
-    // รวมการลา
-    const totalDays = usedDays + currentDays;
-
-    return { usedDays, currentDays, totalDays };
+    return { usedDays, currentDays, totalDays: usedDays + currentDays };
   };
 
   const handleExport = async () => {
     try {
+      if (masterLeave.length === 0 || dataLeaveUser.length === 0) {
+        await fetchData();
+        message.warning("กำลังโหลดข้อมูล กรุณากดใหม่อีกครั้ง");
+        return;
+      }
+
       const response = await fetch("/dataLeaveTemplate.docx");
       if (!response.ok) throw new Error("ไม่สามารถโหลด template.docx");
       const arrayBuffer = await response.arrayBuffer();
@@ -94,6 +151,13 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       const doc = new Docxtemplater(zip, {
         paragraphLoop: true,
         linebreaks: true,
+        nullGetter: (part) => (part.value ? part.value : ""),
+      });
+
+      // --- ข้อมูล User ---
+      const creator = userData.find((u) => {
+        if (record.createdById) return u.userId === record.createdById;
+        return `${u.firstName} ${u.lastName}` === record.createdName;
       });
 
       const backupUser =
@@ -104,83 +168,6 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         ? `${backupUser.firstName} ${backupUser.lastName}`
         : "-";
 
-      const creators = userData.find((u) => {
-        const fullName = `${u.firstName} ${u.lastName}`;
-        return fullName === backupUserName;
-      });
-      const genderPrefixs = creators
-        ? creators.gender === "male"
-          ? "นาย"
-          : creators.gender === "female"
-            ? "นาง"
-            : creators.gender === "miss"
-              ? "นางสาว"
-              : (creators.gender ?? "-")
-        : "-";
-
-      // const userPosition =
-      //   record.createdName && userData.length
-      //     ? userData.find((u) => u.username === record.createdName)
-      //     : null;
-      const userPosition =
-        record.createdName && userData.length > 0
-          ? userData.find(
-              (u) => `${u.firstName} ${u.lastName}` === record.createdName,
-            )?.position || "ไม่ระบุตำแหน่ง"
-          : "ไม่ระบุตำแหน่ง";
-
-      // console.log("User:", userPosition);
-      // console.log("User:", userData);
-      // console.log("User:", record.createdName);
-
-      const toThaiNumber = (input: string | number): string => {
-        const thaiDigits = ["๐", "๑", "๒", "๓", "๔", "๕", "๖", "๗", "๘", "๙"];
-        return input
-          .toString()
-          .replace(/[0-9]/g, (digit) => thaiDigits[parseInt(digit)]);
-      };
-
-      const formatThaiDate = (date: string | Date) => {
-        const d = dayjs(date);
-        const day = toThaiNumber(d.format("D"));
-        const month = d.format("MMMM");
-        const year = toThaiNumber(d.year() + 543);
-        return `${day} ${month} ${year}`;
-      };
-
-      const leaveType = record.masterLeave?.leaveType ?? "-";
-      const leaveTypes = record.masterLeave?.leaveType ?? "-";
-
-      const sortedLeave = [...(dataLeaveUser || [])].sort(
-        (a, b) => dayjs(b.dateEnd).valueOf() - dayjs(a.dateEnd).valueOf(),
-      );
-
-      // ถ้ามีหลายครั้ง → เอาครั้งก่อนล่าสุด (index 1)
-      // ถ้ามีครั้งเดียว → เอาครั้งนั้นเอง (index 0)
-      const previousLeave = sortedLeave[1] || sortedLeave[0];
-
-      const latestDateStart = previousLeave?.dateStart;
-      const latestDateEnd = previousLeave?.dateEnd;
-
-      const sickLeave = getLeaveStats("ลาป่วย");
-      const maternityLeave = getLeaveStats("ลาคลอดบุตร");
-      const personalLeave = getLeaveStats("ลากิจส่วนตัว");
-
-      const leaveD =
-        latestDateStart && latestDateEnd
-          ? dayjs(latestDateEnd).diff(dayjs(latestDateStart), "day") + 1
-          : 0;
-      const checked = "☑"; // \u2611
-      const unchecked = "☐"; // \u2610
-      const checkeds = "(/)"; // กรณีเลือก
-      const uncheckeds = "( )"; // กรณีไม่ได้เลือก
-
-      const creator = userData.find((u) => {
-        const fullName = `${u.firstName} ${u.lastName}`;
-        return fullName === record.createdName;
-      });
-
-      // 2. ตรวจสอบเพศ/คำนำหน้าจาก User ที่หาเจอ
       const genderPrefix = creator
         ? creator.gender === "male"
           ? "นาย"
@@ -191,63 +178,116 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
               : (creator.gender ?? "-")
         : "-";
 
+      // ✅ คำนวณคำนำหน้าชื่อผู้ปฏิบัติงานแทน (backupGenderPrefix) เพื่อใช้เป็น gds
+      const backupGenderPrefix = backupUser
+        ? backupUser.gender === "male"
+          ? "นาย"
+          : backupUser.gender === "female"
+            ? "นาง"
+            : backupUser.gender === "miss"
+              ? "นางสาว"
+              : (backupUser.gender ?? "-")
+        : "-";
+
+      const userPosition = creator?.position || "ไม่ระบุตำแหน่ง";
+
+      // --- ประวัติการลาครั้งก่อน ---
+      const historyLeaves = dataLeaveUser.filter((l) => {
+        return (
+          l.status === "approve" &&
+          l.id !== record.id &&
+          dayjs(l.dateEnd).isBefore(dayjs(record.dateStart), "day")
+        );
+      });
+      historyLeaves.sort(
+        (a, b) => dayjs(b.dateEnd).valueOf() - dayjs(a.dateEnd).valueOf(),
+      );
+      const lastLeave = historyLeaves.length > 0 ? historyLeaves[0] : null;
+      const lastLeaveTypeName = lastLeave
+        ? masterLeave.find((m) => m.id === lastLeave.typeId)?.leaveType || ""
+        : "";
+
+      // --- ตัวแปรสำหรับ Template ---
+      const checked = "☑";
+      const unchecked = "☐";
+      const currentLeaveType = record.masterLeave?.leaveType ?? "-";
+
+      // ✅ คำนวณจำนวนวันลา "ปัจจุบัน" (ที่ถูกต้อง)
+      const currentDuration = calculateDays(record.dateStart, record.dateEnd);
+
+      const lastDuration = lastLeave
+        ? calculateDays(lastLeave.dateStart, lastLeave.dateEnd)
+        : 0;
+
+      const sickLeave = getLeaveStats("ลาป่วย");
+      const maternityLeave = getLeaveStats("ลาคลอดบุตร");
+      const personalLeave = getLeaveStats("ลากิจส่วนตัว");
+
       const data = {
-        dateStart: record.dateStart ? formatThaiDate(record.dateStart) : "-",
-        dateEnd: record.dateEnd ? formatThaiDate(record.dateEnd) : "-",
-        writeAt: record.writeAt || "-",
-        contactAddress: record.contactAddress || "-",
-        contactPhone: record.contactPhone || "-",
-        backupUser: backupUserName,
+        // --- ส่วนหัว ---
+        writeAt: record.writeAt || "....................",
+        D: toThaiNumber(dayjs().format("D")),
+        MM: dayjs().format("MMMM"),
+        BBBB: toThaiNumber(dayjs().year() + 543),
+
+        leaveType: currentLeaveType,
+        gd: genderPrefix,
+        createdBy: record.createdName || "-",
         userPosition: userPosition,
-        leaveType: leaveType,
-        details: record.details || "-",
-        status: record.status || "-",
-        approvedBy: record.approvedByName || "-",
+
+        // --- การลาครั้งนี้ ---
+        dateStart: formatThaiDate(record.dateStart),
+        dateEnd: formatThaiDate(record.dateEnd),
+
+        // ✅ เพิ่มตัวแปรนี้: สำหรับแสดงจำนวนวันลาปัจจุบัน (๑๔ วัน)
+        ctLeaveDays: toThaiNumber(currentDuration),
+
+        // Checkbox
+        cS: currentLeaveType === "ลาป่วย" ? checked : unchecked,
+        cP: currentLeaveType === "ลากิจส่วนตัว" ? checked : unchecked,
+        cM: currentLeaveType === "ลาคลอดบุตร" ? checked : unchecked,
+        r1: currentLeaveType === "ลาป่วย" ? record.reason : "",
+        r2: currentLeaveType === "ลากิจส่วนตัว" ? record.reason : "",
+        r3: currentLeaveType === "ลาคลอดบุตร" ? record.reason : "",
+
+        // --- ประวัติการลาครั้งก่อน (ใช้ leaveD สำหรับครั้งก่อน) ---
+        sS: lastLeaveTypeName === "ลาป่วย" ? checked : unchecked,
+        sP: lastLeaveTypeName === "ลากิจส่วนตัว" ? checked : unchecked,
+        sM: lastLeaveTypeName === "ลาคลอดบุตร" ? checked : unchecked,
+        dateStarts: lastLeave
+          ? formatThaiDate(lastLeave.dateStart)
+          : "....................",
+        dateEnds: lastLeave
+          ? formatThaiDate(lastLeave.dateEnd)
+          : "....................",
+
+        // ตัวแปร leaveD เดิม ใช้แสดงจำนวนวันของ "ครั้งก่อน" (เช่น ๔ วัน)
+        leaveD: lastLeave ? toThaiNumber(lastDuration) : ".....",
+
+        // --- อื่นๆ ---
+        cAd:
+          record.contactAddress || "........................................",
+        contactPhone: record.contactPhone || "....................",
+        gds: backupGenderPrefix,
+        backupUser: backupUserName,
+        approvedBy: record.approvedByName || "....................",
         approvedDate: record.approvedDate
           ? formatThaiDate(record.approvedDate)
-          : "-",
-        createdBy: record.createdName || "-",
-        createdAt: record.createdAt ? formatThaiDate(record.createdAt) : "-",
-        D: record.createdAt
-          ? toThaiNumber(dayjs(record.createdAt).format("D"))
-          : "-",
-        MM: record.createdAt
-          ? dayjs(record.createdAt).locale("th").format("MMMM")
-          : "-",
-        BBBB: record.createdAt
-          ? toThaiNumber(dayjs(record.createdAt).year() + 543)
-          : "-",
-        dateStarts: latestDateStart ? formatThaiDate(latestDateStart) : "-",
-        dateEnds: latestDateEnd ? formatThaiDate(latestDateEnd) : "-",
-        leaveD,
-        gd: genderPrefix,
-        gds: genderPrefixs,
-        sS: leaveTypes === "ลาป่วย" ? checked : unchecked,
-        sP: leaveTypes === "ลากิจส่วนตัว" ? checked : unchecked,
-        sM: leaveTypes === "ลาคลอดบุตร" ? checked : unchecked,
+          : "....................",
 
-        cS: leaveType === "ลาป่วย" ? checked : unchecked,
-        cP: leaveType === "ลากิจส่วนตัว" ? checked : unchecked,
-        cM: leaveType === "ลาคลอดบุตร" ? checked : unchecked,
+        // สถิติ
+        // ✅ แก้ไข: สถิติในตารางเป็นเลขอารบิก (toArabicNumber)
+        sickU: toArabicNumber(sickLeave.usedDays),
+        sickC: toArabicNumber(sickLeave.currentDays),
+        sickTt: toArabicNumber(sickLeave.totalDays),
 
-        r1: leaveType === "ลาป่วย" ? record.reason : "",
-        r2: leaveType === "ลากิจส่วนตัว" ? record.reason : "",
-        r3: leaveType === "ลาคลอดบุตร" ? record.reason : "",
+        matUs: toArabicNumber(maternityLeave.usedDays),
+        matCu: toArabicNumber(maternityLeave.currentDays),
+        matTt: toArabicNumber(maternityLeave.totalDays),
 
-        // ✅ สรุปการลา - ลาป่วย
-        sickUsed: sickLeave.usedDays,
-        sickCurrent: sickLeave.currentDays,
-        sickTotal: sickLeave.totalDays,
-
-        // ✅ สรุปการลา - ลาคลอดบุตร
-        matUs: maternityLeave.usedDays,
-        matCur: maternityLeave.currentDays,
-        matTot: maternityLeave.totalDays,
-
-        // ✅ สรุปการลา - ลากิจส่วนตัว
-        perUs: personalLeave.usedDays,
-        perCur: personalLeave.currentDays,
-        perTot: personalLeave.totalDays,
+        perUs: toArabicNumber(personalLeave.usedDays),
+        perCu: toArabicNumber(personalLeave.currentDays),
+        perTt: toArabicNumber(personalLeave.totalDays),
       };
 
       doc.render(data);
@@ -256,15 +296,16 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       saveAs(blob, `ใบลา_${record.id}.docx`);
     } catch (error) {
       console.error("Export Word error:", error);
+      message.error("เกิดข้อผิดพลาดในการ Export");
     }
   };
 
   return (
     <>
-      <Tooltip title="Export">
+      <Tooltip title="ดาวน์โหลดใบลา (Word)">
         <FileWordOutlined
           style={{
-            fontSize: 22,
+            fontSize: 18,
             color: record.status === "approve" ? "#1677ff" : "#d9d9d9",
             cursor: record.status === "approve" ? "pointer" : "not-allowed",
             transition: "color 0.2s",
@@ -272,16 +313,6 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
           onClick={() => {
             if (record.status === "approve") {
               handleExport();
-            }
-          }}
-          onMouseEnter={(e) => {
-            if (record.status === "approve") {
-              (e.currentTarget as HTMLElement).style.color = "#0958d9";
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (record.status === "approve") {
-              (e.currentTarget as HTMLElement).style.color = "#1677ff";
             }
           }}
         />

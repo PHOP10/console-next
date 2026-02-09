@@ -313,7 +313,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             break;
           case "success":
             color = "default";
-            text = "สำเร็จ";
+            text = "เสร็จสิ้น";
             break;
           case "cancel":
             color = "red";
@@ -473,7 +473,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             />
           </Tooltip> */}
 
-          <Popconfirm
+          {/* <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
             onConfirm={async () => {
@@ -499,7 +499,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                 }}
               />
             </Tooltip>
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       ),
     },

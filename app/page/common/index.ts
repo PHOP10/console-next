@@ -135,46 +135,39 @@ export interface MasterLeaveType {
 }
 export interface VisitHomeType {
   id: number;
-  // --- 1. ข้อมูลทั่วไปและระบุตัวตน (Identity) ---
-  hhcNo?: string; // เลขที่ HHC
-  referralDate?: string; // วันที่ส่งต่อ (ISO String)
-  firstName: string; // ชื่อจริง
-  lastName: string; // นามสกุล
-  fullName: string; // ชื่อ-นามสกุล
-  age: number; // อายุ
-  hn: string; // HN
-  dob?: string; // วันเดือนปีเกิด (ISO String)
-  cid?: string; // เลขบัตรประชาชน 13 หลัก
-  phone?: string; // เบอร์โทรศัพท์
-  address: string; // ที่อยู่
-  allergies?: string; // ประวัติแพ้ยา/อาหาร
-  // --- 2. ข้อมูลการรักษา (Admission) ---
-  admissionDate?: string; // วันที่แอดมิท (ISO String)
-  dischargeDate?: string; // วันที่จำหน่าย (ISO String)
-  // --- 3. สัญญาณชีพ (Vital Signs) ---
-  temperature?: number; // อุณหภูมิ (T)
-  pulseRate?: number; // ชีพจร (PR)
-  respRate?: number; // อัตราการหายใจ (RR)
-  bloodPressure?: string; // ความดันโลหิต (BP) เช่น "120/80"
-  oxygenSat?: number; // ออกซิเจนในเลือด (O2 Sat)
-  // --- 4. อาการและการวินิจฉัย (Clinical Data) ---
-  initialHistory?: string; // ประวัติเจ็บป่วยแรกรับ
-  symptoms?: string; // อาการปัจจุบัน
-  diagnosis?: string; // การวินิจฉัยโรค
-  // --- 5. การดูแลและอุปกรณ์ (Care & Equipment) ---
-  medication?: string; // ยาที่ได้รับ/ใช้
-  medicalEquipment?: string; // อุปกรณ์ติดตัวกลับบ้าน
-  careNeeds?: string; // ความต้องการดูแล / ปัญหาที่พบ
-  // --- 6. การนัดหมาย (Appointment) ---
-  visitDate: string; // วันที่เยี่ยมบ้าน (ISO String)
-  nextAppointment?: string; // วันนัดครั้งถัดไป (ISO String)
-  notes?: string; // หมายเหตุ
-  // --- 7. ข้อมูลระบบ (System & Relations) ---
-  createdName?: string; // ชื่อผู้บันทึก
+  hhcNo?: string;
+  referralDate?: string;
+  firstName: string;
+  lastName: string;
+  fullName: string;
+  age: number;
+  hn: string;
+  dob?: string;
+  cid?: string;
+  phone?: string;
+  address: string;
+  allergies?: string;
+  admissionDate?: string;
+  dischargeDate?: string;
+  temperature?: number;
+  pulseRate?: number;
+  respRate?: number;
+  bloodPressure?: string;
+  oxygenSat?: number;
+  initialHistory?: string;
+  symptoms?: string;
+  diagnosis?: string;
+  medication?: string;
+  medicalEquipment?: string;
+  careNeeds?: string;
+  visitDate: string;
+  nextAppointment?: string;
+  notes?: string;
+  createdName?: string;
   createdAt: string;
   updatedAt: string;
-  patientTypeId?: number; // FK ID ประเภทผู้ป่วย
-  patientType?: MasterPatientType; // Relation Object (ถ้ามีการ Join)
+  patientTypeId?: number;
+  patientType?: MasterPatientType;
 }
 
 export interface MasterPatientType {
@@ -198,7 +191,7 @@ export interface MaDrugType {
   status: string;
   createdAt: string;
   updatedAt: string;
-  quantityUsed?: number; // แก้เป็น number ให้ตรงกับ DB (Int) หรือ string ตามที่คุณใช้
+  quantityUsed?: number;
   totalPrice?: number;
   createdName: string;
 
@@ -211,10 +204,10 @@ export interface DrugType {
   id: number;
   workingCode: string;
   name: string;
-  drugTypeId: number; // FK ไป MasterDrug
+  drugTypeId: number;
   packagingSize: string;
   price: number;
-  quantity: number; // จำนวนคงเหลือ (Stock ปัจจุบัน)
+  quantity: number; // จำนวนคงเหลือรวม (Summary Stock)
   note?: string;
   createdAt: string;
   updatedAt: string;
@@ -223,6 +216,9 @@ export interface DrugType {
   drugType?: MasterDrugType;
   maDrugItems?: MaDrugItemType[];
   dispenseItems?: DispenseItemType[];
+
+  // ✅ [NEW] เพิ่มความสัมพันธ์กับ Lot เพื่อดูสต็อกย่อย
+  drugLots?: DrugLotType[];
 }
 
 // 3. MasterDrug (ประเภทยา)
@@ -243,18 +239,25 @@ export interface MaDrugItemType {
   drugId: number;
   quantity: number;
   cancelReason?: string;
-  price?: number; // ราคายา ณ ขณะที่เบิก (Snapshot)
+  price?: number;
+
+  // ✅ [NEW] วันหมดอายุ (รับค่าจากหน้าจอ)
+  expiryDate?: string | null;
+
   // ความสัมพันธ์
   maDrug?: MaDrugType;
   drug?: DrugType;
+
+  // ✅ [NEW] เชื่อมโยงกับ Lot ที่ถูกสร้างขึ้น
+  drugLot?: DrugLotType;
 }
 
-// ✅ 5. Dispense (ใบจ่ายยา - ขาออก) [NEW]
+// ✅ 5. Dispense (ใบจ่ายยา - ขาออก)
 export interface DispenseType {
   id: number;
   dispenseDate: string; // ISO Date String
-  dispenserName?: string; // ผู้จ่าย
-  receiverName?: string; // ผู้รับ
+  dispenserName?: string;
+  receiverName?: string;
   note?: string;
   totalPrice?: number;
   status: string; // pending, approved, completed, canceled
@@ -265,17 +268,32 @@ export interface DispenseType {
   dispenseItems?: DispenseItemType[];
 }
 
-// ✅ 6. DispenseItem (รายการยาในใบจ่าย - ขาออก) [NEW]
+// ✅ 6. DispenseItem (รายการยาในใบจ่าย - ขาออก)
 export interface DispenseItemType {
   id: number;
   dispenseId: number;
   drugId: number;
-  quantity: number; // จำนวนที่ตัดจ่าย
-  price?: number; // ราคายา ณ ขณะที่จ่าย (Snapshot)
+  quantity: number;
+  price?: number;
 
   // ความสัมพันธ์
   dispense?: DispenseType;
   drug?: DrugType;
+}
+
+// ✅ 7. DrugLot (สต็อกย่อย/ล็อตยา) [NEW TYPE]
+export interface DrugLotType {
+  id: number;
+  drugId: number;
+  lotNumber?: string;
+  price: number; // ต้นทุนของล็อตนี้
+  quantity: number; // คงเหลือในล็อตนี้
+  isActive: boolean;
+  createdAt: string;
+  expiryDate?: dayjs.Dayjs | null;
+  // ความสัมพันธ์
+  drug?: DrugType;
+  maDrugItem?: MaDrugItemType;
 }
 
 export interface DurableArticleType {

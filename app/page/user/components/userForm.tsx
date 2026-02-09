@@ -124,12 +124,12 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
 
             {/* 3. Gender */}
             <Form.Item
-              label="เพศ"
+              label="คำนำหน้า"
               name="gender"
-              rules={[{ required: true, message: "กรุณาเลือกเพศ" }]}
+              rules={[{ required: true, message: "กรุณาเลือกคำนำหน้า" }]}
             >
               <Select
-                placeholder="เลือกเพศ"
+                placeholder="เลือกคำนำหน้า"
                 className={selectStyle}
                 options={[
                   { label: "นาย", value: "male" },

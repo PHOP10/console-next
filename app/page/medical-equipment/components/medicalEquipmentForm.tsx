@@ -308,7 +308,7 @@ export default function CreateMedicalEquipmentForm({
         <Row gutter={24}>
           <Col span={12}>
             <Form.Item
-              label="วันที่ส่งซ่อม"
+              label="วันที่ส่ง"
               name="sentDate"
               rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
             >

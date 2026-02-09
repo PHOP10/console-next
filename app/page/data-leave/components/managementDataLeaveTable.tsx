@@ -182,18 +182,21 @@ export default function ManagementDataLeaveTable({
       width: 150,
     },
     {
-      title: "เหตุผล",
+      title: "เหตุผลการลา",
       dataIndex: "reason",
       key: "reason",
       align: "center",
       width: 150,
-      responsive: ["lg"], // ซ่อนบนมือถือ
+      responsive: ["lg"],
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
+
         return text.length > maxLength ? (
           <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
+            <span style={{ fontWeight: "normal" }}>
+              {text.slice(0, maxLength) + "..."}
+            </span>
           </Tooltip>
         ) : (
           text

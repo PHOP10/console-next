@@ -224,7 +224,7 @@ export default function UserProfile() {
                 <Descriptions.Item label="ชื่อ-นามสกุล">
                   {userData?.firstName} {userData?.lastName}
                 </Descriptions.Item>
-                <Descriptions.Item label="เพศ">
+                <Descriptions.Item label="คำนำหน้า">
                   {userData?.gender === "male"
                     ? "ชาย"
                     : userData?.gender === "female"

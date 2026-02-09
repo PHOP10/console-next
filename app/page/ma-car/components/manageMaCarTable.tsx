@@ -452,7 +452,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Tooltip> */}
 
             {/* 6. ปุ่มลบ */}
-            <Popconfirm
+            {/* <Popconfirm
               title="ยืนยันการลบ"
               description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
               onConfirm={async () => {
@@ -477,7 +477,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
                   }}
                 />
               </Tooltip>
-            </Popconfirm>
+            </Popconfirm> */}
           </Space>
         );
       },

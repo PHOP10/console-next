@@ -32,6 +32,7 @@ import "./Form.css";
 import { buddhistLocale } from "@/app/common";
 import "dayjs/locale/th";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -45,6 +46,7 @@ export default function VisitHomeForm() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
   const router = useRouter();
+  const { data: session } = useSession();
 
   const fetchMasterPatients = async () => {
     try {
@@ -112,6 +114,7 @@ export default function VisitHomeForm() {
         medicalEquipment: encryptData(values.medicalEquipment),
         careNeeds: encryptData(values.careNeeds),
         notes: encryptData(values.notes),
+        createdName: session?.user?.fullName || "-",
       };
 
       await intraAuthService.createVisitHomeWaste(payload);
@@ -248,7 +251,11 @@ export default function VisitHomeForm() {
               </Col>
               <Col xs={10} md={6}>
                 <Form.Item name="hn" label="HN" className="mb-1">
-                  <Input className={inputStyle} placeholder="HN" />
+                  <Input
+                    className={inputStyle}
+                    placeholder="HN"
+                    maxLength={10}
+                  />
                 </Form.Item>
               </Col>
 
@@ -390,7 +397,7 @@ export default function VisitHomeForm() {
                           event.preventDefault();
                         }
                       }}
-                      maxLength={2}
+                      maxLength={5}
                     />
                   </Form.Item>
                 </Col>
@@ -421,7 +428,7 @@ export default function VisitHomeForm() {
                     <Input
                       className={`${inputStyle} bg-white text-center`}
                       placeholder="120/80"
-                      maxLength={5}
+                      maxLength={10}
                     />
                   </Form.Item>
                 </Col>

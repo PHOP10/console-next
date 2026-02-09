@@ -47,17 +47,14 @@ export default function DataLeavePage() {
     data: swrData,
     isLoading: isSwrLoading,
     mutate,
-  } = useSWR(
-    session?.user?.userId ? ["dataLeavePage", session.user.userId] : null, // Key จะทำงานเมื่อมี User ID
-    fetcher,
-    {
-      refreshInterval: 5000, // ดึงข้อมูลใหม่ทุก 5 วินาที (Sync ข้าม Browser)
-      revalidateOnFocus: true, // ดึงใหม่ทันทีเมื่อสลับหน้าจอกลับมา
-      onError: () => {
-        message.error("ไม่สามารถดึงข้อมูลการลาได้");
-      },
+  } = useSWR(["dataLeavePage", session?.user?.userId], fetcher, {
+    refreshInterval: 5000,
+    revalidateOnFocus: true,
+    revalidateOnMount: true, // บังคับดึงทันที
+    onError: () => {
+      message.error("ไม่สามารถดึงข้อมูลการลาได้");
     },
-  );
+  });
 
   // 5. Map ข้อมูลจาก SWR กลับมาเป็นตัวแปรชื่อเดิม (เพื่อไม่ให้กระทบ code ส่วนอื่น)
   const data: DataLeaveType[] = swrData?.data || [];

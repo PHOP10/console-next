@@ -235,14 +235,22 @@ export default function DurableArticleTable({
       title: "รายการ",
       dataIndex: "description",
       key: "description",
-      width: 150,
+      width: 200,
       render: (text: string) => {
         if (!text) return "-";
+
+        // --- ปรับแก้ตรงนี้: เช็คขนาดหน้าจอ ---
+        // ถ้าจอใหญ่ (md=true) ใช้ 44, ถ้าจอมือถือ ใช้ 22
+        const limit = screens.md ? 44 : 22;
+
+        const displayText =
+          text.length > limit ? `${text.substring(0, limit)}...` : text;
+
         return (
           <Tooltip placement="topLeft" title={text}>
-            <div className="truncate w-full max-w-[150px] sm:max-w-[300px] font-normal">
-              {text}
-            </div>
+            <span className="font-normal cursor-pointer hover:text-blue-500 transition-colors">
+              {displayText}
+            </span>
           </Tooltip>
         );
       },
@@ -268,7 +276,16 @@ export default function DurableArticleTable({
         "0.00",
     },
     {
-      title: "สุทธิ",
+      title: "อายุการใช้งาน (ปี)",
+      dataIndex: "usageLifespanYears", // ใช้ตัวแปรนี้ครับ
+      key: "usageLifespanYears",
+      align: "center",
+      width: 100,
+      responsive: ["lg"], // แสดงเฉพาะจอใหญ่
+      render: (text) => (text ? `${text} ปี` : "-"),
+    },
+    {
+      title: "มูลค่าสุทธิ",
       dataIndex: "netValue",
       key: "netValue",
       align: "center",
@@ -303,29 +320,31 @@ export default function DurableArticleTable({
               />
             </Tooltip>
           )}
-
-          <Popconfirm
-            title="ลบข้อมูล?"
-            onConfirm={async () => {
-              try {
-                await intraAuthService.deleteDurableArticle(record.id);
-                message.success("ลบสำเร็จ");
-                setLoading(true);
-              } catch (error) {
-                console.error(error);
-                message.error("ลบไม่สำเร็จ");
-              }
-            }}
-            okText="ใช่"
-            cancelText="ยกเลิก"
-            okButtonProps={{ danger: true }}
-          >
-            <Tooltip title="ลบ">
-              <DeleteOutlined
-                style={{ color: "#ff4d4f", fontSize: 18, cursor: "pointer" }}
-              />
-            </Tooltip>
-          </Popconfirm>
+          {(session?.user?.role === "asset" ||
+            session?.user?.role === "admin") && (
+            <Popconfirm
+              title="ลบข้อมูล?"
+              onConfirm={async () => {
+                try {
+                  await intraAuthService.deleteDurableArticle(record.id);
+                  message.success("ลบสำเร็จ");
+                  setLoading(true);
+                } catch (error) {
+                  console.error(error);
+                  message.error("ลบไม่สำเร็จ");
+                }
+              }}
+              okText="ใช่"
+              cancelText="ยกเลิก"
+              okButtonProps={{ danger: true }}
+            >
+              <Tooltip title="ลบ">
+                <DeleteOutlined
+                  style={{ color: "#ff4d4f", fontSize: 18, cursor: "pointer" }}
+                />
+              </Tooltip>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
@@ -470,7 +489,7 @@ export default function DurableArticleTable({
 
           <div className="flex justify-between mb-2 px-1">
             <span className="text-gray-500 text-xs sm:text-sm">
-              พบ {filteredData.length} รายการ
+              มีครุภัณฑ์ทั้งหมด {filteredData.length} รายการ
             </span>
           </div>
 
@@ -483,9 +502,10 @@ export default function DurableArticleTable({
             scroll={{ x: "max-content" }}
             size="small"
             pagination={{
-              pageSize: 10,
-              showSizeChanger: false,
-              simple: true,
+              pageSize: 20,
+              showTotal: (total) => `รวม ${total} รายการ`,
+              position: ["bottomRight"],
+              size: "small",
             }}
           />
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react"; // 1. เพิ่ม useEffect
+import React, { useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { officialTravelRequestService } from "../services/officialTravelRequest.service";
@@ -13,39 +13,7 @@ export default function page() {
   const intraAuth = useAxiosAuth();
   const [manualLoading, setManualLoading] = useState<boolean>(false);
 
-  useEffect(() => {
-    const autoUpdateStatus = async () => {
-      try {
-        const service = officialTravelRequestService(intraAuth);
-        const allRequests = await service.getOfficialTravelRequestQuery();
-        if (!allRequests || allRequests.length === 0) return;
-        const now = new Date();
-        const expiredRequests = allRequests.filter((req: any) => {
-          if (req.status !== "approve") return false; // เอาเฉพาะสถานะ approved
-          if (!req.endDate) return false;
-          const endDate = new Date(req.endDate);
-          return endDate < now;
-        });
-        if (expiredRequests.length > 0) {
-          await Promise.all(
-            expiredRequests.map((req: any) =>
-              service.updateOfficialTravelRequest({
-                id: req.id,
-                status: "success",
-              }),
-            ),
-          );
-        }
-      } catch (error) {
-        console.error("Frontend auto-update failed:", error);
-      }
-    };
-
-    autoUpdateStatus();
-  }, [intraAuth]);
-  // ---------------------------------------------------------------------------
-
-  // 3. Fetcher Function (คงเดิม 100%)
+  // 1. Fetcher Function
   const fetcher = async () => {
     const intraAuthService = officialTravelRequestService(intraAuth);
     const intraAuthUserService = userService(intraAuth);
@@ -62,27 +30,27 @@ export default function page() {
     };
   };
 
-  // 4. เรียกใช้ SWR (คงเดิม 100%)
+  // 2. เรียกใช้ SWR
   const {
     data: swrData,
     isLoading: isSwrLoading,
     mutate,
   } = useSWR("manageOfficialTravelRequestPage", fetcher, {
-    refreshInterval: 5000, // อัปเดตข้อมูลอัตโนมัติทุก 5 วินาที
+    refreshInterval: 5000, // ยังคง refresh ทุก 5 วิ เพื่อให้เห็นสถานะที่ Backend (Cron) อัปเดตให้แล้ว
     revalidateOnFocus: true,
     onError: () => {
       message.error("ไม่สามารถดึงข้อมูลได้");
     },
   });
 
-  // 5. Map ข้อมูลกลับมาเป็นตัวแปร
+  // 3. Map ข้อมูลกลับมาเป็นตัวแปร
   const data: any[] = swrData?.data || [];
   const dataUser: UserType[] = swrData?.dataUser || [];
 
   // รวม Loading state
   const loading = isSwrLoading || manualLoading;
 
-  // 6. Wrapper function สำหรับส่งให้ลูก
+  // 4. Wrapper function สำหรับส่งให้ลูก (Manual Refresh ปุ่มกด)
   const fetchData = async () => {
     setManualLoading(true);
     await mutate();

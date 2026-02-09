@@ -71,3 +71,10 @@ export const buddhistLocale: any = {
     cellYearFormat: "BBBB",
   },
 };
+
+export interface UploadResponse {
+  success: boolean;
+  fileName: string;
+  originalName: string;
+  path: string;
+}

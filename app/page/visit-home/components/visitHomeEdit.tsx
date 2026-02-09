@@ -30,6 +30,7 @@ import {
   EditOutlined,
 } from "@ant-design/icons";
 import { buddhistLocale } from "@/app/common";
+import { useSession } from "next-auth/react";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -44,6 +45,7 @@ interface VisitHomeEditProps {
   record: VisitHomeType | null;
   masterPatients: MasterPatientType[];
   initialMode: "view" | "edit";
+  fetchData: () => Promise<void>;
 }
 
 export default function VisitHomeEdit({
@@ -53,11 +55,14 @@ export default function VisitHomeEdit({
   record,
   masterPatients,
   initialMode,
+  fetchData,
 }: VisitHomeEditProps) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
   const [mode, setMode] = useState<"view" | "edit">(initialMode);
+  const { data: session } = useSession();
+  const [submitting, setSubmitting] = useState(false);
 
   const decryptData = (ciphertext: string | null | undefined) => {
     if (!ciphertext) return "";
@@ -132,6 +137,10 @@ export default function VisitHomeEdit({
     try {
       const values = await form.validateFields();
       if (!record) return;
+
+      // ✅ เริ่มโหลด
+      setSubmitting(true);
+
       const fullNameStr = values.fullName || "";
       const nameParts = fullNameStr.trim().split(/\s+/);
       const firstNameRaw = nameParts[0] || "-";
@@ -176,17 +185,23 @@ export default function VisitHomeEdit({
         hn: encryptData(values.hn),
         cid: encryptData(values.cid),
         phone: encryptData(values.phone),
+        createdName: session?.user?.fullName || "-",
       };
 
       const res = await intraAuthService.updateVisitHome(payload);
 
       if (res) {
         message.success("แก้ไขข้อมูลสำเร็จ");
+        // ✅ แก้ไขตรงนี้: เรียก fetchData() และรอให้เสร็จก่อนปิด Modal
+        await fetchData();
         onSuccess();
       }
     } catch (error) {
       console.error("Update Error:", error);
       message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
+    } finally {
+      // ✅ หยุดโหลด ไม่ว่าจะสำเร็จหรือล้มเหลว
+      setSubmitting(false);
     }
   };
 
@@ -238,9 +253,11 @@ export default function VisitHomeEdit({
         <Form
           form={form}
           layout="vertical"
-          disabled={mode === "view"}
+          disabled={mode === "view" || submitting} // ปิดฟอร์มถ้ากำลังบันทึก
           className="compact-form"
         >
+          {/* ... (ส่วน Form.Item อื่นๆ คงเดิม) ... */}
+
           <SectionHeader icon={<UserOutlined />} title="ข้อมูลผู้ป่วย" />
           <Row gutter={[12, 4]}>
             <Col xs={12} md={4}>
@@ -248,6 +265,7 @@ export default function VisitHomeEdit({
                 <Input className={inputStyle} />
               </Form.Item>
             </Col>
+            {/* ... (Code ส่วนอื่นๆ เหมือนเดิม) ... */}
             <Col xs={12} md={4}>
               <Form.Item name="referralDate" label="วันที่ส่ง">
                 <DatePicker
@@ -438,18 +456,21 @@ export default function VisitHomeEdit({
                 <TextArea
                   autoSize={{ minRows: 1, maxRows: 3 }}
                   className={textAreaStyle}
+                  maxLength={150}
                 />
               </Form.Item>
               <Form.Item name="diagnosis" label="การวินิจฉัยโรค">
                 <TextArea
                   autoSize={{ minRows: 1, maxRows: 3 }}
                   className={textAreaStyle}
+                  maxLength={150}
                 />
               </Form.Item>
               <Form.Item name="careNeeds" label="ปัญหา/ความต้องการ">
                 <TextArea
                   autoSize={{ minRows: 1, maxRows: 3 }}
                   className={textAreaStyle}
+                  maxLength={150}
                 />
               </Form.Item>
             </Col>
@@ -465,14 +486,16 @@ export default function VisitHomeEdit({
               />
               <Form.Item name="medication" label="ยากลับบ้าน">
                 <TextArea
-                  autoSize={{ minRows: 2, maxRows: 5 }}
+                  autoSize={{ minRows: 3, maxRows: 6 }}
                   className={textAreaStyle}
+                  maxLength={200}
                 />
               </Form.Item>
               <Form.Item name="medicalEquipment" label="อุปกรณ์ติดตัว">
                 <TextArea
                   autoSize={{ minRows: 2, maxRows: 5 }}
                   className={textAreaStyle}
+                  maxLength={100}
                 />
               </Form.Item>
             </Col>
@@ -511,20 +534,12 @@ export default function VisitHomeEdit({
             </Col>
           </Row>
 
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-            {mode === "view" ? (
-              <Button
-                type="primary"
-                onClick={() => setMode("edit")}
-                className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
-                icon={<EditOutlined />}
-              >
-                แก้ไขข้อมูล
-              </Button>
-            ) : (
+          <div className="flex justify-center gap-3 mt-6 pt-4 border-t border-gray-100">
+            {mode === "view" ? null : (
               <Button
                 type="primary"
                 onClick={handleUpdate}
+                loading={submitting}
                 className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
               >
                 บันทึกการแก้ไข

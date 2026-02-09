@@ -113,7 +113,6 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
           })
         : [];
 
-      // หาข้อมูลผู้สร้างเพื่อระบุเพศ
       const creator = userData.find((u) => {
         const fullName = `${u.firstName} ${u.lastName}`;
         return fullName === record.createdName;

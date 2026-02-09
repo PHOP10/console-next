@@ -86,7 +86,7 @@ export default function EditProfileForm({
             </Form.Item>
           </Col>
           <Col span={12}>
-            <Form.Item label="เพศ" name="gender">
+            <Form.Item label="คำนำหน้า" name="gender">
               <Select className={selectStyle}>
                 <Select.Option value="male">นาย</Select.Option>
                 <Select.Option value="female">นาง</Select.Option>

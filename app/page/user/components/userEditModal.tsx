@@ -107,11 +107,11 @@ export default function UserEditModal({
         <Form form={form} layout="vertical" onFinish={handleUpdate}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
             <Form.Item
-              label="เพศ"
+              label="คำนำหน้า"
               name="gender"
-              rules={[{ required: true, message: "กรุณาเลือกเพศ" }]}
+              rules={[{ required: true, message: "กรุณาเลือกคำนำหน้า" }]}
             >
-              <Select placeholder="เลือกเพศ" className={selectStyle}>
+              <Select placeholder="เลือกคำนำหน้า" className={selectStyle}>
                 <Select.Option value="male">นาย</Select.Option>
                 <Select.Option value="female">นาง</Select.Option>
                 <Select.Option value="miss">นางสาว</Select.Option>

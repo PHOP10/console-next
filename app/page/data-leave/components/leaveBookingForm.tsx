@@ -12,8 +12,6 @@ import {
   message,
   Row,
   Select,
-  Space,
-  Table,
   Upload,
 } from "antd";
 import isBetween from "dayjs/plugin/isBetween";
@@ -28,8 +26,13 @@ import { DataLeaveService } from "../services/dataLeave.service";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import CustomTable from "../../common/CustomTable";
 import { useRouter } from "next/navigation";
-import { buddhistLocale } from "@/app/common";
+import { buddhistLocale, UploadResponse } from "@/app/common";
+import Holidays from "date-holidays";
+
 dayjs.locale("th");
+dayjs.extend(isBetween);
+
+const hd = new Holidays("TH");
 
 interface LeaveBookingFormProps {
   loading: boolean;
@@ -43,7 +46,6 @@ interface LeaveBookingFormProps {
 export default function LeaveBookingForm({
   loading,
   setLoading,
-  // createDataLeave,
   masterLeaves,
   leaveByUserId = [],
   user,
@@ -61,25 +63,56 @@ export default function LeaveBookingForm({
     setFileList(fileList);
   };
 
-  // ฟังก์ชันคำนวณจำนวนวันลา
-  const calculateDays = (start: string | Date, end: string | Date) => {
-    if (!start || !end) return 0;
-    return dayjs(end).endOf("day").diff(dayjs(start).startOf("day"), "day") + 1;
+  // --- 2. Check if a date is a holiday ---
+  const isHoliday = (date: dayjs.Dayjs) => {
+    // แปลง dayjs เป็น Date object เพื่อส่งให้ library ตรวจสอบ
+    const holiday = hd.isHoliday(date.toDate());
+
+    // ตรวจสอบว่าเป็นวันหยุดจริงหรือไม่ (library จะคืนค่าเป็น array ของ objects หรือ false)
+    // เราเช็คแค่ว่ามีค่าคืนกลับมาไหม และ type เป็น public (วันหยุดราชการ) หรือเปล่า
+    if (holiday && holiday[0].type === "public") {
+      return true;
+    }
+    return false;
   };
 
-  // ดึงค่าที่เลือกในฟอร์ม
+  // --- 3. Updated calculateDays Function ---
+  // Calculates government leave days: excludes Sat, Sun, and Public Holidays
+  // ✅ 4. อัปเดต calculateDays (Logic Loop เหมือนเดิม แต่ใช้ isHoliday ตัวใหม่)
+  const calculateDays = (start: string | Date, end: string | Date) => {
+    if (!start || !end) return 0;
+
+    const startDate = dayjs(start).startOf("day");
+    const endDate = dayjs(end).endOf("day");
+
+    if (endDate.isBefore(startDate)) return 0;
+
+    let count = 0;
+    let current = startDate;
+
+    while (current.isBefore(endDate) || current.isSame(endDate, "day")) {
+      const dayOfWeek = current.day(); // 0 = อาทิตย์, 6 = เสาร์
+      const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+      // นับเฉพาะ (ไม่ใช่วันเสาร์อาทิตย์) และ (ไม่ใช่วันหยุดนักขัตฤกษ์)
+      if (!isWeekend && !isHoliday(current)) {
+        count++;
+      }
+      current = current.add(1, "day");
+    }
+    return count;
+  };
+
+  // Get form values
   const selectedTypeId = Form.useWatch("typeId", form);
   const selectedDateStart = Form.useWatch("dateStart", form);
   const selectedDateEnd = Form.useWatch("dateEnd", form);
-  dayjs.extend(isBetween);
 
-  // ✅ เพิ่มฟังก์ชันคำนวณปีงบประมาณ (1 ตุลาคม - 30 กันยายน)
   const getCurrentFiscalYear = () => {
     const today = dayjs();
     const currentYear = today.year();
     const fiscalYearStart = dayjs(`${currentYear}-10-01`);
 
-    // ถ้าวันนี้ก่อน 1 ตุลาคม ให้ใช้ปีงบประมาณปีก่อน
     if (today.isBefore(fiscalYearStart)) {
       return {
         start: dayjs(`${currentYear - 1}-10-01`).startOf("day"),
@@ -87,26 +120,21 @@ export default function LeaveBookingForm({
       };
     }
 
-    // ถ้าวันนี้หลัง 1 ตุลาคม ให้ใช้ปีงบประมาณปีปัจจุบัน
     return {
       start: fiscalYearStart.startOf("day"),
       end: dayjs(`${currentYear + 1}-09-30`).endOf("day"),
     };
   };
 
-  // ✅ แก้ไขส่วน tableData ให้กรองเฉพาะการลาในปีงบประมาณปัจจุบัน
   const tableData = useMemo(() => {
     const fiscalYear = getCurrentFiscalYear();
 
     return masterLeaves.map((leave) => {
-      // ลามาแล้ว - กรองเฉพาะการลาที่อยู่ในปีงบประมาณปัจจุบัน
       const usedDays = leaveByUserId
         .filter((item) => {
           if (item.typeId !== leave.id || item.status !== "approve") {
             return false;
           }
-
-          // ตรวจสอบว่าวันเริ่มลาอยู่ในปีงบประมาณปัจจุบันหรือไม่
           const leaveStartDate = dayjs(item.dateStart);
           return leaveStartDate.isBetween(
             fiscalYear.start,
@@ -116,13 +144,13 @@ export default function LeaveBookingForm({
           );
         })
         .reduce(
-          (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd),
+          (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd), // Use updated logic
           0,
         );
 
       const currentDays =
         selectedTypeId === leave.id && selectedDateStart && selectedDateEnd
-          ? calculateDays(selectedDateStart, selectedDateEnd)
+          ? calculateDays(selectedDateStart, selectedDateEnd) // Use updated logic
           : 0;
 
       const totalDays = usedDays + currentDays;
@@ -182,23 +210,21 @@ export default function LeaveBookingForm({
   ];
 
   const uploadFile = async (file: File) => {
-    if (!file) return null;
-
     try {
-      const data = await intraAuthService.uploadDataLeaveFile(file);
-
-      return data.fileName;
-    } catch (err) {
-      console.error("Upload error:", err);
+      const res: UploadResponse =
+        await intraAuthService.uploadDataLeaveFile(file);
+      console.log(res.fileName);
+      return res.fileName;
+    } catch (error) {
       message.error("ไม่สามารถอัพโหลดไฟล์ได้");
-      throw err;
+      throw error;
     }
   };
 
   const onFinish = async (values: any) => {
     setLoading(true);
+    let uploadedFileName = null;
     try {
-      let uploadedFileName = null;
       if (values.fileName && values.fileName.length > 0) {
         const file = values.fileName[0].originFileObj;
         if (file) {
@@ -206,7 +232,6 @@ export default function LeaveBookingForm({
         }
       }
 
-      // 2️⃣ เตรียม payload
       const payload = {
         typeId: Number(values.typeId),
         reason: values.reason,
@@ -229,7 +254,6 @@ export default function LeaveBookingForm({
 
       await intraAuthService.createDataLeave(payload);
       await fetchData();
-
       message.success("บันทึกใบลาสำเร็จ");
       form.resetFields();
       setFileList([]);
@@ -244,7 +268,6 @@ export default function LeaveBookingForm({
 
   return (
     <Row gutter={[24, 24]}>
-      {/* ฟอร์ม */}
       <Col xs={24} md={12}>
         <Card
           className="shadow-lg rounded-2xl border-gray-100 overflow-hidden h-full"
@@ -256,7 +279,6 @@ export default function LeaveBookingForm({
         >
           <ConfigProvider locale={th_TH}>
             <Form form={form} layout="vertical" onFinish={onFinish}>
-              {/* สไตล์กลางสำหรับ Input ทั้งหมด */}
               {(() => {
                 const inputStyle =
                   "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
@@ -310,7 +332,6 @@ export default function LeaveBookingForm({
                         <Select.Option value="รพ.สต.บ้านผาผึ้ง">
                           รพ.สต.บ้านผาผึ้ง
                         </Select.Option>
-                        <Select.Option value="other">อื่นๆ...</Select.Option>
                       </Select>
                     </Form.Item>
 
@@ -333,17 +354,11 @@ export default function LeaveBookingForm({
                       </Select>
                     </Form.Item>
 
-                    <Form.Item
-                      label="เหตุผลการลา"
-                      name="reason"
-                      rules={[
-                        { required: true, message: "กรุณากรอกเหตุผลการลา" },
-                      ]}
-                    >
+                    <Form.Item label="เหตุผลการลา" name="reason">
                       <Input.TextArea
                         rows={2}
                         placeholder="กรอกเหตุผลการลา"
-                        maxLength={50}
+                        maxLength={30}
                         className={textAreaStyle}
                       />
                     </Form.Item>
@@ -371,6 +386,7 @@ export default function LeaveBookingForm({
                             }}
                             disabledDate={(current) => {
                               if (!current) return false;
+                              // Disable past dates? Adjust if needed.
                               if (current < dayjs().startOf("day")) return true;
                               return leaveByUserId.some((leave) => {
                                 const start = dayjs(leave.dateStart).startOf(
@@ -419,7 +435,9 @@ export default function LeaveBookingForm({
                               ) {
                                 return true;
                               }
+                              // Disable past dates? Adjust if needed
                               if (current < dayjs().startOf("day")) return true;
+
                               return leaveByUserId.some((leave) => {
                                 const start = dayjs(leave.dateStart).startOf(
                                   "day",
@@ -437,18 +455,6 @@ export default function LeaveBookingForm({
                         </Form.Item>
                       </Col>
                     </Row>
-
-                    <Form.Item
-                      label="ระหว่างลาติดต่อได้ที่"
-                      name="contactAddress"
-                      rules={[{ required: false }]}
-                    >
-                      <Input.TextArea
-                        rows={2}
-                        placeholder="กรอกที่อยู่ระหว่างลา"
-                        className={textAreaStyle}
-                      />
-                    </Form.Item>
 
                     <Form.Item
                       label="เบอร์ติดต่อระหว่างลา"
@@ -492,6 +498,19 @@ export default function LeaveBookingForm({
                     </Form.Item>
 
                     <Form.Item
+                      label="ระหว่างลาติดต่อได้ที่"
+                      name="contactAddress"
+                      rules={[{ required: false }]}
+                    >
+                      <Input.TextArea
+                        rows={2}
+                        placeholder="กรอกที่อยู่ระหว่างลา"
+                        className={textAreaStyle}
+                        maxLength={80}
+                      />
+                    </Form.Item>
+
+                    <Form.Item
                       label="แนบไฟล์ใบรับรองแพทย์ (ถ้ามี)"
                       name="fileName"
                       valuePropName="fileList"
@@ -503,9 +522,26 @@ export default function LeaveBookingForm({
                         name="file"
                         maxCount={1}
                         fileList={fileList}
-                        beforeUpload={() => false}
-                        onChange={handleUploadChange}
                         accept=".pdf,.jpg,.jpeg,.png"
+                        beforeUpload={(file) => {
+                          const isJpgOrPngOrPdf =
+                            file.type === "image/jpeg" ||
+                            file.type === "image/png" ||
+                            file.type === "application/pdf";
+                          if (!isJpgOrPngOrPdf) {
+                            message.error(
+                              "อัปโหลดได้เฉพาะไฟล์ JPG/PNG หรือ PDF เท่านั้น!",
+                            );
+                            return Upload.LIST_IGNORE;
+                          }
+                          const isLt5M = file.size / 1024 / 1024 < 5;
+                          if (!isLt5M) {
+                            message.error("ไฟล์ต้องมีขนาดไม่เกิน 5MB!");
+                            return Upload.LIST_IGNORE;
+                          }
+                          return false;
+                        }}
+                        onChange={handleUploadChange}
                       >
                         <Button
                           icon={<UploadOutlined />}
@@ -548,7 +584,6 @@ export default function LeaveBookingForm({
         </Card>
       </Col>
 
-      {/* ตาราง */}
       <Col xs={24} md={12}>
         <Card
           title={
