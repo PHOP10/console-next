@@ -9,7 +9,6 @@ import {
   DatePicker,
   message,
   Card,
-  Table,
   Row,
   Col,
   Modal,
@@ -18,19 +17,16 @@ import {
   PlusOutlined,
   DeleteOutlined,
   SearchOutlined,
-  SaveOutlined,
-  UserOutlined,
-  TeamOutlined,
 } from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-// คุณอาจต้องสร้างไฟล์ service แยก หรือรวมไว้ในไฟล์เดิมแล้ว export มาใช้
-// ในที่นี้ผมสมมติว่าคุณรวม method createDispense ไว้ใน DispenseService
 import { MaDrug } from "../services/maDrug.service";
 import { DispenseType, DrugType } from "../../common";
 import { useSession } from "next-auth/react";
 import CustomTable from "../../common/CustomTable";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import { buddhistLocale } from "@/app/common";
+import { useRouter } from "next/navigation";
 
 interface DispenseItemRow {
   key: string;
@@ -38,8 +34,8 @@ interface DispenseItemRow {
   drugName: string;
   workingCode: string;
   packagingSize: string;
-  stockQty: number; // คงเหลือในคลัง (สำคัญมากสำหรับหน้าจ่าย)
-  quantity: number; // จำนวนที่จะจ่าย
+  stockQty: number;
+  quantity: number;
   price: number;
 }
 
@@ -63,6 +59,7 @@ export default function DispenseForm({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState("");
+  const router = useRouter();
 
   // คำนวณยอดรวม (Items & Price)
   const summary = useMemo(() => {
@@ -116,6 +113,7 @@ export default function DispenseForm({
 
       setDataSource([]);
       refreshData();
+      router.push("/page/ma-drug/maDrug?tab=3");
     } catch (error) {
       console.error(error);
       message.error("บันทึกข้อมูลล้มเหลว กรุณาลองใหม่อีกครั้ง");
@@ -172,9 +170,9 @@ export default function DispenseForm({
 
   // --- Styles ---
   const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300";
+    "w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300 text-sm";
   const tableInputStyle =
-    "w-full h-9 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:shadow-sm";
+    "w-full h-8 sm:h-9 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:shadow-sm text-center";
 
   // --- Columns ตารางหลัก (รายการจ่าย) ---
   const mainColumns = [
@@ -184,8 +182,8 @@ export default function DispenseForm({
       key: "drugName",
       render: (text: string, record: DispenseItemRow) => (
         <div className="py-1">
-          <div className="font-bold text-gray-700">{text}</div>
-          <div className="text-xs text-gray-500 mt-1">
+          <div className="font-bold text-gray-700 text-sm">{text}</div>
+          <div className="text-xs text-gray-500 mt-0.5">
             Code: {record.workingCode} | ขนาด: {record.packagingSize}
           </div>
         </div>
@@ -196,41 +194,53 @@ export default function DispenseForm({
       dataIndex: "stockQty",
       key: "stockQty",
       align: "center" as const,
-      width: 100,
+      width: 90,
       render: (val: number) => (
         <span
-          className={`font-semibold ${val === 0 ? "text-red-500" : "text-green-600"}`}
+          className={`font-semibold text-sm ${
+            val === 0 ? "text-red-500" : "text-green-600"
+          }`}
         >
           {val.toLocaleString()}
         </span>
       ),
     },
     {
+      title: "ราคา/หน่วย",
+      dataIndex: "price",
+      key: "price",
+      width: 90,
+      align: "right" as const,
+      render: (val: number) => (
+        <span className="text-gray-500 text-sm">{val.toLocaleString()}</span>
+      ),
+    },
+    {
       title: "จำนวนจ่าย",
       dataIndex: "quantity",
       key: "quantity",
-      width: 150,
+      width: 120,
       render: (value: number, record: DispenseItemRow) => (
         <Form.Item
-          // เพิ่ม validation เช็คเกินสต็อก (Optional)
           validateStatus={value > record.stockQty ? "error" : ""}
-          help={value > record.stockQty ? "เกินสต็อก" : null}
+          help={
+            value > record.stockQty ? (
+              <span className="text-xs">เกินสต็อก</span>
+            ) : null
+          }
           style={{ marginBottom: 0 }}
         >
           <InputNumber
             min={1}
-            max={record.stockQty} // ✅ ยังคง limit ห้ามเกินสต็อกที่มี
+            max={record.stockQty}
             value={value}
-            className={tableInputStyle} // ใช้ style เดิมของคุณ
+            className={tableInputStyle}
             onChange={(val) => {
               const newData = [...dataSource];
               const index = newData.findIndex(
                 (item) => item.key === record.key,
               );
-
-              // ✅ ใช้ Logic แบบที่คุณต้องการ: ถ้าเป็นค่าว่าง ให้ใส่ 1 แทน
               newData[index].quantity = val || 1;
-
               setDataSource(newData);
             }}
           />
@@ -238,12 +248,12 @@ export default function DispenseForm({
       ),
     },
     {
-      title: "มูลค่า (บาท)",
+      title: "รวม (บาท)",
       key: "subtotal",
-      width: 120,
+      width: 100,
       align: "right" as const,
       render: (_: any, record: DispenseItemRow) => (
-        <span className="font-semibold text-slate-700">
+        <span className="font-semibold text-slate-700 text-sm">
           {(record.quantity * record.price).toLocaleString()}
         </span>
       ),
@@ -252,11 +262,12 @@ export default function DispenseForm({
       title: "",
       key: "action",
       width: 50,
+      align: "center" as const,
       render: (_: any, record: DispenseItemRow) => (
         <Button
           type="text"
           danger
-          icon={<DeleteOutlined />}
+          icon={<DeleteOutlined style={{ fontSize: "18px" }} />} // ปรับขนาดไอคอน 18px
           onClick={() => {
             setDataSource(dataSource.filter((item) => item.key !== record.key));
           }}
@@ -267,19 +278,31 @@ export default function DispenseForm({
 
   // --- Columns Modal (เลือกยา) ---
   const modalColumns = [
-    { title: "รหัส", dataIndex: "workingCode", width: 100 },
+    { title: "รหัส", dataIndex: "workingCode", width: 90 },
     {
       title: "ชื่อยา",
       dataIndex: "name",
-      render: (text: string) => <span className="font-medium">{text}</span>,
+      render: (text: string) => (
+        <span className="font-medium text-sm">{text}</span>
+      ),
+    },
+    {
+      title: "ราคา",
+      dataIndex: "price",
+      width: 80,
+      align: "right" as const,
+      render: (val: number) => val.toLocaleString(),
     },
     {
       title: "คงเหลือ",
       dataIndex: "quantity",
-      width: 100,
+      width: 80,
+      align: "center" as const,
       render: (val: number) => (
         <span
-          className={`font-bold ${val === 0 ? "text-red-500" : "text-green-600"}`}
+          className={`font-bold text-sm ${
+            val === 0 ? "text-red-500" : "text-green-600"
+          }`}
         >
           {val}
         </span>
@@ -290,54 +313,39 @@ export default function DispenseForm({
   return (
     <>
       <div className="mb-6 -mt-7">
-        <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
           แบบฟอร์มการจ่ายยา
         </h2>
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
 
-      <Card bordered={false}>
+      <Card bordered={false} className="shadow-sm">
         <Form form={form} layout="vertical" onFinish={onFinish}>
           {/* Row 1: ผู้จ่าย & วันที่ */}
-          <Row gutter={24}>
+          <Row gutter={[16, 16]}>
             <Col xs={24} md={12}>
               <Form.Item
                 label="วันที่จ่าย"
                 name="dispenseDate"
                 validateTrigger={["onChange", "onBlur"]}
-                rules={[
-                  { required: true, message: "ระบุวันที่" },
-                  () => ({
-                    validator(_, value) {
-                      if (!value) {
-                        return Promise.resolve();
-                      }
-                      const selectedDateStr = dayjs(value).format("YYYY-MM-DD");
-                      const isDuplicate = data.some((item) => {
-                        return (
-                          dayjs(item.dispenseDate).format("YYYY-MM-DD") ===
-                          selectedDateStr
-                        );
-                      });
-
-                      if (isDuplicate) {
-                        return Promise.reject(
-                          new Error(
-                            "วันนี้มีการทำรายการไปแล้ว ไม่สามารถทำซ้ำได้",
-                          ),
-                        );
-                      }
-
-                      return Promise.resolve();
-                    },
-                  }),
-                ]}
+                rules={[{ required: true, message: "ระบุวันที่" }]}
               >
                 <DatePicker
-                  format="DD/MM/YYYY"
-                  className={`${inputStyle} pt-2 w-full`}
+                  locale={buddhistLocale}
+                  format="D MMMM BBBB"
+                  className={`${inputStyle} pt-1 w-full`}
                   placeholder="เลือกวันที่"
-                  disabledDate={disabledDate}
+                  disabledDate={(current) => {
+                    if (!current) return false;
+                    const isPast = current < dayjs().startOf("day");
+
+                    const isDuplicate = data.some((item) => {
+                      if (!item.dispenseDate) return false;
+                      return dayjs(item.dispenseDate).isSame(current, "day");
+                    });
+
+                    return isPast || isDuplicate;
+                  }}
                 />
               </Form.Item>
             </Col>
@@ -349,22 +357,27 @@ export default function DispenseForm({
           </Row>
 
           {/* Summary Box */}
-          <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 mb-6 shadow-inner">
-            <Row gutter={24} align="middle">
+          <div className="bg-blue-50/50 p-4 sm:p-6 rounded-2xl border border-blue-100 mb-6 shadow-inner">
+            <Row gutter={[24, 16]} align="middle">
               <Col
-                span={12}
-                className="flex flex-col items-center border-r border-blue-200"
+                xs={24}
+                sm={12}
+                className="flex flex-col items-center border-r-0 sm:border-r border-blue-200 pb-3 sm:pb-0 border-b sm:border-b-0"
               >
                 <span className="text-slate-500 text-sm mb-1">จำนวนรายการ</span>
-                <span className="text-2xl font-bold text-blue-600">
+                <span className="text-xl sm:text-2xl font-bold text-blue-600">
                   {summary.totalItems}
                 </span>
               </Col>
-              <Col span={12} className="flex flex-col items-center">
+              <Col
+                xs={24}
+                sm={12}
+                className="flex flex-col items-center pt-3 sm:pt-0"
+              >
                 <span className="text-slate-500 text-sm mb-1">
                   มูลค่ารวม (บาท)
                 </span>
-                <span className="text-2xl font-bold text-red-500">
+                <span className="text-xl sm:text-2xl font-bold text-red-500">
                   {summary.totalPrice.toLocaleString()}
                 </span>
               </Col>
@@ -372,16 +385,16 @@ export default function DispenseForm({
           </div>
 
           {/* Table Area */}
-          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-6">
-            <div className="flex justify-between items-center mb-4 px-2">
-              <span className="font-bold text-lg text-gray-700">
+          <div className="bg-gray-50 p-3 sm:p-4 rounded-2xl border border-gray-200 mb-6">
+            <div className="flex flex-wrap justify-between items-center mb-4 px-1 gap-2">
+              <span className="font-bold text-base sm:text-lg text-gray-700">
                 รายการยาที่จะตัดจ่าย
               </span>
               <Button
                 type="dashed"
                 icon={<PlusOutlined />}
                 onClick={() => setIsModalOpen(true)}
-                className="border-blue-400 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl"
+                className="border-blue-400 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl w-full sm:w-auto"
               >
                 เลือกยาจากคลัง
               </Button>
@@ -393,17 +406,19 @@ export default function DispenseForm({
               pagination={false}
               rowKey="key"
               locale={{ emptyText: "ยังไม่มีรายการยาที่เลือก" }}
+              scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
+              size="small" // ใช้ size small บนมือถือ
             />
           </div>
 
           {/* Submit Button */}
-          <Form.Item className="mt-8 mb-2">
+          <Form.Item className="mt-6 mb-2">
             <div className="flex justify-center">
               <Button
                 type="primary"
                 htmlType="submit"
                 loading={loading}
-                className="h-11 px-10 rounded-xl text-base shadow-md bg-[#0683e9] hover:scale-105 transition-transform"
+                className="h-10 sm:h-11 px-10 rounded-xl text-base shadow-md bg-[#0683e9] hover:scale-105 transition-transform w-full sm:w-auto"
               >
                 ยืนยันการจ่ายยา
               </Button>
@@ -415,7 +430,7 @@ export default function DispenseForm({
       {/* Modal เลือกยา */}
       <Modal
         title={
-          <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+          <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
             คลังยา (สำหรับเลือกจ่าย)
           </div>
         }
@@ -424,8 +439,10 @@ export default function DispenseForm({
         onCancel={() => setIsModalOpen(false)}
         width={800}
         centered
+        // Responsive Modal
+        style={{ maxWidth: "100%", top: 20, paddingBottom: 0 }}
         styles={{
-          content: { borderRadius: "16px", padding: "24px" },
+          content: { borderRadius: "16px", padding: "16px sm:24px" },
         }}
         okText="เพิ่มรายการ"
         cancelText="ปิด"
@@ -433,7 +450,7 @@ export default function DispenseForm({
         <Input
           placeholder="ค้นหาชื่อยา..."
           prefix={<SearchOutlined />}
-          className="w-full h-11 rounded-xl mb-4"
+          className="w-full h-10 sm:h-11 rounded-xl mb-4"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
           allowClear
@@ -443,7 +460,6 @@ export default function DispenseForm({
             type: "checkbox",
             selectedRowKeys,
             onChange: (keys) => setSelectedRowKeys(keys),
-            // Disable รายการที่สต็อกหมด ไม่ให้เลือกจ่าย
             getCheckboxProps: (record: DrugType) => ({
               disabled: record.quantity <= 0,
             }),
@@ -451,9 +467,9 @@ export default function DispenseForm({
           columns={modalColumns}
           dataSource={filteredDrugs}
           rowKey="id"
-          pagination={{ pageSize: 10 }}
+          pagination={{ pageSize: 5 }}
           size="small"
-          scroll={{ y: 300 }}
+          scroll={{ x: "max-content", y: 300 }}
         />
       </Modal>
     </>

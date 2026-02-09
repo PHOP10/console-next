@@ -11,7 +11,8 @@ import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import CustomTable from "../../common/CustomTable";
-import UserEditModal from "./userEditModal"; // ✅ Import Modal ใหม่
+import UserEditModal from "./userEditModal";
+import { useSession } from "next-auth/react";
 
 dayjs.locale("th");
 
@@ -25,10 +26,9 @@ interface UserTableProps {
 const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
   const intraAuth = useAxiosAuth();
   const intraAuthService = userService(intraAuth);
-
-  // --- States ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserType | null>(null);
+  const { data: session } = useSession();
 
   // --- Handlers ---
   const handleEdit = (record: UserType) => {
@@ -72,7 +72,12 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
       key: "lastName",
       align: "center",
     },
-
+    {
+      title: "ชื่อผู้ใช้",
+      dataIndex: "username",
+      key: "username",
+      align: "center",
+    },
     { title: "อีเมล", dataIndex: "email", key: "email", align: "center" },
     {
       title: "เบอร์โทร",
@@ -107,42 +112,55 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
       title: "จัดการ",
       key: "action",
       align: "center",
-      render: (_, record) => (
-        <Space>
-          <Tooltip title="แก้ไข">
-            <EditOutlined
-              style={{
-                fontSize: 22,
-                color: "#faad14",
-                cursor: "pointer",
-              }}
-              onClick={() => handleEdit(record)}
-            />
-          </Tooltip>
+      render: (_, record) => {
+        // ✅ สร้างตัวแปรเช็คว่าเป็น Account ของตัวเองหรือไม่
+        // (สมมติว่าใน session มี userId และใน record ก็มี userId)
+        const isOwnAccount = session?.user?.userId === record.userId;
 
-          <Tooltip title="ลบข้อมูล">
-            <Popconfirm
-              title="ยืนยันการลบ"
-              description="คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?"
-              okText="ใช่"
-              cancelText="ไม่"
-              onConfirm={() => handleDelete(record.id)}
-              okButtonProps={{ danger: true }}
-            >
-              <DeleteOutlined
+        return (
+          <Space>
+            <Tooltip title="แก้ไข">
+              <EditOutlined
                 style={{
                   fontSize: 22,
-                  color: "#ff4d4f",
+                  color: "#faad14",
                   cursor: "pointer",
-                  transition: "color 0.2s",
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
+                onClick={() => handleEdit(record)}
               />
-            </Popconfirm>
-          </Tooltip>
-        </Space>
-      ),
+            </Tooltip>
+
+            {/* ✅ เพิ่มเงื่อนไข: ถ้าไม่ใช่ Account ตัวเอง ถึงจะแสดงปุ่มลบ */}
+            {!isOwnAccount && (
+              <Tooltip title="ลบข้อมูล">
+                <Popconfirm
+                  title="ยืนยันการลบ"
+                  description="คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?"
+                  okText="ใช่"
+                  cancelText="ไม่"
+                  onConfirm={() => handleDelete(record.id)}
+                  okButtonProps={{ danger: true }}
+                >
+                  <DeleteOutlined
+                    style={{
+                      fontSize: 22,
+                      color: "#ff4d4f",
+                      cursor: "pointer",
+                      transition: "color 0.2s",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color = "#cf1322")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "#ff4d4f")
+                    }
+                  />
+                </Popconfirm>
+              </Tooltip>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
@@ -162,7 +180,6 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
         bordered
       />
 
-      {/* ✅ เรียกใช้ Modal ที่แยกไฟล์ออกมา */}
       <UserEditModal
         open={isModalOpen}
         onClose={() => setIsModalOpen(false)}

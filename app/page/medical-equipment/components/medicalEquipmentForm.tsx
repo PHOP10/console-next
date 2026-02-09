@@ -16,6 +16,7 @@ import {
   Typography,
   Modal,
   Space,
+  ConfigProvider,
 } from "antd";
 import {
   PlusOutlined,
@@ -27,10 +28,11 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MaMedicalEquipmentType, MedicalEquipmentType } from "../../common";
 import { useSession } from "next-auth/react";
+import { buddhistLocale } from "@/app/common";
 import dayjs from "dayjs";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import "dayjs/locale/th";
-import th_TH from "antd/es/date-picker/locale/th_TH";
+import { useRouter } from "next/navigation";
 
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
@@ -55,26 +57,19 @@ export default function CreateMedicalEquipmentForm({
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
   const maService = maMedicalEquipmentServices(intraAuth);
-
-  // State สำหรับ Modal และการเลือก
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTools, setSelectedTools] = useState<any[]>([]); // รายการที่เลือกมาลงตารางหลัก
-  const [tempSelectedKeys, setTempSelectedKeys] = useState<React.Key[]>([]); // state ชั่วคราวใน Modal
+  const [selectedTools, setSelectedTools] = useState<any[]>([]);
+  const [tempSelectedKeys, setTempSelectedKeys] = useState<React.Key[]>([]);
   const [searchText, setSearchText] = useState("");
 
-  // ---------------------------------------------------------------------------
-  // 1. Logic แก้ไขการคำนวณ Stock (หัวใจสำคัญ)
-  // ---------------------------------------------------------------------------
   const stockData = useMemo(() => {
     return dataEQ.map((eq) => {
       const items = eq.items || [];
 
-      // คำนวณยอดที่ถูกจอง (ต้องเช็ค items ของ eq นั้นๆ)
       const reservedQuantity = items.reduce((sum: number, item: any) => {
-        // ต้องเช็คว่า maMedicalEquipment มีอยู่จริงไหมก่อนเรียก status
         const status = item.maMedicalEquipment?.status?.toLowerCase();
 
-        // ถ้าสถานะเป็น Pending หรือ Approve ถือว่าของถูกใช้อยู่
         if (status === "pending" || status === "approve") {
           return sum + (item.quantity || 0);
         }
@@ -86,21 +81,16 @@ export default function CreateMedicalEquipmentForm({
 
       return {
         ...eq,
-        key: eq.id, // ต้องมี key สำหรับ Table
+        key: eq.id,
         reservedQuantity,
-        remainingQuantity: remaining < 0 ? 0 : remaining, // ห้ามติดลบ
+        remainingQuantity: remaining < 0 ? 0 : remaining,
       };
     });
-  }, [dataEQ]); // คำนวณใหม่เมื่อ dataEQ เปลี่ยน
+  }, [dataEQ]);
 
-  // กรองข้อมูลใน Modal ตาม Search Text
   const modalDataSource = stockData.filter((item) =>
     item.equipmentName?.toLowerCase().includes(searchText.toLowerCase()),
   );
-
-  // ---------------------------------------------------------------------------
-  // 2. Event Handlers
-  // ---------------------------------------------------------------------------
 
   // เปิด Modal
   const handleOpenModal = () => {
@@ -183,6 +173,7 @@ export default function CreateMedicalEquipmentForm({
       } else {
         message.error("ไม่สามารถบันทึกข้อมูลได้");
       }
+      router.push("/page/medical-equipment/medicalEquipment?tab=1");
     } catch (error) {
       console.error("เกิดข้อผิดพลาด:", error);
       message.error("ไม่สามารถบันทึกข้อมูลได้");
@@ -193,14 +184,17 @@ export default function CreateMedicalEquipmentForm({
   // 3. UI Components (Columns)
   // ---------------------------------------------------------------------------
 
-  // Columns ของ Modal (เลือกของ)
+  // // Columns ของ Modal (เลือกของ)
   const modalColumns = [
     {
       title: "ชื่อเครื่องมือ",
       dataIndex: "equipmentName",
       render: (text: string, record: any) => (
         <span>
-          {text} {record.remainingQuantity === 0 && <Tag color="red">หมด</Tag>}
+          {text}{" "}
+          {record.remainingQuantity === 0 && (
+            <Tag color="orange">ดำเนินการอยู่</Tag>
+          )}
         </span>
       ),
     },
@@ -314,28 +308,22 @@ export default function CreateMedicalEquipmentForm({
         <Row gutter={24}>
           <Col span={12}>
             <Form.Item
-              label="วันที่ส่งซ่อม"
+              label="วันที่ส่ง"
               name="sentDate"
               rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
             >
               <DatePicker
-                locale={th_TH}
+                locale={buddhistLocale}
                 format="D MMMM BBBB"
                 className="w-full h-11 rounded-xl"
                 disabledDate={(current) => {
                   if (!current) return false;
-
-                  // 1. ห้ามเลือกวันในอดีต
                   const today = dayjs().startOf("day");
                   if (current.isBefore(today)) return true;
 
-                  // 2. ห้ามเลือกวันที่ซ้ำกับที่มีอยู่แล้ว (check duplicate)
                   const isDuplicate = data.some((item) => {
-                    // ถ้าไม่มีวันที่ หรือ รายการนั้นถูก "ยกเลิก" ไปแล้ว -> ไม่นับว่าซ้ำ (เลือกได้)
                     if (!item.sentDate || item.status === "cancel")
                       return false;
-
-                    // เช็คว่าวันที่ตรงกันหรือไม่
                     return dayjs(item.sentDate).isSame(current, "day");
                   });
 
@@ -351,6 +339,7 @@ export default function CreateMedicalEquipmentForm({
                 placeholder="รายละเอียดเพิ่มเติม"
                 className="rounded-xl"
                 style={{ minHeight: "44px" }}
+                maxLength={150}
               />
             </Form.Item>
           </Col>
@@ -395,7 +384,7 @@ export default function CreateMedicalEquipmentForm({
           }}
           dataSource={modalDataSource}
           columns={modalColumns}
-          pagination={{ pageSize: 5 }}
+          pagination={{ pageSize: 10 }}
           size="small"
           scroll={{ y: 300 }} // Fix ความสูงถ้ามีของเยอะ
         />

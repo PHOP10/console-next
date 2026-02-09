@@ -11,15 +11,9 @@ import {
   Popconfirm,
   Modal,
   Card,
-  Divider,
   Tooltip,
 } from "antd";
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  SaveOutlined,
-} from "@ant-design/icons";
+import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
@@ -31,20 +25,14 @@ export default function DrugTypeTable() {
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
 
-  // --- States ---
   const [data, setData] = useState<MasterDrugType[]>([]);
   const [loading, setLoading] = useState(false);
-
-  // Modal State (ใช้ร่วมกันทั้ง เพิ่ม และ แก้ไข)
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MasterDrugType | null>(
     null,
   );
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  // --- Actions ---
-
-  // โหลดข้อมูล
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -67,45 +55,40 @@ export default function DrugTypeTable() {
     fetchData();
   }, []);
 
-  // เปิด Modal สำหรับ "เพิ่มข้อมูล"
   const handleOpenAdd = () => {
-    setEditingRecord(null); // เคลียร์ record เพื่อระบุว่าเป็นโหมดเพิ่ม
+    setEditingRecord(null);
     form.resetFields();
     setIsModalOpen(true);
   };
 
-  // เปิด Modal สำหรับ "แก้ไขข้อมูล"
   const handleOpenEdit = (record: MasterDrugType) => {
-    setEditingRecord(record); // ใส่ record เพื่อระบุว่าเป็นโหมดแก้ไข
-    form.setFieldsValue(record); // set ค่าเดิมลงฟอร์ม
+    setEditingRecord(record);
+    form.setFieldsValue(record);
     setIsModalOpen(true);
   };
 
-  // ฟังก์ชันบันทึก (ทำงานทั้ง Add และ Edit)
   const handleSave = async (values: any) => {
     try {
       setSubmitLoading(true);
       const payload = {
         ...values,
-        drugTypeId: Number(values.drugTypeId), // แปลงเป็นตัวเลข
+        drugTypeId: Number(values.drugTypeId),
       };
 
       if (editingRecord) {
-        // --- โหมดแก้ไข ---
         await intraAuthService.updateMasterDrug({
           ...payload,
           id: editingRecord.id,
         });
         message.success("แก้ไขข้อมูลสำเร็จ");
       } else {
-        // --- โหมดเพิ่ม ---
         await intraAuthService.createMasterDrug(payload);
         message.success("เพิ่มข้อมูลสำเร็จ");
       }
 
       setIsModalOpen(false);
       form.resetFields();
-      fetchData(); // โหลดตารางใหม่
+      fetchData();
     } catch (error) {
       console.error("Save error:", error);
       message.error("บันทึกข้อมูลไม่สำเร็จ");
@@ -114,7 +97,6 @@ export default function DrugTypeTable() {
     }
   };
 
-  // ลบข้อมูล
   const handleDelete = async (id: number) => {
     try {
       await intraAuthService.deleteMasterDrug(id);
@@ -126,14 +108,13 @@ export default function DrugTypeTable() {
     }
   };
 
-  // --- Columns Config ---
   const columns: ColumnsType<MasterDrugType> = [
     {
       title: "รหัสประเภท",
       dataIndex: "drugTypeId",
       key: "drugTypeId",
       align: "center",
-      width: 150,
+      width: 100, // ลดความกว้างลงเล็กน้อย
       sorter: (a, b) => a.drugTypeId - b.drugTypeId,
     },
     {
@@ -141,27 +122,29 @@ export default function DrugTypeTable() {
       dataIndex: "drugType",
       key: "drugType",
       align: "center",
+      width: 150,
     },
     {
       title: "คำอธิบาย",
       dataIndex: "description",
       key: "description",
       align: "center",
-      render: (text) => text || "-", // ถ้าไม่มีข้อมูลให้โชว์ขีด
+      width: 200,
+      responsive: ["md"], // ซ่อนบนมือถือเพื่อประหยัดพื้นที่
+      render: (text) => text || "-",
     },
     {
       title: "จัดการ",
       key: "action",
       align: "center",
-      width: 200,
+      width: 120,
       render: (_, record) => (
         <Space>
-          {/* ส่วนแก้ไข */}
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 22,
-                color: "#faad14", // สีส้ม
+                fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                color: "#faad14",
                 cursor: "pointer",
                 transition: "color 0.2s",
               }}
@@ -169,7 +152,6 @@ export default function DrugTypeTable() {
             />
           </Tooltip>
 
-          {/* ส่วนลบ */}
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -181,8 +163,8 @@ export default function DrugTypeTable() {
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 22,
-                  color: "#ff4d4f", // สีแดง
+                  fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                  color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
                 }}
@@ -198,16 +180,14 @@ export default function DrugTypeTable() {
     <Card
       bordered={false}
       className="shadow-sm"
+      bodyStyle={{ padding: "16px sm:24px" }}
       title={
         <div
           style={{
             color: "#0683e9",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center", 
-            gap: 8,
-            fontSize: "24px",
-            fontWeight: "bold", 
+            textAlign: "center",
+            fontSize: "clamp(18px, 4vw, 24px)", // Responsive font size
+            fontWeight: "bold",
             marginTop: "10px",
             marginBottom: "8px",
           }}
@@ -219,20 +199,16 @@ export default function DrugTypeTable() {
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-start",
+          justifyContent: "flex-end", // ย้ายปุ่มไปขวาเพื่อให้กดง่ายบนมือถือ
           marginBottom: "16px",
         }}
       >
         <Button
           type="primary"
           onClick={handleOpenAdd}
-          style={{
-            borderRadius: "8px", // ปรับมุมโค้งให้เข้ากับธีม Card
-            display: "inline-flex", // บังคับให้ขนาดกว้างเท่ากับเนื้อหาข้างใน
-            alignItems: "center",
-          }}
+          className="w-full sm:w-auto h-10 rounded-lg shadow-sm"
         >
-         + เพิ่มประเภทยา
+          + เพิ่มประเภทยา
         </Button>
       </div>
 
@@ -242,22 +218,21 @@ export default function DrugTypeTable() {
         dataSource={data}
         loading={loading}
         bordered
-        pagination={{ pageSize: 10 }}
-        size="middle"
+        pagination={{ pageSize: 10, size: "small" }}
+        size="small" // ใช้ตารางขนาดเล็กบนมือถือ
+        scroll={{ x: "max-content" }} // เพิ่ม Scroll แนวนอน
       />
 
       <Modal
         title={
-          <div className="text-xl font-bold text-[#0683e9] text-center w-full">
+          <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
             {editingRecord ? (
               <span>
                 <EditOutlined className="mr-2" />
                 แก้ไขประเภทยา
               </span>
             ) : (
-              <span>
-                เพิ่มประเภทยาใหม่
-              </span>
+              <span>เพิ่มประเภทยาใหม่</span>
             )}
           </div>
         }
@@ -269,9 +244,12 @@ export default function DrugTypeTable() {
         cancelText="ยกเลิก"
         destroyOnClose
         centered
+        width={500}
+        // Responsive Modal
+        style={{ maxWidth: "95%", top: 20 }}
         styles={{
-          content: { borderRadius: "20px", padding: "30px" },
-          header: { marginBottom: "20px" },
+          content: { borderRadius: "16px", padding: "20px" },
+          header: { marginBottom: "16px" },
         }}
       >
         <Form
@@ -288,7 +266,7 @@ export default function DrugTypeTable() {
             <Input
               type="number"
               placeholder="เช่น 101"
-              className="w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300"
+              className="w-full h-10 rounded-lg border-gray-300 shadow-sm"
             />
           </Form.Item>
 
@@ -299,7 +277,7 @@ export default function DrugTypeTable() {
           >
             <Input
               placeholder="เช่น ยาเม็ด, ยาน้ำ"
-              className="w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300"
+              className="w-full h-10 rounded-lg border-gray-300 shadow-sm"
             />
           </Form.Item>
 
@@ -307,7 +285,7 @@ export default function DrugTypeTable() {
             <Input.TextArea
               rows={3}
               placeholder="รายละเอียด (ถ้ามี)"
-              className="w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300"
+              className="w-full rounded-lg border-gray-300 shadow-sm"
             />
           </Form.Item>
         </Form>

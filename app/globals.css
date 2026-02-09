@@ -21,3 +21,23 @@
   background-position: center;
   background-size: "cover";
 } */
+
+
+@keyframes pulse-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(255, 77, 79, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 77, 79, 0);
+  }
+}
+
+.badge-pulse .ant-badge-count {
+  animation: pulse-red 2s infinite; /* สั่งให้กระพริบ */
+  background-color: #ff4d4f !important; /* บังคับสีแดงสด */
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2); /* ขอบบางๆ */
+}

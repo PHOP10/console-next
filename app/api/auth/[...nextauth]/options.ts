@@ -1,6 +1,8 @@
 import CredentialsProvider from "next-auth/providers/credentials";
-import axios from "@/app/lib/axios/axios";
+// import axios from "@/app/lib/axios/axios";
 import type { NextAuthOptions } from "next-auth";
+import axios from "axios";
+import config from "@/config";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -15,10 +17,24 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.username || !credentials?.password) return null;
 
         try {
-          const response = await axios.post("/auth/login", {
-            username: credentials.username,
-            password: credentials.password,
-          });
+          let response;
+          try {
+            // 1. ลองยิงผ่าน Internal URL (Docker Network)
+            // console.log("Attempting login via Internal URL...");
+            response = await axios.post(`${config.internalUrl}/auth/login`, {
+              username: credentials.username,
+              password: credentials.password,
+            });
+          } catch (internalError) {
+            // 2. ถ้า Internal พัง ให้ลองยิงผ่าน Backend URL (Public IP)
+            // console.log("Internal login failed, trying via Backend URL...");
+            response = await axios.post(`${config.backendUrl}/auth/login`, {
+              username: credentials.username,
+              password: credentials.password,
+            });
+          }
+
+          // console.log("Login response:", response);
 
           if (!response?.data) return null;
 
@@ -29,7 +45,24 @@ export const authOptions: NextAuthOptions = {
 
           return user;
         } catch (error: any) {
-          throw new Error(error.message || "Login failed");
+          console.error("Login error:", error.response?.data || error.message);
+
+          const status = error.response?.status;
+          const backendMessage = error.response?.data?.message;
+
+          if (backendMessage) {
+            throw new Error(backendMessage);
+          }
+
+          if (status === 404) {
+            throw new Error("User not found");
+          } else if (status === 401) {
+            throw new Error("Password incorrect");
+          }
+
+          throw new Error(
+            "Login failed: Invalid credentials or server unreachable",
+          );
         }
       },
     }),

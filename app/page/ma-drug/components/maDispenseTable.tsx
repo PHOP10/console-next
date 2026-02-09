@@ -14,6 +14,7 @@ import {
   Modal,
   Input,
   Card,
+  Form,
 } from "antd";
 import {
   CheckCircleOutlined,
@@ -22,57 +23,69 @@ import {
   DeleteOutlined,
   ExclamationCircleOutlined,
   FileExcelOutlined,
+  EditOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-// ✅ แนะนำให้ใช้ DispenseService ถ้าแยกไฟล์ไว้ หรือใช้ MaDrug ตามเดิมถ้าคุณรวมไว้ที่นั่น
 import { MaDrug } from "../services/maDrug.service";
-import { DispenseType } from "../../common";
+import { DispenseType, DrugType } from "../../common";
 import CustomTable from "../../common/CustomTable";
 import DispenseTableDetail from "./dispenseTableDetail";
 import { useSession } from "next-auth/react";
 import { exportDispenseToExcel } from "./dispenseExport";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+import DispenseEdit from "./dispenseEdit";
+
+// Set locale globally
+dayjs.locale("th");
 
 interface MaDispenseTableProps {
   data: DispenseType[];
   fetchData: () => void;
+  drugs: DrugType[];
 }
 
 export default function MaDispenseTable({
   data,
   fetchData,
+  drugs,
 }: MaDispenseTableProps) {
   const intraAuth = useAxiosAuth();
   const dispenseService = MaDrug(intraAuth);
   const { data: session } = useSession();
-
   const [loading, setLoading] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<DispenseType | null>(
     null,
   );
-
-  // --- States สำหรับการอนุมัติ/ยกเลิก ---
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
   const [cancelingId, setCancelingId] = useState<number | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelLoading, setCancelLoading] = useState(false);
+  const [editVisible, setEditVisible] = useState(false);
+  const [formCancel] = Form.useForm();
 
-  // --- ฟังก์ชันเปิด Modal ยกเลิก ---
   const openCancelModal = (id: number) => {
     setCancelingId(id);
     setCancelReason("");
     setIsCancelModalOpen(true);
-    setOpenPopoverId(null); // ปิด Popover
+    setOpenPopoverId(null);
+    formCancel.resetFields();
   };
 
-  // --- ฟังก์ชัน Submit การยกเลิก ---
-  const handleCancelSubmit = async () => {
-    if (!cancelReason.trim()) {
-      message.warning("กรุณาระบุเหตุผลในการยกเลิก");
-      return;
-    }
+  const handleViewDetail = (record: DispenseType) => {
+    setSelectedRecord(record);
+    setDetailVisible(true);
+  };
+
+  const handleEdit = (record: DispenseType) => {
+    setSelectedRecord(record);
+    setEditVisible(true);
+  };
+
+  const handleCancelSubmit = async (values: any) => {
     if (!cancelingId) return;
 
     try {
@@ -80,7 +93,7 @@ export default function MaDispenseTable({
       const payload = {
         id: cancelingId,
         status: "canceled",
-        cancelReason: cancelReason,
+        cancelReason: values.cancelReason,
         cancelName: session?.user?.fullName || "Admin",
       };
 
@@ -96,8 +109,6 @@ export default function MaDispenseTable({
       setCancelLoading(false);
     }
   };
-
-  // --- ฟังก์ชันอนุมัติ ---
   const handleApprove = async (id: number) => {
     try {
       setLoading(true);
@@ -128,11 +139,6 @@ export default function MaDispenseTable({
     }
   };
 
-  const handleViewDetail = (record: DispenseType) => {
-    setSelectedRecord(record);
-    setDetailVisible(true);
-  };
-
   const handleExport = (record: DispenseType) => {
     try {
       message.loading("กำลังสร้างไฟล์ Excel...", 1);
@@ -150,6 +156,7 @@ export default function MaDispenseTable({
       key: "dispenserName",
       align: "center",
       width: 150,
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (text) => (
         <span className="font-medium text-slate-700">{text || "-"}</span>
       ),
@@ -159,14 +166,22 @@ export default function MaDispenseTable({
       dataIndex: "dispenseDate",
       key: "dispenseDate",
       align: "center",
-      width: 130,
+      width: 120,
       render: (text: string) => {
         if (!text) return "-";
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(new Date(text));
+        const dateObj = dayjs(text);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -176,6 +191,7 @@ export default function MaDispenseTable({
       align: "center",
       width: 150,
       ellipsis: true,
+      responsive: ["lg"], // แสดงเฉพาะจอใหญ่
       render: (text) => <span className="text-gray-500">{text || "-"}</span>,
     },
     {
@@ -183,7 +199,7 @@ export default function MaDispenseTable({
       dataIndex: "totalPrice",
       key: "totalPrice",
       align: "right",
-      width: 120,
+      width: 100,
       render: (val) => (
         <span className="text-blue-600 font-semibold">
           {val
@@ -197,7 +213,7 @@ export default function MaDispenseTable({
       dataIndex: "status",
       key: "status",
       align: "center",
-      width: 120,
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = status;
@@ -229,13 +245,13 @@ export default function MaDispenseTable({
       title: "จัดการ",
       key: "action",
       align: "center",
-      width: 150,
-      fixed: "right",
+      width: 180, // เพิ่มความกว้างให้พอสำหรับปุ่ม
       render: (_, record) => {
         const isPending = record.status === "pending";
 
         return (
-          <Space>
+          <Space size="small">
+            {/* 1. ปุ่มอนุมัติ */}
             <Popover
               trigger={isPending ? "click" : []}
               open={isPending && openPopoverId === record.id}
@@ -247,18 +263,18 @@ export default function MaDispenseTable({
               title={
                 <Space>
                   <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                  <Typography.Text strong>จัดการรายการ ?</Typography.Text>
+                  <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
                 </Space>
               }
               content={
-                <Space style={{ display: "flex", marginTop: 10 }}>
-                  <Button
-                    type="primary"
-                    size="small"
-                    onClick={() => handleApprove(record.id)}
-                  >
-                    อนุมัติ
-                  </Button>
+                <Space
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end", // จัดชิดขวา
+                    width: "100%", // ขยายเต็มความกว้าง
+                    marginTop: 13,
+                  }}
+                >
                   <Button
                     danger
                     size="small"
@@ -266,37 +282,96 @@ export default function MaDispenseTable({
                   >
                     ยกเลิก
                   </Button>
+                  <Button
+                    type="primary"
+                    size="small"
+                    onClick={() => handleApprove(record.id)}
+                    style={{
+                      backgroundColor: "#52c41a",
+                      borderColor: "#52c41a",
+                    }}
+                  >
+                    อนุมัติ
+                  </Button>
                 </Space>
               }
             >
-              <Tooltip title={isPending ? "ตรวจสอบและอนุมัติ" : ""}>
+              <Tooltip title={isPending ? "อนุมัติ" : "อนุมัติแล้ว"}>
                 <Button
                   type="text"
                   shape="circle"
                   style={{
-                    opacity: isPending ? 1 : 0.3,
+                    color: isPending ? "#52c41a" : "#ccc",
                     cursor: isPending ? "pointer" : "not-allowed",
                   }}
                   icon={
                     <CheckCircleOutlined
                       style={{
-                        fontSize: 20,
-                        color: isPending ? "#52c41a" : "#ccc",
+                        fontSize: 18, // ขนาด 18px
+                        opacity: isPending ? 1 : 0.5,
                       }}
                     />
                   }
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (isPending) setOpenPopoverId(record.id);
+                    if (isPending) {
+                      setOpenPopoverId(record.id);
+                    }
                   }}
                 />
               </Tooltip>
             </Popover>
 
+            {/* 2. ดูรายละเอียด */}
+            <Tooltip title="ดูรายละเอียด">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <FileSearchOutlined
+                    style={{ fontSize: 18, color: "#1677ff" }} // ขนาด 18px
+                  />
+                }
+                onClick={() => handleViewDetail(record)}
+              />
+            </Tooltip>
+
+            {/* 3. ปุ่ม Export Excel */}
+            <Tooltip title="พิมพ์ใบจ่ายยา">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <FileExcelOutlined
+                    style={{ fontSize: 18, color: "#217346" }} // ขนาด 18px
+                  />
+                }
+                onClick={() => handleExport(record)}
+              />
+            </Tooltip>
+
+            <Tooltip title="แก้ไข">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <EditOutlined
+                    style={{
+                      fontSize: 18,
+                      color: isPending ? "#faad14" : "#d9d9d9",
+                    }}
+                  />
+                }
+                disabled={!isPending}
+                onClick={() => isPending && handleEdit(record)}
+              />
+            </Tooltip>
+
+            {/* 4. ปุ่มลบ */}
             <Tooltip title="ลบรายการ">
               <Popconfirm
                 title="ยืนยันการลบ"
-                description="คุณต้องการลบรายการนี้ใช่หรือไม่?"
+                description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
                 onConfirm={() => handleDelete(record.id)}
                 okText="ลบ"
                 cancelText="ยกเลิก"
@@ -306,33 +381,13 @@ export default function MaDispenseTable({
                   type="text"
                   shape="circle"
                   danger
-                  icon={<DeleteOutlined style={{ fontSize: 20 }} />}
+                  icon={
+                    <DeleteOutlined
+                      style={{ fontSize: 18, color: "#ff4d4f" }}
+                    /> // ขนาด 18px
+                  }
                 />
               </Popconfirm>
-            </Tooltip>
-
-            <Tooltip title="ดูรายละเอียด">
-              <Button
-                type="text"
-                shape="circle"
-                icon={
-                  <FileSearchOutlined
-                    style={{ fontSize: 20, color: "#1677ff" }}
-                  />
-                }
-                onClick={() => handleViewDetail(record)}
-              />
-            </Tooltip>
-            <Tooltip title="พิมพ์ใบจ่ายยา">
-              <FileExcelOutlined
-                style={{
-                  fontSize: 22,
-                  color: "#217346",
-                  cursor: "pointer",
-                  transition: "color 0.2s",
-                }}
-                onClick={() => handleExport(record)}
-              />
             </Tooltip>
           </Space>
         );
@@ -344,9 +399,8 @@ export default function MaDispenseTable({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
-          ข้อมูลรายการจ่ายยา
+          จัดการรายการจ่ายยา
         </h2>
-
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
 
@@ -356,40 +410,54 @@ export default function MaDispenseTable({
         dataSource={data}
         loading={loading}
         bordered
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 900 }}
+        size="small" // ใช้ size small บนมือถือ
+        pagination={{ pageSize: 10, size: "small" }}
+        scroll={{ x: "max-content" }}
       />
 
-      {/* Modal รายละเอียด */}
       <DispenseTableDetail
         visible={detailVisible}
         onClose={() => setDetailVisible(false)}
         data={selectedRecord}
       />
 
-      {/* ✅ Modal สำหรับกรอกเหตุผลการยกเลิก */}
       <Modal
         title={
-          <div style={{ color: "#ff4d4f" }}>
-            <CloseCircleOutlined />
-          </div>
+          <div className="flex items-center gap-2">ยืนยันการยกเลิกรายการ</div>
         }
         open={isCancelModalOpen}
-        onOk={handleCancelSubmit}
+        // ✅ แก้ไข: เมื่อกดปุ่ม OK ให้สั่ง submit ฟอร์ม
+        onOk={() => formCancel.submit()}
         onCancel={() => setIsCancelModalOpen(false)}
         okText="ยืนยันการยกเลิก"
-        cancelText="ปิด"
+        cancelButtonProps={{ style: { display: "none" } }} // ซ่อนปุ่ม Cancel ตามเดิม
         okButtonProps={{ danger: true, loading: cancelLoading }}
+        centered
+        style={{ maxWidth: "95%" }}
       >
-        <p>กรุณาระบุเหตุผลที่ต้องการยกเลิกรายการนี้:</p>
-        <Input.TextArea
-          rows={4}
-          value={cancelReason}
-          onChange={(e) => setCancelReason(e.target.value)}
-          placeholder="เช่น คีย์ข้อมูลผิด, ยาไม่พอจ่าย, หรืออื่นๆ..."
-          autoFocus
-        />
+        {/* ✅ ใช้ Form เต็มรูปแบบ */}
+        <Form form={formCancel} layout="vertical" onFinish={handleCancelSubmit}>
+          <Form.Item
+            name="cancelReason"
+            label="เหตุผลการยกเลิก"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+          >
+            <Input.TextArea
+              rows={4}
+              placeholder="กรอกเหตุผลที่ต้องการยกเลิก..."
+            />
+          </Form.Item>
+        </Form>
       </Modal>
+
+      <DispenseEdit
+        visible={editVisible}
+        onClose={() => setEditVisible(false)}
+        onSuccess={fetchData}
+        data={selectedRecord}
+        drugs={drugs}
+        existingData={data}
+      />
     </>
   );
 }

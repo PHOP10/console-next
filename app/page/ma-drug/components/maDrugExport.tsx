@@ -6,24 +6,24 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("ใบเบิกยา");
 
-  // ✅ 1. ตั้งค่าหน้ากระดาษ A4 และขอบกระดาษ (Page Setup)
+  // 1. Page Setup
   worksheet.pageSetup = {
-    paperSize: 9, // 9 = A4
-    orientation: "portrait", // แนวตั้ง
-    fitToPage: true, // บังคับพอดีหน้า
-    fitToWidth: 1, // บีบความกว้างให้เหลือ 1 หน้า
-    fitToHeight: 0, // ความสูงปล่อยไหล (เผื่อรายการยาเยอะจนล้นไปหน้า 2)
+    paperSize: 9, // A4
+    orientation: "portrait",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
     margins: {
       left: 0.25,
       right: 0.25,
       top: 0.5,
-      bottom: 0.5, // หน่วยเป็นนิ้ว (ลดขอบให้เหลือพื้นที่เยอะขึ้น)
+      bottom: 0.5,
       header: 0.3,
       footer: 0.3,
     },
   };
 
-  // ✅ 2. ลดความกว้างคอลัมน์ให้กระชับลง (รวมกันอย่าให้เกินมากเกินไป)
+  // 2. Columns
   worksheet.columns = [
     { width: 6 }, // A: ลำดับ
     { width: 12 }, // B: Working Code
@@ -36,10 +36,10 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     { width: 15 }, // I: หมายเหตุ
   ];
 
-  // ✅ 3. Helper ปรับลดขนาดฟอนต์ (Default 12)
+  // 3. Helper Functions
   const setBaseFont = (
     target: ExcelJS.Cell | ExcelJS.Row,
-    size = 12, // ลดจาก 14 เป็น 12
+    size = 12,
     bold = false,
   ) => {
     target.font = { name: "Angsana New", family: 4, size, bold };
@@ -54,12 +54,12 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     };
   };
 
-  // 4. ส่วนหัวกระดาษ (Title)
+  // 4. Header
   worksheet.mergeCells("A1:I1");
   const titleRow = worksheet.getCell("A1");
   titleRow.value = "ใบขอเบิกยาและเวชภัณฑ์ที่มิใช่ยา โรงพยาบาลวังเจ้า";
   titleRow.alignment = { vertical: "middle", horizontal: "center" };
-  setBaseFont(titleRow, 16, true); // หัวข้อใหญ่คงไว้ 16
+  setBaseFont(titleRow, 16, true);
 
   worksheet.mergeCells("A2:I2");
   const subTitleRow = worksheet.getCell("A2");
@@ -67,34 +67,20 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
   subTitleRow.alignment = { vertical: "middle", horizontal: "center" };
   setBaseFont(subTitleRow, 14, true);
 
-  // 5. ข้อมูลใบเบิก
   worksheet.addRow([""]);
 
-  // ✅ แก้ไขฟังก์ชันนี้: ขยับตำแหน่ง Cell และ Merge ใหม่เพื่อบีบเข้าตรงกลาง
+  // 5. Info Rows
   const addInfoRow = (l1: string, v1: string, l2: string, v2: string) => {
-    // Array นี้จะลงช่อง: A(ว่าง), B(Label1), C(Value1), D, E, F(Label2), G(Value2), H, I(ว่าง)
     const row = worksheet.addRow(["", l1, v1, "", "", l2, v2, "", ""]);
     setBaseFont(row, 12);
 
-    // --- ฝั่งซ้าย ---
-    // Label 1 (ช่อง B): ชิดขวา เพื่อให้ตัวหนังสือวิ่งไปหาข้อมูล
+    // Formatting
     row.getCell(2).alignment = { horizontal: "right" };
-
-    // Value 1 (ช่อง C): ชิดซ้าย + ย่อหน้า 1
     row.getCell(3).alignment = { horizontal: "left", indent: 1 };
-
-    // --- ฝั่งขวา ---
-    // Label 2 (ช่อง F): ชิดขวา
     row.getCell(6).alignment = { horizontal: "right" };
-
-    // Value 2 (ช่อง G): ชิดซ้าย + ย่อหน้า 1
     row.getCell(7).alignment = { horizontal: "left", indent: 1 };
 
-    // ✅ Merge ใหม่: เว้น A และ I ไว้เป็นขอบ
-    // Value 1 รวม C-E
     worksheet.mergeCells(`C${row.number}:E${row.number}`);
-
-    // Value 2 รวม G-H (เว้น I ไว้)
     worksheet.mergeCells(`G${row.number}:H${row.number}`);
   };
 
@@ -115,11 +101,12 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     ? `${Number(data.totalPrice).toLocaleString()} บาท`
     : "-";
   const totalItems = data.quantityUsed ? `${data.quantityUsed} รายการ` : "-";
+
   addInfoRow("จำนวนรายการ:", totalItems, "รวมเป็นเงิน:", totalPrice);
 
   worksheet.addRow([""]);
 
-  // 6. ส่วนลายเซ็น
+  // 6. Signatures
   const signLabelRow = worksheet.addRow([
     "",
     "ลงชื่อ ........................................ ผู้ขอเบิก",
@@ -144,7 +131,7 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
   ]);
 
   [signLabelRow, signNameRow].forEach((row) => {
-    setBaseFont(row, 12); // ลดฟอนต์ลายเซ็น
+    setBaseFont(row, 12);
     row.alignment = { horizontal: "center", vertical: "middle" };
     worksheet.mergeCells(`B${row.number}:E${row.number}`);
     worksheet.mergeCells(`F${row.number}:I${row.number}`);
@@ -152,7 +139,7 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
 
   worksheet.addRow([""]);
 
-  // 7. หัวตาราง
+  // 7. Table Header
   const headerRow = worksheet.addRow([
     "ลำดับ",
     "Working Code",
@@ -166,7 +153,7 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
   ]);
 
   headerRow.eachCell((cell) => {
-    setBaseFont(cell, 12, true); // หัวตารางใช้ 12 ตัวหนา
+    setBaseFont(cell, 12, true);
     cell.alignment = { vertical: "middle", horizontal: "center" };
     setBorder(cell);
     cell.fill = {
@@ -176,7 +163,7 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     };
   });
 
-  // 8. ข้อมูลยา
+  // 8. Data Items (แก้ไขตรงนี้)
   if (data.maDrugItems && data.maDrugItems.length > 0) {
     const groupedItems: Record<string, any[]> = {};
 
@@ -191,6 +178,7 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     Object.keys(groupedItems)
       .sort()
       .forEach((groupName) => {
+        // Group Header
         const groupRow = worksheet.addRow([groupName]);
         setBaseFont(groupRow, 12, true);
         groupRow.getCell(1).alignment = {
@@ -205,13 +193,17 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
         };
         setBorder(groupRow.getCell(1));
 
+        // Items
         groupedItems[groupName].forEach((item) => {
           const row = worksheet.addRow([
             globalIndex++,
             item.drug?.workingCode || "-",
             item.drug?.name || "-",
             item.drug?.packagingSize || "-",
-            item.drug?.price || 0,
+
+            // ✅ 1. ดึงราคาจาก item.price (ราคาในรายการ)
+            item.price || 0,
+
             item.drug?.quantity || 0,
             item.quantity,
             "", // จำนวนจ่าย
@@ -219,12 +211,19 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
           ]);
 
           row.eachCell((cell, colNumber) => {
-            setBaseFont(cell, 12); // ข้อมูลยาใช้ฟอนต์ 12
+            setBaseFont(cell, 12);
             setBorder(cell);
+
+            // ✅ 2. จัดรูปแบบแต่ละคอลัมน์ให้ถูกต้อง
             if (colNumber === 3 || colNumber === 9) {
-              cell.alignment = { horizontal: "left" }; // ชื่อยากับหมายเหตุ ชิดซ้าย
-              cell.alignment.wrapText = true; // ✅ ตัดบรรทัดอัตโนมัติถ้าชื่อยาวเกิน
+              // ชื่อยา (Col 3) และ หมายเหตุ (Col 9) -> ชิดซ้าย, ตัดคำ
+              cell.alignment = { horizontal: "left", wrapText: true };
+            } else if (colNumber === 5) {
+              // ราคา (Col 5) -> ชิดขวา, มีทศนิยม
+              cell.alignment = { horizontal: "right" };
+              cell.numFmt = "#,##0.00";
             } else {
+              // อื่นๆ -> ตรงกลาง
               cell.alignment = { horizontal: "center" };
             }
           });
@@ -237,7 +236,7 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     setBaseFont(emptyRow, 12);
   }
 
-  // 9. สร้างไฟล์
+  // 9. Save File
   const buffer = await workbook.xlsx.writeBuffer();
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

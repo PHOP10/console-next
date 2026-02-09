@@ -30,12 +30,16 @@ import {
   EditOutlined,
   ExclamationCircleOutlined,
   FileSearchOutlined,
-  FormOutlined,
   RollbackOutlined,
-  UndoOutlined,
 } from "@ant-design/icons";
 import { useSession } from "next-auth/react";
 import CustomTable from "../../common/CustomTable";
+import "dayjs/locale/th";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+
+// Setup dayjs
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
 
 interface Props {
   data: OfficialTravelRequestType[];
@@ -93,9 +97,9 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
 
   const handleDelete = async (id: number) => {
     try {
-      await intraAuthService.deleteOfficialTravelRequest(id); // ฟังก์ชัน service ของคุณ
+      await intraAuthService.deleteOfficialTravelRequest(id);
       message.success("ลบคำขอเรียบร้อยแล้ว");
-      fetchData(); // รีเฟรชตาราง
+      fetchData();
     } catch (error) {
       console.error(error);
       message.error("ลบคำขอไม่สำเร็จ");
@@ -147,7 +151,6 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
 
   const handleApprove = async (record: any) => {
     try {
-      // const payload = {}
       await intraAuthService.updateOfficialTravelRequest({
         id: record.id,
         status: "approve",
@@ -180,7 +183,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       });
       message.success("ยกเลิกรายการแล้ว");
       setModalCancelOpen(false);
-      formCancel.resetFields(); // รีเซ็ต Form
+      formCancel.resetFields();
       fetchData();
     } catch (err) {
       console.error(err);
@@ -194,19 +197,22 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "createdName",
       key: "createdName",
       align: "center",
+      width: 150,
     },
     {
       title: "เลขที่เอกสาร",
       dataIndex: "documentNo",
       key: "documentNo",
       align: "center",
+      width: 120,
     },
     {
       title: "วัตถุประสงค์",
       dataIndex: "missionDetail",
       key: "missionDetail",
       align: "center",
-      // ellipsis: true,
+      width: 150,
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -224,7 +230,8 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "location",
       key: "location",
       align: "center",
-      // ellipsis: true,
+      width: 150,
+      responsive: ["lg"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
@@ -242,13 +249,22 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "startDate",
       key: "startDate",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -256,20 +272,28 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "endDate",
       key: "endDate",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
-
     {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
+      align: "center",
+      width: 100,
       render: (status: string) => {
         let color = "default";
         let text = status;
@@ -289,7 +313,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             break;
           case "success":
             color = "default";
-            text = "สำเร็จ";
+            text = "เสร็จสิ้น";
             break;
           case "cancel":
             color = "red";
@@ -304,11 +328,13 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       },
     },
     {
-      title: "หมมายเหตุ",
+      title: "หมายเหตุ",
       dataIndex: "note",
       key: "note",
       align: "center",
+      width: 150,
       ellipsis: true,
+      responsive: ["xl"], // ซ่อนบนมือถือและจอเล็ก
       render: (text: string) => {
         const maxLength = 15;
         if (!text) return "-";
@@ -325,26 +351,129 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 180, // เพิ่มความกว้างให้ปุ่ม
       render: (_, record) => (
-        <Space>
-          <Tooltip title="แก้ไข">
+        <Space size="small">
+          <Popover
+            trigger="click"
+            open={openPopoverId === record.id}
+            onOpenChange={(newOpen) => {
+              if (newOpen && record.status === "pending") {
+                setOpenPopoverId(record.id);
+              } else {
+                setOpenPopoverId(null);
+              }
+            }}
+            title={
+              <Space>
+                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
+                <Typography.Text strong>ยืนยันการอนุมัติ ?</Typography.Text>
+              </Space>
+            }
+            content={
+              <Space
+                style={{
+                  display: "flex",
+                  marginTop: 13,
+                  justifyContent: "flex-end",
+                }}
+              >
+                <Button
+                  danger
+                  size="small"
+                  onClick={() => {
+                    setSelectedCancelRecord(record);
+                    setModalCancelOpen(true);
+                    setOpenPopoverId(null);
+                    formCancel.resetFields();
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+
+                <Button
+                  type="primary"
+                  size="small"
+                  style={{
+                    backgroundColor: "#52c41a",
+                    borderColor: "#52c41a",
+                  }}
+                  onClick={() => {
+                    handleApprove(record);
+                    setOpenPopoverId(null);
+                  }}
+                >
+                  อนุมัติ
+                </Button>
+              </Space>
+            }
+          >
+            <Tooltip
+              title={record.status === "pending" ? "อนุมัติ" : "อนุมัติแล้ว"}
+            >
+              <CheckCircleOutlined
+                style={{
+                  fontSize: 18, // ขนาด 18px
+                  color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
+                  cursor:
+                    record.status === "pending" ? "pointer" : "not-allowed",
+                  opacity: record.status === "pending" ? 1 : 0.5,
+                  transition: "color 0.2s",
+                }}
+                onClick={(e) => {
+                  if (record.status !== "pending") {
+                    e.stopPropagation();
+                    return;
+                  }
+                  setOpenPopoverId(record.id);
+                }}
+              />
+            </Tooltip>
+          </Popover>
+          <Popconfirm
+            title="ยืนยันการส่งคืนเพื่อแก้ไข"
+            okText="ยืนยัน"
+            cancelText="ยกเลิก"
+            onConfirm={() => returnEdit(record)}
+            disabled={record.status !== "approve"}
+          >
+            <Tooltip title="ส่งคืนเพื่อแก้ไข">
+              <RollbackOutlined
+                style={{
+                  fontSize: 18, // ขนาด 18px
+                  color: record.status === "approve" ? "orange" : "#d9d9d9",
+                  cursor:
+                    record.status === "approve" ? "pointer" : "not-allowed",
+                  transition: "color 0.2s",
+                }}
+              />
+            </Tooltip>
+          </Popconfirm>
+
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }}
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
+
+          {/* <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 22, // ปรับขนาดตามความเหมาะสม
+                fontSize: 18, // ขนาด 18px
                 color: record.status === "pending" ? "#faad14" : "#d9d9d9",
                 cursor: record.status === "pending" ? "pointer" : "not-allowed",
                 transition: "color 0.2s",
               }}
               onClick={() => {
-                // ต้องเช็คเงื่อนไขตรงนี้ เพราะ Icon กดได้ตลอดเวลาถ้าไม่กันไว้
                 if (record.status === "pending") {
                   handleEdit(record);
                 }
               }}
             />
-          </Tooltip>
+          </Tooltip> */}
 
-          <Popconfirm
+          {/* <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
             onConfirm={async () => {
@@ -363,130 +492,14 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 22,
-                  color: "#ff4d4f", // สีแดงตาม Theme ของ Ant Design (Danger)
+                  fontSize: 18, // ขนาด 18px
+                  color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
                 }}
-                // เพิ่ม effect ตอนเอาเมาส์ชี้ให้สีเข้มขึ้นเล็กน้อย (Option เสริม)
-                onMouseEnter={(e) => (e.currentTarget.style.color = "#cf1322")}
-                onMouseLeave={(e) => (e.currentTarget.style.color = "#ff4d4f")}
               />
             </Tooltip>
-          </Popconfirm>
-
-          <Popconfirm
-            title="ยืนยันการส่งคืนเพื่อแก้ไข"
-            okText="ยืนยัน"
-            cancelText="ยกเลิก"
-            onConfirm={() => returnEdit(record)}
-            disabled={record.status !== "approve"}
-          >
-            <Tooltip title="ส่งคืนเพื่อแก้ไข">
-              <RollbackOutlined
-                style={{
-                  fontSize: 22,
-                  color: record.status === "approve" ? "orange" : "#d9d9d9",
-                  cursor:
-                    record.status === "approve" ? "pointer" : "not-allowed",
-                  transition: "color 0.2s",
-                }}
-              />
-            </Tooltip>
-          </Popconfirm>
-
-          <Popover
-            trigger="click"
-            open={openPopoverId === record.id}
-            // สั่งปิด Popover เมื่อคลิกที่อื่น หรือเมื่อสถานะเปลี่ยน
-            onOpenChange={(newOpen) => {
-              if (newOpen && record.status === "pending") {
-                setOpenPopoverId(record.id);
-              } else {
-                setOpenPopoverId(null);
-              }
-            }}
-            title={
-              <Space>
-                <ExclamationCircleOutlined style={{ color: "#faad14" }} />
-                <Typography.Text strong>ยืนยันผลการพิจารณา ?</Typography.Text>
-              </Space>
-            }
-            content={
-              <Space
-                style={{
-                  display: "flex",
-                  marginTop: 13,
-                  justifyContent: "flex-end",
-                }}
-              >
-                <Button
-                  danger
-                  size="small"
-                  onClick={() => {
-                    setSelectedCancelRecord(record);
-                    setModalCancelOpen(true);
-                    setOpenPopoverId(null);
-                  }}
-                >
-                  ยกเลิกคำขอ
-                </Button>
-
-                {/* ปุ่มอนุมัติ (Approve) */}
-                <Button
-                  type="primary"
-                  size="small"
-                  style={{ backgroundColor: "#52c41a", borderColor: "#52c41a" }} // สีเขียว
-                  onClick={() => {
-                    handleApprove(record);
-                    setOpenPopoverId(null); // ปิด Popover หลังกด
-                  }}
-                >
-                  อนุมัติ
-                </Button>
-              </Space>
-            }
-          >
-            <Tooltip
-              title={
-                record.status === "pending" ? "อนุมัติ" : "ไม่สามารถอนุมัติได้"
-              }
-            >
-              <CheckCircleOutlined
-                style={{
-                  fontSize: 22,
-                  // ถ้าเป็น pending ให้เป็นสีเขียว (พร้อมกด) ถ้าไม่ใช่ให้เป็นสีเทา
-                  color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
-                  cursor:
-                    record.status === "pending" ? "pointer" : "not-allowed",
-                  opacity: record.status === "pending" ? 1 : 0.5,
-                  transition: "color 0.2s",
-                }}
-                onClick={(e) => {
-                  if (record.status !== "pending") {
-                    e.stopPropagation();
-                    return;
-                  }
-                  setOpenPopoverId(record.id);
-                }}
-              />
-            </Tooltip>
-          </Popover>
-
-          {/* <Button
-            size="small"
-            type="primary"
-            onClick={() => handleShowDetail(record)}
-          >
-            รายละเอียด
-          </Button> */}
-
-          <Tooltip title="รายละเอียด">
-            <FileSearchOutlined
-              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
-              onClick={() => handleShowDetail(record)}
-            />
-          </Tooltip>
+          </Popconfirm> */}
         </Space>
       ),
     },
@@ -496,7 +509,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
     <>
       <div className="mb-6 -mt-7">
         <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
-          รายการขอไปราชการ
+          จัดการคำขอไปราชการ
         </h2>
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
@@ -506,7 +519,11 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
         columns={columns}
         dataSource={data}
         loading={loading}
+        bordered
+        // Responsive Config
         scroll={{ x: "max-content" }}
+        size="small" // ใช้ size small บนมือถือ
+        pagination={{ pageSize: 10, size: "small" }}
       />
 
       <Modal
@@ -516,6 +533,8 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
         onOk={handleUpdate}
         okText="บันทึก"
         cancelText="ยกเลิก"
+        centered
+        style={{ maxWidth: "95%" }} // Responsive Modal
       >
         <Form form={form} layout="vertical">
           <Form.Item name="title" label="เรื่อง" rules={[{ required: true }]}>
@@ -540,14 +559,22 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             label="วันที่เริ่ม"
             rules={[{ required: true }]}
           >
-            <DatePicker showTime format="YYYY-MM-DD HH:mm" />
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm"
+              style={{ width: "100%" }}
+            />
           </Form.Item>
           <Form.Item
             name="endDate"
             label="วันที่สิ้นสุด"
             rules={[{ required: true }]}
           >
-            <DatePicker showTime format="YYYY-MM-DD HH:mm" />
+            <DatePicker
+              showTime
+              format="YYYY-MM-DD HH:mm"
+              style={{ width: "100%" }}
+            />
           </Form.Item>
           <Form.Item name="carId" label="รถที่ใช้">
             <Select allowClear placeholder="เลือกรถ">
@@ -577,12 +604,15 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       />
 
       <Modal
-        title="ยกเลิกคำขอไปราชการ"
+        title="ยืนยันการยกเลิกรายการ"
         open={modalCancelOpen}
         onOk={() => formCancel.submit()}
         onCancel={() => setModalCancelOpen(false)}
-        okText="ยืนยัน"
-        cancelText="ยกเลิก"
+        okText="ยืนยันการยกเลิก"
+        cancelButtonProps={{ style: { display: "none" } }}
+        centered
+        okButtonProps={{ danger: true }}
+        style={{ maxWidth: "95%" }}
       >
         <Form
           form={formCancel}

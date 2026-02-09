@@ -17,6 +17,10 @@ import {
 import { User } from "next-auth";
 import DataLeaveEdit from "./dataLeaveEdit";
 import CustomTable from "../../common/CustomTable";
+import "dayjs/locale/th";
+
+// Set locale globally
+dayjs.locale("th");
 
 interface DataLeaveTableProps {
   data: DataLeaveType[];
@@ -77,18 +81,23 @@ export default function DataLeaveTable({
       dataIndex: "createdName",
       key: "createdName",
       align: "center",
+      width: 150,
     },
     {
       title: "เหตุผลการลา",
       dataIndex: "reason",
       key: "reason",
       align: "center",
+      width: 150,
+      responsive: ["lg"],
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
         return text.length > maxLength ? (
           <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
+            <span style={{ fontWeight: "normal" }}>
+              {text.slice(0, maxLength) + "..."}
+            </span>
           </Tooltip>
         ) : (
           text
@@ -100,13 +109,21 @@ export default function DataLeaveTable({
       dataIndex: "dateStart",
       key: "dateStart",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+
+            <span className="hidden md:block font-normal">
+              {dateObj.locale("th").format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -114,13 +131,20 @@ export default function DataLeaveTable({
       dataIndex: "dateEnd",
       key: "dateEnd",
       align: "center",
+      width: 120,
       render: (text: string) => {
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        if (!text) return "-";
+        const dateObj = dayjs(text);
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {dateObj.locale("th").format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -128,6 +152,7 @@ export default function DataLeaveTable({
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = "";
@@ -166,7 +191,9 @@ export default function DataLeaveTable({
       dataIndex: "details",
       key: "details",
       align: "center",
+      width: 150,
       ellipsis: true,
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 15;
         if (!text) return "-";
@@ -184,12 +211,25 @@ export default function DataLeaveTable({
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 140, // เพิ่มความกว้างเล็กน้อยสำหรับปุ่ม
       render: (_: any, record: any) => (
-        <Space>
+        <Space size="small">
+          <Tooltip title="รายละเอียด">
+            <FileSearchOutlined
+              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }} // ปรับขนาดไอคอนเป็น 18px
+              onClick={() => handleShowDetail(record)}
+            />
+          </Tooltip>
+
+          {/* ปรับขนาดไอคอนใน DataLeaveWord ด้วยถ้าทำได้ หรือปล่อยไว้ถ้าเป็น component แยก */}
+          <div style={{ transform: "scale(0.9)" }}>
+            <DataLeaveWord record={record} />
+          </div>
+
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 22,
+                fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
                 color:
                   record.status === "pending" || record.status === "edit"
                     ? "#faad14"
@@ -210,15 +250,6 @@ export default function DataLeaveTable({
               }}
             />
           </Tooltip>
-
-          <Tooltip title="รายละเอียด">
-            <FileSearchOutlined
-              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
-              onClick={() => handleShowDetail(record)}
-            />
-          </Tooltip>
-
-          <DataLeaveWord record={record} />
         </Space>
       ),
     },
@@ -240,17 +271,18 @@ export default function DataLeaveTable({
           record={selectedRecord}
           user={user}
         />
-        <Row gutter={[24, 24]}>
-          <CustomTable
-            rowKey="id"
-            columns={columns}
-            dataSource={leaveByUserId}
-            loading={loading}
-            pagination={{ pageSize: 10 }}
-            scroll={{ x: "800" }}
-            bordered
-          />
-        </Row>
+
+        <CustomTable
+          rowKey="id"
+          columns={columns}
+          dataSource={leaveByUserId}
+          loading={loading}
+          pagination={{ pageSize: 10 }}
+          scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
+          bordered
+          size="small" // ใช้ size small บนมือถือ
+        />
+
         <DataLeaveEdit
           open={isEditOpen}
           record={currentRecord}

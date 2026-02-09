@@ -1,14 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Table, Tag, Tooltip, Button, Space, message } from "antd";
+import { Tag, Tooltip, Button, Space, message, Card } from "antd";
 import {
   FileSearchOutlined,
   EditOutlined,
-  CheckCircleOutlined,
-  ExportOutlined,
-  DropboxOutlined,
-  ShoppingOutlined,
   MedicineBoxOutlined,
   FileExcelOutlined,
 } from "@ant-design/icons";
@@ -21,6 +17,11 @@ import DispenseTableDetail from "./dispenseTableDetail";
 import DispenseEdit from "./dispenseEdit";
 import DispenseConfirmModal from "./dispenseConfirmModal";
 import { exportDispenseToExcel } from "./dispenseExport";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+
+// Set locale globally
+dayjs.locale("th");
 
 interface DispenseTableProps {
   data: DispenseType[];
@@ -37,15 +38,9 @@ export default function DispenseTable({
   const intraAuth = useAxiosAuth();
   const dispenseService = MaDrug(intraAuth);
 
-  // State สำหรับดูรายละเอียด
   const [detailVisible, setDetailVisible] = useState(false);
-
-  // State สำหรับแก้ไข
   const [editVisible, setEditVisible] = useState(false);
-
-  // ✅ State สำหรับยืนยันการจ่ายยา
   const [confirmVisible, setConfirmVisible] = useState(false);
-
   const [selectedRecord, setSelectedRecord] = useState<DispenseType | null>(
     null,
   );
@@ -60,7 +55,6 @@ export default function DispenseTable({
     setEditVisible(true);
   };
 
-  // ✅ ฟังก์ชันเปิดหน้ายืนยันการจ่ายยา
   const handleConfirm = (record: DispenseType) => {
     setSelectedRecord(record);
     setConfirmVisible(true);
@@ -83,6 +77,7 @@ export default function DispenseTable({
       key: "dispenserName",
       align: "center",
       width: 150,
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (text) => (
         <span className="font-medium text-slate-700">{text || "-"}</span>
       ),
@@ -95,14 +90,21 @@ export default function DispenseTable({
       width: 130,
       render: (text: string) => {
         if (!text) return "-";
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(new Date(text));
+        const dateObj = dayjs(text);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
-
     {
       title: "หมายเหตุ",
       dataIndex: "note",
@@ -110,6 +112,7 @@ export default function DispenseTable({
       align: "center",
       width: 150,
       ellipsis: true,
+      responsive: ["lg"], // แสดงเฉพาะจอใหญ่
       render: (text) => <span className="text-gray-500">{text || "-"}</span>,
     },
     {
@@ -131,7 +134,7 @@ export default function DispenseTable({
       dataIndex: "status",
       key: "status",
       align: "center",
-      width: 120,
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = status;
@@ -162,14 +165,13 @@ export default function DispenseTable({
       title: "จัดการ",
       key: "action",
       align: "center",
-      width: 150,
-      // fixed: "right",
+      width: 160, // เพิ่มความกว้างเล็กน้อยสำหรับปุ่ม 4 ปุ่ม
       render: (_, record) => {
         const isEditable = record.status === "pending";
         const isConfirmable = record.status === "approved";
 
         return (
-          <div className="flex justify-center items-center gap-2">
+          <Space size="small">
             {isConfirmable && (
               <Tooltip title="ยืนยันการจ่ายยา (ตัดสต็อก)">
                 <Button
@@ -177,24 +179,10 @@ export default function DispenseTable({
                   shape="circle"
                   icon={
                     <MedicineBoxOutlined
-                      style={{ fontSize: 22, color: "#faad14" }}
+                      style={{ fontSize: 18, color: "#faad14" }} // ขนาด 18px
                     />
-                  } // สีเขียว
+                  }
                   onClick={() => handleConfirm(record)}
-                />
-              </Tooltip>
-            )}
-
-            {/* ปุ่มแก้ไข */}
-            {isEditable && (
-              <Tooltip title="แก้ไข">
-                <Button
-                  type="text"
-                  shape="circle"
-                  icon={
-                    <EditOutlined style={{ fontSize: 20, color: "#faad14" }} />
-                  } // สีส้ม
-                  onClick={() => handleEdit(record)}
                 />
               </Tooltip>
             )}
@@ -205,7 +193,7 @@ export default function DispenseTable({
                 shape="circle"
                 icon={
                   <FileSearchOutlined
-                    style={{ fontSize: 20, color: "#1677ff" }}
+                    style={{ fontSize: 18, color: "#1677ff" }}
                   />
                 }
                 onClick={() => handleViewDetail(record)}
@@ -214,7 +202,7 @@ export default function DispenseTable({
             <Tooltip title="พิมพ์ใบจ่ายยา">
               <FileExcelOutlined
                 style={{
-                  fontSize: 22,
+                  fontSize: 18,
                   color: "#217346",
                   cursor: "pointer",
                   transition: "color 0.2s",
@@ -222,7 +210,23 @@ export default function DispenseTable({
                 onClick={() => handleExport(record)}
               />
             </Tooltip>
-          </div>
+            <Tooltip title="แก้ไข">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <EditOutlined
+                    style={{
+                      fontSize: 18,
+                      color: isEditable ? "#faad14" : "#d9d9d9",
+                    }}
+                  />
+                }
+                disabled={!isEditable}
+                onClick={() => isEditable && handleEdit(record)}
+              />
+            </Tooltip>
+          </Space>
         );
       },
     },
@@ -230,31 +234,32 @@ export default function DispenseTable({
 
   return (
     <>
-      <div className="mb-6 -mt-7">
-        <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
+      <div className="mb-4 sm:mb-6 -mt-4 sm:-mt-7">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
           ข้อมูลรายการจ่ายยา
         </h2>
-        <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
+        <hr className="border-slate-100/30 -mx-4 sm:-mx-6" />
       </div>
 
-      <CustomTable
-        rowKey="id"
-        columns={columns}
-        dataSource={data}
-        loading={loading}
-        bordered
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 1000 }}
-      />
+      <Card bodyStyle={{ padding: 0 }} bordered={false}>
+        <CustomTable
+          rowKey="id"
+          columns={columns}
+          dataSource={data}
+          loading={loading}
+          bordered
+          size="small" // ใช้ size small บนมือถือ
+          pagination={{ pageSize: 10, size: "small" }}
+          scroll={{ x: "max-content" }}
+        />
+      </Card>
 
-      {/* Modal ดูรายละเอียด */}
       <DispenseTableDetail
         visible={detailVisible}
         onClose={() => setDetailVisible(false)}
         data={selectedRecord}
       />
 
-      {/* Modal แก้ไข */}
       <DispenseEdit
         visible={editVisible}
         onClose={() => setEditVisible(false)}
@@ -264,7 +269,6 @@ export default function DispenseTable({
         existingData={data}
       />
 
-      {/* ✅ Modal ยืนยันการจ่ายยา */}
       <DispenseConfirmModal
         visible={confirmVisible}
         onClose={() => setConfirmVisible(false)}

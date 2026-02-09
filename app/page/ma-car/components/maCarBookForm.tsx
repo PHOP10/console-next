@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Form,
   Input,
@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { MaCarType } from "../../common";
+import { buddhistLocale } from "@/app/common";
 
 dayjs.locale("th");
 dayjs.extend(isBetween);
@@ -111,12 +112,27 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         await fetchData();
       }
 
-      router.push("/page/ma-car/maCar");
+      router.push("/page/ma-car/maCar?tab=2");
     } catch (err) {
       console.error("Booking Error:", err);
       message.error("เกิดข้อผิดพลาดจากระบบ ไม่สามารถดำเนินการได้");
     }
   };
+
+  useEffect(() => {
+    if (session?.user?.userId) {
+      const currentNames = form.getFieldValue("passengerNames") || [];
+
+      // ถ้ายังไม่มีชื่อตัวเองในรายการ ให้เพิ่มเข้าไปอัตโนมัติ
+      if (!currentNames.includes(session.user.userId)) {
+        const newNames = [...currentNames, session.user.userId];
+        form.setFieldsValue({
+          passengerNames: newNames,
+          passengers: newNames.length, // อัปเดตตัวเลขอัตโนมัติ
+        });
+      }
+    }
+  }, [session, form]);
 
   // --- Style Constants (Master Template) ---
   const inputStyle =
@@ -232,6 +248,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   rows={1} // เริ่มต้น 1 บรรทัด จะขยายเอง
                   className={textAreaStyle}
                   style={{ minHeight: "44px" }}
+                  maxLength={200}
                 />
               </Form.Item>
             </Col>
@@ -249,6 +266,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   rows={1}
                   className={textAreaStyle}
                   style={{ minHeight: "44px" }}
+                  maxLength={200}
                 />
               </Form.Item>
             </Col>
@@ -337,7 +355,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             <Col span={12}>
               <Form.Item
                 name="dateStart"
-                label="ตั้งแต่วันที่"
+                label="ตั้งแต่วันที่-เวลา"
                 dependencies={["carId"]} // ✅ เพิ่ม: ให้เช็คใหม่เมื่อเปลี่ยนรถ
                 rules={[
                   { required: true, message: "กรุณาเลือกวันเวลาเริ่ม" },
@@ -380,9 +398,10 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 style={{ marginBottom: 0 }}
               >
                 <DatePicker
+                  locale={buddhistLocale}
                   showTime={{ format: "HH:mm" }}
                   style={{ width: "100%" }}
-                  format="DD/MM/YYYY HH:mm"
+                  format="DD MMMM YYYY เวลา HH:mm น."
                   placeholder="เลือกวันเวลาเริ่ม"
                   className={`${inputStyle} pt-2`}
                   onChange={() => form.setFieldValue("dateEnd", null)}
@@ -406,7 +425,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                   return (
                     <Form.Item
                       name="dateEnd"
-                      label="ถึงวันที่"
+                      label="ถึงวันที่-เวลา"
                       dependencies={["dateStart", "carId"]}
                       rules={[
                         { required: true, message: "กรุณาเลือกวันเวลาสิ้นสุด" },
@@ -460,9 +479,10 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                       style={{ marginBottom: 0 }}
                     >
                       <DatePicker
+                        locale={buddhistLocale}
                         showTime={{ format: "HH:mm" }}
                         style={{ width: "100%" }}
-                        format="DD/MM/YYYY HH:mm"
+                        format="DD MMMM YYYY เวลา HH:mm น."
                         placeholder={
                           dateStart
                             ? "เลือกวันเวลาสิ้นสุด"
@@ -487,52 +507,55 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               </Form.Item>
             </Col>
           </Row>
-          <Row gutter={24}>
-            <Col span={6}>
+
+          <Row gutter={16}>
+            <Col xs={24} sm={18}>
               <Form.Item
-                name="passengers"
-                label="จำนวนผู้โดยสาร"
-                rules={[{ required: true, message: "กรุณากรอกจำนวน" }]}
+                label="รายชื่อผู้โดยสาร"
+                name="passengerNames"
+                rules={[{ required: true, message: "กรุณาเลือกผู้โดยสาร" }]}
               >
+                <Select
+                  mode="multiple"
+                  placeholder="เลือกผู้โดยสาร"
+                  optionFilterProp="children"
+                  className={selectStyle}
+                  maxTagCount="responsive"
+                  onChange={(values) => {
+                    form.setFieldValue("passengers", values.length);
+                  }}
+                  onDeselect={(val) => {
+                    if (val === session?.user?.userId) {
+                      const current = form.getFieldValue("passengerNames");
+                      setTimeout(() => {
+                        const restored = [...current, val];
+
+                        const unique = Array.from(new Set(restored));
+
+                        form.setFieldValue("passengerNames", unique);
+                        form.setFieldValue("passengers", unique.length);
+                        message.warning("ผู้ยื่นคำขอต้องร่วมเดินทางด้วยเสมอ");
+                      }, 0);
+                    }
+                  }}
+                >
+                  {dataUser.map((user) => (
+                    <Select.Option key={user.userId} value={user.userId}>
+                      {user.firstName} {user.lastName}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>{" "}
+            <Col xs={24} sm={6}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
                 <InputNumber
                   min={1}
                   max={10}
                   style={{ width: "100%" }}
-                  placeholder="ระบุจำนวน"
-                  className={`${inputStyle} pt-1`}
-                  onKeyDown={(e) => {
-                    if (
-                      !/[0-9]/.test(e.key) &&
-                      ![
-                        "Backspace",
-                        "Delete",
-                        "Tab",
-                        "ArrowLeft",
-                        "ArrowRight",
-                      ].includes(e.key)
-                    ) {
-                      e.preventDefault();
-                    }
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={18}>
-              <Form.Item
-                name="passengerNames"
-                label="ชื่อผู้โดยสาร"
-                rules={[{ required: true, message: "กรุณาเลือกผู้ใช้รถ" }]}
-              >
-                <Select
-                  mode="multiple"
-                  placeholder="เลือกผู้ใช้รถ"
-                  loading={loading}
-                  className={selectStyle} // ใช้ Class เดิมแต่ Antd จะจัดการ multiple ให้เอง
-                  maxTagCount="responsive"
-                  options={dataUser.map((u) => ({
-                    label: `${u.firstName} ${u.lastName}`,
-                    value: u.userId,
-                  }))}
+                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`}
+                  readOnly
+                  controls={false}
                 />
               </Form.Item>
             </Col>
@@ -543,6 +566,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               placeholder="หมายเหตุเพิ่มเติม"
               rows={2}
               className={textAreaStyle}
+              maxLength={200}
             />
           </Form.Item>
 

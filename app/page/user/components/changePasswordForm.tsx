@@ -1,13 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { Form, Input, Button, Row, Col, Divider, message } from "antd";
-import {
-  SaveOutlined,
-  CloseOutlined,
-  LockOutlined,
-  KeyOutlined,
-} from "@ant-design/icons";
+import { Form, Input, Button, Row, Col, message } from "antd";
+import { LockOutlined, KeyOutlined } from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../services/user.service";
 
@@ -29,8 +24,6 @@ export default function ChangePasswordForm({
   const intraAuthService = userService(intraAuth);
 
   const handleChangePassword = async (values: any) => {
-    // console.log("Values:", values);
-
     setSubmitting(true);
     try {
       const body = {
@@ -39,25 +32,20 @@ export default function ChangePasswordForm({
         newPassword: values.newPassword,
       };
 
-      // เรียก API (จะไม่ error แดงแล้ว เพราะเราดัก validateStatus ไว้)
       const res = await intraAuthService.changePassword(body);
 
-      // --- [จุดสำคัญ] เช็คค่าที่ส่งกลับมา ---
       if (res?.status === 400) {
-        // ถ้า Backend บอกว่า 400 (รหัสผิด) ให้แจ้งเตือนและจบการทำงาน
         message.error("รหัสผ่านเดิมไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง");
         setSubmitting(false);
         return;
       }
 
-      // ถ้าผ่าน (ไม่มี error)
       message.success("เปลี่ยนรหัสผ่านเรียบร้อยแล้ว");
       form.resetFields();
       onSuccess();
     } catch (error: any) {
       console.error("Change password error:", error);
 
-      // catch นี้จะทำงานเฉพาะ error ร้ายแรง (404, 500, เน็ตหลุด)
       if (error?.response?.status === 404) {
         message.error("ไม่พบข้อมูลผู้ใช้งาน");
       } else {
@@ -68,9 +56,8 @@ export default function ChangePasswordForm({
     }
   };
 
-  // 2. เพิ่มฟังก์ชันเช็คกรณี Validation ไม่ผ่าน
   const onFinishFailed = (errorInfo: any) => {
-    console.log("Form Validation Failed (ติดแดง):", errorInfo);
+    console.log("Form Validation Failed:", errorInfo);
     message.warning("กรุณากรอกข้อมูลให้ครบถ้วนและถูกต้อง");
   };
 
@@ -79,11 +66,10 @@ export default function ChangePasswordForm({
       form={form}
       layout="vertical"
       onFinish={handleChangePassword}
-      onFinishFailed={onFinishFailed} // <--- เพิ่มบรรทัดนี้เพื่อเช็ค error
+      onFinishFailed={onFinishFailed}
     >
       <Row gutter={[16, 16]}>
-        {/* ... (Code ส่วน Input เหมือนเดิม) ... */}
-
+        {/* รหัสผ่านเดิม: เต็มจอเสมอ */}
         <Col span={24}>
           <Form.Item
             label="รหัสผ่านเดิม"
@@ -94,7 +80,8 @@ export default function ChangePasswordForm({
           </Form.Item>
         </Col>
 
-        <Col span={12}>
+        {/* รหัสผ่านใหม่: มือถือเต็มจอ (24) / จอใหญ่แบ่งครึ่ง (12) */}
+        <Col xs={24} sm={12}>
           <Form.Item
             label="รหัสผ่านใหม่"
             name="newPassword"
@@ -107,7 +94,8 @@ export default function ChangePasswordForm({
           </Form.Item>
         </Col>
 
-        <Col span={12}>
+        {/* ยืนยันรหัสผ่าน: มือถือเต็มจอ (24) / จอใหญ่แบ่งครึ่ง (12) */}
+        <Col xs={24} sm={12}>
           <Form.Item
             label="ยืนยันรหัสผ่านใหม่"
             name="confirmPassword"
@@ -129,11 +117,16 @@ export default function ChangePasswordForm({
         </Col>
       </Row>
 
-      <div style={{ textAlign: "right", marginTop: 20 }}>
-        {/* ... ปุ่มเหมือนเดิม ... */}
-        <Button onClick={onCancel} style={{ marginRight: 8 }}>
-          ยกเลิก
-        </Button>
+      {/* ปรับส่วนปุ่มให้ใช้ Flexbox เพื่อการจัดเรียงที่ดีขึ้นบนมือถือ */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          gap: "8px",
+          marginTop: 20,
+        }}
+      >
+        <Button onClick={onCancel}>ยกเลิก</Button>
         <Button type="primary" htmlType="submit" loading={submitting}>
           ยืนยัน
         </Button>

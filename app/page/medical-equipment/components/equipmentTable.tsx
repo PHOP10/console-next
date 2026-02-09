@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  Table,
   Button,
   Space,
   Modal,
@@ -14,19 +13,18 @@ import {
   Card,
   Tooltip,
 } from "antd";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import type { ColumnsType } from "antd/es/table";
-// import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { MedicalEquipmentType } from "../../common/index";
 import { useSession } from "next-auth/react";
 import dayjs from "dayjs";
-import buddhistEra from "dayjs/plugin/buddhistEra";
 import "dayjs/locale/th";
 import th_TH from "antd/es/date-picker/locale/th_TH";
 import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
+import { buddhistLocale } from "@/app/common";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -59,7 +57,6 @@ export default function EquipmentTable({
       createdById: session?.user?.userId,
       acquiredDate: values.acquiredDate.toISOString(),
     };
-    // console.log(payload);
 
     try {
       await intraAuthService.createMedicalEquipment(payload);
@@ -113,6 +110,8 @@ export default function EquipmentTable({
       title: "ลำดับ",
       key: "index",
       align: "center",
+      width: 60,
+      responsive: ["md"], // ซ่อนบนมือถือ
       render: (_text, _record, index) => index + 1,
     },
     {
@@ -120,21 +119,36 @@ export default function EquipmentTable({
       dataIndex: "equipmentName",
       key: "equipmentName",
       align: "center",
+      width: 150,
     },
     {
-      title: "จำนวนเครื่องมือ",
+      title: "จำนวน",
       dataIndex: "quantity",
       key: "quantity",
       align: "center",
+      width: 80,
     },
     {
       title: "วันที่ได้รับ",
       dataIndex: "acquiredDate",
       key: "acquiredDate",
       align: "center",
+      width: 120,
       render: (date: string) => {
         if (!date) return "-";
-        return dayjs(date).format("D MMMM BBBB");
+        const dateObj = dayjs(date);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -142,33 +156,39 @@ export default function EquipmentTable({
       dataIndex: "createdBy",
       key: "createdBy",
       align: "center",
+      width: 120,
+      responsive: ["lg"],
     },
     {
-      title: "รายละเอียดเพิ่มเติม",
+      title: "รายละเอียด",
       dataIndex: "description",
       key: "description",
       align: "center",
+      width: 150,
+      responsive: ["xl"],
     },
     {
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 100,
+      // ไม่ใช้ fixed ตามข้อ 5
       render: (_, record) => (
-        <Space size="middle">
-          {/* ส่วนแก้ไข (ดินสอสีส้ม) */}
+        <Space size="small">
+          {/* ส่วนแก้ไข */}
           <Tooltip title="แก้ไข">
             <EditOutlined
               onClick={() => handleEdit(record)}
               style={{
-                fontSize: 20,
-                color: "#faad14", // สีส้ม (ตามโค้ดเดิม)
+                fontSize: 18, // ปรับขนาดเป็น 18px ตามข้อ 3
+                color: "#faad14",
                 cursor: "pointer",
                 transition: "color 0.2s",
               }}
             />
           </Tooltip>
 
-          {/* ส่วนลบ (ถังขยะสีแดง) */}
+          {/* ส่วนลบ */}
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
@@ -188,7 +208,7 @@ export default function EquipmentTable({
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 20,
+                  fontSize: 18, // ปรับขนาดเป็น 18px ตามข้อ 3
                   color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
@@ -207,8 +227,8 @@ export default function EquipmentTable({
         title={
           <div
             style={{
-              fontSize: "24px",
               textAlign: "center",
+              fontSize: "clamp(18px, 4vw, 24px)",
               fontWeight: "bold",
               color: "#0683e9",
             }}
@@ -219,7 +239,13 @@ export default function EquipmentTable({
         bordered={true}
         style={{ width: "100%" }}
       >
-        <Space style={{ marginBottom: 16 }}>
+        <Space
+          style={{
+            marginBottom: 16,
+            display: "flex",
+            justifyContent: "flex-end",
+          }}
+        >
           <Button type="primary" onClick={() => setIsModalOpen(true)}>
             + เพิ่มเครื่องมือแพทย์
           </Button>
@@ -231,12 +257,14 @@ export default function EquipmentTable({
           rowKey="id"
           loading={loading}
           bordered
-          pagination={{ pageSize: 10 }}
+          // ใช้ size small บนมือถือ
+          size="small"
+          pagination={{ pageSize: 10, size: "small" }}
+          scroll={{ x: "max-content" }}
         />
       </Card>
 
       <Modal
-        // 1. ปรับหัวข้อเป็นสีฟ้า ตัวหนา จัดกึ่งกลาง
         title={
           <div className="text-xl font-bold text-[#0683e9] text-center w-full">
             {editingItem ? "แก้ไขเครื่องมือแพทย์" : "เพิ่มเครื่องมือแพทย์"}
@@ -251,8 +279,10 @@ export default function EquipmentTable({
         onOk={() => form.submit()}
         okText="บันทึก"
         cancelText="ยกเลิก"
-        centered // จัดให้อยู่กลางจอเสมอ
-        // 2. ปรับตัว Modal ให้โค้งมนและโปร่งขึ้น
+        centered
+        // ปรับ Modal ให้ Responsive
+        width={500}
+        style={{ maxWidth: "95%" }}
         styles={{
           content: { borderRadius: "20px", padding: "30px" },
           header: { marginBottom: "20px" },
@@ -263,7 +293,6 @@ export default function EquipmentTable({
           layout="vertical"
           onFinish={editingItem ? handleSubmit : handleCreate}
         >
-          {/* 3. Input: ชื่อเครื่องมือ */}
           <Form.Item
             label="ชื่อเครื่องมือ"
             name="equipmentName"
@@ -275,7 +304,6 @@ export default function EquipmentTable({
             />
           </Form.Item>
 
-          {/* 4. InputNumber: จำนวน */}
           <Form.Item
             label="จำนวนเครื่องมือ"
             name="quantity"
@@ -288,21 +316,19 @@ export default function EquipmentTable({
             />
           </Form.Item>
 
-          {/* 5. DatePicker: วันที่ */}
           <Form.Item
             label="วันที่ได้รับ"
             name="acquiredDate"
             rules={[{ required: true, message: "กรุณาเลือกวันที่ได้รับ" }]}
           >
             <DatePicker
-              locale={th_TH}
+              locale={buddhistLocale}
               format="D MMMM BBBB"
               placeholder="เลือกวันที่"
               className="w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300"
             />
           </Form.Item>
 
-          {/* 6. TextArea: รายละเอียด (ไม่ fix ความสูง แต่ใส่ style ขอบมน) */}
           <Form.Item label="รายละเอียดเพิ่มเติม" name="description">
             <Input.TextArea
               rows={3}

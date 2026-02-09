@@ -17,6 +17,7 @@ import { DataLeaveType, MasterLeaveType, UserType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import th_TH from "antd/locale/th_TH";
 import isBetween from "dayjs/plugin/isBetween";
+import { buddhistLocale } from "@/app/common";
 
 dayjs.extend(isBetween);
 
@@ -215,7 +216,7 @@ export default function DataLeaveEdit({
           <Form.Item
             label="เหตุผล"
             name="reason"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผล" }]}
+            // rules={[{ required: true, message: "กรุณากรอกเหตุผล" }]}
           >
             <Input.TextArea
               rows={2}
@@ -237,7 +238,8 @@ export default function DataLeaveEdit({
                   style={{ marginBottom: 0 }}
                 >
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    locale={buddhistLocale}
+                    format="D MMMM BBBB"
                     style={{ width: "100%" }}
                     placeholder="เลือกวันที่เริ่มลา"
                     className={`${inputStyle} pt-2`}
@@ -279,7 +281,8 @@ export default function DataLeaveEdit({
                   style={{ marginBottom: 0 }}
                 >
                   <DatePicker
-                    format="DD/MM/YYYY"
+                    locale={buddhistLocale}
+                    format="D MMMM BBBB"
                     style={{ width: "100%" }}
                     className={`${inputStyle} pt-2`}
                     placeholder={
@@ -318,20 +321,6 @@ export default function DataLeaveEdit({
           <Row gutter={24}>
             <Col span={12}>
               <Form.Item
-                label="ระหว่างลาติดต่อได้ที่"
-                name="contactAddress"
-                rules={[{ required: false }]}
-              >
-                <Input.TextArea
-                  rows={2}
-                  maxLength={50}
-                  placeholder="กรอกที่อยู่ติดต่อ"
-                  className={textAreaStyle}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item
                 label="เบอร์ติดต่อระหว่างลา"
                 name="contactPhone"
                 rules={[
@@ -352,26 +341,43 @@ export default function DataLeaveEdit({
                   }}
                 />
               </Form.Item>
+            </Col>{" "}
+            <Col span={12}>
+              <Form.Item
+                label="ผู้รับผิดชอบงานระหว่างลา"
+                name="backupUserId"
+                rules={[
+                  {
+                    required: true,
+                    message: "กรุณาเลือกผู้รับผิดชอบงานระหว่างลา",
+                  },
+                ]}
+              >
+                <Select
+                  placeholder="เลือกผู้รับผิดชอบงาน"
+                  className={selectStyle}
+                >
+                  {user.map((user) => (
+                    <Select.Option key={user.userId} value={user.userId}>
+                      {user.firstName} {user.lastName}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
             </Col>
           </Row>
 
           <Form.Item
-            label="ผู้รับผิดชอบงานระหว่างลา"
-            name="backupUserId"
-            rules={[
-              {
-                required: true,
-                message: "กรุณาเลือกผู้รับผิดชอบงานระหว่างลา",
-              },
-            ]}
+            label="ระหว่างลาติดต่อได้ที่"
+            name="contactAddress"
+            rules={[{ required: false }]}
           >
-            <Select placeholder="เลือกผู้รับผิดชอบงาน" className={selectStyle}>
-              {user.map((user) => (
-                <Select.Option key={user.userId} value={user.userId}>
-                  {user.firstName} {user.lastName}
-                </Select.Option>
-              ))}
-            </Select>
+            <Input.TextArea
+              rows={2}
+              maxLength={70}
+              placeholder="กรอกที่อยู่ติดต่อ"
+              className={textAreaStyle}
+            />
           </Form.Item>
 
           <Form.Item label="หมายเหตุเพิ่มเติม" name="details">

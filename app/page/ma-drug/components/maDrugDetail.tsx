@@ -1,11 +1,13 @@
 "use client";
 
 import React from "react";
-import { Modal, Row, Col, Tag, Divider, Table } from "antd";
+import { Modal, Row, Col, Tag, Divider, Table, Grid } from "antd";
 import { MaDrugType } from "../../common";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import type { ColumnsType } from "antd/es/table";
+
+const { useBreakpoint } = Grid;
 
 interface MaDrugTableDetailProps {
   visible: boolean;
@@ -18,14 +20,16 @@ export default function MaDrugTableDetail({
   onClose,
   data,
 }: MaDrugTableDetailProps) {
+  const screens = useBreakpoint();
   // --- Helper Functions ---
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
-    return dayjs(dateString).locale("th").format("DD MMM YYYY HH:mm น.");
+    return dayjs(dateString).locale("th").format("DD MMMM YYYY");
   };
 
   const getStatusTag = (status: string) => {
-    const baseStyle = "px-3 py-1 rounded-full text-sm font-medium border-0";
+    const baseStyle =
+      "px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border-0";
     switch (status) {
       case "pending":
         return (
@@ -67,7 +71,9 @@ export default function MaDrugTableDetail({
     isBold,
   }) => (
     <div
-      className={`text-slate-800 text-sm break-words ${isBold ? "font-semibold" : ""}`}
+      className={`text-slate-800 text-sm break-words ${
+        isBold ? "font-semibold" : ""
+      }`}
     >
       {children}
     </div>
@@ -78,17 +84,19 @@ export default function MaDrugTableDetail({
     {
       title: "ลำดับ",
       key: "index",
-      width: 60,
+      width: 50, // ลดความกว้าง
       align: "center",
-      render: (_: any, __: any, index: number) => index + 1, // ปรับ logic นี้ถ้าต้องการ running number ข้ามหน้า
+      render: (_: any, __: any, index: number) => index + 1,
     },
     {
       title: "รหัสยา",
       dataIndex: ["drug", "workingCode"],
       key: "workingCode",
-      width: 100,
+      width: 80,
       render: (text) => (
-        <span className="text-slate-500 font-mono">{text}</span>
+        <span className="text-slate-500 font-mono text-xs sm:text-sm">
+          {text}
+        </span>
       ),
     },
     {
@@ -96,41 +104,47 @@ export default function MaDrugTableDetail({
       dataIndex: ["drug", "name"],
       key: "drugName",
       render: (text) => (
-        <span className="font-medium text-slate-700">{text}</span>
+        <span className="font-medium text-slate-700 text-sm sm:text-base">
+          {text}
+        </span>
       ),
     },
     {
       title: "ขนาด",
       dataIndex: ["drug", "packagingSize"],
       key: "packagingSize",
-      width: 100,
+      width: 80,
       align: "center",
+      responsive: ["sm"], // ซ่อนบนมือถือ
     },
     {
       title: "จำนวน",
       dataIndex: "quantity",
       key: "quantity",
-      width: 90,
+      width: 80,
       align: "center",
       render: (val) => <span className="font-bold text-blue-600">{val}</span>,
     },
     {
       title: "ราคา/หน่วย",
-      dataIndex: ["drug", "price"],
-      width: 100,
+      // ❌ ของเดิม: dataIndex: ["drug", "price"],  <-- ผิด: ดึงราคาปัจจุบัน
+      // ✅ แก้เป็น: dataIndex: "price",             <-- ถูก: ดึงราคาที่บันทึกไว้ในรายการ
+      dataIndex: "price",
+      width: 90,
       align: "right",
+      responsive: ["sm"],
       render: (val) =>
         val?.toLocaleString(undefined, { minimumFractionDigits: 2 }) || "-",
     },
     {
       title: "รวมเงิน",
       key: "subtotal",
-      width: 110,
+      width: 100,
       align: "right",
       render: (_, record) => {
-        const total = (record.quantity || 0) * (record.drug?.price || 0);
+        const total = (record.quantity || 0) * (record.price || 0);
         return (
-          <span className="font-semibold">
+          <span className="font-semibold text-sm">
             {total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
           </span>
         );
@@ -148,7 +162,7 @@ export default function MaDrugTableDetail({
       footer={null}
       width={900}
       centered
-      style={{ top: 20 }}
+      style={{ top: 20, maxWidth: "100%", paddingBottom: 0 }}
       modalRender={(modal) => (
         <div className="bg-slate-50 rounded-lg overflow-hidden shadow-xl font-sans">
           {modal}
@@ -159,14 +173,15 @@ export default function MaDrugTableDetail({
         header: { display: "none" },
       }}
     >
-      <div className="flex flex-col h-[85vh]">
-        <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center shrink-0">
+      <div className="flex flex-col h-[85vh] sm:h-[80vh]">
+        {/* Header */}
+        <div className="bg-white px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-start sm:items-center shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-slate-800 m-0">
-              รายละเอียดใบเบิก
+            <h2 className="text-base sm:text-lg font-bold text-slate-800 m-0">
+              รายละเอียดใบเบิกยา
             </h2>
             <div className="text-slate-500 text-xs mt-1">
-              เลขที่:{" "}
+              เลขที่เบิก:{" "}
               <span className="text-blue-600 font-mono font-bold">
                 {data.requestNumber}
               </span>
@@ -174,30 +189,31 @@ export default function MaDrugTableDetail({
           </div>
           <div>{getStatusTag(data.status)}</div>
         </div>
-        {/* 2. Scrollable Content Area */}
-        <div className="flex-1 overflow-y-auto p-6">
-          {/* ข้อมูลทั่วไป (Header Info) */}
+
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+          {/* ข้อมูลทั่วไป */}
           <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mb-4">
             <Row gutter={[16, 16]}>
               <Col xs={24} sm={8}>
                 <Label>หน่วยงาน</Label>
                 <Value isBold>{data.requestUnit}</Value>
               </Col>
-              <Col xs={24} sm={8}>
+              <Col xs={12} sm={8}>
                 <Label>ผู้ขอเบิก</Label>
                 <Value>{data.requesterName}</Value>
               </Col>
-              <Col xs={24} sm={8}>
+              <Col xs={12} sm={8}>
                 <Label>วันที่ทำรายการ</Label>
                 <Value>{formatDate(data.requestDate)}</Value>
               </Col>
             </Row>
           </div>
 
-          {/* ตารางรายการยา (Table) */}
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-            <div className="px-4 py-3 bg-slate-100/50 border-b border-slate-200 font-semibold text-slate-700 flex justify-between">
-              <span>รายการยา ({data.maDrugItems?.length || 0})</span>
+          {/* ตารางรายการยา */}
+          <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden mb-4">
+            <div className="px-4 py-3 bg-slate-100/50 border-b border-slate-200 font-semibold text-slate-700 text-sm">
+              รายการยา ({data.maDrugItems?.length || 0})
             </div>
 
             <Table
@@ -205,23 +221,22 @@ export default function MaDrugTableDetail({
               columns={drugColumns}
               rowKey="id"
               size="small"
-              scroll={{ y: 400, x: 700 }}
-              pagination={{
-                pageSize: 20,
-                showSizeChanger: false,
-                size: "small",
-                showTotal: (total, range) =>
-                  `${range[0]}-${range[1]} จาก ${total} รายการ`,
-              }}
-              summary={(pageData) => {
-                let totalQ = 0;
-                let totalAmt = 0;
+              scroll={{ x: "max-content", y: 400 }}
+              pagination={{ pageSize: 10, size: "small" }}
+              summary={() => {
+                const labelColSpan = screens.md ? 4 : 3;
+                const priceColSpan = screens.md ? 2 : 1;
 
                 return (
-                  <Table.Summary.Row className="bg-blue-50/50 font-bold">
-                    <Table.Summary.Cell index={0} colSpan={4} align="right">
-                      รวมทั้งสิ้น (Grand Total)
+                  <Table.Summary.Row className="bg-blue-50/50 font-bold text-xs sm:text-sm">
+                    <Table.Summary.Cell
+                      index={0}
+                      colSpan={labelColSpan}
+                      align="right"
+                    >
+                      รวมทั้งสิ้น
                     </Table.Summary.Cell>
+
                     <Table.Summary.Cell index={1} align="center">
                       <span className="text-blue-600">
                         {data.maDrugItems
@@ -229,8 +244,13 @@ export default function MaDrugTableDetail({
                           .toLocaleString()}
                       </span>
                     </Table.Summary.Cell>
-                    <Table.Summary.Cell index={2} colSpan={2} align="right">
-                      <span className="text-blue-600 text-lg">
+
+                    <Table.Summary.Cell
+                      index={2}
+                      colSpan={priceColSpan}
+                      align="right"
+                    >
+                      <span className="text-blue-600 text-sm sm:text-lg">
                         {data.totalPrice?.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                         })}{" "}
@@ -245,16 +265,26 @@ export default function MaDrugTableDetail({
 
           {/* หมายเหตุ */}
           {data.note && (
-            <div className="mt-4 bg-yellow-50 p-3 rounded border border-yellow-200 text-sm text-yellow-800">
+            <div className="bg-yellow-50 p-3 rounded border border-yellow-200 text-xs sm:text-sm text-yellow-800">
               <strong>หมายเหตุ:</strong> {data.note}
             </div>
           )}
         </div>
-        {/* 3. Footer (Fixed) - ปุ่มปิด */}
-        <div className="bg-slate-50 px-6 py-3 border-t border-slate-200 flex justify-end shrink-0">
+
+        {/* {data.status === "cancel" && data.cancelReason && (
+          <div className="bg-red-50 p-3 rounded border border-red-200 text-xs sm:text-sm text-red-800">
+            <strong>สาเหตุที่ยกเลิก:</strong> {data.cancelReason} <br />
+            <span className="text-xs text-red-600">
+              (โดย: {data.cancelName || "-"})
+            </span>
+          </div>
+        )} */}
+
+        {/* Footer */}
+        <div className="bg-slate-50 px-4 sm:px-6 py-3 border-t border-slate-200 flex justify-end shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium transition-colors"
+            className="px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium transition-colors text-sm"
           >
             ปิดหน้าต่าง
           </button>

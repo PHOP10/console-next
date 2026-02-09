@@ -5,9 +5,6 @@ import { useForm } from "antd/es/form/Form";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
-// Import components ที่เราแยกไว้
-// ตรวจสอบ path ให้ถูกต้องตามตำแหน่งที่คุณวางไฟล์
 import LoginForm from "./components/loginForm";
 import ForgotForm from "./components/forgotForm";
 
@@ -23,7 +20,6 @@ export default function Login() {
     password: "",
   });
 
-  // --- Logic เดิมทั้งหมด ---
   const onFinish = () => {
     if (remember) {
       if (!localStorage.getItem("username")) {
@@ -40,7 +36,15 @@ export default function Login() {
         redirect: false,
       });
       if (result?.error) {
-        message.error("ไม่สามารถเข้าสู่ระบบได้ กรุณาลองใหม่อีกครั้ง");
+        const errorMsg = result.error.toLowerCase();
+
+        if (errorMsg.includes("password")) {
+          message.error("รหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง");
+        } else if (errorMsg.includes("user") || errorMsg.includes("found")) {
+          message.error("ไม่พบชื่อผู้ใช้งานนี้ในระบบ");
+        } else {
+          message.error("เข้าสู่ระบบไม่สำเร็จ");
+        }
       } else {
         message.success("เข้าสู่ระบบสำเร็จ");
         router.push("/page");

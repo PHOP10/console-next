@@ -56,3 +56,25 @@ export const packingOptions = [
   { value: "10 g." },
   { value: "lb." },
 ];
+
+import th_TH from "antd/es/date-picker/locale/th_TH";
+import dayjs from "dayjs";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
+
+export const buddhistLocale: any = {
+  ...th_TH,
+  lang: {
+    ...th_TH.lang,
+    yearFormat: "BBBB",
+    cellYearFormat: "BBBB",
+  },
+};
+
+export interface UploadResponse {
+  success: boolean;
+  fileName: string;
+  originalName: string;
+  path: string;
+}

@@ -107,7 +107,6 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
         return fullName === record.createdName;
       });
 
-      // 2. ตรวจสอบเพศ/คำนำหน้าจาก User ที่หาเจอ
       const genderPrefix = creator
         ? creator.gender === "male"
           ? "นาย"
@@ -219,7 +218,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
     <Tooltip title="Export">
       <FileWordOutlined
         style={{
-          fontSize: 22,
+          fontSize: 18,
           color: record.status === "approve" ? "#1677ff" : "#d9d9d9",
           cursor: record.status === "approve" ? "pointer" : "not-allowed",
           transition: "color 0.2s",

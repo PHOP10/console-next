@@ -12,17 +12,20 @@ import {
   message,
   Skeleton,
   Tag,
+  Grid,
 } from "antd";
-import { UserOutlined, EditOutlined, KeyOutlined } from "@ant-design/icons";
+import { UserOutlined, EditOutlined } from "@ant-design/icons";
 import { useSession } from "next-auth/react";
 import dayjs from "dayjs";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../services/user.service";
 import { UserType } from "../../common";
 
-// Import Components ที่แยกออกมา
+// Import Components
 import EditProfileForm from "./editProfileForm";
 import ChangePasswordForm from "./changePasswordForm";
+
+const { useBreakpoint } = Grid;
 
 export default function UserProfile() {
   const { data: session } = useSession();
@@ -33,6 +36,8 @@ export default function UserProfile() {
     "view",
   );
   const [userData, setUserData] = useState<UserType | null>(null);
+
+  const screens = useBreakpoint();
 
   const fetchUserData = async () => {
     if (!session?.user?.userId) return;
@@ -63,7 +68,7 @@ export default function UserProfile() {
       case "password":
         return <span className="text-[#0683e9]">เปลี่ยนรหัสผ่าน</span>;
       default:
-        return <span className="text-[#0683e9]">ข้อมูลส่วนตัว</span>;
+        return <span className="text-[#0683e9]">ข้อมูลผู้ใช้งาน</span>;
     }
   };
 
@@ -75,12 +80,11 @@ export default function UserProfile() {
     );
   }
 
-  // --- Style สำหรับ Label (หัวข้อ) ให้เป็นสีฟ้าอ่อน ---
   const descriptionLabelStyle: React.CSSProperties = {
-    backgroundColor: "#f0f5ff", // สีฟ้าอ่อน
+    backgroundColor: "#f0f5ff",
     fontWeight: "600",
-    color: "#1d39c4", // สีตัวหนังสือโทนน้ำเงินเข้ม
-    width: "180px", // กำหนดความกว้างให้เท่ากันสวยงาม
+    color: "#1d39c4",
+    width: screens.md ? "180px" : "auto",
     verticalAlign: "middle",
   };
 
@@ -91,7 +95,7 @@ export default function UserProfile() {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: screens.md ? "20px" : "10px" }}>
       <Row gutter={[24, 24]} justify="center">
         {/* Left Side: Profile Picture */}
         <Col xs={24} md={8} lg={6}>
@@ -109,7 +113,7 @@ export default function UserProfile() {
                 size={120}
                 icon={<UserOutlined />}
                 style={{
-                  backgroundColor: "#0683e9", // สีฟ้าหลักของแอป
+                  backgroundColor: "#0683e9",
                   fontSize: "48px",
                   boxShadow: "0 4px 10px rgba(6, 131, 233, 0.3)",
                 }}
@@ -137,6 +141,11 @@ export default function UserProfile() {
                 {userData?.position || "ไม่ระบุตำแหน่ง"}
               </Tag>
             </div>
+
+            {/* [Optional] อาจจะเพิ่ม Username ตัวเล็กๆ ตรงนี้ด้วยก็ได้ */}
+            <div style={{ color: "#888", fontSize: "14px" }}>
+              {userData?.username}
+            </div>
           </Card>
         </Col>
 
@@ -150,9 +159,12 @@ export default function UserProfile() {
               borderRadius: "16px",
               minHeight: "100%",
             }}
+            styles={{
+              header: { padding: screens.md ? "16px 24px" : "12px 16px" },
+            }}
             extra={
               editMode === "view" && (
-                <Space>
+                <Space wrap>
                   <Button
                     onClick={() => setEditMode("password")}
                     style={{ borderRadius: "8px" }}
@@ -176,7 +188,7 @@ export default function UserProfile() {
           >
             {editMode === "profile" && userData && (
               <EditProfileForm
-                userData={userData} // ถ้า error ตรงนี้ให้แก้ UserEditModalProps ให้รับ record หรือ userData ให้ตรงกัน
+                userData={userData}
                 onCancel={() => setEditMode("view")}
                 onSuccess={() => {
                   setEditMode("view");
@@ -196,21 +208,30 @@ export default function UserProfile() {
             {editMode === "view" && (
               <Descriptions
                 bordered
+                layout={screens.md ? "horizontal" : "vertical"}
                 column={{ xxl: 2, xl: 2, lg: 1, md: 1, sm: 1, xs: 1 }}
-                size="middle"
-                // --- ใส่ Style ตรงนี้ ---
+                size={screens.md ? "middle" : "small"}
                 labelStyle={descriptionLabelStyle}
                 contentStyle={descriptionContentStyle}
               >
+                {/* --- เพิ่ม Username ตรงนี้ --- */}
+                <Descriptions.Item label="ชื่อผู้ใช้">
+                  <span className="font-semibold text-gray-700">
+                    {userData?.username}
+                  </span>
+                </Descriptions.Item>
+
                 <Descriptions.Item label="ชื่อ-นามสกุล">
                   {userData?.firstName} {userData?.lastName}
                 </Descriptions.Item>
-                <Descriptions.Item label="เพศ">
+                <Descriptions.Item label="คำนำหน้า">
                   {userData?.gender === "male"
                     ? "ชาย"
                     : userData?.gender === "female"
                       ? "หญิง"
-                      : userData?.gender || "-"}
+                      : userData?.gender === "miss"
+                        ? "หญิง"
+                        : userData?.gender || "-"}
                 </Descriptions.Item>
                 <Descriptions.Item label="อีเมล">
                   {userData?.email}
@@ -226,7 +247,7 @@ export default function UserProfile() {
                 </Descriptions.Item>
                 <Descriptions.Item label="วันที่เริ่มงาน">
                   {userData?.startDate
-                    ? dayjs(userData.startDate).format("DD/MM/YYYY")
+                    ? dayjs(userData.startDate).format("DD MMMM BBBB")
                     : "-"}
                 </Descriptions.Item>
               </Descriptions>

@@ -11,13 +11,14 @@ import {
   Popconfirm,
   Space,
   Tooltip,
+  Card,
 } from "antd";
 
 import type { ColumnsType } from "antd/es/table";
 import { MasterLeaveType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
-import { DeleteOutlined, FormOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, FormOutlined } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
 
 interface ManagementMasterLeaveTableProps {
@@ -104,30 +105,55 @@ export default function ManagementMasterLeaveTable({
     }
   };
 
+  const handleDelete = async (id: number) => {
+    try {
+      setLoading(true);
+      await intraAuthService.deleteMasterLeave(id);
+      message.success("ลบข้อมูลสำเร็จ");
+      setMasterLeave((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      console.error("เกิดข้อผิดพลาดในการลบ:", error);
+      message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const columns: ColumnsType<MasterLeaveType> = [
-    { title: "ID", dataIndex: "id", key: "id", align: "center" },
+    {
+      title: "ID",
+      dataIndex: "id",
+      key: "id",
+      align: "center",
+      width: 60,
+      responsive: ["sm"], // ซ่อนบนมือถือเล็ก
+    },
     {
       title: "ประเภทลา",
       dataIndex: "leaveType",
       key: "leaveType",
       align: "center",
+      width: 150,
     },
     {
       title: "คำอธิบาย",
       dataIndex: "description",
       key: "description",
       align: "center",
+      responsive: ["md"], // ซ่อนบนมือถือ
+      render: (text) => text || "-",
     },
     {
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 120,
       render: (_: any, record: MasterLeaveType) => (
-        <Space>
+        <Space size="small">
           <Tooltip title="แก้ไข">
-            <FormOutlined
+            <EditOutlined
               style={{
-                fontSize: 22,
+                fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
                 color: "#faad14",
                 cursor: "pointer",
               }}
@@ -139,28 +165,14 @@ export default function ManagementMasterLeaveTable({
           <Popconfirm
             title="ยืนยันการลบ"
             description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
-            onConfirm={async () => {
-              try {
-                setLoading(true);
-                await intraAuthService.deleteMasterLeave(record.id);
-                message.success("ลบข้อมูลสำเร็จ");
-                setMasterLeave((prev) =>
-                  prev.filter((item) => item.id !== record.id),
-                );
-              } catch (error) {
-                console.error("เกิดข้อผิดพลาดในการลบ:", error);
-                message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
-              } finally {
-                setLoading(false);
-              }
-            }}
+            onConfirm={() => handleDelete(record.id)}
             okText="ใช่"
             cancelText="ยกเลิก"
           >
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 22,
+                  fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
                   color: "#ff4d4f",
                   cursor: "pointer",
                 }}
@@ -174,28 +186,22 @@ export default function ManagementMasterLeaveTable({
 
   return (
     <>
-      <div
-        style={{
-          textAlign: "center",
-          fontSize: "24px",
-          fontWeight: "bold",
-          color: "#0683e9",
-          marginTop: "-12px",
-
-          borderBottom: "1px solid #f0f0f0",
-          paddingBottom: "12px",
-          marginBottom: "24px",
-
-          marginLeft: "-24px",
-          marginRight: "-24px",
-        }}
-      >
-        ข้อมูลประเภทการลา
+      <div className="mb-6 -mt-7">
+        <h2 className="text-2xl font-bold text-blue-600 text-center mb-2 tracking-tight">
+          ข้อมูลประเภทการลา
+        </h2>
+        <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
       </div>
 
-      <Button type="primary" style={{ marginBottom: 16 }} onClick={handleAdd}>
-        + เพิ่มประเภทการลา
-      </Button>
+      <div className="flex justify-end mb-4 px-2">
+        <Button
+          type="primary"
+          onClick={handleAdd}
+          className="w-full sm:w-auto h-10 rounded-lg shadow-sm"
+        >
+          + เพิ่มประเภทการลา
+        </Button>
+      </div>
 
       <CustomTable
         rowKey="id"
@@ -205,16 +211,29 @@ export default function ManagementMasterLeaveTable({
         pagination={{ pageSize: 10 }}
         scroll={{ x: "max-content" }}
         bordered
+        size="small" // ใช้ size small บนมือถือ
       />
 
       <Modal
-        title="เพิ่มประเภทการลา"
+        title={
+          <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
+            เพิ่มประเภทการลา
+          </div>
+        }
         open={isAddModalOpen}
         onOk={handleAddOk}
         onCancel={() => setIsAddModalOpen(false)}
         okText="บันทึก"
         cancelText="ยกเลิก"
         confirmLoading={loading}
+        centered
+        // Responsive Modal
+        width={500}
+        style={{ maxWidth: "95%" }}
+        styles={{
+          content: { borderRadius: "16px", padding: "24px" },
+          header: { marginBottom: "16px" },
+        }}
       >
         <Form form={form} layout="vertical">
           <Form.Item
@@ -222,23 +241,41 @@ export default function ManagementMasterLeaveTable({
             name="leaveType"
             rules={[{ required: true, message: "กรุณากรอกประเภทลา" }]}
           >
-            <Input placeholder="เช่น ลาป่วย, ลากิจ" />
+            <Input
+              placeholder="เช่น ลาป่วย, ลากิจ"
+              className="w-full h-10 rounded-lg border-gray-300 shadow-sm"
+            />
           </Form.Item>
 
           <Form.Item label="คำอธิบาย" name="description">
-            <Input.TextArea placeholder="คำอธิบายเพิ่มเติม (ถ้ามี)" rows={3} />
+            <Input.TextArea
+              placeholder="คำอธิบายเพิ่มเติม (ถ้ามี)"
+              rows={3}
+              className="w-full rounded-lg border-gray-300 shadow-sm"
+            />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title="แก้ไขประเภทลา"
+        title={
+          <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
+            แก้ไขประเภทลา
+          </div>
+        }
         open={isEditModalOpen}
         onOk={handleEditOk}
         onCancel={() => setIsEditModalOpen(false)}
         okText="บันทึก"
         cancelText="ยกเลิก"
         confirmLoading={loading}
+        centered
+        width={500}
+        style={{ maxWidth: "95%" }}
+        styles={{
+          content: { borderRadius: "16px", padding: "24px" },
+          header: { marginBottom: "16px" },
+        }}
       >
         <Form form={editForm} layout="vertical">
           <Form.Item
@@ -246,11 +283,14 @@ export default function ManagementMasterLeaveTable({
             name="leaveType"
             rules={[{ required: true, message: "กรุณากรอกประเภทลา" }]}
           >
-            <Input />
+            <Input className="w-full h-10 rounded-lg border-gray-300 shadow-sm" />
           </Form.Item>
 
           <Form.Item label="คำอธิบาย" name="description">
-            <Input.TextArea rows={3} />
+            <Input.TextArea
+              rows={3}
+              className="w-full rounded-lg border-gray-300 shadow-sm"
+            />
           </Form.Item>
         </Form>
       </Modal>

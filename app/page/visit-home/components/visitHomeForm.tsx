@@ -22,7 +22,6 @@ import { MasterPatientType } from "../../common";
 import CryptoJS from "crypto-js";
 import th_TH from "antd/locale/th_TH";
 import {
-  SaveOutlined,
   UserOutlined,
   HeartOutlined,
   FileTextOutlined,
@@ -30,7 +29,10 @@ import {
   MedicineBoxOutlined,
 } from "@ant-design/icons";
 import "./Form.css";
-import { ExperimentOutlined } from "@ant-design/icons"; /* ตัวอย่างข้อมูล */
+import { buddhistLocale } from "@/app/common";
+import "dayjs/locale/th";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -43,6 +45,8 @@ export default function VisitHomeForm() {
   const [masterPatients, setMasterPatients] = useState<MasterPatientType[]>([]);
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
+  const router = useRouter();
+  const { data: session } = useSession();
 
   const fetchMasterPatients = async () => {
     try {
@@ -65,6 +69,11 @@ export default function VisitHomeForm() {
 
   const handleFinish = async (values: any) => {
     try {
+      const fullNameStr = values.fullName || "";
+      const nameParts = fullNameStr.trim().split(/\s+/);
+      const firstNameRaw = nameParts[0] || "";
+      const lastNameRaw = nameParts.slice(1).join(" ") || "";
+
       const payload = {
         patientTypeId: values.patientTypeId || null,
         age: values.age ? Number(values.age) : null,
@@ -88,202 +97,106 @@ export default function VisitHomeForm() {
         pulseRate: values.pulseRate ? Number(values.pulseRate) : null,
         respRate: values.respRate ? Number(values.respRate) : null,
         oxygenSat: values.oxygenSat ? Number(values.oxygenSat) : null,
-        bloodPressure: values.bloodPressure || null,
-        hhcNo: values.hhcNo || null,
-        allergies: values.allergies || null,
-        initialHistory: values.initialHistory || null,
-        symptoms: values.symptoms || null,
-        diagnosis: values.diagnosis || null,
-        medication: values.medication || null,
-        medicalEquipment: values.medicalEquipment || null,
-        careNeeds: values.careNeeds || null,
-        notes: values.notes || null,
-        firstName: encryptData(values.firstName),
-        lastName: encryptData(values.lastName),
-        fullName: encryptData(values.fullName),
+        hhcNo: encryptData(values.hhcNo),
+        firstName: encryptData(firstNameRaw),
+        lastName: encryptData(lastNameRaw),
+        fullName: encryptData(fullNameStr),
         hn: encryptData(values.hn),
         cid: encryptData(values.cid),
         phone: encryptData(values.phone),
         address: encryptData(values.address),
+        bloodPressure: encryptData(values.bloodPressure),
+        allergies: encryptData(values.allergies),
+        initialHistory: encryptData(values.initialHistory),
+        symptoms: encryptData(values.symptoms),
+        diagnosis: encryptData(values.diagnosis),
+        medication: encryptData(values.medication),
+        medicalEquipment: encryptData(values.medicalEquipment),
+        careNeeds: encryptData(values.careNeeds),
+        notes: encryptData(values.notes),
+        createdName: session?.user?.fullName || "-",
       };
 
       await intraAuthService.createVisitHomeWaste(payload);
       message.success("บันทึกข้อมูลสำเร็จ");
       form.resetFields();
+      router.push("/page/visit-home/dataVisitHome");
     } catch (error) {
       console.error(error);
       message.error("เกิดข้อผิดพลาดในการเชื่อมต่อ API");
     }
   };
 
-  // --- Master Template Styles (Premium Look) ---
+  // --- Style Constants (Compact Mode) ---
+  // ปรับ h-11 เป็น h-9 สำหรับมือถือ (36px) เพื่อประหยัดที่
   const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full h-9 sm:h-10 rounded-lg border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-xs sm:text-sm px-2";
 
   const textAreaStyle =
-    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full rounded-lg border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-xs sm:text-sm px-2 py-1";
 
   const selectStyle =
-    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+    "h-9 sm:h-10 w-full [&>.ant-select-selector]:!rounded-lg [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400 text-xs sm:text-sm";
 
-  // Header ของแต่ละ Section
+  // ลด margin-bottom ของ header
   const SectionHeader = ({ icon, title }: { icon: any; title: string }) => (
-    <div className="flex items-center gap-2 text-[#0683e9] font-bold text-lg mb-4 mt-2 border-b border-blue-50 pb-2">
-      {icon} {title}
+    <div className="flex items-center gap-2 text-[#0683e9] font-bold text-base sm:text-lg mb-2 mt-0 border-b border-blue-50 pb-1">
+      {React.cloneElement(icon, { style: { fontSize: "18px" } })} {title}
     </div>
   );
 
-  // --------------------------------------------------------ข้อมูลตัวอย่าง---------------------------//
-  const getRandomInt = (min: number, max: number) =>
-    Math.floor(Math.random() * (max - min + 1)) + min;
-
-  const getRandomElement = (arr: any[]) =>
-    arr[Math.floor(Math.random() * arr.length)];
-
-  const handleAutoFill = () => {
-    // A. ข้อมูลผู้ป่วย (Mock Data)
-    const firstNames = ["สมชาย", "วิชัย", "กานดา", "มานี", "สมศรี", "อำนวย"];
-    const lastNames = ["ใจดี", "รักชาติ", "มีสุข", "เจริญพร", "มั่นคง"];
-    const addresses = [
-      "123 ม.1 ต.เชียงทอง",
-      "55 ม.4 ต.วังเจ้า",
-      "88/9 ถ.พหลโยธิน",
-    ];
-    const diagnosisList = [
-      "Stroke with Hemiparesis",
-      "Diabetes Mellitus type 2",
-      "Hypertension with complications",
-      "COPD with acute exacerbation",
-      "Bedridden patient",
-    ];
-    const symptomsList = [
-      "มีอาการอ่อนแรงซีกซ้าย",
-      "แผลกดทับที่ก้นกบ ระดับ 2",
-      "หายใจเหนื่อยหอบเล็กน้อย",
-      "รับประทานอาหารได้น้อยลง",
-      "ระดับน้ำตาลในเลือดสูง",
-    ];
-    const medicationList = [
-      "Metformin 500mg 1x3 pc",
-      "Amlodipine 5mg 1x1 pc",
-      "ASA 81mg 1x1 pc",
-      "Omeprazole 20mg 1x2 ac",
-    ];
-    const equipmentList = [
-      "Foley Catheter",
-      "NG Tube",
-      "Oxygen Cannula",
-      "Wheelchair",
-      "-",
-    ];
-
-    // B. สุ่มข้อมูลทั่วไป
-    const randAge = getRandomInt(40, 90);
-    const randCID = Array(13)
-      .fill(0)
-      .map(() => getRandomInt(0, 9))
-      .join("");
-    const randPhone =
-      "08" +
-      Array(8)
-        .fill(0)
-        .map(() => getRandomInt(0, 9))
-        .join("");
-    const randHN = getRandomInt(100000, 999999).toString();
-
-    // C. สุ่มวันที่
-    const today = dayjs();
-    const admitDate = today.subtract(getRandomInt(5, 30), "day");
-    const dischargeDate = admitDate.add(getRandomInt(3, 10), "day");
-    const referralDate = today.subtract(getRandomInt(0, 5), "day");
-
-    // D. สุ่มสัญญาณชีพ (Vital Signs) - ให้ค่าอยู่ในเกณฑ์ปกติถึงปานกลาง
-    const temp = (getRandomInt(360, 375) / 10).toFixed(1); // 36.0 - 37.5
-    const pulse = getRandomInt(70, 100);
-    const resp = getRandomInt(18, 24);
-    const bpSystolic = getRandomInt(110, 150);
-    const bpDiastolic = getRandomInt(70, 90);
-    const o2sat = getRandomInt(95, 100);
-
-    // E. สุ่มประเภทผู้ป่วย (จาก Master Data ที่มี)
-    let randPatientTypeId = undefined;
-    if (masterPatients && masterPatients.length > 0) {
-      randPatientTypeId = getRandomElement(masterPatients).id;
-    }
-
-    // ✅ F. ใส่ค่าลง Form
-    form.setFieldsValue({
-      // ข้อมูลทั่วไป
-      hhcNo: `HHC-${getRandomInt(100, 999)}`,
-      referralDate: referralDate,
-      patientTypeId: randPatientTypeId,
-      fullName: `${getRandomElement(firstNames)} ${getRandomElement(lastNames)}`,
-      age: randAge,
-      cid: randCID,
-      hn: randHN,
-      dob: dayjs()
-        .year(dayjs().year() - randAge)
-        .startOf("year"), // วันเกิดคร่าวๆ ตามอายุ
-      phone: randPhone,
-      allergies: Math.random() > 0.8 ? "Penicillin" : "-", // สุ่มแพ้ยา 20%
-      address: getRandomElement(addresses),
-
-      // ประวัติ & Vital Signs
-      admissionDate: admitDate,
-      dischargeDate: dischargeDate,
-      initialHistory: "ผู้ป่วยเข้ารับการรักษาด้วยอาการ...",
-      temperature: temp,
-      pulseRate: pulse,
-      respRate: resp,
-      bloodPressure: `${bpSystolic}/${bpDiastolic}`,
-      oxygenSat: o2sat,
-
-      // การประเมิน & รักษา
-      symptoms: getRandomElement(symptomsList),
-      diagnosis: getRandomElement(diagnosisList),
-      careNeeds: "ต้องการการดูแลแผลและกายภาพบำบัด",
-      medication: getRandomElement(medicationList),
-      medicalEquipment: getRandomElement(equipmentList),
-
-      // นัดหมาย
-      visitDate: today,
-      nextAppointment: today.add(getRandomInt(7, 30), "day"),
-      notes: Math.random() > 0.5 ? "ทดสอบระบบ (Auto-fill)" : "",
-    });
-  };
-
   return (
-    <Card>
+    <Card bodyStyle={{ padding: "12px" }}>
+      {" "}
+      {/* ลด padding card */}
       <ConfigProvider locale={th_TH}>
-        <div className=" rounded-xl shadow-sm mx-auto max-w-7xl overflow-hidden">
+        <div className="rounded-xl shadow-sm mx-auto max-w-7xl overflow-hidden">
           <Form form={form} layout="vertical" onFinish={handleFinish}>
-            <SectionHeader
-              icon={<UserOutlined />}
-              title="ข้อมูลทั่วไปผู้ป่วย"
-            />
+            {/* --- ข้อมูลทั่วไป --- */}
+            <SectionHeader icon={<UserOutlined />} title="ข้อมูลทั่วไป" />
 
-            <Row gutter={[20, 12]}>
-              <Col xs={24} md={6}>
-                <Form.Item name="hhcNo" label="เลขที่ HHC">
-                  <Input className={inputStyle} placeholder="ระบุเลขที่" />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={6}>
-                <Form.Item name="referralDate" label="วันที่ส่ง">
-                  <DatePicker
-                    format="DD MMMM YYYY"
-                    className={`${inputStyle} pt-2`}
-                    style={{ width: "100%" }}
+            {/* Grid แน่นพิเศษ Gutter แค่ 8px บนมือถือ */}
+            <Row
+              gutter={[
+                { xs: 8, sm: 16 },
+                { xs: 4, sm: 12 },
+              ]}
+            >
+              {/* แถว 1: HHC (1/2) | วันที่ส่ง (1/2) */}
+              <Col xs={12} md={6}>
+                <Form.Item name="hhcNo" label="เลขที่ HHC" className="mb-1">
+                  <Input
+                    className={inputStyle}
+                    placeholder="เลขที่"
+                    maxLength={10}
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={12}>
+              <Col xs={12} md={6}>
+                <Form.Item
+                  name="referralDate"
+                  label="วันที่ส่ง"
+                  className="mb-1"
+                >
+                  <DatePicker
+                    locale={buddhistLocale}
+                    format="D MMM BB"
+                    className={`${inputStyle} w-full font-normal`}
+                    style={{ width: "100%" }}
+                    placeholder="วว/ดด/ปป"
+                  />
+                </Form.Item>
+              </Col>
+
+              {/* แถว 2: ประเภท (2/3) | อายุ (1/3) */}
+              <Col xs={16} md={8}>
                 <Form.Item
                   name="patientTypeId"
                   label="ประเภทผู้ป่วย"
                   rules={[{ required: true }]}
+                  className="mb-1"
                 >
-                  <Select placeholder="เลือกประเภท" className={selectStyle}>
+                  <Select placeholder="เลือก" className={selectStyle}>
                     {masterPatients.map((item) => (
                       <Option key={item.id} value={item.id}>
                         {item.typeName}
@@ -292,236 +205,283 @@ export default function VisitHomeForm() {
                   </Select>
                 </Form.Item>
               </Col>
+              <Col xs={8} md={4}>
+                <Form.Item name="age" label="อายุ(ปี)" className="mb-1">
+                  <InputNumber
+                    className={`${inputStyle} pt-1 text-center`}
+                    style={{ width: "100%" }}
+                    min={0}
+                    placeholder="0"
+                  />
+                </Form.Item>
+              </Col>
 
-              {/* บรรทัด 2 */}
+              {/* แถว 3: ชื่อ-สกุล (เต็ม) */}
               <Col xs={24} md={12}>
                 <Form.Item
                   name="fullName"
                   label="ชื่อ-นามสกุล"
                   rules={[{ required: true }]}
+                  className="mb-1"
                 >
                   <Input
                     className={inputStyle}
                     placeholder="ชื่อ-สกุล ผู้ป่วย"
+                    maxLength={100}
                   />
                 </Form.Item>
               </Col>
-              <Col xs={12} md={4}>
-                <Form.Item name="age" label="อายุ (ปี)">
-                  <InputNumber
-                    className={`${inputStyle} pt-1`}
-                    style={{ width: "100%" }}
-                    min={0}
-                  />
-                </Form.Item>
-              </Col>
-              <Col xs={12} md={8}>
+
+              {/* แถว 4: บัตร (14/24) | HN (10/24) */}
+              <Col xs={14} md={8}>
                 <Form.Item
                   name="cid"
-                  label="เลขบัตรประชาชน"
+                  label="เลขบัตร ปชช."
+                  className="mb-1"
                   rules={[{ required: true }]}
+                  normalize={(value) => (value || "").replace(/[^0-9]/g, "")}
                 >
                   <Input
                     maxLength={13}
                     className={inputStyle}
                     placeholder="13 หลัก"
+                    inputMode="numeric"
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={10} md={6}>
+                <Form.Item name="hn" label="HN" className="mb-1">
+                  <Input
+                    className={inputStyle}
+                    placeholder="HN"
+                    maxLength={10}
                   />
                 </Form.Item>
               </Col>
 
-              {/* บรรทัด 3 */}
-              <Col xs={24} md={6}>
-                <Form.Item name="hn" label="HN">
-                  <Input className={inputStyle} />
-                </Form.Item>
-              </Col>
-              <Col xs={24} md={6}>
-                <Form.Item name="dob" label="วันเกิด">
+              {/* แถว 5: วันเกิด (1/2) | เบอร์โทร (1/2) */}
+              <Col xs={12} md={6}>
+                <Form.Item name="dob" label="วันเกิด" className="mb-1">
                   <DatePicker
-                    format="DD MMMM YYYY"
-                    className={`${inputStyle} pt-2`}
+                    locale={buddhistLocale}
+                    format="D MMM BB"
+                    className={`${inputStyle} w-full font-normal`}
                     style={{ width: "100%" }}
+                    placeholder="วว/ดด/ปป"
                   />
                 </Form.Item>
               </Col>
-              <Col xs={24} md={6}>
-                <Form.Item name="phone" label="เบอร์โทรศัพท์">
+              <Col xs={12} md={6}>
+                <Form.Item
+                  name="phone"
+                  label="เบอร์โทร"
+                  className="mb-1"
+                  normalize={(value) => (value || "").replace(/[^0-9]/g, "")}
+                >
                   <Input
                     maxLength={10}
                     className={inputStyle}
-                    placeholder="08x-xxx-xxxx"
+                    placeholder="08x..."
+                    inputMode="numeric"
                   />
                 </Form.Item>
               </Col>
+
+              {/* แถว 6: แพ้ยา (เต็ม) | ที่อยู่ (เต็ม) */}
               <Col xs={24} md={6}>
-                <Form.Item name="allergies" label="แพ้ยา/อาหาร">
+                <Form.Item
+                  name="allergies"
+                  label="แพ้ยา/อาหาร"
+                  className="mb-1"
+                >
                   <Input
-                    className={`${inputStyle} text-red-600 font-medium bg-red-50 border-red-200`}
+                    className={`${inputStyle} text-red-600 bg-red-50 border-red-200`}
                     placeholder="ระบุ (ถ้ามี)"
                   />
                 </Form.Item>
               </Col>
-
-              {/* ที่อยู่ เต็มแถว */}
               <Col span={24}>
                 <Form.Item
                   name="address"
                   label="ที่อยู่ปัจจุบัน"
                   rules={[{ required: true }]}
+                  className="mb-2"
                 >
                   <Input
                     className={inputStyle}
-                    placeholder="บ้านเลขที่ หมู่ ซอย ถนน ตำบล อำเภอ จังหวัด"
+                    placeholder="ที่อยู่"
+                    maxLength={200}
                   />
                 </Form.Item>
               </Col>
             </Row>
 
-            <Divider className="my-6 border-gray-100" />
+            <Divider className="my-2 border-gray-100" />
 
-            {/* ---------------- Section 2: ประวัติ & สัญญาณชีพ ---------------- */}
-            <SectionHeader
-              icon={<HeartOutlined />}
-              title="ประวัติและสัญญาณชีพ"
-            />
+            {/* --- สัญญาณชีพ --- */}
+            <SectionHeader icon={<HeartOutlined />} title="ประวัติ/สัญญาณชีพ" />
 
-            <Row gutter={[20, 12]}>
+            <Row
+              gutter={[
+                { xs: 8, sm: 16 },
+                { xs: 4, sm: 12 },
+              ]}
+            >
+              {/* วันที่รับ/จำหน่าย แบ่งครึ่ง */}
               <Col xs={12} md={6}>
-                <Form.Item name="admissionDate" label="วันที่รับรักษา">
+                <Form.Item
+                  name="admissionDate"
+                  label="รับรักษา"
+                  className="mb-1"
+                >
                   <DatePicker
-                    format="DD MMMM YYYY"
-                    className={`${inputStyle} pt-2`}
+                    locale={buddhistLocale}
+                    format="D MMM BB"
+                    className={`${inputStyle} w-full font-normal`}
                     style={{ width: "100%" }}
+                    placeholder="วว/ดด/ปป"
                   />
                 </Form.Item>
               </Col>
               <Col xs={12} md={6}>
-                <Form.Item name="dischargeDate" label="วันที่จำหน่าย">
+                <Form.Item
+                  name="dischargeDate"
+                  label="จำหน่าย"
+                  className="mb-1"
+                >
                   <DatePicker
-                    format="DD MMMM YYYY"
-                    className={`${inputStyle} pt-2`}
+                    locale={buddhistLocale}
+                    format="D MMM BB"
+                    className={`${inputStyle} w-full font-normal`}
                     style={{ width: "100%" }}
+                    placeholder="วว/ดด/ปป"
                   />
                 </Form.Item>
               </Col>
               <Col xs={24} md={12}>
                 <Form.Item
                   name="initialHistory"
-                  label="ประวัติการเจ็บป่วยแรกรับ"
+                  label="ประวัติแรกรับ"
+                  className="mb-2"
                 >
                   <Input
                     className={inputStyle}
-                    placeholder="ระบุประวัติพอสังเขป"
+                    placeholder="ประวัติพอสังเขป"
+                    maxLength={80}
                   />
                 </Form.Item>
               </Col>
             </Row>
 
-            {/* Vital Signs Bar */}
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 mt-2 mb-4">
-              <Row gutter={[16, 12]} align="middle">
-                <Col xs={24} md={2}>
-                  <span className="font-bold text-slate-500 uppercase text-xs tracking-wider">
+            {/* Vital Signs: อัดแน่น 3 ช่องต่อแถว */}
+            <div className="bg-slate-50/50 rounded-lg p-2 border border-slate-100 mt-0 mb-2">
+              <Row gutter={[8, 4]} align="middle">
+                <Col xs={24} md={2} className="mb-1">
+                  <span className="font-bold text-slate-500 text-[10px] uppercase tracking-wider">
                     Vital Signs
                   </span>
                 </Col>
-                <Col xs={12} sm={6} md={4}>
-                  <Form.Item
-                    name="temperature"
-                    label="Temp (°C)"
-                    style={{ marginBottom: 0 }}
-                  >
+
+                {/* 3 ช่องต่อแถว (xs=8) สำหรับตัวเลข */}
+                <Col xs={8} sm={6} md={4}>
+                  <Form.Item name="temperature" label="Temp" className="mb-0">
                     <InputNumber
-                      className={`${inputStyle} pt-1 bg-white`}
+                      className={`${inputStyle} pt-0.5 bg-white text-center`}
                       style={{ width: "100%" }}
                       step={0.1}
-                      placeholder="37.0"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} sm={6} md={4}>
-                  <Form.Item
-                    name="pulseRate"
-                    label="Pulse (bpm)"
-                    style={{ marginBottom: 0 }}
-                  >
-                    <InputNumber
-                      className={`${inputStyle} pt-1 bg-white`}
-                      style={{ width: "100%" }}
-                      placeholder="80"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} sm={6} md={4}>
-                  <Form.Item
-                    name="respRate"
-                    label="Resp (/min)"
-                    style={{ marginBottom: 0 }}
-                  >
-                    <InputNumber
-                      className={`${inputStyle} pt-1 bg-white`}
-                      style={{ width: "100%" }}
-                      placeholder="20"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} sm={6} md={6}>
-                  <Form.Item
-                    name="bloodPressure"
-                    label="BP (mmHg)"
-                    style={{ marginBottom: 0 }}
-                  >
-                    <Input
-                      className={`${inputStyle} bg-white`}
-                      placeholder="120/80"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} sm={6} md={4}>
-                  <Form.Item
-                    name="oxygenSat"
-                    label="O2 Sat (%)"
-                    style={{ marginBottom: 0 }}
-                  >
-                    <InputNumber
-                      className={`${inputStyle} pt-1 bg-white`}
-                      style={{ width: "100%" }}
-                      placeholder="99"
+                      placeholder="°C"
                       max={100}
+                      parser={(value: any) => value?.replace(/[^\d.]/g, "")}
+                      onKeyPress={(event) => {
+                        if (!/[0-9.]/.test(event.key)) {
+                          event.preventDefault();
+                        }
+                      }}
+                      maxLength={5}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={8} sm={6} md={4}>
+                  <Form.Item name="pulseRate" label="Pulse" className="mb-0">
+                    <InputNumber
+                      className={`${inputStyle} pt-0.5 bg-white text-center`}
+                      style={{ width: "100%" }}
+                      placeholder="bpm"
+                      maxLength={5}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={8} sm={6} md={4}>
+                  <Form.Item name="respRate" label="Resp" className="mb-0">
+                    <InputNumber
+                      className={`${inputStyle} pt-0.5 bg-white text-center`}
+                      style={{ width: "100%" }}
+                      placeholder="/min"
+                      maxLength={5}
+                    />
+                  </Form.Item>
+                </Col>
+
+                {/* ความดัน 12 + O2 12 (แบ่งครึ่ง) */}
+                <Col xs={12} sm={6} md={6}>
+                  <Form.Item name="bloodPressure" label="BP" className="mb-0">
+                    <Input
+                      className={`${inputStyle} bg-white text-center`}
+                      placeholder="120/80"
+                      maxLength={10}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col xs={12} sm={6} md={4}>
+                  <Form.Item name="oxygenSat" label="O2 (%)" className="mb-0">
+                    <InputNumber
+                      className={`${inputStyle} pt-0.5 bg-white text-center`}
+                      style={{ width: "100%" }}
+                      placeholder="%"
+                      max={100}
+                      maxLength={5}
                     />
                   </Form.Item>
                 </Col>
               </Row>
             </div>
 
-            <Divider className="my-6 border-gray-100" />
+            <Divider className="my-2 border-gray-100" />
 
-            {/* ---------------- Section 3: Layout 2 คอลัมน์ ---------------- */}
-            <Row gutter={48}>
+            {/* --- อาการ / การรักษา (TextArea) --- */}
+            <Row gutter={24}>
               <Col xs={24} lg={12}>
-                <SectionHeader
-                  icon={<FileTextOutlined />}
-                  title="การประเมินอาการ"
-                />
-                <Form.Item name="symptoms" label="อาการปัจจุบัน">
+                <SectionHeader icon={<FileTextOutlined />} title="การประเมิน" />
+                <Form.Item
+                  name="symptoms"
+                  label="อาการปัจจุบัน"
+                  className="mb-1"
+                >
                   <TextArea
-                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    autoSize={{ minRows: 1, maxRows: 3 }} // ลด minRows
                     className={textAreaStyle}
-                    placeholder="ระบุอาการ..."
+                    placeholder="อาการ..."
+                    maxLength={200}
                   />
                 </Form.Item>
-                <Form.Item name="diagnosis" label="การวินิจฉัยโรค">
+                <Form.Item name="diagnosis" label="วินิจฉัย" className="mb-1">
                   <TextArea
-                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    autoSize={{ minRows: 1, maxRows: 3 }}
                     className={textAreaStyle}
-                    placeholder="ระบุการวินิจฉัย..."
+                    placeholder="วินิจฉัย..."
+                    maxLength={200}
                   />
                 </Form.Item>
-                <Form.Item name="careNeeds" label="ปัญหา/ความต้องการดูแล">
+                <Form.Item
+                  name="careNeeds"
+                  label="ความต้องการดูแล"
+                  className="mb-2"
+                >
                   <TextArea
-                    autoSize={{ minRows: 2, maxRows: 4 }}
+                    autoSize={{ minRows: 1, maxRows: 3 }}
                     className={textAreaStyle}
-                    placeholder="ระบุปัญหา..."
+                    placeholder="ปัญหา..."
+                    maxLength={200}
                   />
                 </Form.Item>
               </Col>
@@ -529,84 +489,99 @@ export default function VisitHomeForm() {
               <Col
                 xs={24}
                 lg={12}
-                className="lg:border-l lg:border-gray-100 lg:pl-12"
+                className="lg:border-l lg:border-gray-100 lg:pl-6"
               >
                 <SectionHeader
                   icon={<MedicineBoxOutlined />}
-                  title="การรักษาและอุปกรณ์"
+                  title="รักษา/อุปกรณ์"
                 />
-                <Form.Item name="medication" label="รายการยา">
+                <Form.Item name="medication" label="ยา" className="mb-1">
                   <TextArea
-                    autoSize={{ minRows: 3, maxRows: 6 }}
+                    autoSize={{ minRows: 2, maxRows: 4 }}
                     className={textAreaStyle}
                     placeholder="รายการยา..."
+                    maxLength={150}
                   />
                 </Form.Item>
-                <Form.Item name="medicalEquipment" label="อุปกรณ์ติดตัว">
+                <Form.Item
+                  name="medicalEquipment"
+                  label="อุปกรณ์"
+                  className="mb-2"
+                >
                   <TextArea
-                    autoSize={{ minRows: 3, maxRows: 6 }}
+                    autoSize={{ minRows: 2, maxRows: 4 }}
                     className={textAreaStyle}
-                    placeholder="เช่น สายสวนปัสสาวะ, NG Tube..."
+                    placeholder="เช่น NG Tube..."
+                    maxLength={150}
                   />
                 </Form.Item>
               </Col>
             </Row>
 
-            <Divider className="my-6 border-gray-100" />
+            <Divider className="my-2 border-gray-100" />
 
-            {/* ---------------- Section 4: นัดหมาย ---------------- */}
-            <div className="bg-blue-50/30 rounded-2xl p-6 border border-blue-100">
-              <SectionHeader icon={<CalendarOutlined />} title="การนัดหมาย" />
-              <Row gutter={[20, 12]} align="bottom">
+            {/* --- นัดหมาย --- */}
+            <div className="bg-blue-50/30 rounded-lg p-3 border border-blue-100">
+              <SectionHeader icon={<CalendarOutlined />} title="นัดหมาย" />
+              <Row
+                gutter={[
+                  { xs: 8, sm: 16 },
+                  { xs: 4, sm: 12 },
+                ]}
+                align="bottom"
+              >
+                {/* วันที่เยี่ยมบ้าน | วันนัดถัดไป แบ่งครึ่ง */}
                 <Col xs={12} md={6}>
                   <Form.Item
                     name="visitDate"
-                    label="วันที่เยี่ยมบ้าน"
+                    label="วันเยี่ยม"
                     rules={[{ required: true }]}
+                    className="mb-1"
                   >
                     <DatePicker
-                      format="DD MMMM YYYY"
-                      className={`${inputStyle} pt-2`}
+                      locale={buddhistLocale}
+                      format="D MMM BB"
+                      className={`${inputStyle} w-full font-normal`}
                       style={{ width: "100%" }}
+                      placeholder="วว/ดด/ปป"
                     />
                   </Form.Item>
                 </Col>
                 <Col xs={12} md={6}>
-                  <Form.Item name="nextAppointment" label="นัดครั้งถัดไป">
+                  <Form.Item
+                    name="nextAppointment"
+                    label="นัดถัดไป"
+                    className="mb-1"
+                  >
                     <DatePicker
-                      format="DD MMMM YYYY"
-                      className={`${inputStyle} pt-2`}
+                      locale={buddhistLocale}
+                      format="D MMM BB"
+                      className={`${inputStyle} w-full font-normal`}
                       style={{ width: "100%" }}
+                      placeholder="วว/ดด/ปป"
                     />
                   </Form.Item>
                 </Col>
+
                 <Col xs={24} md={12}>
-                  <Form.Item name="notes" label="หมายเหตุ">
+                  <Form.Item name="notes" label="หมายเหตุ" className="mb-1">
                     <Input
                       className={inputStyle}
                       placeholder="ระบุเพิ่มเติม..."
+                      maxLength={70}
                     />
                   </Form.Item>
                 </Col>
               </Row>
             </div>
 
-            <div className="mt-8 flex justify-center items-center gap-3">
+            <div className="mt-4 flex justify-center">
               <Button
                 type="primary"
                 htmlType="submit"
-                icon={<SaveOutlined />}
-                className="h-10 px-8 rounded-lg text-sm font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-r from-[#0683e9] to-[#2593fc] border-0 flex items-center"
+                className="h-9 sm:h-10 px-6 rounded-lg text-xs sm:text-sm font-medium shadow-md bg-gradient-to-r from-[#0683e9] to-[#2593fc] border-0 w-full sm:w-auto"
               >
-                บันทึกข้อมูลการเยี่ยมบ้าน
-              </Button>
-
-              <Button
-                onClick={handleAutoFill}
-                icon={<ExperimentOutlined />}
-                className="h-10 px-6 rounded-lg text-sm shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 bg-amber-500 hover:bg-amber-600 text-white border-none flex items-center"
-              >
-                สุ่มข้อมูลตัวอย่าง
+                บันทึกข้อมูล
               </Button>
             </div>
           </Form>

@@ -8,6 +8,7 @@ import { userService } from "../../user/services/user.service";
 import { officialTravelRequestService } from "../services/officialTravelRequest.service";
 import { maCarService } from "../../ma-car/services/maCar.service";
 import {
+  MaCarType,
   MasterCarType,
   OfficialTravelRequestType,
   UserType,
@@ -26,9 +27,10 @@ export default function Page() {
     const intraAuthCarService = maCarService(intraAuth);
 
     // ดึงข้อมูลพร้อมกัน 3 API
-    const [resUsers, resCars, resOTR] = await Promise.all([
+    const [resUsers, resCars, resMaCars, resOTR] = await Promise.all([
       intraAuthUserService.getUserQuery(),
       intraAuthCarService.getMasterCarQuery(),
+      intraAuthCarService.getMaCarQuery(),
       intraAuthService.getOfficialTravelRequestQuery(),
     ]);
 
@@ -40,6 +42,7 @@ export default function Page() {
     return {
       users: resUsers,
       cars: resCars,
+      maCars: resMaCars,
       dataOTR: resOTR,
       oTRUser: myOTR,
     };
@@ -63,6 +66,7 @@ export default function Page() {
 
   const dataUser: UserType[] = swrData?.users || [];
   const cars: MasterCarType[] = swrData?.cars || [];
+  const maCars: MaCarType[] = swrData?.maCars || [];
   const dataOTR: OfficialTravelRequestType[] = swrData?.dataOTR || [];
   const oTRUser: OfficialTravelRequestType[] = swrData?.oTRUser || [];
 
@@ -90,7 +94,7 @@ export default function Page() {
             cars={cars}
             oTRUser={oTRUser}
             dataOTR={dataOTR}
-            // หาก Component ลูกต้องการ fetchData หรือ loading สามารถส่งเพิ่มได้ตรงนี้ครับ
+            maCars={maCars}
           />
         </Card>
       ),

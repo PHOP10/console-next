@@ -8,12 +8,13 @@ import MaDrugDaisbursementTable from "../components/manageDrugTable";
 import MaDispenseTable from "../components/maDispenseTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { MaDrugType, DispenseType } from "../../common";
+import { MaDrugType, DispenseType, DrugType } from "../../common";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
   const [manualLoading, setManualLoading] = useState<boolean>(false);
+  const [drugs, setDrugsData] = useState<DrugType[]>([]);
   const [requestData, setRequestData] = useState<MaDrugType[]>([]);
   const [dispenseData, setDispenseData] = useState<DispenseType[]>([]);
 
@@ -22,12 +23,14 @@ export default function Page() {
     const maDrugService = MaDrug(intraAuth);
 
     // ดึงข้อมูลพร้อมกัน
-    const [requestsRes, dispensesRes] = await Promise.all([
+    const [drugsRes, requestsRes, dispensesRes] = await Promise.all([
+      maDrugService.getDrugQuery?.(),
       maDrugService.getMaDrugQuery(),
       maDrugService.getDispenseQuery(),
     ]);
 
     return {
+      drugs: Array.isArray(drugsRes) ? drugsRes : drugsRes?.data || [],
       requests: Array.isArray(requestsRes)
         ? requestsRes
         : requestsRes?.data || [],
@@ -53,6 +56,7 @@ export default function Page() {
   // 6. Sync ข้อมูลเข้า State
   useEffect(() => {
     if (swrData) {
+      setDrugsData(swrData.drugs);
       setRequestData(swrData.requests);
       setDispenseData(swrData.dispenses);
     }
@@ -83,7 +87,7 @@ export default function Page() {
       label: "จัดการข้อมูลการจ่ายยา",
       children: (
         <Card>
-          <MaDispenseTable data={dispenseData} fetchData={fetchData} />
+          <MaDispenseTable data={dispenseData} fetchData={fetchData} drugs={drugs} />
         </Card>
       ),
     },

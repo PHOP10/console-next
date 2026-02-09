@@ -28,9 +28,9 @@ import {
   MedicineBoxOutlined,
   CalendarOutlined,
   EditOutlined,
-  SaveOutlined,
-  CloseOutlined,
 } from "@ant-design/icons";
+import { buddhistLocale } from "@/app/common";
+import { useSession } from "next-auth/react";
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -45,6 +45,7 @@ interface VisitHomeEditProps {
   record: VisitHomeType | null;
   masterPatients: MasterPatientType[];
   initialMode: "view" | "edit";
+  fetchData: () => Promise<void>;
 }
 
 export default function VisitHomeEdit({
@@ -54,13 +55,15 @@ export default function VisitHomeEdit({
   record,
   masterPatients,
   initialMode,
+  fetchData,
 }: VisitHomeEditProps) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
   const intraAuthService = visitHomeServices(intraAuth);
   const [mode, setMode] = useState<"view" | "edit">(initialMode);
+  const { data: session } = useSession();
+  const [submitting, setSubmitting] = useState(false);
 
-  // --- Logic เดิม (Encryption/Decryption) ---
   const decryptData = (ciphertext: string | null | undefined) => {
     if (!ciphertext) return "";
     if (!ciphertext.toString().startsWith("U2F")) return ciphertext;
@@ -99,6 +102,16 @@ export default function VisitHomeEdit({
         hn: decryptData(record.hn),
         cid: decryptData(record.cid),
         phone: decryptData(record.phone),
+        hhcNo: decryptData(record.hhcNo),
+        allergies: decryptData(record.allergies),
+        bloodPressure: decryptData(record.bloodPressure),
+        initialHistory: decryptData(record.initialHistory),
+        symptoms: decryptData(record.symptoms),
+        diagnosis: decryptData(record.diagnosis),
+        medication: decryptData(record.medication),
+        medicalEquipment: decryptData(record.medicalEquipment),
+        careNeeds: decryptData(record.careNeeds),
+        notes: decryptData(record.notes),
         visitDate: record.visitDate ? dayjs(record.visitDate) : null,
         referralDate: record.referralDate ? dayjs(record.referralDate) : null,
         dob: record.dob ? dayjs(record.dob) : null,
@@ -124,6 +137,10 @@ export default function VisitHomeEdit({
     try {
       const values = await form.validateFields();
       if (!record) return;
+
+      // ✅ เริ่มโหลด
+      setSubmitting(true);
+
       const fullNameStr = values.fullName || "";
       const nameParts = fullNameStr.trim().split(/\s+/);
       const firstNameRaw = nameParts[0] || "-";
@@ -133,8 +150,6 @@ export default function VisitHomeEdit({
         id: record.id,
         patientTypeId: values.patientTypeId || null,
         age: values.age ? Number(values.age) : null,
-        hhcNo: values.hhcNo || null,
-        allergies: values.allergies || null,
         visitDate: values.visitDate ? values.visitDate.toISOString() : null,
         referralDate: values.referralDate
           ? values.referralDate.toISOString()
@@ -153,14 +168,16 @@ export default function VisitHomeEdit({
         pulseRate: values.pulseRate ? Number(values.pulseRate) : null,
         respRate: values.respRate ? Number(values.respRate) : null,
         oxygenSat: values.oxygenSat ? Number(values.oxygenSat) : null,
-        bloodPressure: values.bloodPressure || null,
-        initialHistory: values.initialHistory || null,
-        symptoms: values.symptoms || null,
-        diagnosis: values.diagnosis || null,
-        medication: values.medication || null,
-        medicalEquipment: values.medicalEquipment || null,
-        careNeeds: values.careNeeds || null,
-        notes: values.notes || null,
+        hhcNo: encryptData(values.hhcNo),
+        allergies: encryptData(values.allergies),
+        bloodPressure: encryptData(values.bloodPressure),
+        initialHistory: encryptData(values.initialHistory),
+        symptoms: encryptData(values.symptoms),
+        diagnosis: encryptData(values.diagnosis),
+        medication: encryptData(values.medication),
+        medicalEquipment: encryptData(values.medicalEquipment),
+        careNeeds: encryptData(values.careNeeds),
+        notes: encryptData(values.notes),
         firstName: encryptData(firstNameRaw),
         lastName: encryptData(lastNameRaw),
         fullName: encryptData(fullNameStr),
@@ -168,22 +185,26 @@ export default function VisitHomeEdit({
         hn: encryptData(values.hn),
         cid: encryptData(values.cid),
         phone: encryptData(values.phone),
+        createdName: session?.user?.fullName || "-",
       };
 
       const res = await intraAuthService.updateVisitHome(payload);
 
       if (res) {
         message.success("แก้ไขข้อมูลสำเร็จ");
+        // ✅ แก้ไขตรงนี้: เรียก fetchData() และรอให้เสร็จก่อนปิด Modal
+        await fetchData();
         onSuccess();
       }
     } catch (error) {
       console.error("Update Error:", error);
       message.error("เกิดข้อผิดพลาดในการแก้ไขข้อมูล");
+    } finally {
+      // ✅ หยุดโหลด ไม่ว่าจะสำเร็จหรือล้มเหลว
+      setSubmitting(false);
     }
   };
 
-  // --- Styles Constants ---
-  // ใช้ h-10 เพื่อความ Compact ใน Modal
   const inputStyle =
     "w-full h-10 rounded-lg border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all text-sm";
 
@@ -219,7 +240,7 @@ export default function VisitHomeEdit({
         width={1000}
         centered
         maskClosable={true}
-        footer={null} // Custom Footer ด้านล่างฟอร์มแทน
+        footer={null}
         styles={{
           content: { borderRadius: "20px", padding: "24px" },
           header: {
@@ -232,10 +253,11 @@ export default function VisitHomeEdit({
         <Form
           form={form}
           layout="vertical"
-          disabled={mode === "view"}
+          disabled={mode === "view" || submitting} // ปิดฟอร์มถ้ากำลังบันทึก
           className="compact-form"
         >
-          {/* ---------------- Section 1: ข้อมูลผู้ป่วย ---------------- */}
+          {/* ... (ส่วน Form.Item อื่นๆ คงเดิม) ... */}
+
           <SectionHeader icon={<UserOutlined />} title="ข้อมูลผู้ป่วย" />
           <Row gutter={[12, 4]}>
             <Col xs={12} md={4}>
@@ -243,10 +265,12 @@ export default function VisitHomeEdit({
                 <Input className={inputStyle} />
               </Form.Item>
             </Col>
+            {/* ... (Code ส่วนอื่นๆ เหมือนเดิม) ... */}
             <Col xs={12} md={4}>
               <Form.Item name="referralDate" label="วันที่ส่ง">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -276,7 +300,6 @@ export default function VisitHomeEdit({
               </Form.Item>
             </Col>
 
-            {/* แถว 2 */}
             <Col xs={12} md={2}>
               <Form.Item name="age" label="อายุ (ปี)">
                 <InputNumber className={`${inputStyle} w-full pt-1`} min={0} />
@@ -295,7 +318,8 @@ export default function VisitHomeEdit({
             <Col xs={12} md={6}>
               <Form.Item name="dob" label="วันเกิด">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -306,7 +330,6 @@ export default function VisitHomeEdit({
               </Form.Item>
             </Col>
 
-            {/* แถว 3 */}
             <Col xs={24} md={8}>
               <Form.Item name="allergies" label="ประวัติแพ้ยา/อาหาร">
                 <Input className={`${inputStyle} text-red-600 font-medium`} />
@@ -325,13 +348,13 @@ export default function VisitHomeEdit({
 
           <Divider dashed style={{ margin: "12px 0" }} />
 
-          {/* ---------------- Section 2: สัญญาณชีพ & ประวัติ ---------------- */}
           <SectionHeader icon={<HeartOutlined />} title="ประวัติและสัญญาณชีพ" />
           <Row gutter={[12, 4]}>
             <Col xs={12} md={4}>
               <Form.Item name="admissionDate" label="วันรับรักษา">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -339,7 +362,8 @@ export default function VisitHomeEdit({
             <Col xs={12} md={4}>
               <Form.Item name="dischargeDate" label="วันจำหน่าย">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -354,7 +378,6 @@ export default function VisitHomeEdit({
             </Col>
           </Row>
 
-          {/* Vital Signs Bar */}
           <div className="bg-slate-50 rounded-xl p-3 border border-slate-100 mb-4">
             <Row gutter={[12, 0]} align="middle">
               <Col xs={24} md={2}>
@@ -426,32 +449,32 @@ export default function VisitHomeEdit({
 
           <Divider dashed style={{ margin: "12px 0" }} />
 
-          {/* ---------------- Section 3: Split Layout ---------------- */}
           <Row gutter={24}>
-            {/* Left: Assessment */}
             <Col xs={24} md={12}>
               <SectionHeader icon={<FileTextOutlined />} title="การประเมิน" />
               <Form.Item name="symptoms" label="อาการปัจจุบัน">
                 <TextArea
                   autoSize={{ minRows: 1, maxRows: 3 }}
                   className={textAreaStyle}
+                  maxLength={150}
                 />
               </Form.Item>
               <Form.Item name="diagnosis" label="การวินิจฉัยโรค">
                 <TextArea
                   autoSize={{ minRows: 1, maxRows: 3 }}
                   className={textAreaStyle}
+                  maxLength={150}
                 />
               </Form.Item>
               <Form.Item name="careNeeds" label="ปัญหา/ความต้องการ">
                 <TextArea
                   autoSize={{ minRows: 1, maxRows: 3 }}
                   className={textAreaStyle}
+                  maxLength={150}
                 />
               </Form.Item>
             </Col>
 
-            {/* Right: Treatment */}
             <Col
               xs={24}
               md={12}
@@ -463,14 +486,16 @@ export default function VisitHomeEdit({
               />
               <Form.Item name="medication" label="ยากลับบ้าน">
                 <TextArea
-                  autoSize={{ minRows: 2, maxRows: 5 }}
+                  autoSize={{ minRows: 3, maxRows: 6 }}
                   className={textAreaStyle}
+                  maxLength={200}
                 />
               </Form.Item>
               <Form.Item name="medicalEquipment" label="อุปกรณ์ติดตัว">
                 <TextArea
                   autoSize={{ minRows: 2, maxRows: 5 }}
                   className={textAreaStyle}
+                  maxLength={100}
                 />
               </Form.Item>
             </Col>
@@ -478,7 +503,6 @@ export default function VisitHomeEdit({
 
           <Divider dashed style={{ margin: "12px 0" }} />
 
-          {/* ---------------- Section 4: Footer (Appointment) ---------------- */}
           <SectionHeader icon={<CalendarOutlined />} title="การนัดหมาย" />
           <Row gutter={[12, 4]} align="bottom">
             <Col xs={12} md={5}>
@@ -488,7 +512,8 @@ export default function VisitHomeEdit({
                 rules={[{ required: true }]}
               >
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -496,7 +521,8 @@ export default function VisitHomeEdit({
             <Col xs={12} md={5}>
               <Form.Item name="nextAppointment" label="นัดถัดไป">
                 <DatePicker
-                  format="DD MMMM YYYY"
+                  locale={buddhistLocale}
+                  format="D MMM BB"
                   className={`${inputStyle} w-full`}
                 />
               </Form.Item>
@@ -508,21 +534,12 @@ export default function VisitHomeEdit({
             </Col>
           </Row>
 
-          {/* --- Buttons Area --- */}
-          <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-gray-100">
-            {mode === "view" ? (
-              <Button
-                type="primary"
-                onClick={() => setMode("edit")}
-                className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
-                icon={<EditOutlined />}
-              >
-                แก้ไขข้อมูล
-              </Button>
-            ) : (
+          <div className="flex justify-center gap-3 mt-6 pt-4 border-t border-gray-100">
+            {mode === "view" ? null : (
               <Button
                 type="primary"
                 onClick={handleUpdate}
+                loading={submitting}
                 className="h-10 px-6 rounded-lg shadow-md bg-[#0683e9] hover:bg-blue-600 border-0"
               >
                 บันทึกการแก้ไข

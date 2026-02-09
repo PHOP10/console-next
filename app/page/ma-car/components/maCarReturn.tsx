@@ -19,11 +19,7 @@ import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { useSession } from "next-auth/react";
 import dayjs from "dayjs";
 import th_TH from "antd/locale/th_TH";
-import {
-  SaveOutlined,
-  CheckCircleOutlined,
-  DashboardOutlined, // ไอคอนสำหรับเลขไมล์
-} from "@ant-design/icons";
+import { DashboardOutlined } from "@ant-design/icons";
 import "dayjs/locale/th";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 
@@ -109,7 +105,7 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
     <Modal
       title={
         <div
-          className={`text-xl font-bold text-center w-full ${isAdmin ? "text-purple-600" : "text-[#0683e9]"}`}
+          className={`text-xl font-bold text-center w-full ${isAdmin ? "text-purple-600" : "text-purple-600"}`}
         >
           {isAdmin ? "ตรวจสอบและรับรถคืน" : "บันทึกการคืนรถ"}
         </div>
@@ -124,22 +120,19 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
       <ConfigProvider locale={th_TH}>
         {record && (
           <div className="flex flex-col gap-4">
-            {/* ✅ ส่วนรายละเอียด พร้อมแถบสีทางซ้าย */}
             <div
               className={`relative overflow-hidden p-5 rounded-2xl border shadow-sm ${
                 isAdmin
                   ? "bg-purple-50/50 border-purple-100"
-                  : "bg-blue-50/50 border-blue-100"
+                  : "bg-purple-50/50 border-purple-100"
               }`}
             >
-              {/* แถบสีด้านซ้าย */}
               <div
                 className={`absolute left-0 top-0 bottom-0 w-1.5 ${
-                  isAdmin ? "bg-purple-500" : "bg-blue-500"
+                  isAdmin ? "bg-purple-500" : "bg-purple-500"
                 }`}
               ></div>
 
-              {/* รายละเอียดรถ */}
               <div className="pl-2">
                 <div className="flex items-start gap-3 mb-3">
                   <div>
@@ -151,7 +144,6 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                   </div>
                 </div>
 
-                {/* แสดงเลขไมล์เริ่มต้น */}
                 <div className="flex items-center gap-2 mb-3 bg-white/60 p-2 rounded-lg border border-gray-100 w-fit">
                   <DashboardOutlined className="text-gray-400" />
                   <div>
@@ -194,11 +186,11 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                     </div>
                     <div className="font-medium text-gray-700">
                       {record.dateStart
-                        ? `${dayjs(record.dateStart).add(543, "year").format("DD/MMMM/BBBB HH:mm")} น.`
+                        ? `${dayjs(record.dateStart).format("DD/MMMM/BBBB เวลา HH:mm")} น.`
                         : "-"}
                       {" - "}
                       {record.dateEnd
-                        ? `${dayjs(record.dateEnd).add(543, "year").format("DD/MMMM/BBBB HH:mm")} น.`
+                        ? `${dayjs(record.dateEnd).format("DD/MMMM/BBBB เวลา HH:mm")} น.`
                         : "-"}
                     </div>
                   </div>
@@ -224,10 +216,7 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                     </div>
                     <div className="text-[10px] text-gray-400 mt-2 text-right">
                       คืนโดย: {record.returnByName} เมื่อ{" "}
-                      {dayjs(record.returnAt)
-                        .add(543, "year")
-                        .format("DD/MM/BBBB HH:mm")}{" "}
-                      น.
+                      {dayjs(record.returnAt).format("DD/MM/BBBB HH:mm")} น.
                     </div>
                   </div>
                 )}
@@ -239,7 +228,6 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
             <Form form={form} layout="vertical" onFinish={handleAction}>
               {!isAdmin && (
                 <>
-                  {/* ✅ เพิ่มช่องกรอกเลขไมล์ */}
                   <Row gutter={16}>
                     <Col span={12}>
                       <Form.Item
@@ -249,7 +237,6 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                             เลขไมล์เมื่อคืนรถ (กม.)
                           </span>
                         }
-                        // ✅ เพิ่มข้อความแสดงเลขไมล์เริ่มต้นด้านล่าง เพื่อช่วยเตือนความจำ
                         extra={
                           <div className="text-xs text-gray-500 mt-1">
                             * เลขไมล์เริ่มต้น:{" "}
@@ -259,15 +246,23 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                             กม.
                           </div>
                         }
+                        // เพิ่ม validateTrigger เพื่อให้ตรวจสอบทันทีที่พิมพ์ หรือเมื่อเอาเมาส์ออก
+                        validateTrigger={["onChange", "onBlur"]}
                         rules={[
                           { required: true, message: "กรุณาระบุเลขไมล์" },
-                          // ✅ เพิ่ม validation ห้ามกรอกน้อยกว่าเลขเดิม
                           {
                             validator: (_, value) => {
                               const start = record?.startMileage || 0;
-                              if (value && value < start) {
+                              // ต้องเช็คด้วยว่ามี value เข้ามาไหม เพื่อไม่ให้ชนกับ rule required
+                              if (
+                                value !== null &&
+                                value !== undefined &&
+                                value < start
+                              ) {
                                 return Promise.reject(
-                                  new Error("เลขไมล์ต้องมากกว่าเลขเริ่มต้น"),
+                                  new Error(
+                                    "เลขไมล์ต้องมากกว่าหรือเท่ากับเลขเริ่มต้น",
+                                  ),
                                 );
                               }
                               return Promise.resolve();
@@ -279,8 +274,6 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                           style={{ width: "100%" }}
                           placeholder="เลขไมล์ปัจจุบัน"
                           className="rounded-xl h-10 pt-1"
-                          // ✅ กำหนดค่าต่ำสุดเท่ากับเลขไมล์เริ่มต้น
-                          min={record?.startMileage || 0}
                           formatter={(value) =>
                             `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
                           }
@@ -328,7 +321,7 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                   className={`rounded-lg h-10 px-6 border-0 ${
                     isAdmin
                       ? "bg-purple-600 hover:bg-purple-500"
-                      : "bg-[#0683e9] hover:bg-blue-600"
+                      : "bg-purple-600 hover:bg-purple-600"
                   }`}
                 >
                   {isAdmin ? "ยืนยันรับรถคืน" : "ยืนยันการคืนรถ"}

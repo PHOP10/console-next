@@ -13,28 +13,37 @@ import EquipmentTable from "../components/equipmentTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import { useSession } from "next-auth/react";
-import useSWR from "swr"; // 1. Import SWR
+import useSWR from "swr";
+import { userService } from "../../user/services/user.service";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
-
-  // 2. แยก manualLoading สำหรับ Action ต่างๆ จาก Component ลูก
   const [manualLoading, setManualLoading] = useState<boolean>(false);
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
+  const router = useRouter();
 
-  // 3. สร้าง Fetcher Function
+  const handleTabChange = (key: string) => {
+    router.push(`/page/medical-equipment/medicalEquipment?tab=${key}`);
+  };
+
   const fetcher = async () => {
     const intraAuthService = maMedicalEquipmentServices(intraAuth);
+    const intraAuthUserService = userService(intraAuth);
 
     // ดึงข้อมูลพร้อมกัน
-    const [resData, resEQ] = await Promise.all([
+    const [resData, resEQ, resUser] = await Promise.all([
       intraAuthService.getMaMedicalEquipmentQuery(),
       intraAuthService.getMedicalEquipmentQuery(),
+      intraAuthUserService.getUserQuery(),
     ]);
 
     return {
       data: resData,
       dataEQ: resEQ,
+      allUsers: resUser,
     };
   };
 
@@ -54,6 +63,7 @@ export default function Page() {
   // 5. Map ข้อมูล (ใช้ Array ว่างเป็น Default)
   const data: MaMedicalEquipmentType[] = swrData?.data || [];
   const dataEQ: MedicalEquipmentType[] = swrData?.dataEQ || [];
+  const allUsers: any[] = swrData?.allUsers || [];
 
   // รวม Loading state
   const loading = isSwrLoading || manualLoading;
@@ -71,11 +81,12 @@ export default function Page() {
       label: "ข้อมูลการส่งเครื่องมือแพทย์",
       children: (
         <MedicalEquipmentTable
-          setLoading={setManualLoading} // ใช้ manualLoading แทน
+          setLoading={setManualLoading}
           loading={loading}
           data={data}
           fetchData={fetchData}
           dataEQ={dataEQ}
+          allUsers={allUsers}
         />
       ),
     },
@@ -94,7 +105,7 @@ export default function Page() {
               marginBottom: "15px",
             }}
           >
-            ส่งเครื่องมือแพทย์
+            แบบฟอร์มส่งเครื่องมือแพทย์
           </div>
 
           <CreateMedicalEquipmentForm
@@ -128,7 +139,12 @@ export default function Page() {
     <div>
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Tabs defaultActiveKey="1" items={items} destroyInactiveTabPane />
+          <Tabs
+            activeKey={activeTabKey}
+            onChange={handleTabChange}
+            items={items}
+            destroyInactiveTabPane
+          />
         </Col>
       </Row>
     </div>

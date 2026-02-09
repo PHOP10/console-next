@@ -17,6 +17,8 @@ import th_TH from "antd/locale/th_TH";
 import { UserType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../services/user.service";
+import { buddhistLocale } from "@/app/common";
+import { useSession } from "next-auth/react";
 
 interface UserEditModalProps {
   open: boolean;
@@ -35,6 +37,10 @@ export default function UserEditModal({
   const [loading, setLoading] = useState(false);
   const intraAuth = useAxiosAuth();
   const intraAuthService = userService(intraAuth);
+  const { data: session } = useSession();
+
+  // ✅ 1. สร้างตัวแปรเช็คว่าเป็น Admin หรือไม่
+  const isTargetAdmin = record?.role === "admin";
 
   useEffect(() => {
     if (open && record) {
@@ -69,7 +75,7 @@ export default function UserEditModal({
     }
   };
 
-  // --- Style Constants (เหมือนหน้าเพิ่มผู้ใช้) ---
+  // --- Style Constants ---
   const inputStyle =
     "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
@@ -88,7 +94,7 @@ export default function UserEditModal({
       onCancel={onClose}
       confirmLoading={loading}
       okText="บันทึก"
-      cancelButtonProps={{ style: { display: "none" } }} // ซ่อนปุ่มยกเลิก
+      cancelButtonProps={{ style: { display: "none" } }}
       width={800}
       centered
       destroyOnClose
@@ -101,11 +107,11 @@ export default function UserEditModal({
         <Form form={form} layout="vertical" onFinish={handleUpdate}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
             <Form.Item
-              label="เพศ"
+              label="คำนำหน้า"
               name="gender"
-              rules={[{ required: true, message: "กรุณาเลือกเพศ" }]}
+              rules={[{ required: true, message: "กรุณาเลือกคำนำหน้า" }]}
             >
-              <Select placeholder="เลือกเพศ" className={selectStyle}>
+              <Select placeholder="เลือกคำนำหน้า" className={selectStyle}>
                 <Select.Option value="male">นาย</Select.Option>
                 <Select.Option value="female">นาง</Select.Option>
                 <Select.Option value="miss">นางสาว</Select.Option>
@@ -125,8 +131,7 @@ export default function UserEditModal({
               <Input
                 placeholder="รหัสพนักงาน"
                 className={inputStyle}
-                maxLength={2} // 1. จำกัดให้พิมพ์ได้แค่ 2 ตัว
-                // 2. (ตัวเลือกเสริม) ป้องกันการพิมพ์ตัวหนังสือ พิมพ์ได้เฉพาะตัวเลข
+                maxLength={2}
                 onKeyPress={(event) => {
                   if (!/[0-9]/.test(event.key)) {
                     event.preventDefault();
@@ -143,7 +148,6 @@ export default function UserEditModal({
               <Input placeholder="ชื่อ" className={inputStyle} />
             </Form.Item>
 
-            {/* 5. LastName */}
             <Form.Item
               label="นามสกุล"
               name="lastName"
@@ -152,7 +156,6 @@ export default function UserEditModal({
               <Input placeholder="นามสกุล" className={inputStyle} />
             </Form.Item>
 
-            {/* 8. Email */}
             <Form.Item
               label="อีเมล"
               name="email"
@@ -161,7 +164,6 @@ export default function UserEditModal({
               <Input placeholder="example@email.com" className={inputStyle} />
             </Form.Item>
 
-            {/* 9. Phone */}
             <Form.Item
               label="เบอร์โทร"
               name="phoneNumber"
@@ -185,17 +187,18 @@ export default function UserEditModal({
               />
             </Form.Item>
             <Form.Item
-              label="วันเริ่มงาน"
+              label="วันที่เริ่มงาน"
               name="startDate"
-              rules={[{ required: true, message: "กรุณาเลือกวันเริ่มงาน" }]}
+              rules={[{ required: true, message: "กรุณาเลือกวันที่เริ่มงาน" }]}
             >
               <DatePicker
+                locale={buddhistLocale}
                 style={{ width: "100%" }}
                 className="h-11 shadow-sm rounded-xl border-gray-300 hover:border-blue-400"
                 placeholder="เลือกวันที่เริ่มงาน"
                 format={(value) =>
                   value
-                    ? `${value.format("DD / MMMM")} / ${value.year() + 543}`
+                    ? `${value.format("DD  MMMM")}  ${value.year() + 543}`
                     : ""
                 }
               />
@@ -206,7 +209,11 @@ export default function UserEditModal({
               name="position"
               rules={[{ required: true, message: "กรุณาเลือกตำแหน่ง" }]}
             >
-              <Select placeholder="เลือกตำแหน่ง" className={selectStyle}>
+              <Select
+                placeholder="เลือกตำแหน่ง"
+                className={selectStyle}
+                disabled={isTargetAdmin}
+              >
                 <Select.Option value="ผู้อำนวยการสถานีอนามัย">
                   ผู้อำนวยการสถานีอนามัย
                 </Select.Option>
@@ -222,7 +229,6 @@ export default function UserEditModal({
               </Select>
             </Form.Item>
 
-            {/* 10. Role */}
             <Form.Item
               label="สิทธิ์การใช้งาน"
               name="role"
@@ -231,6 +237,8 @@ export default function UserEditModal({
               <Select
                 placeholder="เลือกสิทธิ์การใช้งาน"
                 className={selectStyle}
+                // ✅ 3. ล็อคสิทธิ์ ถ้าเป็น Admin
+                disabled={isTargetAdmin}
               >
                 <Select.Option value="user">ผู้ใช้</Select.Option>
                 <Select.Option value="admin">หัวหน้า</Select.Option>

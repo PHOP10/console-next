@@ -1,30 +1,13 @@
 "use client";
 
-import {
-  Table,
-  Button,
-  Space,
-  Tag,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  message,
-  Popconfirm,
-  Select,
-  Tooltip,
-  Card,
-  Col,
-  Row,
-} from "antd";
+import { Space, Tag, Tooltip, Card, message, Popover } from "antd";
 import React, { useState } from "react";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
-import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
-import { maMedicalEquipmentServices } from "../services/medicalEquipment.service";
 import {
   MaMedicalEquipmentType,
   MedicalEquipmentType,
+  UserType,
 } from "../../common/index";
 import { useSession } from "next-auth/react";
 import MedicalEquipmentTableDetails from "./medicalEquipmentTableDetails";
@@ -35,10 +18,9 @@ import {
   RollbackOutlined,
 } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
-import MaMedicalEquipmentEditModal from "./maMedicalEquipmentEditModal"; // ✅ 1. Import Component ใหม่
+import MaMedicalEquipmentEditModal from "./maMedicalEquipmentEditModal";
+import MaMedicalEquipmentReturnModal from "./maMedicalEquipmentReturnModal";
 
-const { Option } = Select;
-const { TextArea } = Input;
 dayjs.locale("th");
 
 type Props = {
@@ -47,6 +29,7 @@ type Props = {
   data: MaMedicalEquipmentType[];
   dataEQ: MedicalEquipmentType[];
   fetchData: () => Promise<void>;
+  allUsers: UserType[];
 };
 
 export default function MedicalEquipmentTable({
@@ -54,10 +37,9 @@ export default function MedicalEquipmentTable({
   loading,
   data,
   dataEQ,
+  allUsers,
   fetchData,
 }: Props) {
-  const intraAuth = useAxiosAuth();
-  const intraAuthService = maMedicalEquipmentServices(intraAuth);
   const { data: session } = useSession();
 
   // --- States ---
@@ -66,24 +48,20 @@ export default function MedicalEquipmentTable({
   );
   const [editModalVisible, setEditModalVisible] = useState(false);
 
-  // Return Modal States
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formReturn] = Form.useForm();
+  const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [recordReturn, setRecordReturn] = useState<any>(null);
 
-  // Detail Modal States
   const [openDetails, setOpenDetails] = useState(false);
   const [recordDetails, setRecordDetails] = useState<any>(null);
 
   // --- Handlers ---
-
   const handleEdit = (item: MaMedicalEquipmentType) => {
     setEditingItem(item);
     setEditModalVisible(true);
   };
 
   const handleEditSuccess = async () => {
-    setLoading(true); // Refresh Data
+    setLoading(true);
     setEditModalVisible(false);
     setEditingItem(null);
     await fetchData();
@@ -91,46 +69,14 @@ export default function MedicalEquipmentTable({
 
   const handleOpenModalReturn = (record: any) => {
     setRecordReturn(record);
-    formReturn.setFieldsValue({
-      id: record.id,
-      sentDate: record.sentDate ? dayjs(record.sentDate) : null,
-      status:
-        record.status === "pending"
-          ? "รออนุมัติ"
-          : record.status === "approve"
-            ? "อนุมัติ"
-            : record.status === "cancel"
-              ? "ยกเลิก"
-              : record.status === "return"
-                ? "รับคืนแล้ว"
-                : "",
-      note: record.note,
-    });
-    setIsModalOpen(true);
+    setIsReturnModalOpen(true);
   };
 
-  const handleConfirmReturn = async () => {
-    if (!recordReturn) return;
-    try {
-      setLoading(true); // ✅ เริ่มโหลด
-      await intraAuthService.updateMaMedicalEquipment({
-        id: recordReturn.id,
-        status: "return",
-        returnName: session?.user?.fullName,
-        returndAt: new Date().toISOString(),
-        note: formReturn.getFieldValue("note"),
-      });
-
-      message.success("รับคืนอุปกรณ์เรียบร้อยแล้ว");
-      setIsModalOpen(false);
-      setRecordReturn(null);
-
-      await fetchData(); // ✅ ดึงข้อมูลใหม่เพื่อรีเฟรชตาราง
-    } catch (error) {
-      console.error("เกิดข้อผิดพลาดในการรับคืนอุปกรณ์:", error);
-      message.error("ไม่สามารถรับคืนอุปกรณ์ได้");
-      setLoading(false); // ❌ อย่าลืมปิด loading กรณี error
-    }
+  const handleReturnSuccess = async () => {
+    setIsReturnModalOpen(false);
+    setRecordReturn(null);
+    setLoading(true);
+    await fetchData();
   };
 
   const handleOpenModalDetails = (record: any) => {
@@ -141,64 +87,47 @@ export default function MedicalEquipmentTable({
   // --- Columns ---
   const columns: ColumnsType<MaMedicalEquipmentType> = [
     {
-      title: "ลำดับ",
-      dataIndex: "id",
-      key: "id",
-      align: "center",
-    },
-    {
-      title: "รายการ",
+      title: "รายการเครื่องมือแพทย์",
       dataIndex: "items",
       key: "items",
       align: "center",
-      width: 140,
+      width: 150,
       render: (items: any[]) => {
-        const maxToShow = 2;
-        const hasMore = items?.length > maxToShow;
-        const displayItems = hasMore ? items.slice(0, maxToShow) : items;
+        if (!items?.length) return "-";
+        const content = (
+          <div
+            style={{ maxHeight: "300px", overflowY: "auto", minWidth: "200px" }}
+          >
+            {items.map((item, i) => (
+              <div
+                key={i}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  padding: "4px 0",
+                  borderBottom: "1px solid #f0f0f0",
+                }}
+              >
+                <span>{item.medicalEquipment?.equipmentName}</span>
+                <b style={{ marginLeft: 16 }}>x {item.quantity}</b>
+              </div>
+            ))}
+          </div>
+        );
 
         return (
-          <ul style={{ paddingLeft: 20, margin: 0 }}>
-            {displayItems?.map((item, index) => (
-              <li key={index}>{item.medicalEquipment?.equipmentName}</li>
-            ))}
-            {hasMore && (
-              <Tooltip
-                title={items
-                  .map((item) => item.medicalEquipment?.equipmentName)
-                  .join(", ")}
-              >
-                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
-              </Tooltip>
-            )}
-          </ul>
-        );
-      },
-    },
-    {
-      title: "จำนวน",
-      dataIndex: "items",
-      key: "items",
-      align: "center",
-      width: 160,
-      render: (items: any[]) => {
-        if (!items || items.length === 0) return null;
-        const firstThree = items.slice(0, 2);
-        const rest = items.slice(2);
-        return (
-          <ul style={{ paddingLeft: 20, margin: 0 }}>
-            {firstThree.map((item, index) => (
-              <li key={index}>{item.quantity}</li>
-            ))}
-            {rest.length > 0 && (
-              <Tooltip
-                title={items.map((item) => item.quantity).join(", ")}
-                placement="top"
-              >
-                <li style={{ cursor: "pointer", color: "#1890ff" }}>...</li>
-              </Tooltip>
-            )}
-          </ul>
+          <Popover content={content} title="รายละเอียดรายการ" placement="right">
+            {/* แสดงแค่สรุปจำนวน */}
+            <span
+              style={{
+                color: "#1890ff",
+                cursor: "pointer",
+                textDecoration: "underline",
+              }}
+            >
+              รวม {items.length} รายการ
+            </span>
+          </Popover>
         );
       },
     },
@@ -207,9 +136,22 @@ export default function MedicalEquipmentTable({
       dataIndex: "sentDate",
       key: "sentDate",
       align: "center",
+      width: 120,
       render: (date: string) => {
         if (!date) return "-";
-        return dayjs(date).format("D MMMM BBBB");
+        const dateObj = dayjs(date);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB (2 ม.ค. 69) */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB (2 มกราคม 2569) */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
@@ -217,18 +159,21 @@ export default function MedicalEquipmentTable({
       dataIndex: "createdBy",
       key: "createdBy",
       align: "center",
+      width: 120,
+      responsive: ["md"], // ซ่อนบนมือถือ
     },
     {
       title: "สถานะ",
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = "";
         switch (status) {
           case "pending":
-            color = "gold";
+            color = "blue";
             text = "รออนุมัติ";
             break;
           case "approve":
@@ -240,8 +185,8 @@ export default function MedicalEquipmentTable({
             text = "ยกเลิก";
             break;
           case "return":
-            color = "purple";
-            text = "คืนแล้ว";
+            color = "default";
+            text = "รับคืนแล้ว";
             break;
           case "verified":
             color = "cyan";
@@ -254,16 +199,18 @@ export default function MedicalEquipmentTable({
       },
     },
     {
-      title: "หมายเหตุเพิ่มเติม",
+      title: "หมายเหตุ",
       dataIndex: "note",
       key: "note",
       align: "center",
+      width: 150,
+      responsive: ["md"],
       render: (text: string) => {
         const shortText =
           text && text.length > 20 ? text.substring(0, 25) + "..." : text;
         return (
           <Tooltip title={text}>
-            <li>{shortText}</li>
+            <span style={{ fontWeight: "normal" }}>{shortText || "-"}</span>
           </Tooltip>
         );
       },
@@ -272,34 +219,15 @@ export default function MedicalEquipmentTable({
       title: "จัดการ",
       key: "action",
       align: "center",
+      width: 140,
+      // เอา fixed ออกตามข้อ 5
       render: (_, record) => (
-        <Space size="middle">
+        <Space size="small">
           {/* Edit Button */}
-          {(session?.user?.role === "admin" ||
-            session?.user?.role === "pharmacy") && (
-            <Tooltip title="แก้ไข">
-              <EditOutlined
-                style={{
-                  fontSize: 22,
-                  color: record.status === "pending" ? "#faad14" : "#d9d9d9",
-                  cursor:
-                    record.status === "pending" ? "pointer" : "not-allowed",
-                  transition: "color 0.2s",
-                }}
-                onClick={() => {
-                  if (record.status === "pending") {
-                    handleEdit(record);
-                  }
-                }}
-              />
-            </Tooltip>
-          )}
-
-          {/* Return Button */}
           <Tooltip title="รับคืน">
             <RollbackOutlined
               style={{
-                fontSize: 22,
+                fontSize: 18, // ขนาด 18 ตามข้อ 3
                 color: record.status === "approve" ? "#722ed1" : "#d9d9d9",
                 cursor: record.status === "approve" ? "pointer" : "not-allowed",
                 transition: "color 0.2s",
@@ -316,7 +244,7 @@ export default function MedicalEquipmentTable({
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
               style={{
-                fontSize: 22,
+                fontSize: 18,
                 color: "#1677ff",
                 cursor: "pointer",
                 transition: "color 0.2s",
@@ -326,38 +254,43 @@ export default function MedicalEquipmentTable({
           </Tooltip>
 
           {/* Export Button */}
-          <ExportMedicalEquipmentWord record={record} />
+          {/* อย่าลืมไปปรับ size icon ใน component ExportMedicalEquipmentWord ด้วยถ้าทำได้ แต่ถ้าเป็น button ปกติให้ปล่อยไว้ */}
+          <ExportMedicalEquipmentWord record={record} allUsers={allUsers} />
+
+          {(session?.user?.role === "admin" ||
+            session?.user?.role === "pharmacy") && (
+            <Tooltip title="แก้ไข">
+              <EditOutlined
+                style={{
+                  fontSize: 18,
+                  color: record.status === "pending" ? "#faad14" : "#d9d9d9",
+                  cursor:
+                    record.status === "pending" ? "pointer" : "not-allowed",
+                  transition: "color 0.2s",
+                }}
+                onClick={() => {
+                  if (record.status === "pending") {
+                    handleEdit(record);
+                  }
+                }}
+              />
+            </Tooltip>
+          )}
         </Space>
       ),
-    },
-  ];
-
-  const columnsReturn = [
-    {
-      title: "ชื่ออุปกรณ์",
-      dataIndex: ["medicalEquipment", "equipmentName"],
-      key: "equipmentName",
-    },
-    {
-      title: "จำนวน",
-      dataIndex: "quantity",
-      key: "quantity",
     },
   ];
 
   return (
     <Card
       bordered
-      style={{
-        backgroundColor: "white",
-        borderRadius: "8px",
-        boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
-      }}
+      style={{ width: "100%" }}
       title={
         <div
           style={{
             textAlign: "center",
-            fontSize: "24px",
+            // ปรับขนาด Font ให้ Responsive
+            fontSize: "clamp(18px, 4vw, 24px)",
             fontWeight: "bold",
             color: "#0683e9ff",
           }}
@@ -372,11 +305,11 @@ export default function MedicalEquipmentTable({
         dataSource={data}
         loading={loading}
         bordered
-        pagination={{ pageSize: 10 }}
+        size="small"
+        pagination={{ pageSize: 10, size: "small" }}
         scroll={{ x: "max-content" }}
       />
 
-      {/* ✅ 2. เรียกใช้ MaMedicalEquipmentEditModal แทน Modal เดิม */}
       <MaMedicalEquipmentEditModal
         open={editModalVisible}
         onClose={() => setEditModalVisible(false)}
@@ -385,75 +318,12 @@ export default function MedicalEquipmentTable({
         dataEQ={dataEQ}
       />
 
-      {/* Modal รายละเอียดการรับคืน (ยังคงไว้เหมือนเดิม หรือจะแยกไฟล์ก็ได้ถ้าต้องการ) */}
-      <Modal
-        title="รายละเอียดการรับคืนอุปกรณ์"
-        open={isModalOpen}
-        onOk={handleConfirmReturn}
-        onCancel={() => setIsModalOpen(false)}
-        okText="รับคืน"
-        cancelText="ยกเลิก"
-        width={700}
-      >
-        <Form form={formReturn} layout="vertical">
-          <Form.Item label="รายการอุปกรณ์ที่ส่ง">
-            <CustomTable
-              dataSource={recordReturn?.items || []}
-              columns={columnsReturn}
-              rowKey="id"
-              pagination={false}
-              size="small"
-            />
-          </Form.Item>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item
-                label="วันที่ส่ง"
-                name="sentDate"
-                rules={[{ required: true, message: "กรุณาเลือกวันที่ส่ง" }]}
-              >
-                <DatePicker
-                  disabled
-                  format="DD/MM/YYYY"
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={12}>
-              <Form.Item label="สถานะ" name="status">
-                <div>
-                  {recordReturn?.status === "pending" && (
-                    <Tag color="gold">รออนุมัติ</Tag>
-                  )}
-                  {recordReturn?.status === "approve" && (
-                    <Tag color="green">อนุมัติ</Tag>
-                  )}
-                  {recordReturn?.status === "cancel" && (
-                    <Tag color="red">ยกเลิก</Tag>
-                  )}
-                  {recordReturn?.status === "return" && (
-                    <Tag color="blue">รับคืนแล้ว</Tag>
-                  )}
-                  {recordReturn?.status === "verified" && (
-                    <Tag color="purple">ตรวจรับคืนแล้ว</Tag>
-                  )}
-                </div>
-              </Form.Item>
-            </Col>
-          </Row>
-          <Row gutter={16}>
-            <Col span={12}>
-              <Form.Item label="หมายเหตุ" name="note">
-                <Input.TextArea
-                  disabled
-                  rows={3}
-                  placeholder="หมายเหตุเพิ่มเติม"
-                />
-              </Form.Item>
-            </Col>
-          </Row>
-        </Form>
-      </Modal>
+      <MaMedicalEquipmentReturnModal
+        open={isReturnModalOpen}
+        onClose={() => setIsReturnModalOpen(false)}
+        onSuccess={handleReturnSuccess}
+        record={recordReturn}
+      />
 
       <MedicalEquipmentTableDetails
         record={recordDetails}

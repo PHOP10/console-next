@@ -1,13 +1,20 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Table, message, Card, Button, Tooltip, Popconfirm, Tag } from "antd";
+import {
+  Table,
+  message,
+  Card,
+  Button,
+  Tooltip,
+  Popconfirm,
+  Tag,
+  Space,
+} from "antd";
 import {
   FileExcelOutlined,
   FileSearchOutlined,
   EditOutlined,
-  DownloadOutlined, // ไอคอนสำหรับรับของ
-  CheckCircleOutlined,
   MedicineBoxOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
@@ -19,6 +26,13 @@ import MaDrugTableDetail from "./maDrugDetail";
 import MaDrugEdit from "./maDrugEdit";
 import CustomTable from "../../common/CustomTable";
 import MaDrugReceiveModal from "./maDrugReceiveModal";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
+import buddhistEra from "dayjs/plugin/buddhistEra";
+
+// Set locale globally
+dayjs.extend(buddhistEra);
+dayjs.locale("th");
 
 interface MaDrugFormProps {
   data: MaDrugType[];
@@ -29,7 +43,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
 
-  // const [data, setData] = useState<MaDrugType[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailVisible, setDetailVisible] = useState(false);
   const [editVisible, setEditVisible] = useState(false);
@@ -61,23 +74,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
     }
   };
 
-  const handleReceive = async (id: number) => {
-    try {
-      setLoading(true);
-      // เรียก API ไปที่ Backend เพื่อเปลี่ยนสถานะและอัปเดตสต็อก
-      // คุณต้องเพิ่ม method receiveMaDrug ใน service ของคุณด้วย
-      await intraAuthService.receiveMaDrug(id);
-
-      message.success("รับยาเข้าคลังเรียบร้อยแล้ว (อัปเดตสต็อกสำเร็จ)");
-      fetchDrugs(); // โหลดข้อมูลใหม่
-    } catch (error) {
-      console.error(error);
-      message.error("ไม่สามารถทำรายการได้");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const columns: ColumnsType<MaDrugType> = [
     {
       title: "เลขที่เบิก",
@@ -91,33 +87,63 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
       dataIndex: "requestUnit",
       key: "requestUnit",
       align: "center",
+      width: 100,
+      responsive: ["sm"],
+      render: (text) => {
+        const shortText =
+          text && text.length > 20 ? text.substring(0, 30) + "..." : text;
+        return (
+          <Tooltip title={text}>
+            <span style={{ fontWeight: "normal" }}>{shortText || "-"}</span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "ผู้ขอเบิก",
       dataIndex: "requesterName",
       key: "requesterName",
       align: "center",
+      width: 100,
+      responsive: ["md"],
     },
     {
       title: "วันที่ขอเบิก",
       dataIndex: "requestDate",
       key: "requestDate",
       align: "center",
+      width: 120,
       render: (text: string) => {
         if (!text) return "-";
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        const dateObj = dayjs(text);
+        return (
+          <>
+            {/* แสดงบนมือถือ: D MMM BB */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D MMM BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: D MMMM BBBB */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMMM BBBB")}
+            </span>
+          </>
+        );
       },
+    },
+    {
+      title: "รายการ",
+      dataIndex: "quantityUsed",
+      key: "quantityUsed",
+      align: "center",
+      width: 90,
+      render: (val) => `${val || 0} รายการ`,
     },
     {
       title: "ยอดรวม",
       dataIndex: "totalPrice",
       key: "totalPrice",
       align: "center",
+      width: 100,
       render: (val) => (
         <span className="text-blue-600 font-semibold">
           {val
@@ -131,6 +157,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
       dataIndex: "status",
       key: "status",
       align: "center",
+      width: 100,
       render: (status) => {
         let color = "default";
         let text = "-";
@@ -148,7 +175,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
             text = "รับยาแล้ว";
             break;
           case "cancel":
-          case "cancel":
             color = "red";
             text = "ยกเลิก";
             break;
@@ -162,44 +188,14 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
       title: "จัดการ",
       key: "action",
       align: "center",
-      width: 220,
+      width: 160,
       render: (_, record) => {
         const isPending = record.status === "pending";
-        const isApproved = record.status === "approved";
-        const isCompleted = record.status === "completed";
-        const isCanceled =
-          record.status === "canceled" || record.status === "cancel";
-
-        // เงื่อนไขการกดปุ่มต่างๆ
-        const canEdit = isPending;
-        const canReceive = isApproved;
-        const canExport = isApproved || isCompleted;
+        const canReceive = record.status === "approved";
 
         return (
-          <div
-            style={{
-              display: "flex",
-              gap: "8px",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            {/* 1. ปุ่มแก้ไข (เปลี่ยนจากซ่อน เป็น Disable) */}
-            <Tooltip title="แก้ไขข้อมูล">
-              <EditOutlined
-                type="primary"
-                shape="circle"
-                style={{
-                  fontSize: 22, // ปรับขนาดตามความเหมาะสม
-                  color: record.status === "pending" ? "#faad14" : "#d9d9d9",
-                  cursor:
-                    record.status === "pending" ? "pointer" : "not-allowed",
-                  transition: "color 0.2s",
-                }}
-                onClick={() => handleEdit(record)}
-              />
-            </Tooltip>
-
+          <Space size="small">
+            {/* 2. ปุ่มรับยา */}
             {canReceive && (
               <Tooltip title="ยืนยันรับยาเข้าคลัง">
                 <Button
@@ -207,7 +203,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
                   shape="circle"
                   icon={
                     <MedicineBoxOutlined
-                      style={{ fontSize: 22, color: "#52c41a" }}
+                      style={{ fontSize: 18, color: "#52c41a" }} // ปรับขนาดไอคอนเป็น 18px
                     />
                   }
                   onClick={() => handleOpenReceive(record)}
@@ -215,32 +211,51 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
               </Tooltip>
             )}
 
-            {/* 3. ดูรายละเอียด (ดูได้ตลอด) */}
+            {/* 3. ดูรายละเอียด */}
             <Tooltip title="ดูรายละเอียด">
               <Button
                 type="text"
+                shape="circle"
                 icon={
                   <FileSearchOutlined
-                    style={{ fontSize: 22, color: "#1677ff" }}
+                    style={{ fontSize: 18, color: "#1677ff" }}
                   />
                 }
                 onClick={() => handleViewDetail(record)}
               />
             </Tooltip>
 
-            {/* 4. ปุ่ม Export (Disable ถ้ายังไม่ Approve) */}
+            {/* 4. พิมพ์ใบเบิก */}
             <Tooltip title="พิมพ์ใบเบิกยา">
-              <FileExcelOutlined
-                style={{
-                  fontSize: 22,
-                  color: "#217346",
-                  cursor: "pointer",
-                  transition: "color 0.2s",
-                }}
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <FileExcelOutlined
+                    style={{ fontSize: 18, color: "#217346" }}
+                  />
+                }
                 onClick={() => handleExport(record)}
               />
             </Tooltip>
-          </div>
+            {/* 1. ปุ่มแก้ไข */}
+            <Tooltip title="แก้ไขข้อมูล">
+              <Button
+                type="text"
+                shape="circle"
+                icon={
+                  <EditOutlined
+                    style={{
+                      fontSize: 18,
+                      color: isPending ? "#faad14" : "#d9d9d9",
+                    }}
+                  />
+                }
+                disabled={!isPending}
+                onClick={() => isPending && handleEdit(record)}
+              />
+            </Tooltip>
+          </Space>
         );
       },
     },
@@ -252,7 +267,6 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
         <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
           ข้อมูลรายการเบิกยา
         </h2>
-
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
 
@@ -262,8 +276,9 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
         dataSource={data}
         loading={loading}
         bordered
-        pagination={{ pageSize: 10 }}
-        scroll={{ x: 1000 }}
+        size="small" // ใช้ size small บนมือถือ
+        pagination={{ pageSize: 10, size: "small" }}
+        scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
       />
 
       <MaDrugTableDetail
@@ -283,7 +298,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
       <MaDrugReceiveModal
         visible={receiveVisible}
         onClose={() => setReceiveVisible(false)}
-        onSuccess={() => fetchDrugs()} // โหลดข้อมูลใหม่เมื่อรับยาเสร็จ
+        onSuccess={() => fetchDrugs()}
         data={selectedRecord}
       />
     </>

@@ -24,6 +24,38 @@ export const indexService = (axiosInstance: AxiosInstance) => {
           return [];
         });
     },
+    getNotificationCounts: async (userId: string) => {
+      return await axiosInstance
+        .get(`${baseUrlApiNotifications}/user/${userId}/counts`) // ตรงกับ Backend
+        .then((res) => res.data) // คาดหวัง: { unread: 5, menuCounts: { maCar: 2 } }
+        .catch((err) => {
+          console.error("Error getting notification counts:", err);
+          return { unread: 0, menuCounts: {} }; // Return ค่ากันตาย กันหน้าเว็บพัง
+        });
+    },
+
+    // ✅ 2. ฟังก์ชันกดอ่านแล้วเคลียร์เลข (ใช้ตอนคลิกเมนู)
+    markMenuRead: async (userId: string, menuKey: string) => {
+      return await axiosInstance
+        .patch(`${baseUrlApiNotifications}/user/${userId}/mark-read`, {
+          menuKey,
+        })
+        .then((res) => res.data)
+        .catch((err) => {
+          console.error("Error marking menu read:", err);
+        });
+    },
+
+    // ✅ 3. (เผื่อใช้) ดึงรายการแจ้งเตือนทั้งหมดมาแสดงเป็น List
+    getUserNotifications: async (userId: string) => {
+      return await axiosInstance
+        .get(`${baseUrlApiNotifications}/user/${userId}`)
+        .then((res) => res.data)
+        .catch((err) => {
+          console.log(err);
+          return [];
+        });
+    },
   };
 };
 

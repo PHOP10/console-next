@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -23,6 +23,7 @@ import {
   UserType,
   MasterCarType,
   OfficialTravelRequestType,
+  MaCarType,
 } from "../../common";
 import { useSession } from "next-auth/react";
 import th_TH from "antd/locale/th_TH";
@@ -34,12 +35,14 @@ dayjs.locale("th");
 dayjs.extend(isBetween);
 
 import { useRouter } from "next/navigation";
+import { buddhistLocale } from "@/app/common";
 
 interface Props {
   dataUser: UserType[];
   cars: MasterCarType[];
   oTRUser: OfficialTravelRequestType[];
   dataOTR: OfficialTravelRequestType[];
+  maCars?: MaCarType[];
 }
 
 export default function OfficialTravelRequestBookForm({
@@ -47,6 +50,7 @@ export default function OfficialTravelRequestBookForm({
   cars,
   oTRUser,
   dataOTR,
+  maCars,
 }: Props) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
@@ -63,7 +67,6 @@ export default function OfficialTravelRequestBookForm({
     try {
       const { carId, startDate, endDate, travelType } = values;
 
-      // แปลงวันที่ที่เลือกมาเป็น dayjs object เพื่อเทียบเวลา (ไม่ต้องใช้ startOf day)
       const currentStart = dayjs(startDate);
       const currentEnd = dayjs(endDate);
 
@@ -71,23 +74,13 @@ export default function OfficialTravelRequestBookForm({
         dataOTR &&
         dataOTR.some((booking) => {
           if (booking.status === "cancel") return false;
-
-          // ถ้าไม่ใช่รถราชการ ไม่ต้องเช็คการชนของรถ
           if (travelType !== "official") return false;
 
-          // เช็คว่าเป็นรถคันเดียวกันหรือไม่
-          // (ต้องเช็ค carId ก่อน ถ้าคนละคัน เวลาชนกันก็ได้ ไม่เป็นไร)
           if (!carId || Number(booking.carId) !== Number(carId)) {
             return false;
           }
-
-          // แปลงเวลาของ Booking ที่มีอยู่
           const bStart = dayjs(booking.startDate);
           const bEnd = dayjs(booking.endDate);
-
-          // สูตรเช็ค Time Overlap มาตรฐาน: (StartA < EndB) && (EndA > StartB)
-          // ❌ ของเดิม: ใช้ .startOf('day') ทำให้มันเหมาทั้งวัน
-          // ✅ ของใหม่: เทียบเวลาจริง (HH:mm)
           const isTimeOverlap =
             currentStart.isBefore(bEnd) && currentEnd.isAfter(bStart);
 
@@ -96,9 +89,34 @@ export default function OfficialTravelRequestBookForm({
 
       if (isCarOverlaps) {
         message.warning("มีการจองรถที่คุณเลือกในช่วงเวลานี้แล้ว");
-        setSubmitting(false); // ✅ แก้ไข: ต้องหยุด Loading เมื่อเจอปัญหา
+        setSubmitting(false);
         return;
       }
+
+      // ---------------------------------------------------------
+      const isMaCarOverlaps =
+        maCars &&
+        maCars.some((booking) => {
+          // ข้ามถ้ายกเลิก
+          if (booking.status === "cancel") return false;
+
+          if (travelType !== "official") return false;
+
+          if (!carId || Number(booking.carId) !== Number(carId)) {
+            return false;
+          }
+
+          const bStart = dayjs(booking.dateStart);
+          const bEnd = dayjs(booking.dateEnd);
+          return currentStart.isBefore(bEnd) && currentEnd.isAfter(bStart);
+        });
+
+      if (isMaCarOverlaps) {
+        message.warning("รถคันนี้ไม่ว่างในช่วงเวลานี้ (ชนกับการจองรถ)");
+        setSubmitting(false);
+        return;
+      }
+      // ---------------------------------------------------------
 
       const payload = {
         ...values,
@@ -121,11 +139,11 @@ export default function OfficialTravelRequestBookForm({
       await service.createOfficialTravelRequest(payload);
       message.success("บันทึกคำขอเรียบร้อยแล้ว");
       form.resetFields();
-      router.push("/page/official-travel-request/officialTravelRequest");
+      router.push("/page/official-travel-request/officialTravelRequest?tab=2");
     } catch (err) {
       console.error(err);
       message.error("บันทึกคำขอไม่สำเร็จ");
-      setSubmitting(false); // หยุด Loading เมื่อเกิด Error
+      setSubmitting(false);
     }
   };
 
@@ -139,25 +157,40 @@ export default function OfficialTravelRequestBookForm({
     )} น.`;
   };
 
+  useEffect(() => {
+    if (session?.user?.userId) {
+      const currentNames = form.getFieldValue("passengerNames") || [];
+
+      if (!currentNames.includes(session.user.userId)) {
+        const newNames = [...currentNames, session.user.userId];
+        form.setFieldsValue({
+          passengerNames: newNames,
+          passengers: newNames.length,
+        });
+      }
+    }
+  }, [session, form]);
+
   // --- Styles ---
   const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
 
   const textAreaStyle =
-    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
 
   const selectStyle =
-    "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
+    "h-10 sm:h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400 text-sm";
 
-  const optionGroupStyle = "bg-gray-50 p-4 rounded-xl border border-gray-200";
+  const optionGroupStyle =
+    "bg-gray-50 p-3 sm:p-4 rounded-xl border border-gray-200";
 
   return (
-    <Card>
+    <Card bordered={false} className="shadow-sm">
       <ConfigProvider locale={th_TH}>
         <Form form={form} layout="vertical" onFinish={onFinish}>
           {/* Section 1: ข้อมูลเอกสาร */}
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="เลขที่เอกสาร"
                 name="documentNo"
@@ -187,20 +220,20 @@ export default function OfficialTravelRequestBookForm({
                 ]}
               >
                 <Input
-                  placeholder="เช่น ตก 0000.1.1/111"
+                  placeholder="กรอกเลขที่เอกสาร"
                   maxLength={15}
                   className={inputStyle}
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="เรียน"
                 name="recipient"
                 rules={[{ required: true, message: "กรุณากรอกเรียน..." }]}
               >
                 <Select
-                  placeholder="กรอกเรียน"
+                  placeholder="ระบุเรียน"
                   className={selectStyle}
                   onChange={(value) => {
                     form.setFieldValue(
@@ -214,7 +247,7 @@ export default function OfficialTravelRequestBookForm({
                       <div style={{ display: "flex", padding: 8 }}>
                         <Input
                           placeholder="กรอกอื่น ๆ ..."
-                          className="rounded-lg"
+                          className="rounded-lg h-9 text-sm"
                           onPressEnter={(e) => {
                             form.setFieldValue(
                               "recipient",
@@ -240,90 +273,97 @@ export default function OfficialTravelRequestBookForm({
             </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={12}>
+          <Row gutter={16}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="วัตถุประสงค์"
                 name="missionDetail"
                 rules={[{ required: true, message: "กรุณากรอกวัตถุประสงค์" }]}
               >
                 <Input.TextArea
-                  placeholder="กรอกวัตถุประสงค์"
                   rows={2}
                   className={textAreaStyle}
+                  placeholder="กรอกวัตถุประสงค์"
+                  maxLength={200}
                 />
               </Form.Item>
             </Col>
-            <Col span={12}>
+            <Col xs={24} sm={12}>
               <Form.Item
                 label="สถานที่"
                 name="location"
                 rules={[{ required: true, message: "กรุณากรอกสถานที่" }]}
               >
                 <Input.TextArea
-                  placeholder="กรอกสถานที่"
                   rows={2}
                   className={textAreaStyle}
+                  placeholder="กรอกสถานที่"
+                  maxLength={200}
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* Section 2: วันเวลาเดินทาง */}
-          {/* Section 2: วันเวลาเดินทาง */}
-          <div className="bg-blue-50/30 p-4 rounded-xl border border-blue-100 mb-6 mt-2">
-            <Row gutter={24}>
-              <Col span={12}>
+          {/* Section 2: วันเวลาเดินทาง (แก้ไข Logic Validator) */}
+          <div className="bg-blue-50/30 p-3 sm:p-4 rounded-xl border border-blue-100 mb-6 mt-2">
+            <Row gutter={16}>
+              {/* --- 1. วันที่เริ่มต้น (Start Date) --- */}
+              <Col xs={24} sm={12}>
                 <Form.Item
                   label="ตั้งแต่วันที่-เวลา"
                   name="startDate"
-                  dependencies={["carId", "travelType"]} // ✅ เพิ่ม: ให้เช็คใหม่เมื่อเปลี่ยนรถ
+                  dependencies={["carId", "travelType"]} // รีรัน validator เมื่อ 2 ค่านี้เปลี่ยน
                   rules={[
                     {
                       required: true,
-                      message: "กรุณาเลือกวันและเวลาที่เริ่มเดินทาง",
+                      message: "กรุณาเลือกวันที่เริ่มเดินทาง",
                     },
                     {
                       validator: (_, value) => {
                         if (!value) return Promise.resolve();
 
-                        // 1. เช็คว่า "เรา" ติดธุระอื่นไหม (oTRUser)
+                        // ดึงค่าสดๆ จาก Form เพื่อความชัวร์
+                        const currentTravelType =
+                          form.getFieldValue("travelType");
+                        const currentCarId = form.getFieldValue("carId");
+
+                        // 1. เช็ค User Overlap (คนเดิมห้ามจองซ้อน)
                         const isUserBusy = oTRUser.some((booking) => {
                           if (booking.status === "cancel") return false;
                           const bStart = dayjs(booking.startDate);
                           const bEnd = dayjs(booking.endDate);
                           return value.isBetween(bStart, bEnd, null, "[]");
                         });
+
                         if (isUserBusy) {
                           return Promise.reject(
                             new Error("คุณมีรายการจองอื่นในช่วงเวลานี้"),
                           );
                         }
 
-                        // 2. ✅ เพิ่ม: เช็คว่า "รถ" ว่างไหม (dataOTR)
-                        const travelType = form.getFieldValue("travelType");
-                        const carId = form.getFieldValue("carId");
-
-                        if (travelType === "official" && carId) {
-                          const isCarBusy = dataOTR.some((booking) => {
+                        // Logic: เช็คว่ารถว่างไหม (เฉพาะรถราชการ)
+                        if (currentTravelType === "official" && currentCarId) {
+                          // ✅ ป้องกัน dataOTR เป็น undefined ด้วย || []
+                          const isCarBusy = (dataOTR || []).some((booking) => {
                             if (booking.status === "cancel") return false;
-                            // เช็คเฉพาะรถคันที่เราเลือก
-                            if (Number(booking.carId) !== Number(carId))
+
+                            // ข้ามถ้ารถคนละคัน
+                            if (Number(booking.carId) !== Number(currentCarId))
                               return false;
 
                             const bStart = dayjs(booking.startDate);
                             const bEnd = dayjs(booking.endDate);
-                            // เช็คว่าเวลาที่เลือก ไปตกอยู่ในช่วงที่รถไม่ว่างไหม
+
+                            // เช็คว่าจุดเริ่มต้นของเรา ไปแทรกอยู่ในช่วงเวลาของคนอื่นไหม
                             return value.isBetween(bStart, bEnd, null, "[]");
                           });
 
                           if (isCarBusy) {
                             return Promise.reject(
-                              new Error("รถคันนี้ไม่ว่างในช่วงเวลานี้"),
+                              new Error("รถไม่ว่างในช่วงเวลานี้"),
                             );
                           }
                         }
-
                         return Promise.resolve();
                       },
                     },
@@ -331,25 +371,28 @@ export default function OfficialTravelRequestBookForm({
                   style={{ marginBottom: 0 }}
                 >
                   <DatePicker
+                    locale={buddhistLocale}
                     showTime={{ format: "HH:mm" }}
                     style={{ width: "100%" }}
-                    placeholder="เลือกวันและเวลาเริ่ม"
                     format={formatBuddhist}
                     className={`${inputStyle} pt-1`}
-                    onChange={() => form.setFieldValue("endDate", null)}
+                    placeholder="เลือกวันและเวลาเริ่ม"
+                    onChange={() => form.setFieldValue("endDate", null)} // เคลียร์วันจบเมื่อเปลี่ยนวันเริ่ม
                     disabledDate={(current) => {
+                      // ห้ามเลือกวันย้อนหลัง (แต่วันปัจจุบันเลือกได้ เพื่อระบุเวลา)
                       return current && current < dayjs().startOf("day");
                     }}
                   />
                 </Form.Item>
               </Col>
 
-              <Col span={12}>
+              {/* --- 2. วันที่สิ้นสุด (End Date) --- */}
+              <Col xs={24} sm={12}>
                 <Form.Item
                   noStyle
                   shouldUpdate={(prev, cur) =>
                     prev.startDate !== cur.startDate ||
-                    prev.carId !== cur.carId || // ✅ อัปเดตเมื่อเปลี่ยนรถ
+                    prev.carId !== cur.carId ||
                     prev.travelType !== cur.travelType
                   }
                 >
@@ -357,13 +400,13 @@ export default function OfficialTravelRequestBookForm({
                     const dateStart = getFieldValue("startDate");
                     return (
                       <Form.Item
-                        name="endDate"
                         label="ถึงวันที่-เวลา"
-                        dependencies={["startDate", "carId", "travelType"]} // ✅ เพิ่ม Dependencies
+                        name="endDate"
+                        dependencies={["startDate", "carId", "travelType"]}
                         rules={[
                           {
                             required: true,
-                            message: "กรุณาเลือกวันและเวลาที่สิ้นสุด",
+                            message: "กรุณาเลือกวันที่สิ้นสุดเดินทาง",
                           },
                           {
                             validator: (_, value) => {
@@ -373,7 +416,7 @@ export default function OfficialTravelRequestBookForm({
                               const currentStart = dayjs(dateStart);
                               const currentEnd = dayjs(value);
 
-                              // เช็ค Logic เวลา
+                              // 1. เช็ค Logic พื้นฐาน: เวลาจบ ต้องหลัง เวลาเริ่ม
                               if (
                                 currentEnd.isBefore(currentStart) ||
                                 currentEnd.isSame(currentStart)
@@ -385,53 +428,37 @@ export default function OfficialTravelRequestBookForm({
                                 );
                               }
 
-                              // 1. เช็ค User Overlap (คนเดิมห้ามจองซ้อน)
-                              const isUserOverlap = oTRUser.some((booking) => {
-                                if (booking.status === "cancel") return false;
-                                const bStart = dayjs(booking.startDate);
-                                const bEnd = dayjs(booking.endDate);
-                                return (
-                                  currentStart.isBefore(bEnd) &&
-                                  currentEnd.isAfter(bStart)
-                                );
-                              });
-                              if (isUserOverlap) {
-                                return Promise.reject(
-                                  new Error(
-                                    "คุณมีรายการจองอื่นซ้อนทับช่วงเวลานี้",
-                                  ),
-                                );
-                              }
-
-                              // 2. ✅ เพิ่ม: เช็ค Car Overlap (รถห้ามจองซ้อน)
+                              // 2. เช็ครถว่าง (Overlap Check)
                               const travelType = getFieldValue("travelType");
                               const carId = getFieldValue("carId");
 
                               if (travelType === "official" && carId) {
-                                const isCarOverlap = dataOTR.some((booking) => {
-                                  if (booking.status === "cancel") return false;
-                                  if (Number(booking.carId) !== Number(carId))
-                                    return false;
+                                // ✅ ป้องกัน dataOTR เป็น undefined
+                                const isCarOverlap = (dataOTR || []).some(
+                                  (booking) => {
+                                    if (booking.status === "cancel")
+                                      return false;
 
-                                  const bStart = dayjs(booking.startDate);
-                                  const bEnd = dayjs(booking.endDate);
+                                    if (Number(booking.carId) !== Number(carId))
+                                      return false;
 
-                                  // สูตรเช็คชนกัน: (StartA < EndB) และ (EndA > StartB)
-                                  return (
-                                    currentStart.isBefore(bEnd) &&
-                                    currentEnd.isAfter(bStart)
-                                  );
-                                });
+                                    const bStart = dayjs(booking.startDate);
+                                    const bEnd = dayjs(booking.endDate);
+
+                                    // สูตร Overlap: (StartA < EndB) && (EndA > StartB)
+                                    return (
+                                      currentStart.isBefore(bEnd) &&
+                                      currentEnd.isAfter(bStart)
+                                    );
+                                  },
+                                );
 
                                 if (isCarOverlap) {
                                   return Promise.reject(
-                                    new Error(
-                                      "รถคันนี้ถูกจองแล้วในช่วงเวลานี้",
-                                    ),
+                                    new Error("รถถูกจองแล้วในช่วงเวลานี้"),
                                   );
                                 }
                               }
-
                               return Promise.resolve();
                             },
                           },
@@ -439,21 +466,24 @@ export default function OfficialTravelRequestBookForm({
                         style={{ marginBottom: 0 }}
                       >
                         <DatePicker
+                          locale={buddhistLocale}
                           showTime={{ format: "HH:mm" }}
                           style={{ width: "100%" }}
+                          format={formatBuddhist}
+                          className={`${inputStyle} pt-1`}
                           placeholder={
                             dateStart ? `เลือกเวลาสิ้นสุด` : "เลือกวันเริ่มก่อน"
                           }
-                          format={formatBuddhist}
-                          className={`${inputStyle} pt-1`}
                           disabled={!dateStart}
                           disabledDate={(current) => {
+                            // ห้ามเลือกวันก่อนวันเริ่ม
                             if (
                               dateStart &&
                               current < dayjs(dateStart).startOf("day")
                             ) {
                               return true;
                             }
+                            // ห้ามเลือกวันย้อนหลัง
                             return current && current < dayjs().startOf("day");
                           }}
                         />
@@ -472,11 +502,11 @@ export default function OfficialTravelRequestBookForm({
             </div>
             <div className={optionGroupStyle}>
               <Row gutter={24} align="top">
-                <Col span={12}>
+                <Col xs={24} sm={12}>
                   <Form.Item
                     name="travelType"
                     noStyle
-                    rules={[{ required: true, message: "กรุณาเลือกประเภท" }]}
+                    rules={[{ required: true }]}
                   >
                     <Radio.Group style={{ width: "100%" }}>
                       <Space direction="vertical" size={12}>
@@ -492,9 +522,9 @@ export default function OfficialTravelRequestBookForm({
                   </Form.Item>
                 </Col>
 
-                {/* Dynamic Inputs based on Selection */}
-                <Col span={12}>
-                  <div className="flex items-center h-full pl-6 border-l border-gray-200 min-h-[150px]">
+                {/* Dynamic Inputs */}
+                <Col xs={24} sm={12}>
+                  <div className="flex items-center h-full pl-0 sm:pl-6 border-l-0 sm:border-l border-gray-200 mt-4 sm:mt-0 min-h-[150px]">
                     <div className="w-full">
                       {selectedTravelType === "official" && (
                         <Form.Item
@@ -506,6 +536,7 @@ export default function OfficialTravelRequestBookForm({
                             placeholder="เลือกรายชื่อรถในระบบ"
                             showSearch
                             className={selectStyle}
+                            optionFilterProp="children"
                           >
                             {cars.map((car) => (
                               <Select.Option key={car.id} value={car.id}>
@@ -520,12 +551,7 @@ export default function OfficialTravelRequestBookForm({
                         <Form.Item
                           label="ทะเบียนรถ"
                           name="privateCarId"
-                          rules={[
-                            {
-                              required: true,
-                              message: "กรุณากรอกทะเบียน",
-                            },
-                          ]}
+                          rules={[{ required: true }]}
                         >
                           <Input
                             placeholder="เช่น กข 1234 ตาก"
@@ -556,7 +582,7 @@ export default function OfficialTravelRequestBookForm({
 
                       {!selectedTravelType && (
                         <div className="text-gray-400 text-center">
-                          กรุณาเลือกประเภทการเดินทางด้านซ้าย
+                          กรุณาเลือกประเภทการเดินทาง
                         </div>
                       )}
                     </div>
@@ -566,40 +592,37 @@ export default function OfficialTravelRequestBookForm({
             </div>
           </div>
 
-          {/* Section 4: ผู้โดยสารและงบประมาณ */}
-          <Row gutter={24}>
-            <Col span={6}>
+          <Row gutter={16}>
+            <Col xs={24} sm={18}>
               <Form.Item
-                label="จำนวนผู้โดยสาร"
-                name="passengers"
-                rules={[{ required: true, message: "ระบุจำนวน" }]}
+                label="รายชื่อผู้โดยสาร"
+                name="passengerNames"
+                rules={[{ required: true, message: "กรุณาเลือกผู้โดยสาร" }]}
               >
-                <InputNumber
-                  min={1}
-                  max={10}
-                  maxLength={1}
-                  precision={0}
-                  style={{ width: "100%" }}
-                  placeholder="0-9"
-                  className={`${inputStyle} pt-1`}
-                  parser={(value) => {
-                    const parsed = value?.replace(/\D/g, "").slice(0, 1);
-                    return parsed ? parseInt(parsed, 10) : "";
-                  }}
-                  onKeyPress={(e) => {
-                    if (!/[0-9]/.test(e.key)) e.preventDefault();
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col span={18}>
-              <Form.Item label="รายชื่อผู้โดยสาร" name="passengerNames">
                 <Select
                   mode="multiple"
                   placeholder="เลือกผู้โดยสาร"
                   optionFilterProp="children"
                   className={selectStyle}
                   maxTagCount="responsive"
+                  onChange={(values) => {
+                    form.setFieldValue("passengers", values.length);
+                  }}
+                  onDeselect={(val) => {
+                    if (val === session?.user?.userId) {
+                      const current = form.getFieldValue("passengerNames");
+
+                      setTimeout(() => {
+                        const restored = [...current, val];
+
+                        const unique = Array.from(new Set(restored));
+
+                        form.setFieldValue("passengerNames", unique);
+                        form.setFieldValue("passengers", unique.length);
+                        message.warning("ผู้ยื่นคำขอต้องร่วมเดินทางด้วยเสมอ");
+                      }, 0);
+                    }
+                  }}
                 >
                   {dataUser.map((user) => (
                     <Select.Option key={user.userId} value={user.userId}>
@@ -609,13 +632,25 @@ export default function OfficialTravelRequestBookForm({
                 </Select>
               </Form.Item>
             </Col>
+            <Col xs={24} sm={6}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
+                <InputNumber
+                  min={1}
+                  max={10}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`}
+                  readOnly
+                  controls={false}
+                />
+              </Form.Item>
+            </Col>
           </Row>
 
-          <Row gutter={24}>
-            <Col span={6}>
+          <Row gutter={16}>
+            <Col xs={24} sm={6}>
               <Form.Item
-                name="budget"
                 label="งบประมาณ"
+                name="budget"
                 rules={[{ required: true, message: "เลือกงบประมาณ" }]}
               >
                 <Select
@@ -631,10 +666,10 @@ export default function OfficialTravelRequestBookForm({
                 </Select>
               </Form.Item>
             </Col>
-            <Col span={18}>
+            <Col xs={24} sm={18}>
               <Form.Item label="หมายเหตุเพิ่มเติม" name="note">
                 <Input.TextArea
-                  placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)"
+                  placeholder="กรอกหมายเหตุเพิ่มเติม"
                   rows={2}
                   className={textAreaStyle}
                 />
@@ -648,7 +683,7 @@ export default function OfficialTravelRequestBookForm({
                 type="primary"
                 htmlType="submit"
                 loading={submitting}
-                className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center"
+                className="h-10 px-8 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center w-full sm:w-auto justify-center"
               >
                 ยื่นคำขอ
               </Button>

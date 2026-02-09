@@ -4,31 +4,31 @@ import React, { useState } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useSWR from "swr";
 
-// Components
 import DrugDaisbursementTable from "../components/maDrugTable";
 import MaDrugForm from "../components/maDrugForm";
 import DispenseForm from "../components/dispenseForm";
-import DispenseTable from "../components/dispenseTable"; // ✅ เปลี่ยนชื่อ import ให้สื่อความหมาย (เดิม DispenseType)
-
-// Services & Hooks
+import DispenseTable from "../components/dispenseTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 
 // Types
 import { DrugType, MaDrugType, DispenseType } from "../../common";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
   const [manualLoading, setManualLoading] = useState<boolean>(false);
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
+  const router = useRouter();
 
-  // 1. ปรับ Fetcher ให้ดึงข้อมูล 3 ส่วน: ยา (Master), ใบเบิก (Stock In), ใบจ่าย (Stock Out)
   const fetcher = async () => {
     const intraAuthService = MaDrug(intraAuth);
 
     const [drugsRes, maDrugsRes, dispenseRes] = await Promise.all([
-      intraAuthService.getDrugQuery?.(), // Master Drugs
-      intraAuthService.getMaDrugQuery(), // Stock In
-      intraAuthService.getDispenseQuery(), // ✅ Stock Out (ดึงข้อมูลจ่ายยา)
+      intraAuthService.getDrugQuery?.(),
+      intraAuthService.getMaDrugQuery(),
+      intraAuthService.getDispenseQuery(),
     ]);
 
     return {
@@ -36,8 +36,12 @@ export default function Page() {
       maDrugs: Array.isArray(maDrugsRes) ? maDrugsRes : maDrugsRes?.data || [],
       dispenses: Array.isArray(dispenseRes)
         ? dispenseRes
-        : dispenseRes?.data || [], // ✅ เก็บข้อมูลจ่ายยา
+        : dispenseRes?.data || [],
     };
+  };
+
+  const handleTabChange = (key: string) => {
+    router.push(`/page/ma-drug/maDrug?tab=${key}`);
   };
 
   const {
@@ -56,7 +60,7 @@ export default function Page() {
   // 2. แยกข้อมูลออกมาใช้งาน
   const drugs: DrugType[] = swrData?.drugs || [];
   const maDrugData: MaDrugType[] = swrData?.maDrugs || [];
-  const dispenseData: DispenseType[] = swrData?.dispenses || []; // ✅ ข้อมูลสำหรับตารางจ่ายยา
+  const dispenseData: DispenseType[] = swrData?.dispenses || [];
 
   const fetchDrugs = async () => {
     setManualLoading(true);
@@ -76,7 +80,7 @@ export default function Page() {
     },
     {
       key: "2",
-      label: "ทำรายการเบิกยา",
+      label: "การเบิกยา",
       children: (
         <Card>
           <MaDrugForm
@@ -102,7 +106,7 @@ export default function Page() {
     },
     {
       key: "4",
-      label: "ทำรายการจ่ายยา",
+      label: "การจ่ายยา",
       children: (
         <Card>
           <DispenseForm
@@ -119,7 +123,11 @@ export default function Page() {
     <div>
       <Row gutter={[16, 16]}>
         <Col span={24}>
-          <Tabs defaultActiveKey="1" items={items} />
+          <Tabs
+            activeKey={activeTabKey}
+            onChange={handleTabChange}
+            items={items}
+          />
         </Col>
       </Row>
     </div>

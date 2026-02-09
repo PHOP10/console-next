@@ -14,7 +14,7 @@ import {
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MasterPatientType } from "../../common";
 import { visitHomeServices } from "../services/visitHome.service";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons"; // เพิ่ม Icon แก้ไข
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
 
 interface MasterPatientTableProps {
@@ -35,7 +35,7 @@ export default function MasterPatientTable({
 
   // State สำหรับเปิดปิด Modal
   const [modalOpen, setModalOpen] = useState(false);
-  // State สำหรับเก็บข้อมูลที่กำลังแก้ไข (ถ้าเป็น null คือโหมดเพิ่มใหม่)
+  // State สำหรับเก็บข้อมูลที่กำลังแก้ไข
   const [editingRecord, setEditingRecord] = useState<MasterPatientType | null>(
     null,
   );
@@ -43,7 +43,7 @@ export default function MasterPatientTable({
   const [form] = Form.useForm();
   const [msgApi, contextHolder] = message.useMessage();
 
-  // ฟังก์ชันลบข้อมูล
+  // ฟังก์ชันลบข้อมูล (Logic เดิม)
   const handleDelete = async (id: number) => {
     try {
       setLoading(true);
@@ -59,41 +59,38 @@ export default function MasterPatientTable({
     }
   };
 
-  // ฟังก์ชันเปิด Modal เพื่อแก้ไข
+  // ฟังก์ชันเปิด Modal เพื่อแก้ไข (Logic เดิม)
   const handleEdit = (record: MasterPatientType) => {
-    setEditingRecord(record); // เก็บข้อมูลที่กำลังแก้
+    setEditingRecord(record);
     form.setFieldsValue({
-      // นำข้อมูลเดิมไปใส่ใน Form
       typeName: record.typeName,
       description: record.description,
     });
-    setModalOpen(true); // เปิด Modal
+    setModalOpen(true);
   };
 
-  // ฟังก์ชันปิด Modal และล้างค่า
+  // ฟังก์ชันปิด Modal (Logic เดิม)
   const handleCancel = () => {
     setModalOpen(false);
     setEditingRecord(null);
     form.resetFields();
   };
 
-  // ฟังก์ชันบันทึกข้อมูล (ใช้ร่วมกันทั้ง เพิ่ม และ แก้ไข)
+  // ฟังก์ชันบันทึกข้อมูล (Logic เดิม)
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
       setLoading(true);
 
       if (editingRecord) {
-        // --- กรณีแก้ไขข้อมูล ---
         const payload = {
           ...values,
-          id: editingRecord.id, // ต้องส่ง id ไปด้วยตาม service ที่ให้มา
+          id: editingRecord.id,
         };
 
         const updatedData = await service.updateMasterPatient(payload);
 
         if (updatedData) {
-          // อัปเดตข้อมูลในตารางโดยไม่ต้องโหลดใหม่
           setDataMasterPatient((prev) =>
             prev.map((item) =>
               item.id === editingRecord.id ? { ...item, ...values } : item,
@@ -104,13 +101,12 @@ export default function MasterPatientTable({
           throw new Error("Update failed");
         }
       } else {
-        // --- กรณีเพิ่มข้อมูลใหม่ ---
         const newPatient = await service.createMasterPatient(values);
         setDataMasterPatient((prev) => [...prev, newPatient]);
         msgApi.success("เพิ่มประเภทผู้ป่วยสำเร็จ");
       }
 
-      handleCancel(); // ปิด Modal และล้างค่า
+      handleCancel();
     } catch (err) {
       console.error(err);
       msgApi.error(
@@ -125,14 +121,16 @@ export default function MasterPatientTable({
 
   return (
     <>
-      <div className="mb-6 -mt-7">
-        <h2 className="text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
+      {/* ปรับ Header ให้ Responsive */}
+      <div className="mb-4 sm:mb-6 -mt-4 sm:-mt-7">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#0683e9] text-center mb-2 tracking-tight">
           ประเภทผู้ป่วย
         </h2>
-        <hr className="border-slate-100/20 -mx-6 md:-mx-6" />
+        <hr className="border-slate-100/20 -mx-4 sm:-mx-6" />
       </div>
 
       {contextHolder}
+
       <div
         style={{
           display: "flex",
@@ -142,6 +140,8 @@ export default function MasterPatientTable({
       >
         <Button
           type="primary"
+          // ปรับปุ่มให้เต็มจอบนมือถือ
+          className="w-full sm:w-auto h-10 rounded-lg shadow-sm"
           onClick={() => {
             setEditingRecord(null);
             form.resetFields();
@@ -158,39 +158,49 @@ export default function MasterPatientTable({
         loading={false}
         pagination={{ pageSize: 10 }}
         bordered
+        // เพิ่ม Scroll แนวนอน เพื่อรองรับมือถือ
+        scroll={{ x: "max-content" }}
         columns={[
           {
             title: "ลำดับ",
-            key: "index", // เปลี่ยน key ไม่ให้ซ้ำกับ id
+            key: "index",
             align: "center",
-            width: 80, // (แนะนำ) กำหนดความกว้างให้ดูสวยงาม
-            render: (_: any, __: any, index: number) => index + 1, // ใช้ index (เริ่มที่ 0) บวก 1
+            width: 60,
+            render: (_: any, __: any, index: number) => index + 1,
           },
           {
             title: "ประเภทผู้ป่วย",
             dataIndex: "typeName",
             key: "typeName",
             align: "center",
+            width: 150,
           },
           {
             title: "รายละเอียด",
             dataIndex: "description",
             key: "description",
             align: "center",
-            render: (text) => text || "-",
+            width: 200,
+            // เพิ่ม truncate เพื่อไม่ให้ตารางยืดเกินไปในมือถือ
+            render: (text) => (
+              <div className="truncate max-w-[200px] mx-auto font-normal">
+                {text || "-"}
+              </div>
+            ),
           },
           {
             title: "จัดการ",
             key: "action",
             align: "center",
+            width: 100,
             render: (_: any, record: MasterPatientType) => (
-              <Space size="middle">
-                {/* ปุ่มแก้ไข */}
+              <Space size="small">
+              
                 <Tooltip title="แก้ไข">
                   <EditOutlined
                     style={{
-                      fontSize: 22,
-                      color: "#faad14", // สีส้มสำหรับการแก้ไข
+                      fontSize: 18, // 2. ปรับขนาดเป็น 18px
+                      color: "#faad14",
                       cursor: "pointer",
                       transition: "color 0.2s",
                     }}
@@ -198,7 +208,6 @@ export default function MasterPatientTable({
                   />
                 </Tooltip>
 
-                {/* ปุ่มลบ */}
                 <Popconfirm
                   title="ยืนยันการลบ"
                   onConfirm={() => handleDelete(record.id)}
@@ -208,7 +217,7 @@ export default function MasterPatientTable({
                   <Tooltip title="ลบ">
                     <DeleteOutlined
                       style={{
-                        fontSize: 22,
+                        fontSize: 18, // 2. ปรับขนาดเป็น 18px
                         color: "#ff4d4f",
                         cursor: "pointer",
                         transition: "color 0.2s",
@@ -229,24 +238,37 @@ export default function MasterPatientTable({
       />
 
       <Modal
-        // เปลี่ยนชื่อหัวข้อตามสถานะ
         title={editingRecord ? "แก้ไขประเภทผู้ป่วย" : "เพิ่มประเภทผู้ป่วย"}
         open={modalOpen}
         onOk={handleSubmit}
         onCancel={handleCancel}
         okText="บันทึก"
         cancelText="ยกเลิก"
+        centered
+        // ปรับ Modal ให้ Responsive ไม่ล้นจอ
+        width={500}
+        style={{ maxWidth: "95%", top: 20 }}
+        styles={{
+          content: { borderRadius: "16px", padding: "20px" },
+        }}
       >
-        <Form form={form} layout="vertical">
+        <Form form={form} layout="vertical" className="mt-4">
           <Form.Item
             label="ประเภทผู้ป่วย"
             name="typeName"
             rules={[{ required: true, message: "กรุณากรอกประเภทผู้ป่วย" }]}
           >
-            <Input placeholder="เช่น ผู้ป่วยทั่วไป, ผู้ป่วยฉุกเฉิน" />
+            <Input
+              placeholder="เช่น ผู้ป่วยทั่วไป, ผู้ป่วยฉุกเฉิน"
+              className="rounded-lg h-10"
+            />
           </Form.Item>
           <Form.Item label="รายละเอียด" name="description">
-            <Input.TextArea placeholder="คำอธิบายเพิ่มเติม (ถ้ามี)" rows={3} />
+            <Input.TextArea
+              placeholder="คำอธิบายเพิ่มเติม (ถ้ามี)"
+              rows={3}
+              className="rounded-lg"
+            />
           </Form.Item>
         </Form>
       </Modal>

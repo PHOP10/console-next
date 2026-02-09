@@ -13,7 +13,7 @@ import {
   Row,
   Col,
   Tooltip,
-  DatePicker, // ตรวจสอบว่ามี import DatePicker
+  DatePicker,
   ConfigProvider,
 } from "antd";
 import dayjs from "dayjs";
@@ -24,6 +24,8 @@ import {
   DeleteOutlined,
   UserOutlined,
   FileSearchOutlined,
+  PrinterOutlined,
+  FileWordOutlined,
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
@@ -34,14 +36,30 @@ import CustomTable from "../../common/CustomTable";
 import "dayjs/locale/th";
 import buddhistEra from "dayjs/plugin/buddhistEra";
 import thTH from "antd/es/locale/th_TH";
+import VisitHomeExportWord from "./visitHomeExportWord";
+import { useSession } from "next-auth/react";
+
 dayjs.extend(buddhistEra);
 dayjs.locale("th");
 
 const { Option } = Select;
-const { RangePicker } = DatePicker; // 1. ดึง RangePicker ออกมาใช้
+const { RangePicker } = DatePicker;
 
 const SECRET_KEY =
   process.env.NEXT_PUBLIC_ENCRYPTION_KEY || "MY_SUPER_SECRET_KEY_1234";
+
+// สร้าง Config ภาษาไทยฉบับแก้ไขปี พ.ศ.
+const thaiYearLocale: any = {
+  ...thTH,
+  DatePicker: {
+    ...thTH.DatePicker,
+    lang: {
+      ...thTH.DatePicker?.lang,
+      yearFormat: "BBBB",
+      cellYearFormat: "BBBB",
+    },
+  },
+};
 
 interface VisitHomeTableProps {
   data: VisitHomeType[];
@@ -70,7 +88,7 @@ export default function VisitHomeTable({
   );
   const [filterDate, setFilterDate] = useState<any>(null);
   const [modalMode, setModalMode] = useState<"view" | "edit">("view");
-
+  const { data: session } = useSession();
   const decryptData = (ciphertext: string) => {
     if (!ciphertext) return "-";
     if (!ciphertext.toString().startsWith("U2F")) return ciphertext;
@@ -83,29 +101,28 @@ export default function VisitHomeTable({
     }
   };
 
-  // Filter Logic
+  // Filter Logic (Logic เดิม ไม่มีการแก้ไข)
   const filteredData = data.filter((item) => {
     const firstName = decryptData(item.firstName || "").toLowerCase();
     const lastName = decryptData(item.lastName || "").toLowerCase();
     const fullName = decryptData(item.fullName || "").toLowerCase();
     const address = decryptData(item.address || "").toLowerCase();
+    const symptoms = decryptData(item.symptoms || "").toLowerCase();
+
     const search = searchText.toLowerCase();
 
-    // กรองด้วย Text
     const matchesSearch =
       firstName.includes(search) ||
       lastName.includes(search) ||
       fullName.includes(search) ||
       address.includes(search) ||
-      item.symptoms?.toLowerCase().includes(search) ||
+      symptoms.includes(search) ||
       (item.age !== undefined && item.age.toString().includes(search));
 
-    // กรองด้วยประเภทผู้ป่วย
     const matchesPatientType = filterPatientType
       ? item.patientType?.id === filterPatientType
       : true;
 
-    // 3. กรองด้วยวันที่ (เปรียบเทียบ string YYYY-MM-DD เพื่อความแม่นยำ)
     let matchesDate = true;
     if (filterDate && filterDate[0] && filterDate[1] && item.visitDate) {
       const visitDateStr = dayjs(item.visitDate).format("YYYY-MM-DD");
@@ -139,25 +156,33 @@ export default function VisitHomeTable({
       title: "ชื่อ-นามสกุล",
       dataIndex: "fullName",
       key: "fullName",
-      width: 200,
+      align: "center",
+      width: 180,
       render: (text: string) => (
-        <div style={{ fontWeight: 500 }}>{decryptData(text)}</div>
+        <div
+          style={{ fontWeight: 500 }}
+          className="truncate max-w-[150px] sm:max-w-none"
+        >
+          {decryptData(text)}
+        </div>
       ),
     },
     {
-      title: "ประเภทผู้ป่วย",
+      title: "ประเภท", // ย่อชื่อ Header
       dataIndex: "patientType",
       key: "patientType",
-      width: 150,
+      width: 120,
       align: "center",
+      responsive: ["md"], // ซ่อนบนมือถือ (แสดงตั้งแต่ md ขึ้นไป)
       render: (value: any) => <Tag color="cyan">{value?.typeName || "-"}</Tag>,
     },
     {
       title: "อายุ",
       dataIndex: "age",
       key: "age",
-      width: 80,
+      width: 70,
       align: "center",
+      responsive: ["sm"], // ซ่อนบนมือถือเล็กมาก
       render: (val) => `${val} ปี`,
     },
     {
@@ -166,35 +191,88 @@ export default function VisitHomeTable({
       key: "visitDate",
       width: 120,
       align: "center",
-      sorter: (a, b) => dayjs(a.visitDate).unix() - dayjs(b.visitDate).unix(),
-      render: (value: string) =>
-        value ? dayjs(value).format("DD MMMM YYYY") : "-",
+      render: (value: string) => {
+        if (!value) return "-";
+        const dateObj = dayjs(value);
+        return (
+          <>
+            {/* แสดงบนมือถือ: แบบย่อ D/M/YY */}
+            <span className="md:hidden font-normal">
+              {dateObj.format("D/M/BB")}
+            </span>
+            {/* แสดงบนจอใหญ่: เต็มรูปแบบ */}
+            <span className="hidden md:block font-normal">
+              {dateObj.format("D MMM BBBB")}
+            </span>
+          </>
+        );
+      },
     },
     {
       title: "ที่อยู่",
       dataIndex: "address",
       key: "address",
-      width: 200,
-      ellipsis: { showTitle: false },
-      render: (address) => (
-        <Tooltip placement="topLeft" title={decryptData(address)}>
-          {decryptData(address)}
-        </Tooltip>
-      ),
+      width: 150,
+      responsive: ["lg"],
+      // ลบ ellipsis: { showTitle: false } ออก เพราะเราจะคุมเอง
+      render: (text) => {
+        const decoded = decryptData(text);
+        const maxLength = 25; // กำหนดตัดคำที่ 20 ตัวอักษร
+
+        return (
+          <Tooltip placement="topLeft" title={decoded}>
+            <span style={{ fontWeight: "normal" }}>
+              {decoded.length > maxLength
+                ? `${decoded.substring(0, maxLength)}...`
+                : decoded}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "อาการ",
       dataIndex: "symptoms",
       key: "symptoms",
-      width: 200,
-      ellipsis: true,
+      width: 150,
+      responsive: ["md"],
+      render: (text) => {
+        const decoded = decryptData(text);
+        const maxLength = 30;
+
+        return (
+          <Tooltip placement="topLeft" title={decoded}>
+            {/* ✅ เพิ่ม fontWeight: 'normal' เพื่อบังคับให้ตัวหนังสือบางปกติ */}
+            <span style={{ fontWeight: "normal" }}>
+              {decoded.length > maxLength
+                ? `${decoded.substring(0, maxLength)}...`
+                : decoded}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "ยาที่ได้รับ",
       dataIndex: "medication",
       key: "medication",
-      width: 150,
-      ellipsis: true,
+      width: 130,
+      responsive: ["xl"],
+      render: (text) => {
+        const decoded = decryptData(text);
+        const maxLength = 20; // ปรับจำนวนตัวอักษรที่ต้องการตัดตรงนี้
+
+        return (
+          <Tooltip placement="topLeft" title={decoded}>
+            {/* ✅ เพิ่ม fontWeight: 'normal' เช่นกัน */}
+            <span style={{ fontWeight: "normal" }}>
+              {decoded.length > maxLength
+                ? `${decoded.substring(0, maxLength)}...`
+                : decoded}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "นัดถัดไป",
@@ -202,69 +280,82 @@ export default function VisitHomeTable({
       key: "nextAppointment",
       width: 120,
       align: "center",
+      responsive: ["sm"],
       render: (text: string) => {
         if (!text) return "-";
-        const date = new Date(text);
-        return new Intl.DateTimeFormat("th-TH", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }).format(date);
+        const date = dayjs(text);
+        // ใช้หลักการเดียวกับวันที่เยี่ยม
+        return (
+          <>
+            <span className="md:hidden font-normal">
+              {date.format("D/M/BB")}
+            </span>
+            <span className="hidden md:block font-normal">
+              {date.format("D MMM BBBB")}
+            </span>
+          </>
+        );
       },
     },
     {
       title: "จัดการ",
       key: "action",
-      width: 150,
-      fixed: "right",
+      width: 120,
       align: "center",
+
       render: (_, record) => (
         <Space size="small">
           <Tooltip title="ดูรายละเอียด">
             <FileSearchOutlined
-              style={{ fontSize: 22, color: "#1677ff", cursor: "pointer" }}
+              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }}
               onClick={() => openModal(record, "view")}
             />
           </Tooltip>
+          <VisitHomeExportWord record={record} />
 
-          <Tooltip title="แก้ไข">
-            <EditOutlined
-              style={{
-                fontSize: 22,
-                color: "#faad14",
-                cursor: "pointer",
-                transition: "color 0.2s",
-              }}
-              onClick={() => openModal(record, "edit")}
-            />
-          </Tooltip>
-
-          <Popconfirm
-            title="ยืนยันการลบ?"
-            description="ข้อมูลนี้จะหายไปจากระบบ"
-            onConfirm={() => handleDelete(record.id)}
-            okText="ลบ"
-            cancelText="ยกเลิก"
-            okButtonProps={{ danger: true }}
-          >
-            <Tooltip title="ลบ">
-              <DeleteOutlined
+          {(session?.user?.role === "admin" ||
+            session?.user?.role === "home") && (
+            <Tooltip title="แก้ไข">
+              <EditOutlined
                 style={{
-                  fontSize: 22,
-                  color: "#ff4d4f",
+                  fontSize: 18,
+                  color: "#faad14",
                   cursor: "pointer",
                   transition: "color 0.2s",
                 }}
+                onClick={() => openModal(record, "edit")}
               />
             </Tooltip>
-          </Popconfirm>
+          )}
+          {(session?.user?.role === "admin" ||
+            session?.user?.role === "home") && (
+            <Popconfirm
+              title="ยืนยันการลบ?"
+              description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
+              onConfirm={() => handleDelete(record.id)}
+              okText="ลบ"
+              cancelText="ยกเลิก"
+              okButtonProps={{ danger: true }}
+            >
+              <Tooltip title="ลบ">
+                <DeleteOutlined
+                  style={{
+                    fontSize: 18,
+                    color: "#ff4d4f",
+                    cursor: "pointer",
+                    transition: "color 0.2s",
+                  }}
+                />
+              </Tooltip>
+            </Popconfirm>
+          )}
         </Space>
       ),
     },
   ];
 
   return (
-    <div style={{ padding: 10, minHeight: "100vh", marginTop: "-9.5px" }}>
+    <div style={{ padding: "10px", minHeight: "100vh", marginTop: "-10px" }}>
       {/* Header Section */}
       <Card bordered={false} style={{ marginBottom: 20, borderRadius: 8 }}>
         <Row justify="space-between" align="middle" gutter={[16, 16]}>
@@ -281,28 +372,31 @@ export default function VisitHomeTable({
                 <UserOutlined style={{ fontSize: 20 }} />
               </div>
               <span
-                style={{ fontSize: 24, fontWeight: "bold", color: "#0683e9" }}
+                style={{ fontSize: 20, fontWeight: "bold", color: "#0683e9" }}
               >
                 ข้อมูลการเยี่ยมบ้าน
               </span>
             </div>
           </Col>
 
-          {/* Filter Controls */}
+          {/* ปรับส่วน Filter ให้ Responsive */}
           <Col xs={24} md={16} style={{ textAlign: "right" }}>
-            <Space wrap>
-              <ConfigProvider locale={thTH}>
+            <div className="flex flex-col sm:flex-row gap-2 justify-end">
+              <ConfigProvider locale={thaiYearLocale}>
                 <RangePicker
-                  format="D/MMM/YYYY"
+                  format="D/MMM/BBBB"
                   placeholder={["วันที่เริ่ม", "วันที่สิ้นสุด"]}
                   value={filterDate}
                   onChange={(dates) => setFilterDate(dates)}
-                  style={{ width: 260 }}
+                  style={{ width: "100%" }}
+                  className="sm:w-[260px]"
                 />
               </ConfigProvider>
+
               <Select
                 placeholder="กรองประเภทผู้ป่วย"
-                style={{ width: 180 }}
+                style={{ width: "100%" }}
+                className="sm:w-[180px]"
                 allowClear
                 onChange={(val) => setFilterPatientType(val)}
                 value={filterPatientType}
@@ -315,11 +409,12 @@ export default function VisitHomeTable({
               </Select>
 
               <Input
-                placeholder="ค้นหาชื่อ, ที่อยู่..."
+                placeholder="ค้นหา..."
                 prefix={<SearchOutlined style={{ color: "#bfbfbf" }} />}
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                style={{ width: 200 }}
+                style={{ width: "100%" }}
+                className="sm:w-[200px]"
                 allowClear
               />
 
@@ -328,13 +423,14 @@ export default function VisitHomeTable({
                 onClick={() => {
                   setSearchText("");
                   setFilterPatientType(null);
-                  setFilterDate(null); // 5. ล้างค่าวันที่เมื่อกดปุ่ม
+                  setFilterDate(null);
                   fetchData();
                 }}
+                className="w-full sm:w-auto"
               >
                 ล้างตัวกรอง
               </Button>
-            </Space>
+            </div>
           </Col>
         </Row>
       </Card>
@@ -350,13 +446,15 @@ export default function VisitHomeTable({
           dataSource={filteredData}
           loading={loading}
           rowKey="id"
-          pagination={{
-            pageSize: 10,
-            showTotal: (total) => `ทั้งหมด ${total} รายการ`,
-            position: ["bottomRight"],
-          }}
-          scroll={{ x: 1300 }}
+          scroll={{ x: "max-content" }}
           bordered
+          size="middle"
+          pagination={{
+            pageSize: 20,
+            showTotal: (total) => `รวม ${total} รายการ`,
+            position: ["bottomRight"],
+            size: "small",
+          }}
         />
       </Card>
 
@@ -369,12 +467,11 @@ export default function VisitHomeTable({
         onSuccess={() => {
           setModalVisible(false);
           setEditingRecord(null);
-          setLoading(true);
-          fetchData();
         }}
         record={editingRecord}
         masterPatients={masterPatients}
         initialMode={modalMode}
+        fetchData={fetchData}
       />
     </div>
   );

@@ -138,134 +138,138 @@ export default function DrugForm({
         </div>
       }
     >
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        initialValues={{ quantity: 0, price: 0 }}
-      >
-        {/* Row 1: รหัสยา, ประเภทยา */}
-        <Row gutter={24}>
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="Working Code (รหัสยา)"
-              name="workingCode"
-              rules={[{ required: true, message: "กรุณากรอก Working Code" }]}
-            >
-              <Input placeholder="เช่น W-001" className={inputStyle} />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={12}>
-            <Form.Item
-              label="ประเภทยา"
-              name="drugTypeId"
-              rules={[{ required: true, message: "กรุณาเลือกประเภทยา" }]}
-            >
-              <Select
-                placeholder="-- เลือกประเภทยา --"
-                options={masterDrugOptions}
-                loading={masterDrugOptions.length === 0}
-                showSearch
-                optionFilterProp="label"
-                className={selectStyle}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
-
-        {/* Row 2: ชื่อยา */}
-        <Form.Item
-          label="ชื่อยา"
-          name="name"
-          rules={[{ required: true, message: "กรุณากรอกชื่อยา" }]}
+      <Card>
+        <Form
+          form={form}
+          layout="vertical"
+          onFinish={onFinish}
+          initialValues={{ quantity: 0, price: 0 }}
         >
-          <Input
-            placeholder="ระบุชื่อยาภาษาไทย หรือ อังกฤษ"
-            className={inputStyle}
-          />
-        </Form.Item>
+          {/* Row 1: รหัสยา, ประเภทยา */}
+          <Row gutter={24}>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="Working Code (รหัสยา)"
+                name="workingCode"
+                rules={[{ required: true, message: "กรุณากรอก Working Code" }]}
+              >
+                <Input placeholder="เช่น W-001" className={inputStyle} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={12}>
+              <Form.Item
+                label="ประเภทยา"
+                name="drugTypeId"
+                rules={[{ required: true, message: "กรุณาเลือกประเภทยา" }]}
+              >
+                <Select
+                  placeholder="-- เลือกประเภทยา --"
+                  options={masterDrugOptions}
+                  loading={masterDrugOptions.length === 0}
+                  showSearch
+                  optionFilterProp="label"
+                  className={selectStyle}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-        {/* Row 3: ขนาดบรรจุ, ราคา, คงเหลือ */}
-        <Row gutter={24}>
-          <Col xs={24} md={8}>
-            <Form.Item
-              label="ขนาดบรรจุ"
-              name="packagingSize"
-              rules={[{ required: true, message: "ระบุขนาดบรรจุ" }]}
-            >
-              <AutoComplete
-                options={packingOptions}
-                placeholder="เช่น แผง/กล่อง หรือพิมพ์ระบุเอง"
-                filterOption={(inputValue, option) =>
-                  option!.value
-                    .toUpperCase()
-                    .indexOf(inputValue.toUpperCase()) !== -1
-                }
-                allowClear
-                className={autoCompleteStyle}
-              />
-            </Form.Item>
-          </Col>
+          {/* Row 2: ชื่อยา */}
+          <Form.Item
+            label="ชื่อยา"
+            name="name"
+            rules={[{ required: true, message: "กรุณากรอกชื่อยา" }]}
+          >
+            <Input
+              placeholder="ระบุชื่อยาภาษาไทย หรือ อังกฤษ"
+              className={inputStyle}
+            />
+          </Form.Item>
 
-          <Col xs={24} md={8}>
-            <Form.Item
-              label="ราคาต่อหน่วย (บาท)"
-              name="price"
-              rules={[{ required: true, message: "ระบุราคา" }]}
-            >
-              <InputNumber
-                style={{ width: "100%" }}
-                min={0}
-                step={0.01}
-                formatter={(value) =>
-                  `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
-                parser={(value: any) => value?.replace(/\฿\s?|(,*)/g, "") || ""}
-                className={`${inputStyle} pt-1`}
-              />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={8}>
-            <Form.Item
-              label="จำนวนคงเหลือเริ่มต้น"
-              name="quantity"
-              rules={[{ required: true, message: "ระบุจำนวน" }]}
-            >
-              <InputNumber
-                style={{ width: "100%" }}
-                min={0}
-                formatter={(value) =>
-                  `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                }
-                className={`${inputStyle} pt-1`}
-              />
-            </Form.Item>
-          </Col>
-        </Row>
+          {/* Row 3: ขนาดบรรจุ, ราคา, คงเหลือ */}
+          <Row gutter={24}>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="ขนาดบรรจุ"
+                name="packagingSize"
+                rules={[{ required: true, message: "ระบุขนาดบรรจุ" }]}
+              >
+                <AutoComplete
+                  options={packingOptions}
+                  placeholder="เช่น แผง/กล่อง หรือพิมพ์ระบุเอง"
+                  filterOption={(inputValue, option) =>
+                    option!.value
+                      .toUpperCase()
+                      .indexOf(inputValue.toUpperCase()) !== -1
+                  }
+                  allowClear
+                  className={autoCompleteStyle}
+                />
+              </Form.Item>
+            </Col>
 
-        {/* หมายเหตุ */}
-        <Form.Item label="หมายเหตุ" name="note">
-          <Input.TextArea
-            rows={3}
-            placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
-            className={textAreaStyle}
-          />
-        </Form.Item>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="ราคาต่อหน่วย (บาท)"
+                name="price"
+                rules={[{ required: true, message: "ระบุราคา" }]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  min={0}
+                  step={0.01}
+                  formatter={(value) =>
+                    `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  parser={(value: any) =>
+                    value?.replace(/\฿\s?|(,*)/g, "") || ""
+                  }
+                  className={`${inputStyle} pt-1`}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item
+                label="จำนวนคงเหลือเริ่มต้น"
+                name="quantity"
+                rules={[{ required: true, message: "ระบุจำนวน" }]}
+              >
+                <InputNumber
+                  style={{ width: "100%" }}
+                  min={0}
+                  formatter={(value) =>
+                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
+                  }
+                  className={`${inputStyle} pt-1`}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
 
-        {/* ปุ่มกด (จัดกึ่งกลาง) */}
-        <Form.Item style={{ textAlign: "center", marginBottom: 0 }}>
-          <Space size="middle">
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex items-center bg-[#0683e9] border-none"
-            >
-              บันทึกข้อมูลยา
-            </Button>
-          </Space>
-        </Form.Item>
-      </Form>
+          {/* หมายเหตุ */}
+          <Form.Item label="หมายเหตุ" name="note">
+            <Input.TextArea
+              rows={3}
+              placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
+              className={textAreaStyle}
+            />
+          </Form.Item>
+
+          {/* ปุ่มกด (จัดกึ่งกลาง) */}
+          <Form.Item style={{ textAlign: "center", marginBottom: 0 }}>
+            <Space size="middle">
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading}
+                className="h-9 px-6 rounded-lg text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 flex items-center bg-[#0683e9] border-none"
+              >
+                บันทึกข้อมูลยา
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Card>
     </Card>
   );
 }

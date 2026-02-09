@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Modal, Row, Col, Tag, Divider } from "antd";
+import { Modal, Row, Col, Tag, Divider, Button } from "antd";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 
@@ -20,11 +20,14 @@ const OfficialTravelRequestDetail: React.FC<
     if (!dateString) return "-";
     const d = dayjs(dateString).locale("th");
     // dayjs ปีไทยต้องบวก 543 เอง หรือใช้ plugin (แต่เขียนสดแบบนี้ชัวร์สุดครับ)
-    return `${d.date()} ${d.format("MMMM")} ${d.year() + 543} เวลา ${d.format("HH:mm")} น.`;
+    return `${d.date()} ${d.format("MMMM")} ${d.year() + 543} เวลา ${d.format(
+      "HH:mm",
+    )} น.`;
   };
   // --- 2. Helper Function จัดการ Status Tag ---
   const getStatusTag = (status: string) => {
-    const baseStyle = "px-3 py-1 rounded-full text-sm font-medium border-0";
+    const baseStyle =
+      "px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium border-0";
     switch (status) {
       case "pending":
         return (
@@ -53,7 +56,7 @@ const OfficialTravelRequestDetail: React.FC<
       case "success":
         return (
           <Tag color="default" className={baseStyle}>
-            สำเร็จ
+            เสร็จสิ้น
           </Tag>
         );
       default:
@@ -90,28 +93,27 @@ const OfficialTravelRequestDetail: React.FC<
     return label;
   };
 
-  // --- 4. Styled Components (สร้าง Component ย่อยเพื่อให้โค้ดหลักสะอาด) ---
+  // --- 4. Styled Components ---
 
-  // หัวข้อตัวเล็กสีจาง
   const Label: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <div className="text-slate-500 text-xs sm:text-sm font-medium mb-1">
       {children}
     </div>
   );
 
-  // ข้อความข้อมูลทั่วไป
   const Value: React.FC<{ children: React.ReactNode; isBold?: boolean }> = ({
     children,
     isBold,
   }) => (
     <div
-      className={`text-slate-800 text-sm sm:text-base break-words ${isBold ? "font-semibold" : ""}`}
+      className={`text-slate-800 text-sm sm:text-base break-words ${
+        isBold ? "font-semibold" : ""
+      }`}
     >
       {children}
     </div>
   );
 
-  // กล่องข้อความสำหรับ Mission/Location/Note (แทน TextArea)
   const InfoBox: React.FC<{ text: string }> = ({ text }) => {
     if (!text) return <Value>-</Value>;
     return (
@@ -124,14 +126,14 @@ const OfficialTravelRequestDetail: React.FC<
   // --- Main Render ---
   return (
     <Modal
-      title={null} // ปิด Title เดิมเพื่อทำ Header เองสวยๆ
+      title={null}
       open={open}
       onCancel={onClose}
       footer={null}
       width={750}
       centered
-      style={{ maxWidth: "100%", paddingBottom: 0 }}
-      // ใส่พื้นหลังสีอ่อนให้ Modal Body
+      // ปรับให้เต็มจอในมือถือ
+      style={{ maxWidth: "100%", paddingBottom: 0, top: 20 }}
       modalRender={(modal) => (
         <div className="bg-slate-100/50 rounded-2xl overflow-hidden shadow-2xl">
           {modal}
@@ -143,14 +145,14 @@ const OfficialTravelRequestDetail: React.FC<
       }}
     >
       {record && (
-        <div className="flex flex-col">
-          <div className="bg-white px-6 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10">
+        <div className="flex flex-col h-[85vh] sm:h-auto sm:max-h-[90vh]">
+          {/* Header */}
+          <div className="bg-white px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10 shrink-0">
             <div>
-              <h2 className="text-xl font-bold text-slate-800 m-0">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800 m-0">
                 รายละเอียดคำขอเดินทาง
               </h2>
-              <br></br>
-              <div className="text-slate-500 text-sm mt-1">
+              <div className="text-slate-500 text-xs sm:text-sm mt-1">
                 เอกสารเลขที่:{" "}
                 <span className="text-blue-600 font-semibold">
                   {record.documentNo}
@@ -160,10 +162,11 @@ const OfficialTravelRequestDetail: React.FC<
             <div className="text-right">{getStatusTag(record.status)}</div>
           </div>
 
-          <div className="p-2 overflow-y-auto max-h-[75vh]">
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6">
             {/* 🔹 Card 1: ผู้รับ & ภารกิจ */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
-              <Row gutter={[24, 24]}>
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+              <Row gutter={[16, 16]}>
                 <Col span={24}>
                   <Label>เรียน :</Label>
                   <Value isBold>{record.recipient || "-"}</Value>
@@ -183,14 +186,13 @@ const OfficialTravelRequestDetail: React.FC<
             </div>
 
             {/* 🔹 Card 2: วันที่ & งบประมาณ & การเดินทาง */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4 relative overflow-hidden">
-              {/* แถบสีตกแต่งด้านซ้าย */}
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4 relative overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
 
-              <h3 className="text-slate-800 font-semibold mb-4 text-base">
+              <h3 className="text-slate-800 font-semibold mb-4 text-sm sm:text-base">
                 ข้อมูลการเดินทาง
               </h3>
-              <Row gutter={[24, 20]}>
+              <Row gutter={[16, 16]}>
                 <Col xs={24} sm={12}>
                   <Label>ตั้งแต่วันที่ :</Label>
                   <Value>{formatDate(record.startDate)}</Value>
@@ -205,8 +207,7 @@ const OfficialTravelRequestDetail: React.FC<
                 </Col>
                 <Col xs={24} sm={12}>
                   <Label>งบประมาณ :</Label>
-                  {/* ✅ สีฟ้าตามที่ขอ แสดงข้อมูลดิบ */}
-                  <div className="text-blue-500 font-bold text-lg">
+                  <div className="text-blue-500 font-bold text-base sm:text-lg">
                     {record.budget || 0}
                   </div>
                 </Col>
@@ -214,9 +215,9 @@ const OfficialTravelRequestDetail: React.FC<
             </div>
 
             {/* 🔹 Card 3: ผู้โดยสาร */}
-            <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
+            <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-slate-800 font-semibold text-base">
+                <span className="text-slate-800 font-semibold text-sm sm:text-base">
                   ผู้โดยสาร
                 </span>
                 <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded text-xs">
@@ -230,10 +231,9 @@ const OfficialTravelRequestDetail: React.FC<
                     return (
                       <div
                         key={uid}
-                        className="flex items-center gap-2 bg-blue-50/50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-lg text-sm"
+                        className="flex items-center gap-2 bg-blue-50/50 text-blue-700 border border-blue-100 px-3 py-1.5 rounded-lg text-xs sm:text-sm"
                       >
-                        {/* Icon คนเล็กๆ (ใช้ CSS วาด) */}
-                        <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                        <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-400"></div>
                         {user ? `${user.firstName} ${user.lastName}` : uid}
                       </div>
                     );
@@ -246,7 +246,7 @@ const OfficialTravelRequestDetail: React.FC<
               </div>
             </div>
 
-            {/* 🔹 Note Section (ถ้ามี) */}
+            {/* 🔹 Note Section */}
             {record.note && (
               <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl mb-4">
                 <Label>หมายเหตุเพิ่มเติม :</Label>
@@ -254,15 +254,14 @@ const OfficialTravelRequestDetail: React.FC<
               </div>
             )}
 
-            {/* 🔹 Footer: ประวัติการอนุมัติ/ยกเลิก (System Info) */}
+            {/* 🔹 Footer: System Info */}
             <div className="bg-slate-200/50 p-4 rounded-xl text-sm border border-slate-200">
-              {/* Approval / Cancel Info */}
               <Row gutter={[16, 12]}>
                 {record.approvedByName && record.approvedDate ? (
                   <>
                     <Col xs={24} sm={12}>
                       <span className="text-slate-500 block text-xs">
-                        ผู้ดำเนินการ
+                        ผู้อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium">
                         {record.approvedByName}
@@ -270,7 +269,7 @@ const OfficialTravelRequestDetail: React.FC<
                     </Col>
                     <Col xs={24} sm={12}>
                       <span className="text-slate-500 block text-xs">
-                        วันที่ดำเนินการ
+                        วันที่อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium">
                         {formatDate(record.approvedDate)}
@@ -304,7 +303,10 @@ const OfficialTravelRequestDetail: React.FC<
                     )}
                   </>
                 ) : (
-                  <Col span={24} className="text-center text-slate-400 italic">
+                  <Col
+                    span={24}
+                    className="text-center text-slate-400 italic text-xs"
+                  >
                     - อยู่ระหว่างดำเนินการ -
                   </Col>
                 )}
@@ -317,6 +319,16 @@ const OfficialTravelRequestDetail: React.FC<
                 <span>อัปเดต: {formatDate(record.updatedAt)}</span>
               </div>
             </div>
+          </div>
+
+          {/* Footer (Fixed for Mobile) */}
+          <div className="bg-slate-50 px-4 sm:px-6 py-3 border-t border-slate-200 flex justify-end shrink-0">
+            <Button
+              onClick={onClose}
+              className="h-9 sm:h-10 px-4 sm:px-6 rounded-lg text-slate-600 hover:bg-slate-100 border-slate-300 w-full sm:w-auto"
+            >
+              ปิด
+            </Button>
           </div>
         </div>
       )}

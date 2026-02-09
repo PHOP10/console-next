@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Menu, Badge } from "antd";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -8,37 +8,76 @@ import { usePathname } from "next/navigation";
 import { MenuSider, IMenu, IMenuChild } from "../../config/menu";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { indexService } from "../../services/index.service";
+import { useNotificationSocket } from "../../app/lib/axios/hooks/useNotificationSocket";
 
 const Sidebar: React.FC<{ collapsed?: boolean }> = ({ collapsed }) => {
-  const { data: session } = useSession();
+  // เพิ่ม status เพื่อเช็คสถานะการโหลด
+  const { data: session, status } = useSession();
   const userRole = session?.user?.role ?? "user";
-  const pathname = usePathname(); // ✅ ดักเปลี่ยนหน้า
 
+  // แปลง userId
+  const rawUserId = session?.user?.userId || (session?.user as any)?.id;
+  const userId = rawUserId ? String(rawUserId) : undefined;
+
+  const pathname = usePathname();
   const intraAuth = useAxiosAuth();
-  const intraAuthService = indexService(intraAuth);
+
+  // ✅ แก้ไข 1: ใช้ useMemo เพื่อไม่ให้ service ถูกสร้างใหม่ทุกครั้งที่ render
+  // ถ้าไม่ใส่ useMemo ตัว useEffect ด้านล่างจะทำงานรัวๆ เพราะ object เปลี่ยนตลอดเวลา
+  const intraAuthService = useMemo(() => indexService(intraAuth), [intraAuth]);
 
   const [counts, setCounts] = useState<{ [key: string]: number }>({});
 
-  // ฟังก์ชันดึง notification
-  const fetchNotificationCounts = async () => {
+  // Debug: Log ดูว่า Component ถูกเรียกไหม (ดูที่ F12 Browser Console นะครับ)
+  console.log("Render Sidebar | Status:", status, "| UserId:", userId);
+
+  const fetchNotificationCounts = useCallback(async () => {
+    // รอให้ Session โหลดเสร็จก่อน (authenticated)
+    if (status === "loading") return;
+
+    if (!userId) {
+      console.log("❌ Sidebar: No UserId found (User might be logged out)");
+      return;
+    }
+
     try {
-      const res = await intraAuthService.getNotifications();
-      setCounts(res); // res ต้องเป็น object { menuKey: number }
-      console.log("Notification counts:", res);
+      // console.log("🔍 Sidebar: Fetching API...");
+      const res = await intraAuthService.getNotificationCounts(userId);
+      console.log("✅ Sidebar: API Response:", res);
+      setCounts(res.menuCounts || {});
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      console.error("❌ Sidebar Error:", error);
+    }
+  }, [userId, intraAuthService, status]);
+
+  // เรียก Socket Hook
+  useNotificationSocket(userId, setCounts);
+
+  const handleMenuClick = async (key: string) => {
+    setCounts((prev) => ({ ...prev, [key]: 0 }));
+    if (userId) {
+      try {
+        await intraAuthService.markMenuRead(userId, key);
+      } catch (error) {
+        console.error("Error marking read:", error);
+      }
     }
   };
 
+  // ✅ แก้ไข 2: Effect นี้จะทำงานเมื่อ userId หรือ service เปลี่ยน (ซึ่งตอนนี้เสถียรแล้ว)
   useEffect(() => {
     fetchNotificationCounts();
-  }, []); // เรียกตอน mount
 
-  // ✅ รีเฟรชทุกครั้งที่ pathname เปลี่ยน
+    const interval = setInterval(fetchNotificationCounts, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotificationCounts]);
+
+  // Trigger เมื่อเปลี่ยนหน้า
   useEffect(() => {
     fetchNotificationCounts();
-  }, [pathname]);
+  }, [pathname, fetchNotificationCounts]);
 
+  // ... (Logic Map Menu เหมือนเดิม) ...
   const filterByRole = (menu: IMenu) =>
     !menu.roles || menu.roles.includes(userRole);
 
@@ -48,14 +87,37 @@ const Sidebar: React.FC<{ collapsed?: boolean }> = ({ collapsed }) => {
       return {
         ...item,
         label: (
-          <Link href={`/page/${item.key}`}>
-            {item.label} {count > 0 && <Badge count={count} />}
+          <Link
+            href={`/page/${item.key}`}
+            onClick={() => handleMenuClick(item.key)}
+          >
+            <div className="flex justify-between items-center w-full">
+              <span>{item.label}</span>
+              {count > 0 && (
+                <Badge
+                  count={count}
+                  offset={[0, 0]}
+                  size="small"
+                  className="badge-pulse"
+                />
+              )}
+            </div>
           </Link>
         ),
       };
     }
+
+    const childHasNotification = item.children.some(
+      (c) => (counts[c.key] || 0) > 0,
+    );
+
     return {
       ...item,
+      icon: (
+        <Badge dot={childHasNotification} offset={[5, 0]}>
+          {item.icon}
+        </Badge>
+      ),
       children: item.children
         ?.filter((child: any) => !child.roles || child.roles.includes(userRole))
         .map((child: IMenuChild) => {
@@ -63,8 +125,16 @@ const Sidebar: React.FC<{ collapsed?: boolean }> = ({ collapsed }) => {
           return {
             ...child,
             label: (
-              <Link href={`/page/${item.key}/${child.key}`}>
-                {child.label} {count > 0 && <Badge count={count} />}
+              <Link
+                href={`/page/${item.key}/${child.key}`}
+                onClick={() => handleMenuClick(child.key)}
+              >
+                <div className="flex justify-between items-center w-full pr-2">
+                  <span>{child.label}</span>
+                  {count > 0 && (
+                    <Badge count={count} size="small" className="badge-pulse" />
+                  )}
+                </div>
               </Link>
             ),
           };
@@ -72,7 +142,9 @@ const Sidebar: React.FC<{ collapsed?: boolean }> = ({ collapsed }) => {
     };
   });
 
-  return <Menu items={mapMenu} mode="inline" />;
+  return (
+    <Menu items={mapMenu} mode="inline" defaultSelectedKeys={[pathname]} />
+  );
 };
 
 export default Sidebar;

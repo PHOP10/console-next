@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, Col, Row, Tabs, TabsProps, message } from "antd";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { maCarService } from "../services/maCar.service";
@@ -9,69 +9,69 @@ import MaCarCalendar from "../components/maCarCalendar";
 import { useSession } from "next-auth/react";
 import { userService } from "../../user/services/user.service";
 import { MaCarType, MasterCarType, UserType } from "../../common";
-import useSWR from "swr"; // 1. Import SWR
+import useSWR from "swr";
+import { useSearchParams } from "next/navigation";
 
 export default function MaCarPage() {
   const intraAuth = useAxiosAuth();
   const { data: session } = useSession();
-
-  // 2. แยก manualLoading สำหรับการกดปุ่มต่างๆ ในตาราง (เช่น อนุมัติ/ไม่อนุมัติ)
+  const searchParams = useSearchParams();
+  const activeTabKey = searchParams.get("tab") || "1";
   const [manualLoading, setManualLoading] = useState<boolean>(false);
 
-  // 3. สร้าง Fetcher Function
   const fetcher = async () => {
-    // Instantiate Services
     const intraAuthService = maCarService(intraAuth);
     const intraAuthUserService = userService(intraAuth);
-    const userId = session?.user?.userId;
 
-    // ใช้ Promise.all ดึง API 3 ตัวพร้อมกัน (เร็วกว่าเดิม)
+    // ✅ ตัด userId ออกจาก fetcher เพราะ API 3 ตัวนี้ไม่จำเป็นต้องใช้ userId ในการดึง
     const [resMaCar, resCars, resUsers] = await Promise.all([
-      intraAuthService.getMaCarQuery(), // ดึงข้อมูลการจองรถ (ดึงครั้งเดียวพอ)
-      intraAuthService.getMasterCarQuery(), // ดึงข้อมูลรถ
-      intraAuthUserService.getUserQuery(), // ดึงข้อมูล User
+      intraAuthService.getMaCarQuery(),
+      intraAuthService.getMasterCarQuery(),
+      intraAuthUserService.getUserQuery(),
     ]);
-
-    // Filter ข้อมูลการจองของ User ปัจจุบัน (ใช้ข้อมูลจาก resMaCar ได้เลย ไม่ต้องยิง API ใหม่)
-    const resMaCarUser = resMaCar.filter(
-      (car: any) => car.createdById === userId,
-    );
 
     return {
       data: resMaCar,
       cars: resCars,
       users: resUsers,
-      maCarUser: resMaCarUser,
+      // maCarUser: ... ตัดออก (ไปคำนวณข้างนอกแทน)
     };
   };
 
-  // 4. เรียกใช้ SWR
   const {
     data: swrData,
     isLoading: isSwrLoading,
     mutate,
   } = useSWR(
-    session?.user?.userId ? ["maCarPage", session.user.userId] : null,
+    // ✅ จุดที่แก้: ใส่ userId เข้าไปใน Key เพื่อบังคับให้ SWR ยิงใหม่ทันทีที่ Session มา
+    ["maCarPage", session?.user?.userId],
     fetcher,
     {
-      refreshInterval: 5000, // อัปเดตข้อมูลทุก 5 วินาที
+      refreshInterval: 5000,
       revalidateOnFocus: true,
-      onError: () => {
-        message.error("ไม่สามารถดึงข้อมูลรถได้");
+
+      onError: (err) => {
+        // กัน Error 401 เด้งตอน session ยังไม่มา
+        if (session?.user?.userId) {
+          message.error("ไม่สามารถดึงข้อมูลรถได้");
+        }
       },
     },
   );
 
-  // 5. Map ข้อมูลกลับมาเป็นตัวแปร (ใช้ค่าว่างป้องกัน Error)
   const data: MaCarType[] = swrData?.data || [];
   const cars: MasterCarType[] = swrData?.cars || [];
   const dataUser: UserType[] = swrData?.users || [];
-  const maCarUser: MaCarType[] = swrData?.maCarUser || [];
 
-  // รวม Loading state
+  // ✅ คำนวณ "รถของฉัน" ที่ Client Side แทน
+  // ข้อมูลจะมาทันที และเมื่อ Session โหลดเสร็จ ตัวแปรนี้จะอัปเดตเองโดยไม่ต้องดึง API ใหม่
+  const maCarUser = useMemo(() => {
+    if (!session?.user?.userId) return [];
+    return data.filter((car: any) => car.createdById === session.user.userId);
+  }, [data, session?.user?.userId]);
+
   const loading = isSwrLoading || manualLoading;
 
-  // 6. Wrapper function สำหรับส่งให้ลูก (เพื่อให้ Type ตรงกับ Promise<void>)
   const fetchData = async () => {
     await mutate();
   };
@@ -100,8 +100,6 @@ export default function MaCarPage() {
           <MaCarTable
             data={data}
             loading={loading}
-            // ถ้า Child Component มีการใช้ setLoading ให้ส่ง setManualLoading ไปแทน
-            // setLoading={setManualLoading}
             fetchData={fetchData}
             dataUser={dataUser}
             cars={cars}
@@ -115,7 +113,7 @@ export default function MaCarPage() {
   return (
     <Row gutter={[16, 16]}>
       <Col span={24}>
-        <Tabs defaultActiveKey="1" items={items} />
+        <Tabs defaultActiveKey={activeTabKey} items={items} />
       </Col>
     </Row>
   );
