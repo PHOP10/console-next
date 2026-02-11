@@ -195,22 +195,22 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
 
         return (
           <Space size="small">
-            {/* 2. ปุ่มรับยา */}
-            {canReceive && (
-              <Tooltip title="ยืนยันรับยาเข้าคลัง">
-                <Button
-                  type="text"
-                  shape="circle"
-                  icon={
-                    <MedicineBoxOutlined
-                      style={{ fontSize: 18, color: "#52c41a" }} // ปรับขนาดไอคอนเป็น 18px
-                    />
-                  }
-                  onClick={() => handleOpenReceive(record)}
-                />
-              </Tooltip>
-            )}
-
+            <Tooltip title={canReceive ? "ยืนยันรับยาเข้าคลัง" : "รออนุมัติ"}>
+              <Button
+                type="text"
+                shape="circle"
+                disabled={!canReceive}
+                icon={
+                  <MedicineBoxOutlined
+                    style={{
+                      fontSize: 18,
+                      color: canReceive ? "#52c41a" : "#d9d9d9",
+                    }}
+                  />
+                }
+                onClick={() => canReceive && handleOpenReceive(record)}
+              />
+            </Tooltip>
             {/* 3. ดูรายละเอียด */}
             <Tooltip title="ดูรายละเอียด">
               <Button
@@ -276,9 +276,9 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
         dataSource={data}
         loading={loading}
         bordered
-        size="small" // ใช้ size small บนมือถือ
+        size="small"
         pagination={{ pageSize: 10, size: "small" }}
-        scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
+        scroll={{ x: "max-content" }} 
       />
 
       <MaDrugTableDetail

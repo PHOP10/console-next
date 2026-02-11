@@ -172,10 +172,6 @@ export const MaDrug = (axiosInstance: AxiosInstance) => {
         .delete(`${baseUrlApiMasterDrug}/${id}`)
         .then((res) => {
           return res.data;
-        })
-        .catch((err) => {
-          console.log(err);
-          return [];
         });
     },
 

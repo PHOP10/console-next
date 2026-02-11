@@ -32,8 +32,6 @@ export const optionNumber = [
 ];
 
 export const packingOptions = [
-  { value: "10's" },
-  { value: "50's" },
   { value: "100's" },
   { value: "500's" },
   { value: "1000's" },
@@ -52,8 +50,7 @@ export const packingOptions = [
   { value: "หลอด" },
   { value: "Vial" },
   { value: "Amp" },
-  { value: "5 g." },
-  { value: "10 g." },
+  { value: "1 g." },
   { value: "lb." },
 ];
 

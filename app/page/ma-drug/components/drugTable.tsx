@@ -17,14 +17,22 @@ import {
   Row,
   Col,
   Tooltip,
+  Popover, // ✅ 1. Import Popover
 } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import {
+  EditOutlined,
+  DeleteOutlined,
+  AlertOutlined,
+  SearchOutlined,
+} from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { DrugType, MasterDrugType } from "../../common";
 import CustomTable from "../../common/CustomTable";
 import { packingOptions } from "../../../common/index";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
 
 interface DrugTableProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -45,6 +53,9 @@ export default function DrugTable({
   const [editingRecord, setEditingRecord] = useState<DrugType | null>(null);
   const [form] = Form.useForm();
   const [masterDrugs, setMasterDrugs] = useState<MasterDrugType[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
   useEffect(() => {
     const fetchMasterDrugs = async () => {
@@ -60,6 +71,73 @@ export default function DrugTable({
     };
     fetchMasterDrugs();
   }, []);
+
+  const filteredData = data.filter((item) => {
+    const searchLower = searchText.toLowerCase();
+    return (
+      item.workingCode?.toLowerCase().includes(searchLower) ||
+      item.name?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  // ✅ 2. Logic คำนวณยาใกล้หมดอายุ เพื่อแสดงในกล่องแจ้งเตือนด้านบน
+  const today = dayjs();
+  const redDrugs: any[] = [];
+  const orangeDrugs: any[] = [];
+
+  data.forEach((drug) => {
+    if (drug.expiryDate) {
+      const expiry = dayjs(drug.expiryDate);
+      const diffMonths = expiry.diff(today, "month", true);
+      if (diffMonths <= 3) {
+        redDrugs.push({ ...drug, diffMonths });
+      } else if (diffMonths <= 6) {
+        orangeDrugs.push({ ...drug, diffMonths });
+      }
+    }
+  });
+
+  const totalExpiring = redDrugs.length + orangeDrugs.length;
+
+  // ✅ 3. สร้าง UI กล่องข้อความที่จะเด้งขึ้นมาตอนเอาเมาส์ชี้
+  const expiringPopoverContent = (
+    <div className="max-h-[300px] overflow-y-auto pr-2 w-[280px]">
+      {redDrugs.length > 0 && (
+        <div className="mb-3">
+          <div className="text-red-500 font-bold border-b border-red-100 pb-1 mb-2 flex items-center">
+            <AlertOutlined className="mr-1" /> หมดอายุ หรือ &lt; 3 เดือน
+          </div>
+          {redDrugs.map((d) => (
+            <div key={d.id} className="text-sm flex justify-between mb-1">
+              <span className="truncate pr-2 font-medium text-slate-700">
+                {d.name}
+              </span>
+              <span className="text-red-500 text-xs shrink-0">
+                {dayjs(d.expiryDate).locale("th").format("DD MMM BB")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+      {orangeDrugs.length > 0 && (
+        <div>
+          <div className="text-orange-500 font-bold border-b border-orange-100 pb-1 mb-2 flex items-center">
+            <AlertOutlined className="mr-1" /> &lt; 6 เดือน
+          </div>
+          {orangeDrugs.map((d) => (
+            <div key={d.id} className="text-sm flex justify-between mb-1">
+              <span className="truncate pr-2 font-medium text-slate-700">
+                {d.name}
+              </span>
+              <span className="text-orange-500 text-xs shrink-0">
+                {dayjs(d.expiryDate).locale("th").format("DD MMM BB")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   const handleDelete = async (id: number) => {
     try {
@@ -114,10 +192,14 @@ export default function DrugTable({
         ...editingRecord,
         ...values,
         id: editingRecord.id,
+        // ✅ บังคับแปลง price ให้เป็นตัวเลข (Number) เสมอก่อนส่งไป Backend
+        price: Number(values.price),
+        // แปลงรหัสประเภทยาให้เป็นตัวเลขด้วย กันเหนียว
+        drugTypeId: Number(values.drugTypeId),
       };
 
       const updatedData = await intraAuthService.updateDrug(payload);
-      message.success("แก้ไขข้อมูลสำเร็จ");
+      message.success("แก้ไขข้อมูลยาสำเร็จ");
 
       setData((prev) =>
         prev.map((item) => (item.id === editingRecord.id ? updatedData : item)),
@@ -125,9 +207,14 @@ export default function DrugTable({
 
       setIsModalOpen(false);
       setEditingRecord(null);
-    } catch (error) {
-      console.error(error);
-      message.error("แก้ไขข้อมูลไม่สำเร็จ");
+    } catch (error: any) {
+      console.error("Update error:", error);
+      // ✅ เพิ่มการแสดง Error Message จาก Backend (ถ้ามี) จะได้รู้ว่าพังเพราะอะไร
+      const backendMessage = error?.response?.data?.message;
+      const msgToShow = Array.isArray(backendMessage)
+        ? backendMessage.join(", ")
+        : backendMessage || "แก้ไขข้อมูลไม่สำเร็จ";
+      message.error(msgToShow);
     } finally {
       setLoading(false);
     }
@@ -155,7 +242,7 @@ export default function DrugTable({
       key: "drugTypeId",
       align: "center",
       width: 150,
-      responsive: ["md"], // ซ่อนบนมือถือ
+      responsive: ["md"],
       render: (id) => {
         const match = masterDrugs.find(
           (m) => m.drugTypeId === id || m.id === id,
@@ -173,7 +260,7 @@ export default function DrugTable({
       key: "packagingSize",
       align: "center",
       width: 100,
-      responsive: ["sm"], // ซ่อนบนมือถือเล็กมาก
+      responsive: ["sm"],
     },
     {
       title: "ราคา/หน่วย",
@@ -181,7 +268,7 @@ export default function DrugTable({
       key: "price",
       align: "center",
       width: 100,
-      responsive: ["sm"], // ซ่อนบนมือถือเล็กมาก
+      responsive: ["sm"],
       render: (value) =>
         Number(value).toLocaleString("th-TH", {
           style: "currency",
@@ -206,6 +293,60 @@ export default function DrugTable({
       ),
     },
     {
+      title: "วันหมดอายุ (ใกล้สุด)",
+      dataIndex: "expiryDate",
+      key: "expiryDate",
+      align: "center",
+      width: 140,
+      render: (date) => {
+        if (!date) return <span className="text-gray-400">-</span>;
+
+        const expiry = dayjs(date);
+        const today = dayjs();
+        const diffMonths = expiry.diff(today, "month", true);
+
+        if (diffMonths <= 0) {
+          return <Tag color="error">หมดอายุแล้ว</Tag>;
+        } else if (diffMonths <= 3) {
+          return (
+            <div className="flex flex-col items-center">
+              <span className="text-red-500 font-bold">
+                {expiry.locale("th").format("DD MMM BB")}
+              </span>
+              <Tag
+                color="red"
+                bordered={false}
+                className="mt-1 text-[10px] leading-tight"
+              >
+                <AlertOutlined /> &lt; 3 เดือน
+              </Tag>
+            </div>
+          );
+        } else if (diffMonths <= 6) {
+          return (
+            <div className="flex flex-col items-center">
+              <span className="text-orange-500 font-semibold">
+                {expiry.locale("th").format("DD MMM BB")}
+              </span>
+              <Tag
+                color="warning"
+                bordered={false}
+                className="mt-1 text-[10px] leading-tight"
+              >
+                <AlertOutlined /> &lt; 6 เดือน
+              </Tag>
+            </div>
+          );
+        } else {
+          return (
+            <span className="text-green-600">
+              {expiry.locale("th").format("DD MMM BB")}
+            </span>
+          );
+        }
+      },
+    },
+    {
       title: "จัดการ",
       key: "action",
       align: "center",
@@ -215,7 +356,7 @@ export default function DrugTable({
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 18, // ขนาด 18px
+                fontSize: 18,
                 color: "#faad14",
                 cursor: "pointer",
                 transition: "color 0.2s",
@@ -225,8 +366,7 @@ export default function DrugTable({
           </Tooltip>
 
           <Popconfirm
-            title="ลบข้อมูล"
-            description="ต้องการลบยานี้หรือไม่?"
+            title="ยืนยันการลบข้อมูลยา"
             onConfirm={() => handleDelete(record.id)}
             okText="ลบ"
             cancelText="ยกเลิก"
@@ -235,7 +375,7 @@ export default function DrugTable({
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 18, // ขนาด 18px
+                  fontSize: 18,
                   color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
@@ -258,15 +398,67 @@ export default function DrugTable({
       </div>
 
       <Card bordered={false} className="shadow-sm" bodyStyle={{ padding: 0 }}>
+        {/* ✅ 4. โซนด้านบนตาราง (กล่องแจ้งเตือน ซ้าย + ช่องค้นหา ขวา) */}
+        <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
+          {/* ซ้าย: กล่องแจ้งเตือนยาหมดอายุ */}
+          <div>
+            {totalExpiring > 0 ? (
+              <Popover
+                content={expiringPopoverContent}
+                title={
+                  <div className="font-bold text-slate-700 border-b pb-2 mb-2">
+                    สรุปยาใกล้หมดอายุ
+                  </div>
+                }
+                placement="bottomLeft"
+                trigger="hover"
+              >
+                <Button
+                  danger
+                  type="dashed"
+                  className="h-10 rounded-xl bg-red-50 hover:bg-red-100 border-red-200 shadow-sm"
+                >
+                  <AlertOutlined className="text-red-500 animate-pulse" />
+                  <span className="text-red-600 font-bold">
+                    พบยาใกล้หมดอายุ ({totalExpiring} รายการ)
+                  </span>
+                </Button>
+              </Popover>
+            ) : (
+              <div className="text-green-600 font-medium flex items-center h-10 px-3 bg-green-50 rounded-xl border border-green-100">
+                <AlertOutlined className="mr-2" /> สต็อกปกติ
+                (ไม่มียาใกล้หมดอายุ)
+              </div>
+            )}
+          </div>
+
+          {/* ขวา: ช่องค้นหา */}
+          <Input
+            prefix={<SearchOutlined className="text-gray-400" />}
+            placeholder="ค้นหาชื่อยา หรือ รหัสยา..."
+            value={searchText}
+            onChange={(e) => setSearchText(e.target.value)}
+            className="w-full sm:w-72 h-10 rounded-xl shadow-sm hover:border-blue-400 focus:border-blue-500"
+            allowClear
+          />
+        </div>
+
         <CustomTable
           rowKey="id"
           columns={columns}
-          dataSource={data}
+          dataSource={filteredData}
           loading={loading}
           bordered
-          size="small" // ใช้ size small บนมือถือ
-          pagination={{ pageSize: 10, size: "small" }}
-          scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
+          size="small"
+          pagination={{
+            defaultPageSize: 20,
+            showSizeChanger: true,
+            pageSizeOptions: ["10", "20", "50", "100"],
+            size: "small",
+            showTotal: (total, range) =>
+              `แสดง ${range[0]}-${range[1]} จาก ${total} รายการ`,
+          }}
+          scroll={{ x: "max-content", y: 600 }}
         />
       </Card>
 
@@ -284,7 +476,6 @@ export default function DrugTable({
         destroyOnClose
         centered
         width={700}
-        // Responsive Modal
         style={{ maxWidth: "95%", top: 20 }}
       >
         <Form
@@ -293,7 +484,6 @@ export default function DrugTable({
           onFinish={handleUpdate}
           style={{ marginTop: 16 }}
         >
-          {/* แถวที่ 1: รหัสยา และ ประเภทยา */}
           <Row gutter={16}>
             <Col xs={24} sm={12}>
               <Form.Item
@@ -301,7 +491,7 @@ export default function DrugTable({
                 name="workingCode"
                 rules={[{ required: true, message: "กรุณาระบุรหัสยา" }]}
               >
-                <Input placeholder="เช่น W-001" />
+                <Input placeholder="เช่น W-001" maxLength={10} />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
@@ -323,7 +513,6 @@ export default function DrugTable({
             </Col>
           </Row>
 
-          {/* แถวที่ 2: ชื่อยา (ยาวเต็มบรรทัด) */}
           <Form.Item
             label="ชื่อยา"
             name="name"
@@ -332,13 +521,8 @@ export default function DrugTable({
             <Input placeholder="ระบุชื่อยา" />
           </Form.Item>
 
-          {/* แถวที่ 3: ขนาดบรรจุ, ราคา, คงเหลือ (แบ่ง 3 ส่วนเท่ากัน) */}
           <Row gutter={[12, 12]}>
-            {" "}
-            {/* ลด gutter ลงนิดหน่อย */}
             <Col span={8}>
-              {" "}
-              {/* span 8 = 1/3 ของ 24 */}
               <Form.Item
                 label="ขนาดบรรจุ"
                 name="packagingSize"
@@ -371,21 +555,16 @@ export default function DrugTable({
               </Form.Item>
             </Col>
             <Col span={8}>
-              <Form.Item
-                label="คงเหลือ"
-                name="quantity"
-                rules={[{ required: true }]}
-              >
+              <Form.Item label="จำนวนยาคงเหลือ" name="quantity">
                 <InputNumber
-                  style={{ width: "100%" }}
-                  min={0}
                   placeholder="0"
+                  style={{ width: "100%" }}
+                  disabled
                 />
               </Form.Item>
             </Col>
           </Row>
 
-          {/* แถวสุดท้าย: หมายเหตุ */}
           <Form.Item label="หมายเหตุ" name="note">
             <Input.TextArea
               rows={2}

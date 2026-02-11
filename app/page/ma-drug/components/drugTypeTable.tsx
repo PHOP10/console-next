@@ -89,9 +89,11 @@ export default function DrugTypeTable() {
       setIsModalOpen(false);
       form.resetFields();
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Save error:", error);
-      message.error("บันทึกข้อมูลไม่สำเร็จ");
+      const errorMsg =
+        error?.response?.data?.message || "บันทึกข้อมูลไม่สำเร็จ";
+      message.error(errorMsg);
     } finally {
       setSubmitLoading(false);
     }
@@ -102,9 +104,18 @@ export default function DrugTypeTable() {
       await intraAuthService.deleteMasterDrug(id);
       message.success("ลบข้อมูลสำเร็จ");
       fetchData();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Delete error:", error);
-      message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+
+      // ✅ ดึงข้อความจาก Backend มาแสดง
+      const errorMsg = error?.response?.data?.message;
+
+      if (errorMsg) {
+        message.error(errorMsg);
+      } else {
+        // ถ้าไม่มีข้อความ (Error อื่นๆ) ให้แสดงข้อความกลางๆ
+        message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
+      }
     }
   };
 
@@ -114,8 +125,7 @@ export default function DrugTypeTable() {
       dataIndex: "drugTypeId",
       key: "drugTypeId",
       align: "center",
-      width: 100, // ลดความกว้างลงเล็กน้อย
-      sorter: (a, b) => a.drugTypeId - b.drugTypeId,
+      width: 100,
     },
     {
       title: "ชื่อประเภทยา",
@@ -130,7 +140,7 @@ export default function DrugTypeTable() {
       key: "description",
       align: "center",
       width: 200,
-      responsive: ["md"], // ซ่อนบนมือถือเพื่อประหยัดพื้นที่
+      responsive: ["md"],
       render: (text) => text || "-",
     },
     {
@@ -143,7 +153,7 @@ export default function DrugTypeTable() {
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                fontSize: 18,
                 color: "#faad14",
                 cursor: "pointer",
                 transition: "color 0.2s",
@@ -154,7 +164,6 @@ export default function DrugTypeTable() {
 
           <Popconfirm
             title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
             onConfirm={() => handleDelete(record.id)}
             okText="ลบ"
             cancelText="ยกเลิก"
@@ -163,7 +172,7 @@ export default function DrugTypeTable() {
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                  fontSize: 18,
                   color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
@@ -186,7 +195,7 @@ export default function DrugTypeTable() {
           style={{
             color: "#0683e9",
             textAlign: "center",
-            fontSize: "clamp(18px, 4vw, 24px)", // Responsive font size
+            fontSize: "clamp(18px, 4vw, 24px)",
             fontWeight: "bold",
             marginTop: "10px",
             marginBottom: "8px",
@@ -196,10 +205,11 @@ export default function DrugTypeTable() {
         </div>
       }
     >
+      {/* ปุ่มเพิ่ม (ชิดขวา) */}
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end", // ย้ายปุ่มไปขวาเพื่อให้กดง่ายบนมือถือ
+          justifyContent: "flex-end",
           marginBottom: "16px",
         }}
       >
@@ -219,8 +229,8 @@ export default function DrugTypeTable() {
         loading={loading}
         bordered
         pagination={{ pageSize: 10, size: "small" }}
-        size="small" // ใช้ตารางขนาดเล็กบนมือถือ
-        scroll={{ x: "max-content" }} // เพิ่ม Scroll แนวนอน
+        size="small"
+        scroll={{ x: "max-content" }}
       />
 
       <Modal
@@ -245,7 +255,6 @@ export default function DrugTypeTable() {
         destroyOnClose
         centered
         width={500}
-        // Responsive Modal
         style={{ maxWidth: "95%", top: 20 }}
         styles={{
           content: { borderRadius: "16px", padding: "20px" },
@@ -259,14 +268,34 @@ export default function DrugTypeTable() {
           preserve={false}
         >
           <Form.Item
-            label="รหัสประเภทยา (ID)"
+            label="รหัสประเภทยา"
             name="drugTypeId"
-            rules={[{ required: true, message: "กรุณากรอกรหัสประเภทยา" }]}
+            rules={[
+              { required: true, message: "กรุณากรอกรหัสประเภทยา" },
+
+              ({ getFieldValue }) => ({
+                validator(_, value) {
+                  if (!value || editingRecord) {
+                    return Promise.resolve();
+                  }
+                  const exists = data.some(
+                    (item) => item.drugTypeId === Number(value),
+                  );
+                  if (exists) {
+                    return Promise.reject(
+                      new Error("รหัสประเภทนี้มีอยู่แล้วในระบบ"),
+                    );
+                  }
+                  return Promise.resolve();
+                },
+              }),
+            ]}
           >
             <Input
               type="number"
-              placeholder="เช่น 101"
+              placeholder="กรอกรหัสประเภทยา"
               className="w-full h-10 rounded-lg border-gray-300 shadow-sm"
+              disabled={!!editingRecord}
             />
           </Form.Item>
 
@@ -276,7 +305,7 @@ export default function DrugTypeTable() {
             rules={[{ required: true, message: "กรุณากรอกชื่อประเภทยา" }]}
           >
             <Input
-              placeholder="เช่น ยาเม็ด, ยาน้ำ"
+              placeholder="กรอกชื่อประเภทยา"
               className="w-full h-10 rounded-lg border-gray-300 shadow-sm"
             />
           </Form.Item>
@@ -284,7 +313,7 @@ export default function DrugTypeTable() {
           <Form.Item label="คำอธิบายเพิ่มเติม" name="description">
             <Input.TextArea
               rows={3}
-              placeholder="รายละเอียด (ถ้ามี)"
+              placeholder="กรอกรายละเอียด (ถ้ามี)"
               className="w-full rounded-lg border-gray-300 shadow-sm"
             />
           </Form.Item>

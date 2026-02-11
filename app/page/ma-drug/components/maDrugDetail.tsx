@@ -195,15 +195,20 @@ export default function MaDrugTableDetail({
           {/* ข้อมูลทั่วไป */}
           <div className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 mb-4">
             <Row gutter={[16, 16]}>
-              <Col xs={24} sm={8}>
+              <Col xs={24} sm={12} md={6}>
                 <Label>หน่วยงาน</Label>
                 <Value isBold>{data.requestUnit}</Value>
               </Col>
-              <Col xs={12} sm={8}>
+              <Col xs={12} sm={12} md={6}>
                 <Label>ผู้ขอเบิก</Label>
                 <Value>{data.requesterName}</Value>
               </Col>
-              <Col xs={12} sm={8}>
+              <Col xs={12} sm={12} md={6}>
+                <Label>เบิกครั้งที่</Label>
+                {/* ⚠️ เปลี่ยน data.requestRound ให้ตรงกับชื่อ Field ที่ได้จาก API ของคุณ */}
+                <Value>{data.roundNumber || "-"}</Value>
+              </Col>
+              <Col xs={12} sm={12} md={6}>
                 <Label>วันที่ทำรายการ</Label>
                 <Value>{formatDate(data.requestDate)}</Value>
               </Col>
@@ -286,7 +291,7 @@ export default function MaDrugTableDetail({
             onClick={onClose}
             className="px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium transition-colors text-sm"
           >
-            ปิดหน้าต่าง
+            ปิด
           </button>
         </div>
       </div>

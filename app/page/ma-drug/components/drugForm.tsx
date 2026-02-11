@@ -14,14 +14,10 @@ import {
   Space,
   AutoComplete,
 } from "antd";
-import {
-  SaveOutlined,
-  ClearOutlined,
-  ExperimentOutlined,
-} from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import { DrugType, MasterDrugType } from "../../common";
+import { packingOptions } from "@/app/common";
 
 interface DrugFormProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
@@ -42,7 +38,6 @@ export default function DrugForm({
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
 
-  // โหลด MasterDrug มาทำเป็น dropdown
   useEffect(() => {
     const fetchMasterDrug = async () => {
       try {
@@ -68,15 +63,15 @@ export default function DrugForm({
   const onFinish = async (values: any) => {
     try {
       setLoading(true);
-      // แปลงค่า number ให้แน่ใจว่าเป็น number จริงๆ ก่อนส่ง
+
       const payload = {
         ...values,
         price: Number(values.price),
-        quantity: Number(values.quantity),
+        quantity: 0,
       };
 
       const newDrug: DrugType = await intraAuthService.createDrug(payload);
-      setData((prev) => [newDrug, ...prev]); // เอาตัวใหม่ขึ้นบนสุด เพื่อให้ user เห็นทันที
+      setData((prev) => [newDrug, ...prev]);
       message.success("เพิ่มข้อมูลยาสำเร็จ");
       form.resetFields();
     } catch (error) {
@@ -87,44 +82,13 @@ export default function DrugForm({
     }
   };
 
-  const packingOptions = [
-    { value: "10's" },
-    { value: "50's" },
-    { value: "100's" },
-    { value: "500's" },
-    { value: "1000's" },
-    { value: "แผง" },
-    { value: "กล่อง" },
-    { value: "ขวด" },
-    { value: "กระปุก" },
-    { value: "ซอง" },
-    { value: "ถุง" },
-    { value: "ห่อ" },
-    { value: "แพ็ค" },
-    { value: "ชิ้น" },
-    { value: "คู่" },
-    { value: "ชุด" },
-    { value: "ม้วน" },
-    { value: "หลอด" },
-    { value: "Vial" },
-    { value: "Amp" },
-    { value: "5 g." },
-    { value: "10 g." },
-    { value: "lb." },
-  ];
-
-  // --- Style Constants (Master Template) ---
-  const inputStyle =
-    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
-
+  // --- Styles ---
   const textAreaStyle =
     "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
-
-  // Class สำหรับ Select ของ Antd
+  const inputStyle =
+    "w-full h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
   const selectStyle =
     "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400";
-
-  // Class สำหรับ AutoComplete (ใช้คล้าย Select/Input)
   const autoCompleteStyle =
     "h-11 w-full [&>.ant-select-selector]:!rounded-xl [&>.ant-select-selector]:!border-gray-300 [&>.ant-select-selector]:!shadow-sm hover:[&>.ant-select-selector]:!border-blue-400 focus-within:[&>.ant-select-selector]:!border-blue-500 focus-within:[&>.ant-select-selector]:!ring-4 focus-within:[&>.ant-select-selector]:!ring-blue-50 focus-within:[&>.ant-select-selector]:!shadow-md";
 
@@ -143,7 +107,7 @@ export default function DrugForm({
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ quantity: 0, price: 0 }}
+          initialValues={{ price: 0 }} // ไม่ต้องใส่ quantity ใน initialValues แล้ว เพราะไม่ได้โชว์ใน Form
         >
           {/* Row 1: รหัสยา, ประเภทยา */}
           <Row gutter={24}>
@@ -153,7 +117,11 @@ export default function DrugForm({
                 name="workingCode"
                 rules={[{ required: true, message: "กรุณากรอก Working Code" }]}
               >
-                <Input placeholder="เช่น W-001" className={inputStyle} />
+                <Input
+                  placeholder="กรอกรหัสยา"
+                  className={inputStyle}
+                  maxLength={10}
+                />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
@@ -186,9 +154,9 @@ export default function DrugForm({
             />
           </Form.Item>
 
-          {/* Row 3: ขนาดบรรจุ, ราคา, คงเหลือ */}
+          {/* Row 3: ขนาดบรรจุ, ราคา */}
           <Row gutter={24}>
-            <Col xs={24} md={8}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="ขนาดบรรจุ"
                 name="packagingSize"
@@ -208,7 +176,7 @@ export default function DrugForm({
               </Form.Item>
             </Col>
 
-            <Col xs={24} md={8}>
+            <Col xs={24} md={12}>
               <Form.Item
                 label="ราคาต่อหน่วย (บาท)"
                 name="price"
@@ -228,34 +196,18 @@ export default function DrugForm({
                 />
               </Form.Item>
             </Col>
-            <Col xs={24} md={8}>
-              <Form.Item
-                label="จำนวนคงเหลือเริ่มต้น"
-                name="quantity"
-                rules={[{ required: true, message: "ระบุจำนวน" }]}
-              >
-                <InputNumber
-                  style={{ width: "100%" }}
-                  min={0}
-                  formatter={(value) =>
-                    `${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                  }
-                  className={`${inputStyle} pt-1`}
-                />
-              </Form.Item>
-            </Col>
           </Row>
 
-          {/* หมายเหตุ */}
+          {/* ❌ เอาส่วนที่ตั้งค่าสต็อกเริ่มต้น (ปริมาณ & วันหมดอายุ) ออกแล้ว */}
+
           <Form.Item label="หมายเหตุ" name="note">
             <Input.TextArea
               rows={3}
-              placeholder="ระบุข้อมูลเพิ่มเติม (ถ้ามี)"
+              placeholder="ระบุหมายเหตุเพิ่มเติม (ถ้ามี)"
               className={textAreaStyle}
             />
           </Form.Item>
 
-          {/* ปุ่มกด (จัดกึ่งกลาง) */}
           <Form.Item style={{ textAlign: "center", marginBottom: 0 }}>
             <Space size="middle">
               <Button

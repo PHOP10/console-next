@@ -207,17 +207,14 @@ export interface DrugType {
   drugTypeId: number;
   packagingSize: string;
   price: number;
-  quantity: number; // จำนวนคงเหลือรวม (Summary Stock)
+  quantity: number;
   note?: string;
   createdAt: string;
   updatedAt: string;
-
-  // ความสัมพันธ์
   drugType?: MasterDrugType;
   maDrugItems?: MaDrugItemType[];
   dispenseItems?: DispenseItemType[];
-
-  // ✅ [NEW] เพิ่มความสัมพันธ์กับ Lot เพื่อดูสต็อกย่อย
+  expiryDate?: string | null;
   drugLots?: DrugLotType[];
 }
 

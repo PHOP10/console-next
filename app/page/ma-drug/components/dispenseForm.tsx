@@ -11,22 +11,23 @@ import {
   Card,
   Row,
   Col,
-  Modal,
+  Divider,
 } from "antd";
 import {
   PlusOutlined,
   DeleteOutlined,
-  SearchOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { DispenseType, DrugType } from "../../common";
+import { DispenseType, DrugType, MasterDrugType } from "../../common";
 import { useSession } from "next-auth/react";
 import CustomTable from "../../common/CustomTable";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import { buddhistLocale } from "@/app/common";
 import { useRouter } from "next/navigation";
+import DrugSelectModal from "./drugSelectModal";
 
 interface DispenseItemRow {
   key: string;
@@ -57,11 +58,17 @@ export default function DispenseForm({
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState<DispenseItemRow[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [searchText, setSearchText] = useState("");
   const router = useRouter();
+  const [masterDrugs, setMasterDrugs] = useState<MasterDrugType[]>([]);
 
-  // คำนวณยอดรวม (Items & Price)
+  const existingDates = useMemo(() => {
+    if (!data || !Array.isArray(data)) return [];
+    const dates = data.map((item: any) =>
+      dayjs(item.dispenseDate).format("YYYY-MM-DD"),
+    );
+    return Array.from(new Set(dates));
+  }, [data]);
+
   const summary = useMemo(() => {
     const totalItems = dataSource.length;
     const totalPrice = dataSource.reduce((sum, item) => {
@@ -70,18 +77,50 @@ export default function DispenseForm({
     return { totalItems, totalPrice };
   }, [dataSource]);
 
-  // ตั้งค่า Default Form
+  useEffect(() => {
+    const fetchMaster = async () => {
+      try {
+        const res = await dispenseService.getMasterDrugQuery();
+        if (Array.isArray(res)) setMasterDrugs(res);
+      } catch (error) {
+        console.error("fetch master drug err", error);
+      }
+    };
+    fetchMaster();
+  }, []);
+
+  // 🎯 ปรับ useEffect: เอาการเซ็ตค่าวันที่อัตโนมัติออก ให้ช่องว่างบังคับให้เลือกเอง
   useEffect(() => {
     if (session?.user) {
       form.setFieldsValue({
         dispenserName: session.user.fullName,
+        // dispenseDate: dayjs(), <-- ลบออกแล้ว ช่องจะว่างเปล่า
       });
     }
   }, [session, form]);
 
+  const disabledDate = (current: dayjs.Dayjs) => {
+    if (!current) return false;
+    const isPast = current.isBefore(dayjs().startOf("day"));
+    const currentStr = current.format("YYYY-MM-DD");
+    const isExisting = existingDates.includes(currentStr);
+    return isPast || isExisting;
+  };
+
   const onFinish = async (values: any) => {
     if (dataSource.length === 0) {
       message.error("กรุณาเลือกรายการยาที่จะจ่ายอย่างน้อย 1 รายการ");
+      return;
+    }
+
+    // Validation: กันเหนียวอีกรอบก่อนส่ง
+    const invalidItems = dataSource.filter(
+      (item) => item.quantity > item.stockQty,
+    );
+    if (invalidItems.length > 0) {
+      message.error(
+        `มียา ${invalidItems.length} รายการ ที่ระบุจำนวนเกินสต็อกคงเหลือ`,
+      );
       return;
     }
 
@@ -90,9 +129,9 @@ export default function DispenseForm({
       const payload = {
         dispenseDate: values.dispenseDate.toISOString(),
         dispenserName: session?.user?.fullName,
-        receiverName: values.receiverName,
         note: values.note,
         totalPrice: summary.totalPrice,
+        createdById: session?.user?.userId,
         dispenseItems: {
           create: dataSource.map((item) => ({
             drugId: item.drugId,
@@ -108,73 +147,41 @@ export default function DispenseForm({
       form.resetFields();
       form.setFieldsValue({
         dispenserName: session?.user?.fullName,
-        dispenseDate: dayjs(),
       });
 
       setDataSource([]);
       refreshData();
       router.push("/page/ma-drug/maDrug?tab=3");
-    } catch (error) {
-      console.error(error);
-      message.error("บันทึกข้อมูลล้มเหลว กรุณาลองใหม่อีกครั้ง");
+    } catch (error: any) {
+      console.error("Dispense Error:", error);
+      const errorMsg = error?.response?.data?.message || "บันทึกข้อมูลล้มเหลว";
+      message.error(Array.isArray(errorMsg) ? errorMsg.join(", ") : errorMsg);
     } finally {
       setLoading(false);
     }
   };
 
-  // Filter ยาใน Modal
-  const filteredDrugs = useMemo(() => {
-    return drugs.filter(
-      (d) =>
-        d.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        d.workingCode.toLowerCase().includes(searchText.toLowerCase()),
-    );
-  }, [drugs, searchText]);
+  const handleAddDrugsFromModal = (selectedDrugs: DrugType[]) => {
+    const newItems: DispenseItemRow[] = selectedDrugs.map((drug) => ({
+      key: `${drug.id}_${Date.now()}`,
+      drugId: drug.id,
+      workingCode: drug.workingCode,
+      drugName: drug.name,
+      packagingSize: drug.packagingSize,
+      stockQty: drug.quantity,
+      quantity: 1,
+      price: drug.price,
+    }));
 
-  // เมื่อกดตกลงเลือกยาจาก Modal
-  const handleModalOk = () => {
-    const newItems: DispenseItemRow[] = [];
-    selectedRowKeys.forEach((key) => {
-      // เช็คว่ายามีในตารางรึยัง
-      const isExist = dataSource.find((item) => item.drugId === Number(key));
-
-      if (!isExist) {
-        const drug = drugs.find((d) => d.id === Number(key));
-        if (drug) {
-          newItems.push({
-            key: `${drug.id}_${Date.now()}`,
-            drugId: drug.id,
-            workingCode: drug.workingCode,
-            drugName: drug.name,
-            packagingSize: drug.packagingSize,
-            stockQty: drug.quantity,
-            quantity: 1,
-            price: drug.price,
-          });
-        }
-      }
-    });
-
-    if (newItems.length > 0) {
-      setDataSource([...dataSource, ...newItems]);
-      message.success(`เพิ่มยา ${newItems.length} รายการ`);
-    }
+    setDataSource([...dataSource, ...newItems]);
     setIsModalOpen(false);
-    setSelectedRowKeys([]);
-    setSearchText("");
   };
 
-  const disabledDate = (current: any) => {
-    return current && current < dayjs().startOf("day");
-  };
-
-  // --- Styles ---
   const inputStyle =
     "w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300 text-sm";
   const tableInputStyle =
     "w-full h-8 sm:h-9 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:shadow-sm text-center";
 
-  // --- Columns ตารางหลัก (รายการจ่าย) ---
   const mainColumns = [
     {
       title: "รายการยา",
@@ -230,9 +237,10 @@ export default function DispenseForm({
           }
           style={{ marginBottom: 0 }}
         >
+          {/* 🎯 ใส่ max={record.stockQty} เข้าไป พิมพ์เกินไม่ได้แน่นอน */}
           <InputNumber
             min={1}
-            max={record.stockQty}
+            max={record.stockQty} // 👈 เพิ่มบรรทัดนี้ครับ
             value={value}
             className={tableInputStyle}
             onChange={(val) => {
@@ -240,7 +248,10 @@ export default function DispenseForm({
               const index = newData.findIndex(
                 (item) => item.key === record.key,
               );
-              newData[index].quantity = val || 1;
+              // เผื่อ User ก๊อปปี้เลขมาวางแล้วมันเกิน ให้มันตัดเหลือเท่าที่มี
+              const validValue = val || 1;
+              newData[index].quantity =
+                validValue > record.stockQty ? record.stockQty : validValue;
               setDataSource(newData);
             }}
           />
@@ -267,45 +278,11 @@ export default function DispenseForm({
         <Button
           type="text"
           danger
-          icon={<DeleteOutlined style={{ fontSize: "18px" }} />} // ปรับขนาดไอคอน 18px
+          icon={<DeleteOutlined style={{ fontSize: "18px" }} />}
           onClick={() => {
             setDataSource(dataSource.filter((item) => item.key !== record.key));
           }}
         />
-      ),
-    },
-  ];
-
-  // --- Columns Modal (เลือกยา) ---
-  const modalColumns = [
-    { title: "รหัส", dataIndex: "workingCode", width: 90 },
-    {
-      title: "ชื่อยา",
-      dataIndex: "name",
-      render: (text: string) => (
-        <span className="font-medium text-sm">{text}</span>
-      ),
-    },
-    {
-      title: "ราคา",
-      dataIndex: "price",
-      width: 80,
-      align: "right" as const,
-      render: (val: number) => val.toLocaleString(),
-    },
-    {
-      title: "คงเหลือ",
-      dataIndex: "quantity",
-      width: 80,
-      align: "center" as const,
-      render: (val: number) => (
-        <span
-          className={`font-bold text-sm ${
-            val === 0 ? "text-red-500" : "text-green-600"
-          }`}
-        >
-          {val}
-        </span>
       ),
     },
   ];
@@ -319,42 +296,38 @@ export default function DispenseForm({
         <hr className="border-slate-100/30 -mx-6 md:-mx-6" />
       </div>
 
-      <Card bordered={false} className="shadow-sm">
+      <Card bordered={false} className="shadow-sm rounded-2xl">
         <Form form={form} layout="vertical" onFinish={onFinish}>
-          {/* Row 1: ผู้จ่าย & วันที่ */}
-          <Row gutter={[16, 16]}>
-            <Col xs={24} md={12}>
-              <Form.Item
-                label="วันที่จ่าย"
-                name="dispenseDate"
-                validateTrigger={["onChange", "onBlur"]}
-                rules={[{ required: true, message: "ระบุวันที่" }]}
-              >
-                <DatePicker
-                  locale={buddhistLocale}
-                  format="D MMMM BBBB"
-                  className={`${inputStyle} pt-1 w-full`}
-                  placeholder="เลือกวันที่"
-                  disabledDate={(current) => {
-                    if (!current) return false;
-                    const isPast = current < dayjs().startOf("day");
+          <div className="mb-6">
+            <Row gutter={[16, 16]}>
+              <Col xs={24} md={12}>
+                <Form.Item
+                  label="วันที่จ่าย"
+                  name="dispenseDate"
+                  rules={[{ required: true, message: "ระบุวันที่" }]}
+                >
+                  <DatePicker
+                    locale={buddhistLocale}
+                    format="D MMMM BBBB"
+                    className={`${inputStyle} w-full`}
+                    placeholder="เลือกวันที่"
+                    suffixIcon={<CalendarOutlined />}
+                    disabledDate={disabledDate}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} md={12}>
+                <Form.Item label="หมายเหตุ / เหตุผลการจ่าย" name="note">
+                  <Input
+                    className={inputStyle}
+                    placeholder="เช่น เบิกไปห้องฉุกเฉิน, ตัดยาหมดอายุ"
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
 
-                    const isDuplicate = data.some((item) => {
-                      if (!item.dispenseDate) return false;
-                      return dayjs(item.dispenseDate).isSame(current, "day");
-                    });
-
-                    return isPast || isDuplicate;
-                  }}
-                />
-              </Form.Item>
-            </Col>
-            <Col xs={24} md={12}>
-              <Form.Item label="หมายเหตุ / เหตุผลการจ่าย" name="note">
-                <Input className={inputStyle} placeholder="เช่น ตัดยาหมดอายุ" />
-              </Form.Item>
-            </Col>
-          </Row>
+          <Divider dashed />
 
           {/* Summary Box */}
           <div className="bg-blue-50/50 p-4 sm:p-6 rounded-2xl border border-blue-100 mb-6 shadow-inner">
@@ -406,8 +379,8 @@ export default function DispenseForm({
               pagination={false}
               rowKey="key"
               locale={{ emptyText: "ยังไม่มีรายการยาที่เลือก" }}
-              scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
-              size="small" // ใช้ size small บนมือถือ
+              scroll={{ x: "max-content" }}
+              size="small"
             />
           </div>
 
@@ -420,58 +393,23 @@ export default function DispenseForm({
                 loading={loading}
                 className="h-10 sm:h-11 px-10 rounded-xl text-base shadow-md bg-[#0683e9] hover:scale-105 transition-transform w-full sm:w-auto"
               >
-                ยืนยันการจ่ายยา
+                บันทึกการจ่ายยา
               </Button>
             </div>
           </Form.Item>
         </Form>
       </Card>
 
-      {/* Modal เลือกยา */}
-      <Modal
-        title={
-          <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
-            คลังยา (สำหรับเลือกจ่าย)
-          </div>
-        }
-        open={isModalOpen}
-        onOk={handleModalOk}
+      {/* Modal */}
+      <DrugSelectModal
+        isOpen={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
-        width={800}
-        centered
-        // Responsive Modal
-        style={{ maxWidth: "100%", top: 20, paddingBottom: 0 }}
-        styles={{
-          content: { borderRadius: "16px", padding: "16px sm:24px" },
-        }}
-        okText="เพิ่มรายการ"
-        cancelText="ปิด"
-      >
-        <Input
-          placeholder="ค้นหาชื่อยา..."
-          prefix={<SearchOutlined />}
-          className="w-full h-10 sm:h-11 rounded-xl mb-4"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          allowClear
-        />
-        <CustomTable
-          rowSelection={{
-            type: "checkbox",
-            selectedRowKeys,
-            onChange: (keys) => setSelectedRowKeys(keys),
-            getCheckboxProps: (record: DrugType) => ({
-              disabled: record.quantity <= 0,
-            }),
-          }}
-          columns={modalColumns}
-          dataSource={filteredDrugs}
-          rowKey="id"
-          pagination={{ pageSize: 5 }}
-          size="small"
-          scroll={{ x: "max-content", y: 300 }}
-        />
-      </Modal>
+        onOk={handleAddDrugsFromModal}
+        drugs={drugs}
+        masterDrugs={masterDrugs}
+        existingDrugIds={dataSource.map((d) => d.drugId)}
+        disableZeroStock={true}
+      />
     </>
   );
 }

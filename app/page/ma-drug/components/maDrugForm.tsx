@@ -13,17 +13,14 @@ import {
   Row,
   Col,
   Modal,
-  ConfigProvider,
+  Select, // ✅ Import Select
 } from "antd";
-import {
-  PlusOutlined,
-  DeleteOutlined,
-  SearchOutlined,
-} from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table"; // Import Type เพื่อแก้ Error
+import { PlusOutlined, DeleteOutlined } from "@ant-design/icons";
+import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { DrugType, MaDrugType } from "../../common";
+import { DrugType, MaDrugType, MasterDrugType } from "../../common";
+import DrugSelectModal from "./drugSelectModal";
 import { useSession } from "next-auth/react";
 import CustomTable from "../../common/CustomTable";
 import dayjs from "dayjs";
@@ -38,10 +35,11 @@ interface DrugItemRow {
   drugId: number;
   drugName: string;
   packagingSize: string;
-  quantity: number;
+  quantity: number | null; // ✅ อนุญาตให้เป็น null ชั่วคราวเวลาลบเลขเพื่อพิมพ์ใหม่
   stockQty: number;
   note: string;
   price: number;
+  expiryDate?: dayjs.Dayjs | null;
 }
 
 interface MaDrugFormProps {
@@ -62,18 +60,35 @@ export default function MaDrugForm({
   const [loading, setLoading] = useState(false);
   const [dataSource, setDataSource] = useState<DrugItemRow[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [searchText, setSearchText] = useState("");
   const router = useRouter();
+  const [masterDrugs, setMasterDrugs] = useState<MasterDrugType[]>([]);
+  const [customUnits, setCustomUnits] = useState<string[]>([]);
+  const [unitInputValue, setUnitInputValue] = useState("");
+
+  // ✅ State สำหรับเก็บค่าว่าเลือก "หน่วยงานที่เบิก" แบบไหน
+  const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
 
   const summary = useMemo(() => {
     const totalItems = dataSource.length;
     const totalPrice = dataSource.reduce((sum, item) => {
-      return sum + item.quantity * item.price;
+      // ✅ ถ้าจำนวนเป็น null ให้คิดเป็น 0 ไปก่อน
+      return sum + (item.quantity || 0) * item.price;
     }, 0);
 
     return { totalItems, totalPrice };
   }, [dataSource]);
+
+  useEffect(() => {
+    const fetchMaster = async () => {
+      try {
+        const res = await intraAuthService.getMasterDrugQuery();
+        if (Array.isArray(res)) setMasterDrugs(res);
+      } catch (error) {
+        console.error("fetch master drug err", error);
+      }
+    };
+    fetchMaster();
+  }, []);
 
   useEffect(() => {
     form.setFieldsValue({
@@ -88,8 +103,24 @@ export default function MaDrugForm({
       return;
     }
 
+    // ดักเช็คว่ามีบรรทัดไหนที่ลืมใส่จำนวนเบิก หรือใส่เป็น 0 ไหม
+    const hasInvalidQuantity = dataSource.some(
+      (item) => !item.quantity || item.quantity <= 0,
+    );
+    if (hasInvalidQuantity) {
+      message.error("กรุณาระบุจำนวนเบิกให้ครบถ้วนทุกรายการ (ต้องมากกว่า 0)");
+      return;
+    }
+
     try {
       setLoading(true);
+
+      // ✅ เช็คว่าถ้าเลือก "OTHER" (อื่นๆ) ให้เอาค่าจากช่อง Input ที่พิมพ์เองมาใช้แทน
+      const finalRequestUnit =
+        values.requestUnitSelect === "OTHER"
+          ? values.requestUnitOther
+          : values.requestUnitSelect;
+
       const payload = {
         requestNumber: values.requestNumber,
         requestUnit: values.requestUnit,
@@ -100,12 +131,14 @@ export default function MaDrugForm({
         status: "pending",
         totalPrice: summary.totalPrice || 0,
         quantityUsed: summary.totalItems,
+        createdById: session?.user?.userId,
 
         maDrugItems: {
           create: dataSource.map((item) => ({
             drugId: item.drugId,
-            quantity: item.quantity,
+            quantity: item.quantity || 1,
             price: item.price,
+            expiryDate: item.expiryDate ? item.expiryDate.toISOString() : null,
           })),
         },
       };
@@ -125,51 +158,29 @@ export default function MaDrugForm({
     }
   };
 
-  const filteredDrugs = useMemo(() => {
-    return drugs.filter(
-      (d) =>
-        d.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        d.workingCode.toLowerCase().includes(searchText.toLowerCase()),
-    );
-  }, [drugs, searchText]);
+  const handleAddDrugsFromModal = (selectedDrugs: DrugType[]) => {
+    const newItems: DrugItemRow[] = selectedDrugs.map((drug) => ({
+      key: `${drug.id}_${Date.now()}`,
+      drugId: drug.id,
+      drugName: drug.name,
+      packagingSize: drug.packagingSize,
+      price: drug.price,
+      stockQty: drug.quantity,
+      quantity: 1, // ค่าตั้งต้นตอนกดเลือกมา
+      note: "",
+    }));
 
-  const handleModalOk = () => {
-    const newItems: DrugItemRow[] = [];
-    selectedRowKeys.forEach((key) => {
-      const isExist = dataSource.find((item) => item.drugId === Number(key));
-      if (!isExist) {
-        const drug = drugs.find((d) => d.id === Number(key));
-        if (drug) {
-          newItems.push({
-            key: `${drug.id}_${Date.now()}`,
-            drugId: drug.id,
-            drugName: drug.name,
-            packagingSize: drug.packagingSize,
-            price: drug.price,
-            stockQty: drug.quantity,
-            quantity: 1,
-            note: "",
-          });
-        }
-      }
-    });
-
-    if (newItems.length > 0) {
-      setDataSource([...dataSource, ...newItems]);
-      message.success(`เพิ่มยา ${newItems.length} รายการ`);
-    }
+    setDataSource([...dataSource, ...newItems]);
     setIsModalOpen(false);
-    setSelectedRowKeys([]);
-    setSearchText("");
   };
 
-  const disabledDate = (current: any) => {
-    return current && current < dayjs().startOf("day");
-  };
-
+  // ✅ เพิ่มตัวแปร Style ให้ครบถ้วน แก้บั๊กสีแดง Cannot find name
+  const textAreaStyle =
+    "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300";
   const inputStyle =
     "w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300 text-sm";
-
+  const selectStyle =
+    "w-full h-10 sm:h-11 [&>.ant-select-selector]:!rounded-xl shadow-sm";
   const tableInputStyle =
     "w-full h-8 sm:h-9 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:shadow-sm text-center";
 
@@ -198,7 +209,7 @@ export default function MaDrugForm({
       render: (val: number) => (
         <span
           className={`font-semibold text-xs sm:text-sm ${
-            val === 0 ? "text-red-500" : "text-slate-500"
+            val <= 0 ? "text-red-500" : "text-slate-500"
           }`}
         >
           {val?.toLocaleString() || 0}
@@ -210,16 +221,16 @@ export default function MaDrugForm({
       dataIndex: "quantity",
       key: "quantity",
       width: 100,
-      render: (value: number, record: DrugItemRow) => (
+      render: (value: number | null, record: DrugItemRow) => (
         <InputNumber
           min={1}
-          max={record.stockQty}
           value={value}
           className={tableInputStyle}
           onChange={(val) => {
             const newData = [...dataSource];
             const index = newData.findIndex((item) => item.key === record.key);
-            newData[index].quantity = val || 1;
+            // ✅ เปลี่ยนเป็น val เฉยๆ เพื่อรับค่า null เวลาคนลบเลขออก
+            newData[index].quantity = val;
             setDataSource(newData);
           }}
         />
@@ -233,7 +244,7 @@ export default function MaDrugForm({
       responsive: ["sm"],
       render: (_: any, record: DrugItemRow) => (
         <span className="font-semibold text-blue-600 text-xs sm:text-sm">
-          {(record.quantity * record.price).toLocaleString()}
+          {((record.quantity || 0) * record.price).toLocaleString()}
         </span>
       ),
     },
@@ -246,52 +257,12 @@ export default function MaDrugForm({
         <Button
           type="text"
           danger
-          icon={<DeleteOutlined style={{ fontSize: "18px" }} />} // กฎข้อ 3: Icon size 18
+          icon={<DeleteOutlined style={{ fontSize: "18px" }} />}
           className="hover:bg-red-50 rounded-lg"
           onClick={() => {
             setDataSource(dataSource.filter((item) => item.key !== record.key));
           }}
         />
-      ),
-    },
-  ];
-
-  // Columns Modal เลือกยา (ระบุ Type เพื่อแก้ Error สีแดงในรูปภาพที่ 4)
-  const modalColumns: ColumnsType<DrugType> = [
-    {
-      title: "รหัสยา",
-      dataIndex: "workingCode",
-      width: 90,
-      responsive: ["sm"], // ซ่อนบนมือถือ
-    },
-    {
-      title: "ชื่อยา",
-      dataIndex: "name",
-      render: (text: string) => (
-        <span className="font-medium text-sm">{text}</span>
-      ),
-    },
-    {
-      title: "ราคา",
-      dataIndex: "price",
-      width: 80,
-      align: "right",
-      responsive: ["sm"], // ซ่อนบนมือถือ
-      render: (val: number) => val.toLocaleString(),
-    },
-    {
-      title: "คงเหลือ",
-      dataIndex: "quantity",
-      width: 80,
-      align: "center",
-      render: (val: number) => (
-        <span
-          className={`font-bold text-sm ${
-            val === 0 ? "text-red-500" : "text-green-600"
-          }`}
-        >
-          {val}
-        </span>
       ),
     },
   ];
@@ -359,13 +330,45 @@ export default function MaDrugForm({
               <Form.Item
                 label="หน่วยงานที่เบิก"
                 name="requestUnit"
-                rules={[{ required: true, message: "กรุณากรอกหน่วยงาน" }]}
+                rules={[{ required: true, message: "กรุณาระบุหน่วยงาน" }]}
               >
-                <Input
-                  placeholder="กรอกหน่วยงานที่เบิก"
-                  className={inputStyle}
-                  maxLength={85}
-                />
+                <Select
+                  placeholder="-- เลือกหรือพิมพ์หน่วยงานที่เบิก --"
+                  className={selectStyle}
+                  dropdownRender={(menu) => (
+                    <>
+                      {menu}
+                      <div style={{ display: "flex", padding: 8 }}>
+                        <Input
+                          placeholder="กรอกอื่น ๆ ..."
+                          className="rounded-lg h-9 border-gray-300 focus:border-blue-500"
+                          onPressEnter={(e) => {
+                            form.setFieldValue(
+                              "requestUnit",
+                              e.currentTarget.value,
+                            );
+                            // ✅ เพิ่มคำสั่งบังคับพับ Dropdown ทันทีเมื่อกด Enter
+                            const activeElement =
+                              document.activeElement as HTMLElement;
+                            if (activeElement) activeElement.blur();
+                          }}
+                          onBlur={(e) => {
+                            if (e.currentTarget.value) {
+                              form.setFieldValue(
+                                "requestUnit",
+                                e.currentTarget.value,
+                              );
+                            }
+                          }}
+                        />
+                      </div>
+                    </>
+                  )}
+                >
+                  <Select.Option value="โรงพยาบาลวังเจ้า">
+                    โรงพยาบาลวังเจ้า
+                  </Select.Option>
+                </Select>
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
@@ -427,7 +430,7 @@ export default function MaDrugForm({
               maxLength={200}
               rows={2}
               placeholder="กรอกหมายเหตุ (ถ้ามี)"
-              className="w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:shadow-md transition-all duration-300"
+              className={textAreaStyle} // ✅ ใช้ Style ที่ประกาศไว้ข้างบน
             />
           </Form.Item>
 
@@ -492,59 +495,23 @@ export default function MaDrugForm({
                 loading={loading}
                 className="h-11 px-8 rounded-xl text-base shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 bg-[#0683e9] flex items-center w-full sm:w-auto justify-center"
               >
-                บันทึกการเบิกจ่าย
+                บันทึกการเบิกยา
               </Button>
             </div>
           </Form.Item>
         </Form>
-
-        <Modal
-          title={
-            <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
-              รายการยา
-            </div>
-          }
-          open={isModalOpen}
-          onOk={handleModalOk}
-          onCancel={() => setIsModalOpen(false)}
-          width={800}
-          okText={`เพิ่ม (${selectedRowKeys.length})`}
-          cancelText="ยกเลิก"
-          centered
-          style={{ maxWidth: "95%", top: 10 }}
-          styles={{
-            content: { borderRadius: "20px", padding: "16px sm:24px" },
-            header: { marginBottom: "16px" },
-          }}
-        >
-          <Input
-            placeholder="ค้นหาชื่อยา หรือรหัสยา..."
-            prefix={
-              <SearchOutlined
-                className="text-gray-400"
-                style={{ fontSize: "18px" }}
-              />
-            }
-            className="w-full h-10 sm:h-11 rounded-xl border-gray-300 shadow-sm mb-4 hover:border-blue-400 focus:border-blue-500 focus:shadow-md"
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            allowClear
-          />
-          <CustomTable
-            rowSelection={{
-              type: "checkbox",
-              selectedRowKeys,
-              onChange: (keys) => setSelectedRowKeys(keys),
-            }}
-            columns={modalColumns}
-            dataSource={filteredDrugs}
-            rowKey="id"
-            pagination={{ pageSize: 10, size: "small" }}
-            size="small"
-            scroll={{ y: 300, x: "max-content" }}
-          />
-        </Modal>
       </Card>
+
+      {/* เรียกใช้งาน Modal ใหม่ที่เราเพิ่งแยกไป */}
+      <DrugSelectModal
+        isOpen={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onOk={handleAddDrugsFromModal}
+        drugs={drugs}
+        masterDrugs={masterDrugs}
+        existingDrugIds={dataSource.map((d) => d.drugId)}
+        disableZeroStock={false}
+      />
     </>
   );
 }

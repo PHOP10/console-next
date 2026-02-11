@@ -11,14 +11,14 @@ import {
   Table,
   message,
   Tag,
-  Divider,
+  DatePicker,
 } from "antd";
-import { SaveOutlined, CalculatorOutlined } from "@ant-design/icons";
 import { MaDrugType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import { buddhistLocale } from "@/app/common";
 
 interface MaDrugReceiveModalProps {
   visible: boolean;
@@ -28,14 +28,15 @@ interface MaDrugReceiveModalProps {
 }
 
 interface ReceiveItem {
-  id: number; // ID ของ MaDrugItem
+  id: number;
   drugId: number;
   drugName: string;
   drugCode: string;
   packagingSize: string;
   price: number;
-  requestQty: number; // จำนวนที่ขอเบิก
+  requestQty: number;
   receivedQty: number | null;
+  expiryDate?: dayjs.Dayjs | null;
 }
 
 export default function MaDrugReceiveModal({
@@ -63,6 +64,7 @@ export default function MaDrugReceiveModal({
         price: item.drug?.price || 0,
         requestQty: item.quantity,
         receivedQty: item.quantity,
+        expiryDate: item.expiryDate ? dayjs(item.expiryDate) : null,
       }));
       setItems(initialItems);
     }
@@ -84,11 +86,30 @@ export default function MaDrugReceiveModal({
   const handleQtyChange = (val: number | null, index: number) => {
     const newItems = [...items];
     newItems[index].receivedQty = val;
-
     setItems(newItems);
   };
+
+  const handleExpiryChange = (date: dayjs.Dayjs | null, index: number) => {
+    const newItems = [...items];
+    newItems[index].expiryDate = date;
+    setItems(newItems);
+  };
+
   const handleFinish = async () => {
     if (!data) return;
+
+    // ✅ Validation: ตรวจสอบว่ากรอกวันหมดอายุครบไหม (เฉพาะรายการที่มีการรับ)
+    const incompleteItems = items.filter(
+      (item) => (item.receivedQty || 0) > 0 && !item.expiryDate,
+    );
+
+    if (incompleteItems.length > 0) {
+      message.error(
+        `กรุณาระบุ "วันหมดอายุ" ให้ครบถ้วน (${incompleteItems.length} รายการ)`,
+      );
+      // ไฮไลท์รายการที่ยังไม่ได้กรอก (ถ้าต้องการ UX เพิ่มเติม) อาจจะทำในอนาคต
+      return;
+    }
 
     try {
       setLoading(true);
@@ -98,9 +119,11 @@ export default function MaDrugReceiveModal({
           maDrugItemId: item.id,
           drugId: item.drugId,
           receivedQuantity: item.receivedQty,
+          expiryDate: item.expiryDate ? item.expiryDate.toISOString() : null,
         })),
         totalPrice: summary.totalAmt,
       };
+
       await intraAuthService.receiveMaDrug(payload);
 
       message.success("บันทึกการรับยาเรียบร้อยแล้ว");
@@ -119,27 +142,63 @@ export default function MaDrugReceiveModal({
     {
       title: "รหัสยา",
       dataIndex: "drugCode",
-      width: 100,
+      width: 120,
       render: (text: string) => <span className="text-slate-500">{text}</span>,
     },
     {
       title: "รายการยา",
       dataIndex: "drugName",
+      // width: 250, // ปล่อยให้ยืดหยุ่นตามหน้าจอ
       render: (text: string, record: ReceiveItem) => (
         <div>
-          <div className="font-medium text-slate-700">{text}</div>
-          <div className="text-xs text-slate-400">
+          <div className="font-medium text-slate-700 text-base">{text}</div>
+          <div className="text-sm text-slate-400">
             ขนาด: {record.packagingSize} | ราคา: {record.price} บ.
           </div>
         </div>
       ),
     },
     {
+      title: (
+        <span>
+          วันหมดอายุ <span className="text-red-500">*</span>
+        </span>
+      ),
+      dataIndex: "expiryDate",
+      width: 180,
+      render: (val: dayjs.Dayjs | null, record: ReceiveItem, index: number) => {
+        // ตรวจสอบว่าจำเป็นต้องกรอกไหม (ถ้ายอดรับ > 0 และยังไม่มีค่าวันที่)
+        const isRequiredAndEmpty = (record.receivedQty || 0) > 0 && !val;
+
+        return (
+          <DatePicker
+            locale={buddhistLocale}
+            format="D MMMM BBBB"
+            value={val}
+            onChange={(date) => handleExpiryChange(date, index)}
+            className={`w-full text-center ${
+              isRequiredAndEmpty
+                ? "border-red-400 bg-red-50"
+                : "border-blue-300"
+            }`}
+            placeholder="ระบุวันหมดอายุ"
+            allowClear={false}
+            status={isRequiredAndEmpty ? "error" : ""}
+            disabledDate={(current) => {
+              return current && current <= dayjs().endOf("day");
+            }}
+          />
+        );
+      },
+    },
+    {
       title: "ขอเบิก",
       dataIndex: "requestQty",
       align: "center" as const,
       width: 100,
-      render: (val: number) => <span className="text-slate-500">{val}</span>,
+      render: (val: number) => (
+        <span className="text-slate-500 text-base">{val}</span>
+      ),
     },
     {
       title: "รับจริง",
@@ -151,7 +210,7 @@ export default function MaDrugReceiveModal({
           min={0}
           value={val}
           onChange={(v) => handleQtyChange(v, index)}
-          className="w-full border-blue-300 focus:border-blue-500 font-bold text-blue-700 text-center"
+          className="w-full border-blue-300 focus:border-blue-500 font-bold text-blue-700 text-center text-base"
         />
       ),
     },
@@ -159,9 +218,9 @@ export default function MaDrugReceiveModal({
       title: "รวมเงิน",
       key: "total",
       align: "right" as const,
-      width: 120,
+      width: 150,
       render: (_: any, record: ReceiveItem) => (
-        <span className="font-semibold text-slate-700">
+        <span className="font-semibold text-slate-700 text-base">
           {((record.receivedQty || 0) * record.price).toLocaleString()}
         </span>
       ),
@@ -173,94 +232,104 @@ export default function MaDrugReceiveModal({
   return (
     <Modal
       title={
-        <div className="text-xl font-bold text-[#0683e9] flex items-center gap-2">
+        <div className="text-2xl font-bold text-[#0683e9] flex items-center gap-2 py-2">
           ยืนยันการรับยาเข้าคลัง
         </div>
       }
       open={visible}
       onCancel={onClose}
       footer={null}
-      width={900}
+      width="80vw"
+      style={{ top: 20 }}
       centered
       styles={{
         content: { borderRadius: "16px", padding: 0, overflow: "hidden" },
         header: { padding: "20px 24px", borderBottom: "1px solid #f0f0f0" },
-        body: { padding: "24px" },
+        body: { padding: "24px", height: "85vh", overflowY: "auto" },
       }}
     >
-      <Form form={form} layout="vertical" onFinish={handleFinish}>
-        {/* 1. ส่วนแสดงข้อมูลใบเบิก (Read Only) */}
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-6">
+      <Form
+        form={form}
+        layout="vertical"
+        onFinish={handleFinish}
+        className="h-full flex flex-col"
+      >
+        {/* 1. ส่วนแสดงข้อมูลใบเบิก */}
+        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6 flex-shrink-0">
           <Row gutter={[16, 16]}>
-            <Col span={8}>
-              <div className="text-xs text-slate-500">เลขที่ใบเบิก</div>
-              <div className="font-bold text-slate-700 text-lg">
+            <Col xs={24} sm={8}>
+              <div className="text-sm text-slate-500">เลขที่ใบเบิก</div>
+              <div className="font-bold text-slate-700 text-xl">
                 {data.requestNumber}
               </div>
             </Col>
-            <Col span={8}>
-              <div className="text-xs text-slate-500">หน่วยงาน</div>
-              <div className="font-semibold text-slate-700">
+            <Col xs={24} sm={8}>
+              <div className="text-sm text-slate-500">หน่วยงาน</div>
+              <div className="font-semibold text-slate-700 text-lg">
                 {data.requestUnit}
               </div>
             </Col>
-            <Col span={8}>
-              <div className="text-xs text-slate-500">วันที่ขอเบิก</div>
-              <div className="font-medium text-slate-700">
-                {dayjs(data.requestDate).locale("th").format("DD MMM YYYY")}
+            <Col xs={24} sm={8}>
+              <div className="text-sm text-slate-500">วันที่ขอเบิก</div>
+              <div className="font-medium text-slate-700 text-lg">
+                {dayjs(data.requestDate).locale("th").format("DD MMMM YYYY")}
               </div>
             </Col>
           </Row>
         </div>
 
         {/* 2. ตารางรายการยา */}
-        <div className="mb-6 border border-slate-200 rounded-lg overflow-hidden">
-          <div className="bg-blue-50/50 px-4 py-2 border-b border-blue-100 flex justify-between items-center">
-            <span className="font-semibold text-blue-700">
+        <div className="mb-6 border border-slate-200 rounded-lg overflow-hidden flex-1 flex flex-col">
+          <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-100 flex justify-between items-center flex-shrink-0">
+            <span className="font-semibold text-blue-700 text-lg">
               รายการยาที่ขอเบิก
             </span>
-            <Tag color="blue">{items.length} รายการ</Tag>
+            <Tag color="blue" className="text-base px-3 py-1">
+              {items.length} รายการ
+            </Tag>
           </div>
-          <Table
-            dataSource={items}
-            columns={columns}
-            rowKey="id"
-            pagination={{
-              pageSize: 10,
-              showSizeChanger: false,
-            }}
-            size="small"
-            scroll={{ y: 300 }}
-            summary={() => (
-              <Table.Summary.Row className="bg-slate-50 font-bold">
-                <Table.Summary.Cell index={0} colSpan={3} align="right">
-                  รวมทั้งสิ้น
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={1} align="center">
-                  <span className="text-blue-600">
-                    {summary.totalQty.toLocaleString()}
-                  </span>
-                </Table.Summary.Cell>
-                <Table.Summary.Cell index={2} align="right">
-                  <span className="text-red-600 text-lg">
-                    ฿ {summary.totalAmt.toLocaleString()}
-                  </span>
-                </Table.Summary.Cell>
-              </Table.Summary.Row>
-            )}
-          />
+          <div className="flex-1 overflow-hidden">
+            <Table
+              dataSource={items}
+              columns={columns}
+              rowKey="id"
+              pagination={{
+                pageSize: 20,
+                showSizeChanger: false, // ซ่อนปุ่มเปลี่ยนจำนวนต่อหน้า (ถ้าต้องการ)
+              }}
+              size="middle"
+              scroll={{ y: "50vh" }} // ✅ กำหนดความสูง Scroll ให้เหมาะสมกับจอใหญ่
+              summary={() => (
+                <Table.Summary.Row className="bg-slate-50 font-bold text-lg">
+                  <Table.Summary.Cell index={0} colSpan={4} align="right">
+                    รวมทั้งสิ้น
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={1} align="center">
+                    <span className="text-blue-600">
+                      {summary.totalQty.toLocaleString()}
+                    </span>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={2} align="right">
+                    <span className="text-red-600">
+                      ฿ {summary.totalAmt.toLocaleString()}
+                    </span>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              )}
+            />
+          </div>
         </div>
 
         {/* 3. ปุ่มดำเนินการ */}
-        <div className="flex justify-end gap-3 pt-2 border-t border-slate-100">
-          <Button onClick={onClose} className="h-10 px-6 rounded-lg">
+        <div className="flex justify-end gap-4 pt-4 border-t border-slate-100 flex-shrink-0">
+          <Button onClick={onClose} className="h-12 px-8 rounded-xl text-lg">
             ยกเลิก
           </Button>
           <Button
             type="primary"
             htmlType="submit"
             loading={loading}
-            className="h-10 px-6 rounded-lg bg-[#0683e9] shadow-md hover:shadow-lg border-0"
+            className="h-12 px-8 rounded-xl bg-[#0683e9] shadow-md hover:shadow-lg border-0 text-lg"
           >
             ยืนยันการรับยา (อัปเดตสต็อก)
           </Button>

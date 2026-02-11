@@ -260,7 +260,7 @@ export default function DispenseTableDetail({
             onClick={onClose}
             className="px-4 py-2 bg-white border border-slate-300 rounded-md text-slate-700 hover:bg-slate-50 font-medium transition-colors text-sm"
           >
-            ปิดหน้าต่าง
+            ปิด
           </button>
         </div>
       </div>

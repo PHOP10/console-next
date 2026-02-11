@@ -169,23 +169,28 @@ export default function DispenseTable({
       render: (_, record) => {
         const isEditable = record.status === "pending";
         const isConfirmable = record.status === "approved";
+        const isCompleted = record.status === "completed";
 
         return (
           <Space size="small">
-            {isConfirmable && (
-              <Tooltip title="ยืนยันการจ่ายยา (ตัดสต็อก)">
-                <Button
-                  type="text"
-                  shape="circle"
-                  icon={
-                    <MedicineBoxOutlined
-                      style={{ fontSize: 18, color: "#faad14" }} // ขนาด 18px
-                    />
-                  }
-                  onClick={() => handleConfirm(record)}
-                />
-              </Tooltip>
-            )}
+            <Tooltip
+              title={isConfirmable ? "ยืนยันรับยาเข้าคลัง" : "รออนุมัติ"}
+            >
+              <Button
+                type="text"
+                shape="circle"
+                disabled={!isConfirmable}
+                icon={
+                  <MedicineBoxOutlined
+                    style={{
+                      fontSize: 18,
+                      color: isConfirmable ? "#faad14" : "#d9d9d9",
+                    }}
+                  />
+                }
+                onClick={() => handleConfirm(record)}
+              />
+            </Tooltip>
 
             <Tooltip title="ดูรายละเอียด">
               <Button
@@ -249,7 +254,7 @@ export default function DispenseTable({
           loading={loading}
           bordered
           size="small" // ใช้ size small บนมือถือ
-          pagination={{ pageSize: 10, size: "small" }}
+          pagination={{ pageSize: 20, size: "small" }}
           scroll={{ x: "max-content" }}
         />
       </Card>

@@ -245,7 +245,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               >
                 <Input.TextArea
                   placeholder="กรอกวัตถุประสงค์"
-                  rows={1} // เริ่มต้น 1 บรรทัด จะขยายเอง
+                  rows={1}
                   className={textAreaStyle}
                   style={{ minHeight: "44px" }}
                   maxLength={200}
