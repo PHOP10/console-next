@@ -353,7 +353,7 @@ export default function ManageDrugTable({
             </Tooltip>
 
             {/* 3. ปุ่ม Export Excel */}
-            <Tooltip title="พิมพ์ใบเบิก (Excel)">
+            {/* <Tooltip title="พิมพ์ใบเบิก (Excel)">
               <Button
                 type="text"
                 shape="circle"
@@ -364,10 +364,10 @@ export default function ManageDrugTable({
                 }
                 onClick={() => handleExport(record)}
               />
-            </Tooltip>
+            </Tooltip> */}
 
             {/* 4. ปุ่มแก้ไข */}
-            <Tooltip title="แก้ไขข้อมูล">
+            {/* <Tooltip title="แก้ไขข้อมูล">
               <Button
                 type="text"
                 shape="circle"
@@ -382,13 +382,13 @@ export default function ManageDrugTable({
                 disabled={!isPending}
                 onClick={() => isPending && handleEdit(record)}
               />
-            </Tooltip>
+            </Tooltip> */}
 
             {/* 5. ปุ่มลบ */}
             <Tooltip title="ลบรายการ">
               <Popconfirm
                 title="ยืนยันการลบ"
-                description="คุณแน่ใจหรือไม่ว่าต้องการลบข้อมูลนี้?"
+                description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
                 onConfirm={() => handleDelete(record.id)}
                 okText="ลบ"
                 cancelText="ยกเลิก"
@@ -399,7 +399,7 @@ export default function ManageDrugTable({
                   shape="circle"
                   icon={
                     <DeleteOutlined
-                      style={{ fontSize: 18, color: "#ff4d4f" }} // ปรับขนาดไอคอนเป็น 18px
+                      style={{ fontSize: 18, color: "#ff4d4f" }}
                     />
                   }
                 />

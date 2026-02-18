@@ -337,7 +337,7 @@ export default function MaDispenseTable({
             </Tooltip>
 
             {/* 3. ปุ่ม Export Excel */}
-            <Tooltip title="พิมพ์ใบจ่ายยา">
+            {/* <Tooltip title="พิมพ์ใบจ่ายยา">
               <Button
                 type="text"
                 shape="circle"
@@ -348,9 +348,9 @@ export default function MaDispenseTable({
                 }
                 onClick={() => handleExport(record)}
               />
-            </Tooltip>
+            </Tooltip> */}
 
-            <Tooltip title="แก้ไข">
+            {/* <Tooltip title="แก้ไข">
               <Button
                 type="text"
                 shape="circle"
@@ -365,13 +365,13 @@ export default function MaDispenseTable({
                 disabled={!isPending}
                 onClick={() => isPending && handleEdit(record)}
               />
-            </Tooltip>
+            </Tooltip> */}
 
             {/* 4. ปุ่มลบ */}
             <Tooltip title="ลบรายการ">
               <Popconfirm
                 title="ยืนยันการลบ"
-                description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+                description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
                 onConfirm={() => handleDelete(record.id)}
                 okText="ลบ"
                 cancelText="ยกเลิก"

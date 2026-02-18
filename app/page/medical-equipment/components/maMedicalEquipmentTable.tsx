@@ -411,8 +411,7 @@ export default function MaMedicalEquipmentTable({
             />
           </Tooltip>
 
-          {/* Edit */}
-          <Tooltip title="แก้ไข">
+          {/* <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
                 fontSize: 18,
@@ -423,12 +422,12 @@ export default function MaMedicalEquipmentTable({
                 if (record.status === "pending") handleEdit(record);
               }}
             />
-          </Tooltip>
+          </Tooltip> */}
 
           {/* Delete */}
           <Popconfirm
             title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+            description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
             onConfirm={async () => {
               try {
                 await intraAuthService.deleteMaMedicalEquipment(record.id);
@@ -438,8 +437,9 @@ export default function MaMedicalEquipmentTable({
                 message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
               }
             }}
-            okText="ใช่"
+            okText="ลบ"
             cancelText="ยกเลิก"
+            okButtonProps={{ danger: true }}
           >
             <Tooltip title="ลบ">
               <DeleteOutlined

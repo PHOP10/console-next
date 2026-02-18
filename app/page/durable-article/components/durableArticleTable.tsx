@@ -324,6 +324,7 @@ export default function DurableArticleTable({
             session?.user?.role === "admin") && (
             <Popconfirm
               title="ลบข้อมูล?"
+              description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
               onConfirm={async () => {
                 try {
                   await intraAuthService.deleteDurableArticle(record.id);
@@ -334,7 +335,7 @@ export default function DurableArticleTable({
                   message.error("ลบไม่สำเร็จ");
                 }
               }}
-              okText="ใช่"
+              okText="ลบ"
               cancelText="ยกเลิก"
               okButtonProps={{ danger: true }}
             >

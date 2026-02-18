@@ -386,7 +386,7 @@ export default function ManagementDataLeaveTable({
 
           {/* Return Edit */}
           <Popconfirm
-            title="ส่งคืนเพื่อแก้ไข?"
+            title="ยืนยันการส่งคืนเพื่อแก้ไข ?"
             onConfirm={() => returnEdit(record)}
             okText="ใช่"
             cancelText="ไม่"
@@ -415,7 +415,7 @@ export default function ManagementDataLeaveTable({
           {/* Edit */}
 
           {/* Delete */}
-          <Popconfirm
+          {/* <Popconfirm
             title="ยืนยันการลบ?"
             onConfirm={() => handleDelete(record)}
             okText="ลบ"
@@ -431,7 +431,7 @@ export default function ManagementDataLeaveTable({
                 }}
               />
             </Tooltip>
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       ),
     },

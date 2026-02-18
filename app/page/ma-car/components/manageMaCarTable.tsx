@@ -376,7 +376,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               title={isApprove ? "ส่งคืนให้ผู้ใช้แก้ไข" : "ส่งคืนไม่ได้"}
             >
               <Popconfirm
-                title="ยืนยันการส่งคืนเพื่อแก้ไข"
+                title="ยืนยันการส่งคืนเพื่อแก้ไข ?"
                 onConfirm={() => returnEdit(record)}
                 disabled={!isApprove}
                 okText="ยืนยัน"
@@ -454,7 +454,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             {/* 6. ปุ่มลบ */}
             {/* <Popconfirm
               title="ยืนยันการลบ"
-              description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+              description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
               onConfirm={async () => {
                 try {
                   await intraAuthService.deleteMaCar(record.id);

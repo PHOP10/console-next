@@ -113,8 +113,6 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
       key: "action",
       align: "center",
       render: (_, record) => {
-        // ✅ สร้างตัวแปรเช็คว่าเป็น Account ของตัวเองหรือไม่
-        // (สมมติว่าใน session มี userId และใน record ก็มี userId)
         const isOwnAccount = session?.user?.userId === record.userId;
 
         return (
@@ -122,7 +120,7 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
             <Tooltip title="แก้ไข">
               <EditOutlined
                 style={{
-                  fontSize: 22,
+                  fontSize: 18,
                   color: "#faad14",
                   cursor: "pointer",
                 }}
@@ -130,20 +128,19 @@ const UserTable: React.FC<UserTableProps> = ({ data, loading, fetchData }) => {
               />
             </Tooltip>
 
-            {/* ✅ เพิ่มเงื่อนไข: ถ้าไม่ใช่ Account ตัวเอง ถึงจะแสดงปุ่มลบ */}
             {!isOwnAccount && (
               <Tooltip title="ลบข้อมูล">
                 <Popconfirm
                   title="ยืนยันการลบ"
-                  description="คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?"
-                  okText="ใช่"
+                  description="ยืนยันการลบข้อมูลผู้ใช้รายนี้หรือไม่ ?"
+                  okText="ลบ"
                   cancelText="ไม่"
                   onConfirm={() => handleDelete(record.id)}
                   okButtonProps={{ danger: true }}
                 >
                   <DeleteOutlined
                     style={{
-                      fontSize: 22,
+                      fontSize: 18,
                       color: "#ff4d4f",
                       cursor: "pointer",
                       transition: "color 0.2s",

@@ -236,7 +236,7 @@ export default function ForgotForm({
             className="mb-4"
           >
             <Input.Password
-              placeholder="New Password"
+              placeholder="รหัสผ่านใหม่"
               prefix={<LockOutlined className="text-gray-400 mr-2" />}
               size="large"
               style={inputStyle}
@@ -265,7 +265,7 @@ export default function ForgotForm({
             className="mb-8"
           >
             <Input.Password
-              placeholder="Confirm New Password"
+              placeholder="ยืนยันรหัสผ่านใหม่"
               prefix={<LockOutlined className="text-gray-400 mr-2" />}
               size="large"
               style={inputStyle}

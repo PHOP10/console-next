@@ -164,19 +164,14 @@ export default function ManagementMasterLeaveTable({
           {/* ปุ่มลบ */}
           <Popconfirm
             title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+            description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
             onConfirm={() => handleDelete(record.id)}
-            okText="ใช่"
+            okText="ลบ"
+            okButtonProps={{ danger: true }}
             cancelText="ยกเลิก"
           >
             <Tooltip title="ลบ">
-              <DeleteOutlined
-                style={{
-                  fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
-                  color: "#ff4d4f",
-                  cursor: "pointer",
-                }}
-              />
+              <DeleteOutlined style={{ fontSize: 18, color: "#ff4d4f" }} />
             </Tooltip>
           </Popconfirm>
         </Space>

@@ -191,7 +191,7 @@ export default function EquipmentTable({
           {/* ส่วนลบ */}
           <Popconfirm
             title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+            description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
             onConfirm={async () => {
               try {
                 await intraAuthService.deleteMedicalEquipment(record.id);
@@ -202,7 +202,8 @@ export default function EquipmentTable({
                 message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
               }
             }}
-            okText="ใช่"
+            okButtonProps={{ danger: true }}
+            okText="ลบ"
             cancelText="ยกเลิก"
           >
             <Tooltip title="ลบ">

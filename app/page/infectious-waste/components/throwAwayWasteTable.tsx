@@ -143,6 +143,7 @@ export default function ThrowAwayWasteTable({
 
               <Popconfirm
                 title="ลบข้อมูล?"
+                description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
                 onConfirm={async () => {
                   try {
                     await intraAuthService.deleteInfectiousWaste(record.id);
@@ -153,8 +154,9 @@ export default function ThrowAwayWasteTable({
                     message.error("ลบไม่สำเร็จ");
                   }
                 }}
-                okText="ใช่"
+                okText="ลบ"
                 cancelText="ยกเลิก"
+                okButtonProps={{ danger: true }}
               >
                 <Tooltip title="ลบ">
                   <DeleteOutlined

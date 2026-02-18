@@ -20,49 +20,51 @@ export const authOptions: NextAuthOptions = {
           let response;
           try {
             // 1. ลองยิงผ่าน Internal URL (Docker Network)
-            // console.log("Attempting login via Internal URL...");
             response = await axios.post(`${config.internalUrl}/auth/login`, {
               username: credentials.username,
               password: credentials.password,
             });
           } catch (internalError) {
             // 2. ถ้า Internal พัง ให้ลองยิงผ่าน Backend URL (Public IP)
-            // console.log("Internal login failed, trying via Backend URL...");
             response = await axios.post(`${config.backendUrl}/auth/login`, {
               username: credentials.username,
               password: credentials.password,
             });
           }
 
-          // console.log("Login response:", response);
-
           if (!response?.data) return null;
 
           const user = response.data;
-
           // ตรวจสอบให้แน่ใจว่า user มี role
           if (!user.role) user.role = "user";
 
           return user;
         } catch (error: any) {
-          console.error("Login error:", error.response?.data || error.message);
+          console.error(
+            "Login error log:",
+            error.response?.data || error.message,
+          );
 
           const status = error.response?.status;
-          const backendMessage = error.response?.data?.message;
+          let backendMessage = error.response?.data?.message;
 
+          // ✅ ปรับปรุง: ถ้า Backend ส่งข้อความมา (ภาษาไทย) ให้ใช้เลย
           if (backendMessage) {
+            // บางที NestJS ส่ง Validation Error เป็น Array เราต้องแปลงเป็น String
+            if (Array.isArray(backendMessage)) {
+              backendMessage = backendMessage.join(", ");
+            }
             throw new Error(backendMessage);
           }
 
+          // ✅ ปรับปรุง: ถ้า Backend ไม่ส่ง Message มา (เช่น Nginx ตัดบท) ให้ใช้ข้อความสำรองที่เป็นไทย
           if (status === 404) {
-            throw new Error("User not found");
+            throw new Error("ไม่พบชื่อผู้ใช้งาน");
           } else if (status === 401) {
-            throw new Error("Password incorrect");
+            throw new Error("รหัสผ่านไม่ถูกต้อง");
           }
 
-          throw new Error(
-            "Login failed: Invalid credentials or server unreachable",
-          );
+          throw new Error("เข้าสู่ระบบไม่สำเร็จ หรือ เชื่อมต่อ Server ไม่ได้");
         }
       },
     }),

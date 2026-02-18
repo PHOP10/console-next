@@ -431,7 +431,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             </Tooltip>
           </Popover>
           <Popconfirm
-            title="ยืนยันการส่งคืนเพื่อแก้ไข"
+            title="ยืนยันการส่งคืนเพื่อแก้ไข ?"
             okText="ยืนยัน"
             cancelText="ยกเลิก"
             onConfirm={() => returnEdit(record)}
@@ -475,7 +475,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
 
           {/* <Popconfirm
             title="ยืนยันการลบ"
-            description="คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?"
+            description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
             onConfirm={async () => {
               try {
                 await intraAuthService.deleteOfficialTravelRequest(record.id);
@@ -486,7 +486,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                 message.error("เกิดข้อผิดพลาดในการลบข้อมูล");
               }
             }}
-            okText="ใช่"
+            okText="ลบ"
             cancelText="ยกเลิก"
           >
             <Tooltip title="ลบ">

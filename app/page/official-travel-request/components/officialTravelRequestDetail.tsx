@@ -150,7 +150,7 @@ const OfficialTravelRequestDetail: React.FC<
           <div className="bg-white px-4 sm:px-6 py-4 border-b border-slate-200 flex justify-between items-start sticky top-0 z-10 shrink-0">
             <div>
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 m-0">
-                รายละเอียดคำขอเดินทาง
+                รายละเอียดคำขอไปราชการ
               </h2>
               <div className="text-slate-500 text-xs sm:text-sm mt-1">
                 เอกสารเลขที่:{" "}
