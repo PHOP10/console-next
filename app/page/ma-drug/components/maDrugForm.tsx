@@ -389,38 +389,28 @@ export default function MaDrugForm({
           </Row>
 
           <div className="bg-blue-50/50 p-4 sm:p-6 rounded-2xl border border-blue-100 mb-6 shadow-inner">
-            <Row gutter={[16, 16]}>
-              <Col xs={12} sm={12}>
-                <Form.Item
-                  label="จำนวนรายการ (รายการ)"
-                  name="quantityUsed"
-                  style={{ marginBottom: 0 }}
-                >
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    className="w-full h-10 sm:h-11 rounded-xl border-blue-200 bg-white shadow-sm text-gray-700 font-bold pt-1 text-center"
-                    readOnly
-                    disabled
-                  />
-                </Form.Item>
+            <Row gutter={[24, 16]} align="middle">
+              <Col
+                xs={24}
+                sm={12}
+                className="flex flex-col items-center border-r-0 sm:border-r border-blue-200 pb-3 sm:pb-0 border-b sm:border-b-0"
+              >
+                <span className="text-slate-500 text-sm mb-1">จำนวนรายการ</span>
+                <span className="text-xl sm:text-2xl font-bold text-blue-600">
+                  {summary.totalItems}
+                </span>
               </Col>
-              <Col xs={12} sm={12}>
-                <Form.Item
-                  label="รวมเป็นเงิน (บาท)"
-                  name="totalPrice"
-                  style={{ marginBottom: 0 }}
-                >
-                  <InputNumber
-                    style={{ width: "100%" }}
-                    className="w-full h-10 sm:h-11 rounded-xl border-blue-200 bg-white shadow-sm text-red-600 font-bold text-base sm:text-lg pt-1 text-center"
-                    formatter={(value) =>
-                      `฿ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ",")
-                    }
-                    parser={(value) => value!.replace(/\฿\s?|(,*)/g, "")}
-                    readOnly
-                    disabled
-                  />
-                </Form.Item>
+              <Col
+                xs={24}
+                sm={12}
+                className="flex flex-col items-center pt-3 sm:pt-0"
+              >
+                <span className="text-slate-500 text-sm mb-1">
+                  มูลค่ารวม (บาท)
+                </span>
+                <span className="text-xl sm:text-2xl font-bold text-red-500">
+                  {summary.totalPrice.toLocaleString()}
+                </span>
               </Col>
             </Row>
           </div>
@@ -430,7 +420,7 @@ export default function MaDrugForm({
               maxLength={200}
               rows={2}
               placeholder="กรอกหมายเหตุ (ถ้ามี)"
-              className={textAreaStyle} // ✅ ใช้ Style ที่ประกาศไว้ข้างบน
+              className={textAreaStyle}
             />
           </Form.Item>
 

@@ -235,14 +235,10 @@ export default function DurableArticleTable({
       title: "รายการ",
       dataIndex: "description",
       key: "description",
-      width: 200,
+      width: 250,
       render: (text: string) => {
         if (!text) return "-";
-
-        // --- ปรับแก้ตรงนี้: เช็คขนาดหน้าจอ ---
-        // ถ้าจอใหญ่ (md=true) ใช้ 44, ถ้าจอมือถือ ใช้ 22
         const limit = screens.md ? 44 : 22;
-
         const displayText =
           text.length > limit ? `${text.substring(0, limit)}...` : text;
 
@@ -260,7 +256,7 @@ export default function DurableArticleTable({
       dataIndex: "category",
       key: "category",
       align: "center",
-      width: 120,
+      width: 100,
       responsive: ["md"],
       render: (text) => (text ? <Tag color="cyan">{text}</Tag> : "-"),
     },
@@ -503,10 +499,21 @@ export default function DurableArticleTable({
             scroll={{ x: "max-content" }}
             size="small"
             pagination={{
-              pageSize: 20,
-              showTotal: (total) => `รวม ${total} รายการ`,
+              pageSizeOptions: ["10", "20", "50", "100"],
+              showSizeChanger: true,
+              defaultPageSize: 10,
+
+              showTotal: (total, range) => (
+                <span className="text-gray-500 text-xs sm:text-sm font-light">
+                  แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
+                  <span className="font-bold text-blue-600">{total}</span>{" "}
+                  รายการ
+                </span>
+              ),
+
+              locale: { items_per_page: "/ หน้า" },
               position: ["bottomRight"],
-              size: "small",
+              size: "default",
             }}
           />
         </div>

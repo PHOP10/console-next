@@ -15,6 +15,7 @@ import ExportMedicalEquipmentWord from "./medicalEquipmentWord";
 import {
   EditOutlined,
   FileSearchOutlined,
+  ImportOutlined,
   RollbackOutlined,
 } from "@ant-design/icons";
 import CustomTable from "../../common/CustomTable";
@@ -225,7 +226,7 @@ export default function MedicalEquipmentTable({
         <Space size="small">
           {/* Edit Button */}
           <Tooltip title="รับคืน">
-            <RollbackOutlined
+            <ImportOutlined
               style={{
                 fontSize: 18, // ขนาด 18 ตามข้อ 3
                 color: record.status === "approve" ? "#722ed1" : "#d9d9d9",

@@ -105,9 +105,10 @@ export default function DispenseTableDetail({
       dataIndex: ["drug", "name"],
       key: "drugName",
       render: (text) => (
-        <span className="font-medium text-slate-700 text-sm sm:text-base">
+        // ✅ เพิ่ม whitespace-normal และ break-words ให้ตัดคำอัตโนมัติ
+        <div className="font-medium text-slate-700 text-sm sm:text-base whitespace-normal break-words min-w-[150px]">
           {text || "-"}
-        </span>
+        </div>
       ),
     },
     {
@@ -210,8 +211,23 @@ export default function DispenseTableDetail({
               columns={drugColumns}
               rowKey="id"
               size="small"
-              scroll={{ x: "max-content", y: 400 }}
-              pagination={{ pageSize: 10, size: "small" }}
+              // ✅ ปรับ scroll x ให้ไม่เกิดแถบเลื่อนบน Desktop
+              scroll={{ x: 600, y: 400 }}
+              // ✅ อัปเดต Pagination แบบใหม่
+              pagination={{
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showSizeChanger: true,
+                defaultPageSize: 20,
+                showTotal: (total, range) => (
+                  <span className="text-gray-500 text-xs sm:text-sm font-light">
+                    แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
+                    <span className="font-bold text-blue-600">{total}</span>{" "}
+                    รายการ
+                  </span>
+                ),
+                locale: { items_per_page: "/ หน้า" },
+                position: ["bottomRight"],
+              }}
               summary={() => {
                 const labelColSpan = screens.md ? 4 : 3;
                 const priceColSpan = screens.md ? 2 : 1;

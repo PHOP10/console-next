@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react"; // ✅ เพิ่ม useMemo
 import {
   Calendar,
   Formats,
@@ -12,7 +12,8 @@ import { DataLeaveType, UserType } from "../../common";
 import moment from "moment";
 import "moment/locale/th";
 import DataLeaveDetail from "./dataLeaveDetail";
-import { Tooltip, Tag } from "antd";
+import { Tooltip } from "antd";
+import Holidays from "date-holidays"; // ✅ 1. Import Holidays
 
 const localizer = momentLocalizer(moment);
 
@@ -32,6 +33,8 @@ interface Props {
 const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
   const [selected, setSelected] = useState<DataLeaveType | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+
+  const hd = new Holidays("TH");
 
   const getUserName = (idOrName?: string) => {
     if (!idOrName) return "-";
@@ -63,6 +66,68 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
       setModalOpen(true);
     }
   };
+
+  // ✅ 3. ฟังก์ชันสำหรับแตก Event ยาวๆ ให้เป็น Event รายวัน (ตัดวันหยุด)
+  const processEvents = useMemo(() => {
+    const processedEvents: CustomEvent[] = [];
+
+    data.forEach((leave) => {
+      const start = moment(leave.dateStart);
+      const end = moment(leave.dateEnd);
+
+      let current = start.clone();
+
+      let chunkStart: moment.Moment | null = null;
+      let chunkEnd: moment.Moment | null = null;
+
+      // ฟังก์ชันช่วยบันทึก Event เข้า Array
+      const pushChunk = () => {
+        if (chunkStart && chunkEnd) {
+          processedEvents.push({
+            id: leave.id,
+            title: getUserName(leave.createdName),
+            start: chunkStart.toDate(),
+
+            end: chunkEnd.endOf("day").toDate(),
+            status: leave.status,
+            allDay: true,
+          });
+        }
+        chunkStart = null;
+        chunkEnd = null;
+      };
+
+      // วนลูปตรวจสอบทีละวัน
+      while (current.isSameOrBefore(end, "day")) {
+        const dayOfWeek = current.day();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const holiday = hd.isHoliday(current.toDate());
+        const isPublicHoliday = holiday && holiday[0].type === "public";
+        const isWorkingDay = !isWeekend && !isPublicHoliday;
+
+        if (isWorkingDay) {
+          // ถ้าเป็นวันทำงาน
+          if (!chunkStart) {
+            // ถ้ายังไม่มีจุดเริ่ม ให้เริ่มนับวันนี้เป็นวันแรกของก้อน
+            chunkStart = current.clone();
+          }
+          // ขยับจุดสิ้นสุดมาเป็นวันนี้เรื่อยๆ
+          chunkEnd = current.clone();
+        } else {
+          // ⛔ ถ้าเจอวันหยุด: ให้บันทึกก้อนก่อนหน้า (ถ้ามี) แล้วจบก้อนนั้นทันที
+          pushChunk();
+        }
+
+        // ขยับไปวันถัดไป
+        current.add(1, "day");
+      }
+
+      // จบลูปแล้ว อย่าลืมบันทึกก้อนสุดท้ายที่ค้างอยู่ (เช่น ลาถึงวันศุกร์)
+      pushChunk();
+    });
+
+    return processedEvents;
+  }, [data, dataUser]); // คำนวณใหม่เมื่อ data เปลี่ยน
 
   const formats: Formats = {
     monthHeaderFormat: (date: Date) => {
@@ -96,14 +161,9 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
         <Calendar<CustomEvent>
           localizer={localizer}
           formats={formats}
-          events={data.map((item) => ({
-            id: item.id,
-            title: getUserName(item.createdName),
-            start: new Date(item.dateStart),
-            end: new Date(item.dateEnd),
-            status: item.status,
-          }))}
-          // ปรับความสูงให้ Responsive นิดหน่อย แต่ยังคงค่าหลักไว้
+          popup={false} // ปิด Popup ตามที่คุยกัน
+          // ✅ 4. ใช้ processedEvents แทน data.map ตรงๆ
+          events={processEvents}
           style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
           onSelectEvent={onSelectEvent}
           dayPropGetter={() => ({
@@ -186,7 +246,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
       </div>
 
       <style jsx global>{`
-        /* สีประจำวัน */
+        /* ... styles เดิม ... */
         .rbc-header:nth-child(1) {
           background-color: #fef2f2;
           color: #dc2626;
@@ -223,13 +283,12 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           border-bottom: 2px solid #e9d5ff;
         }
 
-        /* Toolbar Styles */
         .rbc-toolbar {
           display: flex;
           align-items: center;
           justify-content: space-between;
           margin-bottom: 10px;
-          flex-wrap: wrap; /* Allow wrapping */
+          flex-wrap: wrap;
           gap: 8px;
         }
         .rbc-toolbar-label {
@@ -239,7 +298,6 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           text-align: center;
         }
 
-        /* Buttons */
         .rbc-btn-group button {
           border: 1px solid #cbd5e1 !important;
           background-color: #fff;
@@ -247,7 +305,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           padding: 6px 14px;
           font-size: 0.9rem;
           transition: all 0.2s;
-          white-space: nowrap; /* Prevent text wrap in buttons */
+          white-space: nowrap;
         }
         .rbc-btn-group > button:first-child {
           border-top-left-radius: 8px;
@@ -263,7 +321,6 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           border-color: #2563eb !important;
         }
 
-        /* Grid */
         .rbc-month-view {
           border: 1px solid #cbd5e1;
           border-radius: 12px;
@@ -290,7 +347,6 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           color: #64748b;
         }
 
-        /* Current Day */
         .rbc-now .rbc-button-link {
           color: #fff;
           background: #2563eb;
@@ -302,53 +358,49 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
           justify-content: center;
         }
 
-        /* --- Mobile Responsive Enhancements --- */
+        .rbc-show-more {
+          background-color: transparent !important;
+          font-size: 0.85rem;
+          color: #64748b;
+          font-weight: 600;
+          z-index: 10;
+        }
+
         @media (max-width: 768px) {
-          /* Toolbar Stack */
           .rbc-toolbar {
             flex-direction: column;
-            align-items: stretch; /* Stretch to full width */
+            align-items: stretch;
             gap: 12px;
           }
-
           .rbc-toolbar-label {
             margin: 0;
-            font-size: 1.25rem; /* Smaller title */
-            order: -1; /* Move title to top if needed, or keep standard flow */
+            font-size: 1.25rem;
+            order: -1;
           }
-
-          /* Button Groups Full Width */
           .rbc-btn-group {
             display: flex;
             width: 100%;
           }
-
           .rbc-btn-group button {
-            flex: 1; /* Equal width buttons */
-            padding: 8px 4px; /* Smaller padding */
+            flex: 1;
+            padding: 8px 4px;
             font-size: 0.85rem;
             justify-content: center;
           }
-
-          /* Header Text */
           .rbc-header {
-            font-size: 0.75rem; /* Smaller day names */
-            font-weight: normal; /* ตามกฎข้อ 4 */
+            font-size: 0.75rem;
+            font-weight: normal;
             padding: 4px 0;
             overflow: hidden;
             text-overflow: ellipsis;
           }
-
-          /* Date Cells */
           .rbc-date-cell {
             font-size: 0.8rem;
             padding: 2px 4px;
-            font-weight: normal; /* ตามกฎข้อ 4 */
+            font-weight: normal;
           }
-
-          /* Event Text */
           .rbc-event {
-            font-size: 0.7rem !important; /* Smaller events */
+            font-size: 0.7rem !important;
             line-height: 1.2;
           }
         }

@@ -64,7 +64,7 @@ export const MenuSider: IMenu[] = [
     children: [
       {
         key: "officialTravelRequest",
-        label: "ข้อมูลขอไปราชการ",
+        label: "ข้อมูลคำขอ",
         roles: [
           group.admin,
           group.user,

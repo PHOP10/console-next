@@ -2,6 +2,7 @@ import React from "react";
 import { Modal, Row, Col, Tag, Divider, Button } from "antd";
 import { MaCarType, UserType } from "../../common";
 import { CarOutlined, DashboardOutlined } from "@ant-design/icons";
+import dayjs from "dayjs";
 
 interface MaCarDetailProps {
   open: boolean;
@@ -39,6 +40,12 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({
       month: "long",
       year: "numeric",
     });
+  };
+
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return "-";
+    const d = dayjs(dateString).locale("th");
+    return `${d.date()} ${d.format("MMMM")} ${d.year() + 543}`;
   };
 
   const getStatusTag = (status: string) => {
@@ -402,8 +409,8 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({
               </Row>
               <Divider className="my-3 bg-slate-300" />
               <div className="flex justify-between text-xs text-slate-400">
-                <span>ยื่นคำขอ: {formatDateOnly(record.createdAt)}</span>
-                <span>อัปเดต: {formatDateOnly(record.updatedAt)}</span>
+                <span>ยื่นคำขอ: {formatDate(record.createdAt)}</span>
+                <span>อัปเดต: {formatDate(record.updatedAt)}</span>
               </div>
             </div>
           </div>

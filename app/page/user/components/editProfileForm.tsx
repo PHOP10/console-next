@@ -80,9 +80,46 @@ export default function EditProfileForm({
     <ConfigProvider locale={th_TH}>
       <Form form={form} layout="vertical" onFinish={handleUpdateProfile}>
         <Row gutter={16}>
-          <Col span={12}>
-            <Form.Item label="ชื่อผู้ใช้" name="username">
-              <Input className={inputStyle} />
+          <Col span={24}>
+            <Form.Item
+              label="ชื่อผู้ใช้"
+              name="username"
+              validateTrigger="onBlur"
+              rules={[
+                { required: true, message: "กรุณากรอก Username" },
+                {
+                  validator: async (_, value) => {
+                    if (!value) return Promise.resolve();
+
+                    // 1. ถ้าไม่ได้เปลี่ยนชื่อ (พิมพ์ชื่อเดิมของตัวเอง) ให้ผ่านเลย
+                    if (value === userData.username) {
+                      return Promise.resolve();
+                    }
+
+                    try {
+                      // 2. ดึงข้อมูลมาเช็คว่าซ้ำกับคนอื่นไหม
+                      const allUsers = await intraAuthService.getUserQuery();
+                      const isDuplicate = allUsers.some(
+                        (user: UserType) => user.username === value,
+                      );
+
+                      if (isDuplicate) {
+                        return Promise.reject(
+                          new Error(
+                            "ชื่อผู้ใช้นี้มีในระบบแล้ว กรุณาใช้ชื่ออื่น",
+                          ),
+                        );
+                      }
+                      return Promise.resolve();
+                    } catch (error) {
+                      console.error("Check username error:", error);
+                      return Promise.resolve();
+                    }
+                  },
+                },
+              ]}
+            >
+              <Input placeholder="Username" className={inputStyle} />
             </Form.Item>
           </Col>
           <Col span={12}>

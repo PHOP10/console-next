@@ -67,7 +67,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
   const handleExport = (record: MaDrugType) => {
     try {
       message.loading("กำลังสร้างไฟล์ Excel...", 1);
-      exportMaDrugToExcel(record);
+      exportMaDrugToExcel(record,intraAuth);
     } catch (error) {
       console.error(error);
       message.error("เกิดข้อผิดพลาดในการสร้างไฟล์");

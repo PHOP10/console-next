@@ -1,8 +1,9 @@
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { MaDrugType } from "../../common";
+import { MaDrugType, UserType } from "../../common";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
+import { userService } from "../../user/services/user.service";
 
 // Helper แปลงวันที่เป็นพุทธศักราชแบบสั้น (dd/mm/bbbb)
 const formatThaiDate = (dateString?: string | Date | null) => {
@@ -10,11 +11,48 @@ const formatThaiDate = (dateString?: string | Date | null) => {
   return dayjs(dateString).locale("th").format("DD/MM/BBBB");
 };
 
-export const exportMaDrugToExcel = async (data: MaDrugType) => {
+export const exportMaDrugToExcel = async (data: MaDrugType, intraAuth: any) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("ใบเบิกยา");
+  const intraAuthUserService = userService(intraAuth);
 
-  // 1. Page Setup
+  // 1. ดึงข้อมูล User
+  let users: UserType[] = [];
+  try {
+    users = await intraAuthUserService.getUserQuery();
+  } catch (err) {
+    console.error("Failed to fetch user data", err);
+  }
+
+  // 2. Logic หาผู้ใช้และใส่คำนำหน้า
+  let formattedRequesterName =
+    data.requesterName || "........................................";
+  let requesterPosition = "............................."; 
+
+  if (data.requesterName && users.length > 0) {
+    const matchedUser = users.find(
+      (u) =>
+        data.requesterName?.includes(u.firstName) &&
+        data.requesterName?.includes(u.lastName),
+    );
+
+    if (matchedUser) {
+      let prefix = "";
+      const gender = matchedUser.gender?.toLowerCase();
+
+      if (gender === "ชาย" || gender === "male" || gender === "m") {
+        prefix = "นาย ";
+      } else if (gender === "หญิง" || gender === "female" || gender === "f") {
+        prefix = "นางสาว ";
+      }
+
+      formattedRequesterName = `${prefix}${matchedUser.firstName}${matchedUser.lastName}`;
+      // ✅ ดึงตำแหน่งมาใช้ ถ้าไม่มีให้ใช้เส้นประ
+      requesterPosition =
+        matchedUser.position || ".............................";
+    }
+  }
+
   worksheet.pageSetup = {
     paperSize: 9, // A4
     orientation: "portrait",
@@ -31,27 +69,26 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     },
   };
 
-  // 2. Columns (เพิ่มคอลัมน์ 'วันหมดอายุ' เป็นคอลัมน์ที่ 5)
+  // ✅ ปรับเป็น 9 คอลัมน์ (ตัดวันหมดอายุออก) และเกลี่ยความกว้างให้พอดี A4
   worksheet.columns = [
     { width: 6 }, // A: ลำดับ
-    { width: 12 }, // B: Working Code
-    { width: 25 }, // C: รายการยา
+    { width: 14 }, // B: Working Code
+    { width: 26 }, // C: รายการ
     { width: 10 }, // D: ขนาดบรรจุ
-    { width: 12 }, // E: วันหมดอายุ (✅ NEW)
-    { width: 10 }, // F: ราคา/หน่วย
-    { width: 8 }, // G: คงเหลือ
-    { width: 8 }, // H: จำนวนเบิก
-    { width: 10 }, // I: จำนวนจ่าย
-    { width: 15 }, // J: หมายเหตุ
+    { width: 12 }, // E: ราคา/ขนาดบรรจุ (เปลี่ยนชื่อคอลัมน์)
+    { width: 10 }, // F: คงเหลือ
+    { width: 10 }, // G: จำนวนเบิก
+    { width: 10 }, // H: จำนวนจ่าย
+    { width: 14 }, // I: หมายเหตุ
   ];
 
   // 3. Helper Functions
   const setBaseFont = (
     target: ExcelJS.Cell | ExcelJS.Row,
-    size = 12,
+    size = 15, // ✅ ลดฟอนต์เป็น 15
     bold = false,
   ) => {
-    target.font = { name: "Angsana New", family: 4, size, bold };
+    target.font = { name: "TH Sarabun New", family: 4, size, bold };
   };
 
   const setBorder = (cell: ExcelJS.Cell) => {
@@ -63,37 +100,39 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     };
   };
 
-  // 4. Header (ปรับ Merge ถึง J)
-  worksheet.mergeCells("A1:J1");
+  // 4. Header (Merge ถึง I)
+  worksheet.mergeCells("A1:I1");
   const titleRow = worksheet.getCell("A1");
   titleRow.value = "ใบขอเบิกยาและเวชภัณฑ์ที่มิใช่ยา โรงพยาบาลวังเจ้า";
   titleRow.alignment = { vertical: "middle", horizontal: "center" };
-  setBaseFont(titleRow, 16, true);
+  setBaseFont(titleRow, 19, true);
 
-  worksheet.mergeCells("A2:J2");
+  const currentMonth = dayjs().month();
+  let fiscalYear = dayjs().year() + 543;
+  if (currentMonth >= 9) {
+    fiscalYear += 1;
+  }
+  worksheet.mergeCells("A2:I2");
   const subTitleRow = worksheet.getCell("A2");
-  subTitleRow.value = `กลุ่มงานเภสัชกรรม ประจำปีงบประมาณ 2569`;
+  subTitleRow.value = `กลุ่มงานเภสัชกรรม ประจำปีงบประมาณ ${fiscalYear}`;
   subTitleRow.alignment = { vertical: "middle", horizontal: "center" };
-  setBaseFont(subTitleRow, 14, true);
+  setBaseFont(subTitleRow, 17, true);
 
   worksheet.addRow([""]);
 
-  // 5. Info Rows (ปรับ Merge ให้สมดุลกับ 10 คอลัมน์)
+  // 5. Info Rows
   const addInfoRow = (l1: string, v1: string, l2: string, v2: string) => {
-    // Array: A, B(Label1), C(Value1), D, E, F, G(Label2), H(Value2), I, J
-    const row = worksheet.addRow(["", l1, v1, "", "", "", l2, v2, "", ""]);
-    setBaseFont(row, 12);
+    // โครงสร้าง 9 คอลัมน์
+    const row = worksheet.addRow(["", l1, v1, "", "", l2, v2, "", ""]);
+    setBaseFont(row, 15);
 
-    // Formatting
-    row.getCell(2).alignment = { horizontal: "right" }; // Label 1
-    row.getCell(3).alignment = { horizontal: "left", indent: 1 }; // Value 1
-    row.getCell(7).alignment = { horizontal: "right" }; // Label 2
-    row.getCell(8).alignment = { horizontal: "left", indent: 1 }; // Value 2
+    row.getCell(2).alignment = { horizontal: "right" };
+    row.getCell(3).alignment = { horizontal: "left", indent: 1 };
+    row.getCell(6).alignment = { horizontal: "right" };
+    row.getCell(7).alignment = { horizontal: "left", indent: 1 };
 
-    // Merge Value 1 (C-F)
-    worksheet.mergeCells(`C${row.number}:F${row.number}`);
-    // Merge Value 2 (H-I)
-    worksheet.mergeCells(`H${row.number}:I${row.number}`);
+    worksheet.mergeCells(`C${row.number}:E${row.number}`); // Merge พื้นที่คำตอบ 1
+    worksheet.mergeCells(`G${row.number}:I${row.number}`); // Merge พื้นที่คำตอบ 2
   };
 
   addInfoRow(
@@ -118,11 +157,10 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
 
   worksheet.addRow([""]);
 
-  // 6. Signatures (ปรับ Merge ให้กึ่งกลาง)
+  // 6. Signatures
   const signLabelRow = worksheet.addRow([
     "",
     "ลงชื่อ ........................................ ผู้ขอเบิก",
-    "",
     "",
     "",
     "",
@@ -131,47 +169,61 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     "",
     "",
   ]);
+
   const signNameRow = worksheet.addRow([
     "",
-    `(${data.requesterName || "........................................"})`,
+    `       (${formattedRequesterName})          `, // เคาะหน้า 7 หลัง 10
     "",
     "",
     "",
-    "",
-    `(${data.dispenserName || "........................................"})`,
+    `       (${data.dispenserName || ".............................................."})         `, // เคาะหน้า 7 หลัง 9
     "",
     "",
     "",
   ]);
 
-  [signLabelRow, signNameRow].forEach((row) => {
-    setBaseFont(row, 12);
+  const signPositionRow = worksheet.addRow([
+    "",
+    `ตำแหน่ง ${requesterPosition}          `, // เคาะหลัง 10
+    "",
+    "",
+    "",
+    `ตำแหน่ง ........................................         `, // เคาะหลัง 9
+    "",
+    "",
+    "",
+  ]);
+
+  // ✅ จัด Format ให้ทั้ง 3 แถว
+  [signLabelRow, signNameRow, signPositionRow].forEach((row) => {
+    setBaseFont(row, 15);
     row.alignment = { horizontal: "center", vertical: "middle" };
-    // ซ้าย B-E
-    worksheet.mergeCells(`B${row.number}:E${row.number}`);
-    // ขวา G-J
-    worksheet.mergeCells(`G${row.number}:J${row.number}`);
+    worksheet.mergeCells(`B${row.number}:E${row.number}`); // ซ้าย
+    worksheet.mergeCells(`F${row.number}:I${row.number}`); // ขวา
   });
 
-  worksheet.addRow([""]);
+  worksheet.addRow([""]); // เว้นบรรทัดก่อนขึ้นตาราง
 
-  // 7. Table Header (เพิ่ม 'วันหมดอายุ')
+  // 7. หัวตาราง (✅ 9 คอลัมน์ตามที่ต้องการ)
   const headerRow = worksheet.addRow([
     "ลำดับ",
     "Working Code",
     "รายการ",
-    "ขนาดบรรจุ",
-    "วันหมดอายุ",
-    "ราคา",
-    "คงเหลือ",
-    "เบิก",
-    "จ่าย",
-    "หมายเหตุ",
+    "ขนาดบรรจุ", // D
+    "ราคา/\nขนาดบรรจุ", // E: เปลี่ยนชื่อ
+    "คงเหลือ", // F
+    "จำนวนเบิก", // G
+    "จำนวนจ่าย", // H
+    "หมายเหตุ", // I
   ]);
 
   headerRow.eachCell((cell) => {
-    setBaseFont(cell, 12, true);
-    cell.alignment = { vertical: "middle", horizontal: "center" };
+    setBaseFont(cell, 15, true);
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true, // ป้องกันหัวตารางล้น
+    };
     setBorder(cell);
     cell.fill = {
       type: "pattern",
@@ -195,14 +247,13 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
     Object.keys(groupedItems)
       .sort()
       .forEach((groupName) => {
-        // Group Header (Merge ถึง J)
         const groupRow = worksheet.addRow([groupName]);
-        setBaseFont(groupRow, 12, true);
+        setBaseFont(groupRow, 15, true);
         groupRow.getCell(1).alignment = {
           vertical: "middle",
           horizontal: "center",
         };
-        worksheet.mergeCells(`A${groupRow.number}:J${groupRow.number}`);
+        worksheet.mergeCells(`A${groupRow.number}:I${groupRow.number}`); // Merge ถึง I
         groupRow.getCell(1).fill = {
           type: "pattern",
           pattern: "solid",
@@ -210,38 +261,30 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
         };
         setBorder(groupRow.getCell(1));
 
-        // Items
         groupedItems[groupName].forEach((item) => {
           const row = worksheet.addRow([
             globalIndex++,
             item.drug?.workingCode || "-",
             item.drug?.name || "-",
             item.drug?.packagingSize || "-",
-
-            // ✅ 1. เพิ่มวันหมดอายุ
-            formatThaiDate(item.expiryDate),
-
-            item.price || 0, // ราคา
-            item.drug?.quantity || 0, // คงเหลือ
-            item.quantity, // เบิก
-            "", // จำนวนจ่าย (เว้นว่างไว้)
+            item.price || 0,
+            item.drug?.quantity || 0,
+            item.quantity,
+            "", // จำนวนจ่าย
             item.note || "",
           ]);
 
           row.eachCell((cell, colNumber) => {
-            setBaseFont(cell, 12);
+            setBaseFont(cell, 15);
             setBorder(cell);
-
-            // จัดรูปแบบ
-            if (colNumber === 3 || colNumber === 10) {
-              // ชื่อยา(3) และ หมายเหตุ(10) -> ชิดซ้าย
+            if (colNumber === 3 || colNumber === 9) {
+              // รายการ และ หมายเหตุ
               cell.alignment = { horizontal: "left", wrapText: true };
-            } else if (colNumber === 6) {
-              // ราคา(6) -> ชิดขวา
+            } else if (colNumber === 5) {
+              // ราคา
               cell.alignment = { horizontal: "right" };
               cell.numFmt = "#,##0.00";
             } else {
-              // อื่นๆ -> ตรงกลาง
               cell.alignment = { horizontal: "center" };
             }
           });
@@ -249,9 +292,9 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
       });
   } else {
     const emptyRow = worksheet.addRow(["ไม่พบรายการยา"]);
-    worksheet.mergeCells(`A${emptyRow.number}:J${emptyRow.number}`);
+    worksheet.mergeCells(`A${emptyRow.number}:I${emptyRow.number}`);
     emptyRow.getCell(1).alignment = { horizontal: "center" };
-    setBaseFont(emptyRow, 12);
+    setBaseFont(emptyRow, 15);
   }
 
   // 9. Save File
@@ -259,5 +302,6 @@ export const exportMaDrugToExcel = async (data: MaDrugType) => {
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
+
   saveAs(blob, `ใบเบิกยา_${data.requestNumber}.xlsx`);
 };

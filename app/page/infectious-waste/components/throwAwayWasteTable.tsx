@@ -194,13 +194,26 @@ export default function ThrowAwayWasteTable({
           columns={columns}
           rowKey="id"
           loading={loading}
-          size="small" // *** สำคัญ: ทำให้ตาราง compact ขึ้น (แถวเตี้ยลง) ***
-          pagination={{
-            pageSize: 10,
-            size: "small", // Pagination ขนาดเล็ก
-          }}
+          size="small"
           bordered
-          scroll={{ x: "max-content" }} // ให้ scroll แนวนอนได้ถ้าเนื้อหาล้น แต่ไม่ตรึงคอลัมน์
+          scroll={{ x: "max-content" }}
+          pagination={{
+            pageSizeOptions: ["10", "20", "50", "100"], // ตัวเลือกจำนวนต่อหน้า
+            showSizeChanger: true, // เปิดให้เลือกจำนวนต่อหน้าได้
+            defaultPageSize: 10, // ค่าเริ่มต้น
+
+            // ส่วนแสดงยอดรวม (Copy รูปแบบมา)
+            showTotal: (total, range) => (
+              <span className="text-gray-500 text-xs sm:text-sm font-light">
+                แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
+                <span className="font-bold text-blue-600">{total}</span> รายการ
+              </span>
+            ),
+
+            locale: { items_per_page: "/ หน้า" },
+            position: ["bottomRight"],
+            size: "default", // หรือใช้ 'small' ตามความชอบ
+          }}
         />
 
         {/* Modal แก้ไข */}

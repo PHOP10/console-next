@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Form,
   Input,
@@ -23,42 +23,24 @@ interface DrugFormProps {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
   setData: React.Dispatch<React.SetStateAction<DrugType[]>>;
+  masterDrugs: MasterDrugType[]; // ✅ รับค่ามาจากหน้า Page
 }
 
 export default function DrugForm({
   setLoading,
   loading,
   setData,
+  masterDrugs,
 }: DrugFormProps) {
   const [form] = Form.useForm();
-  const [masterDrugOptions, setMasterDrugOptions] = useState<
-    { label: string; value: number }[]
-  >([]);
-
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
 
-  useEffect(() => {
-    const fetchMasterDrug = async () => {
-      try {
-        const res: MasterDrugType[] =
-          await intraAuthService.getMasterDrugQuery();
-        if (Array.isArray(res)) {
-          setMasterDrugOptions(
-            res.map((item) => ({
-              label: item.drugType,
-              value: item.drugTypeId,
-            })),
-          );
-        }
-      } catch (error) {
-        console.error(error);
-        message.error("ไม่สามารถโหลดประเภทยาได้");
-      }
-    };
-
-    fetchMasterDrug();
-  }, []);
+  // ✅ แปลง MasterDrugType ที่ได้จาก Props ให้เป็น Option สำหรับ Select
+  const masterDrugOptions = masterDrugs.map((item) => ({
+    label: item.drugType,
+    value: item.drugTypeId,
+  }));
 
   const onFinish = async (values: any) => {
     try {
@@ -107,7 +89,7 @@ export default function DrugForm({
           form={form}
           layout="vertical"
           onFinish={onFinish}
-          initialValues={{ price: 0 }} // ไม่ต้องใส่ quantity ใน initialValues แล้ว เพราะไม่ได้โชว์ใน Form
+          initialValues={{ price: 0 }}
         >
           {/* Row 1: รหัสยา, ประเภทยา */}
           <Row gutter={24}>
@@ -132,7 +114,7 @@ export default function DrugForm({
               >
                 <Select
                   placeholder="-- เลือกประเภทยา --"
-                  options={masterDrugOptions}
+                  options={masterDrugOptions} // ✅ เรียกใช้ Option ที่แปลงร่างมาแล้ว
                   loading={masterDrugOptions.length === 0}
                   showSearch
                   optionFilterProp="label"
@@ -197,8 +179,6 @@ export default function DrugForm({
               </Form.Item>
             </Col>
           </Row>
-
-          {/* ❌ เอาส่วนที่ตั้งค่าสต็อกเริ่มต้น (ปริมาณ & วันหมดอายุ) ออกแล้ว */}
 
           <Form.Item label="หมายเหตุ" name="note">
             <Input.TextArea

@@ -212,16 +212,18 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       key: "missionDetail",
       align: "center",
       width: 150,
-      responsive: ["md"], // ซ่อนบนมือถือ
+      responsive: ["md"],
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
         return text.length > maxLength ? (
           <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
+            <span className="font-normal cursor-pointer text-gray-700">
+              {text.slice(0, maxLength) + "..."}
+            </span>
           </Tooltip>
         ) : (
-          text
+          <span className="font-normal text-gray-700">{text}</span>
         );
       },
     },
@@ -237,10 +239,12 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
         if (!text) return "-";
         return text.length > maxLength ? (
           <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
+            <span className="font-normal cursor-pointer text-gray-700">
+              {text.slice(0, maxLength) + "..."}
+            </span>
           </Tooltip>
         ) : (
-          text
+          <span className="font-normal text-gray-700">{text}</span>
         );
       },
     },
@@ -473,7 +477,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             />
           </Tooltip> */}
 
-          {/* <Popconfirm
+          <Popconfirm
             title="ยืนยันการลบ"
             description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
             onConfirm={async () => {
@@ -492,14 +496,14 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 18, // ขนาด 18px
+                  fontSize: 18,
                   color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
                 }}
               />
             </Tooltip>
-          </Popconfirm> */}
+          </Popconfirm>
         </Space>
       ),
     },

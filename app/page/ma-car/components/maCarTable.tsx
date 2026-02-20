@@ -98,15 +98,18 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       key: "purpose",
       align: "center",
       width: 150,
+      responsive: ["md"],
       render: (text: string) => {
         const maxLength = 25;
         if (!text) return "-";
         return text.length > maxLength ? (
           <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
+            <span className="font-normal cursor-pointer text-gray-700">
+              {text.slice(0, maxLength) + "..."}
+            </span>
           </Tooltip>
         ) : (
-          text
+          <span className="font-normal text-gray-700">{text}</span>
         );
       },
     },
@@ -116,16 +119,18 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       key: "destination",
       align: "center",
       width: 150,
-      responsive: ["md"], // ซ่อนบนมือถือ
+      responsive: ["lg"],
       render: (text: string) => {
         const maxLength = 20;
         if (!text) return "-";
         return text.length > maxLength ? (
           <Tooltip placement="topLeft" title={text}>
-            {text.slice(0, maxLength) + "..."}
+            <span className="font-normal cursor-pointer text-gray-700">
+              {text.slice(0, maxLength) + "..."}
+            </span>
           </Tooltip>
         ) : (
-          text
+          <span className="font-normal text-gray-700">{text}</span>
         );
       },
     },

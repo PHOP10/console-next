@@ -183,7 +183,7 @@ export default function DurableArticleForm({
                 <Input.TextArea
                   rows={1}
                   className={textAreaStyle}
-                  maxLength={200}
+                  maxLength={150}
                   style={{ minHeight: "44px" }}
                   placeholder="กรอกชื่อ ยี่ห้อ ชนิด แบบ ขนาดและลักษณะ"
                 />
@@ -200,7 +200,7 @@ export default function DurableArticleForm({
                 <Input.TextArea
                   placeholder="กรอกสถานที่ตั้ง/ที่อยู่"
                   className={inputStyle}
-                  maxLength={150}
+                  maxLength={100}
                   style={{ minHeight: "44px" }}
                 />
               </Form.Item>
@@ -300,7 +300,7 @@ export default function DurableArticleForm({
                 <Input
                   className={inputStyle}
                   placeholder="ชื่อผู้ขาย/ผู้บริจาค"
-                  maxLength={150}
+                  maxLength={100}
                 />
               </Form.Item>
             </Col>
@@ -439,6 +439,7 @@ export default function DurableArticleForm({
                   rows={2}
                   className={textAreaStyle}
                   placeholder="กรอกหมายเหตุ (ถ้ามี)"
+                  maxLength={30}
                 />
               </Form.Item>
             </Col>

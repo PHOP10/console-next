@@ -63,7 +63,7 @@ export default function DispenseTable({
   const handleExport = (record: DispenseType) => {
     try {
       message.loading("กำลังสร้างไฟล์ Excel...", 1);
-      exportDispenseToExcel(record);
+      exportDispenseToExcel(record,intraAuth);
     } catch (error) {
       console.error(error);
       message.error("เกิดข้อผิดพลาดในการสร้างไฟล์");
@@ -253,8 +253,8 @@ export default function DispenseTable({
           dataSource={data}
           loading={loading}
           bordered
-          size="small" // ใช้ size small บนมือถือ
-          pagination={{ pageSize: 20, size: "small" }}
+          size="small"
+          pagination={{ pageSize: 10, size: "small" }}
           scroll={{ x: "max-content" }}
         />
       </Card>

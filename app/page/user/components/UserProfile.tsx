@@ -214,7 +214,6 @@ export default function UserProfile() {
                 labelStyle={descriptionLabelStyle}
                 contentStyle={descriptionContentStyle}
               >
-                {/* --- เพิ่ม Username ตรงนี้ --- */}
                 <Descriptions.Item label="ชื่อผู้ใช้">
                   <span className="font-semibold text-gray-700">
                     {userData?.username}

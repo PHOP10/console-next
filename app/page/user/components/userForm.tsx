@@ -15,6 +15,7 @@ import {
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { userService } from "../services/user.service";
 import { buddhistLocale } from "@/app/common";
+import { UserType } from "../../common";
 
 interface UserFormProps {
   fetchData: () => Promise<void>;
@@ -107,19 +108,35 @@ const UserForm: React.FC<UserFormProps> = ({ fetchData }) => {
             <Form.Item
               label="ชื่อผู้ใช้"
               name="username"
-              rules={[{ required: true, message: "กรุณากรอก Username" }]}
+              validateTrigger="onBlur" // เช็คเฉพาะตอนพิมพ์เสร็จและคลิกออก
+              rules={[
+                { required: true, message: "กรุณากรอก Username" },
+                {
+                  validator: async (_, value) => {
+                    if (!value) return Promise.resolve();
+                    try {
+                      const allUsers = await intraAuthService.getUserQuery();
+                      const isDuplicate = allUsers.some(
+                        (user: UserType) => user.username === value,
+                      );
+
+                      if (isDuplicate) {
+                        return Promise.reject(
+                          new Error(
+                            "ชื่อผู้ใช้นี้มีในระบบแล้ว กรุณาใช้ชื่ออื่น",
+                          ),
+                        );
+                      }
+                      return Promise.resolve();
+                    } catch (error) {
+                      console.error("Check username error:", error);
+                      return Promise.resolve(); // ข้ามไปก่อนหาก API ตรวจสอบมีปัญหา
+                    }
+                  },
+                },
+              ]}
             >
               <Input placeholder="Username" className={inputStyle} />
-            </Form.Item>
-
-            {/* 2. Password */}
-            <Form.Item
-              label="รหัสผ่าน"
-              name="password"
-              initialValue="User@123"
-              rules={[{ required: true, message: "กรุณากรอก Password" }]}
-            >
-              <Input.Password placeholder="Password" className={inputStyle} />
             </Form.Item>
 
             {/* 3. Gender */}

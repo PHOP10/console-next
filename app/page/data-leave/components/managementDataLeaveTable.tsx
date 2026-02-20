@@ -415,7 +415,7 @@ export default function ManagementDataLeaveTable({
           {/* Edit */}
 
           {/* Delete */}
-          {/* <Popconfirm
+          <Popconfirm
             title="ยืนยันการลบ?"
             onConfirm={() => handleDelete(record)}
             okText="ลบ"
@@ -431,7 +431,7 @@ export default function ManagementDataLeaveTable({
                 }}
               />
             </Tooltip>
-          </Popconfirm> */}
+          </Popconfirm>
         </Space>
       ),
     },
@@ -452,10 +452,8 @@ export default function ManagementDataLeaveTable({
         dataSource={dataLeave}
         loading={loading}
         bordered
-        // ใช้ size small บนมือถือ
         size="small"
         pagination={{ pageSize: 10, size: "small" }}
-        // Scroll แนวนอนอัตโนมัติ
         scroll={{ x: "max-content" }}
       />
 

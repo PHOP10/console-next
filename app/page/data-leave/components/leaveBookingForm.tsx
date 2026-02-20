@@ -65,20 +65,14 @@ export default function LeaveBookingForm({
 
   // --- 2. Check if a date is a holiday ---
   const isHoliday = (date: dayjs.Dayjs) => {
-    // แปลง dayjs เป็น Date object เพื่อส่งให้ library ตรวจสอบ
     const holiday = hd.isHoliday(date.toDate());
 
-    // ตรวจสอบว่าเป็นวันหยุดจริงหรือไม่ (library จะคืนค่าเป็น array ของ objects หรือ false)
-    // เราเช็คแค่ว่ามีค่าคืนกลับมาไหม และ type เป็น public (วันหยุดราชการ) หรือเปล่า
     if (holiday && holiday[0].type === "public") {
       return true;
     }
     return false;
   };
 
-  // --- 3. Updated calculateDays Function ---
-  // Calculates government leave days: excludes Sat, Sun, and Public Holidays
-  // ✅ 4. อัปเดต calculateDays (Logic Loop เหมือนเดิม แต่ใช้ isHoliday ตัวใหม่)
   const calculateDays = (start: string | Date, end: string | Date) => {
     if (!start || !end) return 0;
 
@@ -144,7 +138,7 @@ export default function LeaveBookingForm({
           );
         })
         .reduce(
-          (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd), // Use updated logic
+          (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd), 
           0,
         );
 
@@ -386,7 +380,7 @@ export default function LeaveBookingForm({
                             }}
                             disabledDate={(current) => {
                               if (!current) return false;
-                              // Disable past dates? Adjust if needed.
+
                               if (current < dayjs().startOf("day")) return true;
                               return leaveByUserId.some((leave) => {
                                 const start = dayjs(leave.dateStart).startOf(
@@ -435,7 +429,6 @@ export default function LeaveBookingForm({
                               ) {
                                 return true;
                               }
-                              // Disable past dates? Adjust if needed
                               if (current < dayjs().startOf("day")) return true;
 
                               return leaveByUserId.some((leave) => {

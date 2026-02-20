@@ -124,16 +124,15 @@ export default function DrugSelectModal({
       open={isOpen}
       onOk={handleOk}
       onCancel={onCancel}
-      width="80vw" // ✅ ตั้งความกว้าง 80% ของหน้าจอ
-      style={{ top: 20, maxWidth: "1200px" }} // จำกัดสุดที่ 1200px
+      width="80vw"
+      style={{ top: 20, maxWidth: "1200px" }}
       okText={`เพิ่มรายการที่เลือก (${selectedRowKeys.length})`}
       cancelText="ยกเลิก"
-      okButtonProps={{ disabled: selectedRowKeys.length === 0 }} // ปิดปุ่มถ้ายังไม่เลือก
+      okButtonProps={{ disabled: selectedRowKeys.length === 0 }}
       destroyOnClose
       centered
     >
       <div className="flex flex-col sm:flex-row gap-4 mb-4 mt-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
-        {/* ช่องค้นหาข้อความ */}
         <Input
           placeholder="ค้นหาชื่อยา หรือรหัสยา..."
           prefix={<SearchOutlined className="text-gray-400" />}
@@ -157,8 +156,28 @@ export default function DrugSelectModal({
           }))}
         />
       </div>
-
       <CustomTable
+        columns={columns}
+        dataSource={filteredDrugs}
+        rowKey="id"
+        size="small"
+        scroll={{ y: 400, x: "max-content" }}
+        pagination={{
+          pageSizeOptions: ["20", "50", "100"],
+          showSizeChanger: true,
+          defaultPageSize: 20,
+          size: "small",
+
+          showTotal: (total, range) => (
+            <span className="text-gray-500 text-xs sm:text-sm font-light">
+              แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
+              <span className="font-bold text-blue-600">{total}</span> รายการ
+            </span>
+          ),
+
+          locale: { items_per_page: "/ หน้า" },
+          position: ["bottomRight"],
+        }}
         rowSelection={{
           type: "checkbox",
           selectedRowKeys,
@@ -167,13 +186,8 @@ export default function DrugSelectModal({
             disabled: disableZeroStock ? record.quantity <= 0 : false,
           }),
         }}
-        columns={columns}
-        dataSource={filteredDrugs}
-        rowKey="id"
-        pagination={{ pageSize: 20, size: "small" }}
-        size="small"
-        scroll={{ y: 400, x: "max-content" }}
       />
+      ห
     </Modal>
   );
 }

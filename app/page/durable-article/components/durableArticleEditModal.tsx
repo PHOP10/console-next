@@ -202,7 +202,7 @@ export default function DurableArticleEditModal({
                 <Input.TextArea
                   rows={1}
                   className={textAreaStyle}
-                  maxLength={200}
+                  maxLength={150}
                   style={{ minHeight: "44px" }}
                   placeholder="รายละเอียดครุภัณฑ์"
                 />
@@ -218,7 +218,7 @@ export default function DurableArticleEditModal({
                 <Input.TextArea
                   placeholder="สถานที่ตั้ง"
                   className={inputStyle}
-                  maxLength={150}
+                  maxLength={100}
                   style={{ minHeight: "44px" }}
                 />
               </Form.Item>
@@ -308,7 +308,7 @@ export default function DurableArticleEditModal({
                 <Input
                   className={inputStyle}
                   placeholder="ชื่อผู้ขาย"
-                  maxLength={150}
+                  maxLength={100}
                 />
               </Form.Item>
             </Col>
@@ -449,6 +449,7 @@ export default function DurableArticleEditModal({
                   rows={2}
                   className={textAreaStyle}
                   placeholder="หมายเหตุ (ถ้ามี)"
+                  maxLength={30}
                 />
               </Form.Item>
             </Col>

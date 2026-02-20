@@ -258,7 +258,6 @@ export default function EquipmentTable({
           rowKey="id"
           loading={loading}
           bordered
-          // ใช้ size small บนมือถือ
           size="small"
           pagination={{ pageSize: 10, size: "small" }}
           scroll={{ x: "max-content" }}

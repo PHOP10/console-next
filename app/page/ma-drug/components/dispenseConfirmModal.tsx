@@ -11,9 +11,9 @@ import {
   Table,
   message,
   Tag,
-  Alert, // ✅ 1. Import Alert เพิ่มเข้ามา
+  Alert,
 } from "antd";
-import { CheckCircleOutlined, InfoCircleOutlined } from "@ant-design/icons"; // ✅ 2. Import InfoCircleOutlined
+import { CheckCircleOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { DispenseType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
@@ -192,16 +192,17 @@ export default function DispenseConfirmModal({
       styles={{
         content: { borderRadius: "16px", padding: 0, overflow: "hidden" },
         header: { padding: "20px 24px", borderBottom: "1px solid #f0f0f0" },
-        body: { padding: "24px", height: "85vh", overflowY: "auto" },
+        // ✅ เปลี่ยนจาก height เป็น maxHeight
+        body: { padding: "24px", maxHeight: "85vh", overflowY: "auto" },
       }}
     >
       <Form
         form={form}
         layout="vertical"
         onFinish={handleFinish}
-        className="h-full flex flex-col"
+        className="flex flex-col gap-6" // ✅ ลบ h-full และใช้ gap แแทน
       >
-        <div className="bg-blue-50 p-6 rounded-xl border border-blue-200 mb-6 flex-shrink-0">
+        <div className="bg-blue-50 p-6 rounded-xl border border-blue-200">
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={8}>
               <div className="text-sm text-slate-500">ผู้จ่ายยา</div>
@@ -224,8 +225,9 @@ export default function DispenseConfirmModal({
           )}
         </div>
 
-        <div className="mb-6 border border-slate-200 rounded-lg overflow-hidden flex-1 flex flex-col">
-          <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-100 flex justify-between items-center flex-shrink-0">
+        {/* ✅ นำคลาส overflow-hidden/flex-1 ที่บีบกล่องตารางออก */}
+        <div className="border border-slate-200 rounded-lg bg-white">
+          <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-100 flex justify-between items-center rounded-t-lg">
             <span className="font-semibold text-blue-700 text-lg">
               รายการยาที่จะตัดจ่าย
             </span>
@@ -234,10 +236,10 @@ export default function DispenseConfirmModal({
             </Tag>
           </div>
 
-          {/* ✅ 3. เพิ่มกล่องแจ้งเตือน FEFO ตรงนี้เพื่อให้คนหยิบยารับทราบ */}
-          <div className="px-6 pt-4 pb-2 flex-shrink-0">
+          {/* กล่องแจ้งเตือน FEFO */}
+          <div className="px-6 pt-4 pb-2">
             <Alert
-              message="ระบบจะทำการตัดสต็อกอัตโนมัติแบบ "
+              message="ระบบจะทำการตัดสต็อกอัตโนมัติแบบ FEFO (First Expired First Out)"
               description="กรุณาหยิบยาจากชั้นวางในล๊อตที่ ใกล้หมดอายุที่สุด จ่ายออกไปก่อน เพื่อให้ตรงกับการตัดสต็อกในระบบ"
               type="warning"
               showIcon
@@ -246,14 +248,29 @@ export default function DispenseConfirmModal({
             />
           </div>
 
-          <div className="flex-1 overflow-hidden">
+          <div className="w-full">
             <Table
               dataSource={items}
               columns={columns}
               rowKey="id"
-              pagination={false}
+              // ✅ เพิ่มการตั้งค่า Pagination
+              pagination={{
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showSizeChanger: true,
+                defaultPageSize: 20,
+                showTotal: (total, range) => (
+                  <span className="text-gray-500 text-xs sm:text-sm font-light">
+                    แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
+                    <span className="font-bold text-blue-600">{total}</span>{" "}
+                    รายการ
+                  </span>
+                ),
+                locale: { items_per_page: "/ หน้า" },
+                position: ["bottomRight"],
+              }}
               size="middle"
-              scroll={{ y: "40vh" }} // ปรับความสูงลงมานิดหน่อยเพื่อให้พอกับ Alert
+              // ✅ กำหนดความสูงของ Scroll ให้คงที่
+              scroll={{ x: "max-content", y: 450 }}
               summary={() => (
                 <Table.Summary.Row className="bg-slate-50 font-bold text-lg">
                   <Table.Summary.Cell index={0} colSpan={3} align="right">
@@ -275,7 +292,7 @@ export default function DispenseConfirmModal({
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 pt-4 border-t border-slate-100 flex-shrink-0">
+        <div className="flex justify-end gap-4 pt-4 border-t border-slate-100">
           <Button onClick={onClose} className="h-12 px-8 rounded-xl text-lg">
             ยกเลิก
           </Button>

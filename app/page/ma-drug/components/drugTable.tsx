@@ -39,6 +39,7 @@ interface DrugTableProps {
   loading: boolean;
   data: DrugType[];
   setData: React.Dispatch<React.SetStateAction<DrugType[]>>;
+  masterDrugs: MasterDrugType[];
 }
 
 export default function DrugTable({
@@ -46,31 +47,32 @@ export default function DrugTable({
   loading,
   data,
   setData,
+  masterDrugs,
 }: DrugTableProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<DrugType | null>(null);
   const [form] = Form.useForm();
-  const [masterDrugs, setMasterDrugs] = useState<MasterDrugType[]>([]);
+  // const [masterDrugs, setMasterDrugs] = useState<MasterDrugType[]>([]);
   const [searchText, setSearchText] = useState("");
   const textAreaStyle =
     "w-full rounded-xl border-gray-300 shadow-sm hover:border-blue-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-50 focus:shadow-md transition-all duration-300";
 
-  useEffect(() => {
-    const fetchMasterDrugs = async () => {
-      try {
-        const res: MasterDrugType[] =
-          await intraAuthService.getMasterDrugQuery();
-        if (Array.isArray(res)) {
-          setMasterDrugs(res);
-        }
-      } catch (error) {
-        console.error("Failed to load master drugs", error);
-      }
-    };
-    fetchMasterDrugs();
-  }, []);
+  // useEffect(() => {
+  //   const fetchMasterDrugs = async () => {
+  //     try {
+  //       const res: MasterDrugType[] =
+  //         await intraAuthService.getMasterDrugQuery();
+  //       if (Array.isArray(res)) {
+  //         setMasterDrugs(res);
+  //       }
+  //     } catch (error) {
+  //       console.error("Failed to load master drugs", error);
+  //     }
+  //   };
+  //   fetchMasterDrugs();
+  // }, []);
 
   const filteredData = data.filter((item) => {
     const searchLower = searchText.toLowerCase();
@@ -398,7 +400,6 @@ export default function DrugTable({
       </div>
 
       <Card bordered={false} className="shadow-sm" bodyStyle={{ padding: 0 }}>
-        {/* ✅ 4. โซนด้านบนตาราง (กล่องแจ้งเตือน ซ้าย + ช่องค้นหา ขวา) */}
         <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
           {/* ซ้าย: กล่องแจ้งเตือนยาหมดอายุ */}
           <div>
@@ -450,15 +451,22 @@ export default function DrugTable({
           loading={loading}
           bordered
           size="small"
-          pagination={{
-            defaultPageSize: 20,
-            showSizeChanger: true,
-            pageSizeOptions: ["10", "20", "50", "100"],
-            size: "small",
-            showTotal: (total, range) =>
-              `แสดง ${range[0]}-${range[1]} จาก ${total} รายการ`,
-          }}
           scroll={{ x: "max-content", y: 600 }}
+          pagination={{
+            pageSizeOptions: ["10", "20", "50", "100"],
+            showSizeChanger: true,
+            defaultPageSize: 20,
+
+            showTotal: (total, range) => (
+              <span className="text-gray-500 text-xs sm:text-sm font-light">
+                แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
+                <span className="font-bold text-blue-600">{total}</span> รายการ
+              </span>
+            ),
+
+            locale: { items_per_page: "/ หน้า" },
+            position: ["bottomRight"],
+          }}
         />
       </Card>
 

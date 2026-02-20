@@ -238,7 +238,7 @@ export default function DrugTypeTable() {
           <div className="text-lg sm:text-xl font-bold text-[#0683e9] text-center w-full">
             {editingRecord ? (
               <span>
-                <EditOutlined className="mr-2" />
+              
                 แก้ไขประเภทยา
               </span>
             ) : (

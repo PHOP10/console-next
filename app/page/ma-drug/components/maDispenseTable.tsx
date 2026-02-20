@@ -139,16 +139,6 @@ export default function MaDispenseTable({
     }
   };
 
-  const handleExport = (record: DispenseType) => {
-    try {
-      message.loading("กำลังสร้างไฟล์ Excel...", 1);
-      exportDispenseToExcel(record);
-    } catch (error) {
-      console.error(error);
-      message.error("เกิดข้อผิดพลาดในการสร้างไฟล์");
-    }
-  };
-
   const columns: ColumnsType<DispenseType> = [
     {
       title: "ผู้จ่ายยา",

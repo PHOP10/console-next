@@ -136,16 +136,6 @@ export default function ManageDrugTable({
     }
   };
 
-  const handleExport = (record: MaDrugType) => {
-    try {
-      message.loading("กำลังสร้างไฟล์ Excel...", 1);
-      exportMaDrugToExcel(record);
-    } catch (error) {
-      console.error(error);
-      message.error("เกิดข้อผิดพลาดในการสร้างไฟล์");
-    }
-  };
-
   const columns: ColumnsType<MaDrugType> = [
     {
       title: "เลขที่เบิก",
@@ -259,9 +249,9 @@ export default function ManageDrugTable({
     },
     {
       title: "การจัดการ",
-      key: "actions",
+      key: "action",
       align: "center",
-      width: 180,
+      width: 140,
       render: (_, record) => {
         const isPending = record.status === "pending";
         return (
@@ -301,7 +291,6 @@ export default function ManageDrugTable({
                     type="primary"
                     size="small"
                     onClick={() => handleApprove(record.id)}
-                    // เปลี่ยนสีปุ่มเป็นสีเขียว
                     style={{
                       backgroundColor: "#52c41a",
                       borderColor: "#52c41a",
@@ -345,7 +334,7 @@ export default function ManageDrugTable({
                 shape="circle"
                 icon={
                   <FileSearchOutlined
-                    style={{ fontSize: 18, color: "#1677ff" }} // ปรับขนาดไอคอนเป็น 18px
+                    style={{ fontSize: 18, color: "#1677ff" }}
                   />
                 }
                 onClick={() => handleViewDetail(record)}

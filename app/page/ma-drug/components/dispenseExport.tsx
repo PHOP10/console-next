@@ -1,12 +1,55 @@
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { DispenseType } from "../../common"; // ✅ อย่าลืม Import Type ของ Dispense
+import { DispenseType, UserType } from "../../common";
+import { userService } from "../../user/services/user.service";
+import dayjs from "dayjs";
+import "dayjs/locale/th";
 
-export const exportDispenseToExcel = async (data: DispenseType) => {
+export const exportDispenseToExcel = async (
+  data: DispenseType,
+  intraAuth: any,
+) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("ใบจ่ายยา");
+  const intraAuthUserService = userService(intraAuth);
 
-  // ✅ 1. ตั้งค่าหน้ากระดาษ (เหมือนเดิม)
+  // 1. ดึงข้อมูล User
+  let users: UserType[] = [];
+  try {
+    users = await intraAuthUserService.getUserQuery();
+  } catch (err) {
+    console.error("Failed to fetch user data", err);
+  }
+
+  // 2. Logic หาผู้จ่ายยา (Dispenser) เพื่อใส่คำนำหน้า และ ตำแหน่ง
+  let formattedDispenserName =
+    data.dispenserName || "........................................";
+  let dispenserPosition = ".............................";
+
+  if (data.dispenserName && users.length > 0) {
+    const matchedUser = users.find(
+      (u) =>
+        data.dispenserName?.includes(u.firstName) &&
+        data.dispenserName?.includes(u.lastName),
+    );
+
+    if (matchedUser) {
+      let prefix = "";
+      const gender = matchedUser.gender?.toLowerCase();
+
+      if (gender === "ชาย" || gender === "male" || gender === "m") {
+        prefix = "นาย ";
+      } else if (gender === "หญิง" || gender === "female" || gender === "f") {
+        prefix = "นางสาว ";
+      }
+
+      formattedDispenserName = `${prefix}${matchedUser.firstName} ${matchedUser.lastName}`;
+      dispenserPosition =
+        matchedUser.position || ".............................";
+    }
+  }
+
+  // 3. ตั้งค่าหน้ากระดาษ
   worksheet.pageSetup = {
     paperSize: 9, // A4
     orientation: "portrait",
@@ -23,26 +66,25 @@ export const exportDispenseToExcel = async (data: DispenseType) => {
     },
   };
 
-  // ✅ 2. ปรับความกว้างคอลัมน์ (ตัดช่องคงเหลือ/เบิกออก เพิ่มช่องรวมเงิน)
+  // ✅ 4. ปรับโครงสร้างเป็น 8 คอลัมน์ ตามที่ระบุ
   worksheet.columns = [
     { width: 6 }, // A: ลำดับ
-    { width: 12 }, // B: Working Code
-    { width: 30 }, // C: รายการยา (กว้างขึ้นนิดหน่อย)
-    { width: 12 }, // D: ขนาดบรรจุ
-    { width: 10 }, // E: ราคา/หน่วย
-    { width: 10 }, // F: จำนวนจ่าย
-    { width: 12 }, // G: รวมเงิน (เพิ่มมาแทน)
+    { width: 14 }, // B: Working Code
+    { width: 30 }, // C: รายการยา
+    { width: 10 }, // D: ขนาดบรรจุ
+    { width: 14 }, // E: ราคา/ขนาดบรรจุ
+    { width: 10 }, // F: คงเหลือ
+    { width: 10 }, // G: จำนวนจ่าย
     { width: 15 }, // H: หมายเหตุ
-    { width: 5 }, // I: (เว้นไว้เป็นขอบขวาเล็กๆ)
   ];
 
-  // ✅ 3. Helper Functions (เหมือนเดิม)
+  // 5. Helper Functions
   const setBaseFont = (
     target: ExcelJS.Cell | ExcelJS.Row,
-    size = 12,
+    size = 15,
     bold = false,
   ) => {
-    target.font = { name: "Angsana New", family: 4, size, bold };
+    target.font = { name: "TH Sarabun New", family: 4, size, bold };
   };
 
   const setBorder = (cell: ExcelJS.Cell) => {
@@ -54,82 +96,68 @@ export const exportDispenseToExcel = async (data: DispenseType) => {
     };
   };
 
-  // 4. ส่วนหัวกระดาษ (Title)
-  worksheet.mergeCells("A1:I1");
+  worksheet.mergeCells("A1:H1");
   const titleRow = worksheet.getCell("A1");
-  titleRow.value = "ใบรายการจ่ายยาและเวชภัณฑ์ โรงพยาบาลวังเจ้า";
+  titleRow.value =
+    "ใบรายการจ่ายยาและเวชภัณฑ์ที่มิใช่ยา โรงพยาบาลส่งเสริมสุขภาพตําบลบ้านผาผึ้ง";
   titleRow.alignment = { vertical: "middle", horizontal: "center" };
-  setBaseFont(titleRow, 16, true);
+  setBaseFont(titleRow, 19, true);
 
-  worksheet.mergeCells("A2:I2");
+  const currentMonth = dayjs().month();
+  let fiscalYear = dayjs().year() + 543;
+  if (currentMonth >= 9) {
+    fiscalYear += 1;
+  }
+
+  worksheet.mergeCells("A2:H2"); // Merge ถึง H
   const subTitleRow = worksheet.getCell("A2");
-  subTitleRow.value = `กลุ่มงานเภสัชกรรม (รายการตัดสต็อก)`;
+  subTitleRow.value = `กลุ่มงานเภสัชกรรม ประจำปีงบประมาณ ${fiscalYear}`;
   subTitleRow.alignment = { vertical: "middle", horizontal: "center" };
-  setBaseFont(subTitleRow, 14, true);
+  setBaseFont(subTitleRow, 17, true);
 
-  // 5. ข้อมูลใบจ่าย (วันที่, หมายเหตุ)
   worksheet.addRow([""]);
 
+  // ✅ 7. ข้อมูลใบจ่าย (ปรับ Layout ให้ หมายเหตุ และ รวมเงิน ขึ้นมาขนานกัน)
   const addInfoRow = (l1: string, v1: string, l2: string, v2: string) => {
-    // Layout: A(ว่าง) B(Label1) C-D(Value1) E(ว่าง) F(Label2) G-H(Value2)
-    const row = worksheet.addRow(["", l1, v1, "", "", l2, v2, "", ""]);
-    setBaseFont(row, 12);
+    const row = worksheet.addRow(["", l1, v1, "", l2, v2, "", ""]);
+    setBaseFont(row, 15); // ตัวหนังสือธรรมดา ไม่หนา
 
-    // Style
     row.getCell(2).alignment = { horizontal: "right" }; // Label ซ้าย
     row.getCell(3).alignment = { horizontal: "left", indent: 1 }; // Value ซ้าย
-    row.getCell(6).alignment = { horizontal: "right" }; // Label ขวา
-    row.getCell(7).alignment = { horizontal: "left", indent: 1 }; // Value ขวา
+    row.getCell(5).alignment = { horizontal: "right" }; // Label ขวา
+    row.getCell(6).alignment = { horizontal: "left", indent: 1 }; // Value ขวา
 
-    // Merge
-    worksheet.mergeCells(`C${row.number}:E${row.number}`);
-    worksheet.mergeCells(`G${row.number}:I${row.number}`);
+    worksheet.mergeCells(`C${row.number}:D${row.number}`);
+    worksheet.mergeCells(`F${row.number}:H${row.number}`);
   };
 
-  // ✅ แสดงวันที่จ่าย และ หมายเหตุ
+  // แถวที่ 1: วันที่ และ หมายเหตุ
   addInfoRow(
+    "",
+    "",
     "วันที่จ่าย:",
     data.dispenseDate
-      ? new Date(data.dispenseDate).toLocaleDateString("th-TH")
+      ? dayjs(data.dispenseDate).locale("th").format("D MMMM BBBB")
       : "-",
-    "ผู้รับ/หน่วยงาน:",
-    data.receiverName || "-", // ถ้ามีข้อมูลผู้รับใส่ตรงนี้ ถ้าไม่มีก็ "-"
   );
 
-  addInfoRow(
-    "จำนวนรายการ:",
-    data.dispenseItems ? `${data.dispenseItems.length} รายการ` : "-",
-    "หมายเหตุ:",
-    data.note || "-",
-  );
-
+  // แถวที่ 2: จำนวนรายการ และ รวมเป็นเงิน (ใช้ตัวธรรมดา)
   const totalPriceStr = data.totalPrice
     ? `${Number(data.totalPrice).toLocaleString()} บาท`
     : "-";
 
-  // เพิ่มบรรทัดรวมเงินแยกออกมาให้ชัดเจน
-  const totalRow = worksheet.addRow([
-    "",
-    "",
-    "",
-    "",
-    "",
+  addInfoRow(
+    "จำนวนรายการ:",
+    data.dispenseItems ? `${data.dispenseItems.length} รายการ` : "-",
     "รวมเป็นเงิน:",
     totalPriceStr,
-    "",
-    "",
-  ]);
-  setBaseFont(totalRow, 12, true); // ตัวหนา
-  totalRow.getCell(6).alignment = { horizontal: "right" };
-  totalRow.getCell(7).alignment = { horizontal: "left", indent: 1 };
-  worksheet.mergeCells(`G${totalRow.number}:I${totalRow.number}`);
+  );
 
   worksheet.addRow([""]);
 
-  // 6. ส่วนลายเซ็น (เอาแค่ผู้จ่ายยา ไว้ฝั่งขวา)
+  // ✅ 8. ส่วนลายเซ็น (จัดกึ่งกลางปกติ ไม่ต้องถ่วง Spacebar เพื่อความสวยงาม)
   const signLabelRow = worksheet.addRow([
     "",
-    "", // ลบผู้ขอเบิกออก
     "",
     "",
     "",
@@ -143,52 +171,58 @@ export const exportDispenseToExcel = async (data: DispenseType) => {
     "",
     "",
     "",
+    `(${formattedDispenserName})`,
     "",
-    `(${data.dispenserName || "........................................"})`,
+    "",
+    "",
+  ]);
+  const signPositionRow = worksheet.addRow([
+    "",
+    "",
+    "",
+    "",
+    `ตำแหน่ง ${dispenserPosition}`,
     "",
     "",
     "",
   ]);
 
-  [signLabelRow, signNameRow].forEach((row) => {
-    setBaseFont(row, 12);
+  [signLabelRow, signNameRow, signPositionRow].forEach((row) => {
+    setBaseFont(row, 15);
     row.alignment = { horizontal: "center", vertical: "middle" };
-    // Merge ฝั่งขวา F-I
-    worksheet.mergeCells(`F${row.number}:I${row.number}`);
+    worksheet.mergeCells(`E${row.number}:H${row.number}`); // Merge คอลัมน์ E ถึง H
   });
 
   worksheet.addRow([""]);
 
-  // 7. หัวตาราง
+  // ✅ 9. หัวตาราง (อัปเดต 8 คอลัมน์)
   const headerRow = worksheet.addRow([
     "ลำดับ",
     "Working Code",
     "รายการยา",
     "ขนาดบรรจุ",
-    "ราคา",
+    "ราคา/\nขนาดบรรจุ", // ตัดคำให้สวยงาม
+    "คงเหลือ",
     "จำนวนจ่าย",
-    "รวมเงิน",
     "หมายเหตุ",
-    "", // col I ปล่อยว่างหรือ merge
   ]);
-  // Merge col H-I สำหรับหมายเหตุให้กว้างหน่อย หรือใช้ I เป็นขอบ
-  // ในที่นี้ผมให้ H เป็นหมายเหตุ แล้ว I ปล่อยทิ้งไว้
 
-  headerRow.eachCell((cell, colNum) => {
-    if (colNum <= 8) {
-      // จัดการแค่ A-H
-      setBaseFont(cell, 12, true);
-      cell.alignment = { vertical: "middle", horizontal: "center" };
-      setBorder(cell);
-      cell.fill = {
-        type: "pattern",
-        pattern: "solid",
-        fgColor: { argb: "FFEEEEEE" },
-      };
-    }
+  headerRow.eachCell((cell) => {
+    setBaseFont(cell, 15, true);
+    cell.alignment = {
+      vertical: "middle",
+      horizontal: "center",
+      wrapText: true,
+    };
+    setBorder(cell);
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFEEEEEE" },
+    };
   });
 
-  // 8. ข้อมูลยา (Loop Items)
+  // 10. ข้อมูลยา (Loop Items)
   if (data.dispenseItems && data.dispenseItems.length > 0) {
     let index = 1;
     const groupedItems: Record<string, any[]> = {};
@@ -201,49 +235,51 @@ export const exportDispenseToExcel = async (data: DispenseType) => {
     Object.keys(groupedItems)
       .sort()
       .forEach((groupName) => {
-        // หัวข้อกลุ่มยา
         const groupRow = worksheet.addRow([groupName]);
-        setBaseFont(groupRow, 12, true);
-        worksheet.mergeCells(`A${groupRow.number}:H${groupRow.number}`); // Merge ถึง H
+        setBaseFont(groupRow, 15, true);
+        worksheet.mergeCells(`A${groupRow.number}:H${groupRow.number}`);
         groupRow.getCell(1).fill = {
           type: "pattern",
           pattern: "solid",
           fgColor: { argb: "FFDDEBF7" },
         };
+        groupRow.getCell(1).alignment = {
+          vertical: "middle",
+          horizontal: "center",
+        };
         setBorder(groupRow.getCell(1));
 
-        // รายการยาในกลุ่ม
         groupedItems[groupName].forEach((item) => {
-          const itemTotalPrice = (item.quantity || 0) * (item.price || 0);
-
+          // ✅ อัปเดตข้อมูลใส่ 8 คอลัมน์
           const row = worksheet.addRow([
             index++,
             item.drug?.workingCode || "-",
             item.drug?.name || "-",
             item.drug?.packagingSize || "-",
             item.price || 0,
-            item.quantity || 0,
-            itemTotalPrice,
+            item.drug?.quantity || 0, // คงเหลือ
+            item.quantity || 0, // จำนวนจ่าย
             item.note || "",
           ]);
 
           row.eachCell((cell, colNumber) => {
-            if (colNumber <= 8) {
-              setBaseFont(cell, 12);
-              setBorder(cell);
+            setBaseFont(cell, 15);
+            setBorder(cell);
 
-              // จัด Format
-              if (colNumber === 3 || colNumber === 8) {
-                // ชื่อยา, หมายเหตุ ชิดซ้าย
-                cell.alignment = { horizontal: "left", wrapText: true };
-              } else if (colNumber === 5 || colNumber === 7) {
-                // ราคา, รวมเงิน ชิดขวา
-                cell.alignment = { horizontal: "right" };
-                cell.numFmt = "#,##0.00"; // Format ตัวเลขทศนิยม
-              } else {
-                // อื่นๆ ตรงกลาง
-                cell.alignment = { horizontal: "center" };
-              }
+            if (colNumber === 3 || colNumber === 8) {
+              // รายการยา และ หมายเหตุ จัดซ้าย
+              cell.alignment = {
+                horizontal: "left",
+                wrapText: true,
+                vertical: "middle",
+              };
+            } else if (colNumber === 5) {
+              // ราคา จัดขวา ทศนิยม 2 ตำแหน่ง
+              cell.alignment = { horizontal: "right", vertical: "middle" };
+              cell.numFmt = "#,##0.00";
+            } else {
+              // อื่นๆ จัดกึ่งกลาง
+              cell.alignment = { horizontal: "center", vertical: "middle" };
             }
           });
         });
@@ -252,14 +288,16 @@ export const exportDispenseToExcel = async (data: DispenseType) => {
     const emptyRow = worksheet.addRow(["ไม่พบรายการยา"]);
     worksheet.mergeCells(`A${emptyRow.number}:H${emptyRow.number}`);
     emptyRow.getCell(1).alignment = { horizontal: "center" };
-    setBaseFont(emptyRow, 12);
+    setBaseFont(emptyRow, 15);
   }
 
-  // 9. สร้างไฟล์
+  // 11. สร้างไฟล์
   const buffer = await workbook.xlsx.writeBuffer();
+
   const dateStr = data.dispenseDate
-    ? new Date(data.dispenseDate).toISOString().split("T")[0]
+    ? dayjs(data.dispenseDate).locale("th").format("D_MMM_BBBB")
     : "unknown";
+
   const blob = new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });

@@ -19,7 +19,6 @@ import DataLeaveEdit from "./dataLeaveEdit";
 import CustomTable from "../../common/CustomTable";
 import "dayjs/locale/th";
 
-// Set locale globally
 dayjs.locale("th");
 
 interface DataLeaveTableProps {
@@ -193,7 +192,7 @@ export default function DataLeaveTable({
       align: "center",
       width: 150,
       ellipsis: true,
-      responsive: ["md"], // ซ่อนบนมือถือ
+      responsive: ["md"],
       render: (text: string) => {
         const maxLength = 15;
         if (!text) return "-";
@@ -211,17 +210,16 @@ export default function DataLeaveTable({
       title: "จัดการ",
       key: "action",
       align: "center",
-      width: 140, // เพิ่มความกว้างเล็กน้อยสำหรับปุ่ม
+      width: 140,
       render: (_: any, record: any) => (
         <Space size="small">
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
-              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }} // ปรับขนาดไอคอนเป็น 18px
+              style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }}
               onClick={() => handleShowDetail(record)}
             />
           </Tooltip>
 
-          {/* ปรับขนาดไอคอนใน DataLeaveWord ด้วยถ้าทำได้ หรือปล่อยไว้ถ้าเป็น component แยก */}
           <div style={{ transform: "scale(0.9)" }}>
             <DataLeaveWord record={record} />
           </div>
@@ -229,7 +227,7 @@ export default function DataLeaveTable({
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
-                fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                fontSize: 18,
                 color:
                   record.status === "pending" || record.status === "edit"
                     ? "#faad14"
@@ -278,9 +276,9 @@ export default function DataLeaveTable({
           dataSource={leaveByUserId}
           loading={loading}
           pagination={{ pageSize: 10 }}
-          scroll={{ x: "max-content" }} // เพิ่ม scroll แนวนอน
+          scroll={{ x: "max-content" }}
           bordered
-          size="small" // ใช้ size small บนมือถือ
+          size="small"
         />
 
         <DataLeaveEdit

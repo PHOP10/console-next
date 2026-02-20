@@ -323,7 +323,7 @@ export default function MaMedicalEquipmentTable({
       width: 160,
       // ไม่ใช้ fixed ตามข้อ 5
       render: (_, record) => (
-        <Space size="small">
+        <Space size="middle">
           {/* Approve Popover */}
           <Popover
             trigger="click"
@@ -376,7 +376,7 @@ export default function MaMedicalEquipmentTable({
             >
               <CheckCircleOutlined
                 style={{
-                  fontSize: 18, // ขนาด 18 ตามข้อ 3
+                  fontSize: 18,
                   color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
                   cursor:
                     record.status === "pending" ? "pointer" : "not-allowed",
@@ -476,7 +476,6 @@ export default function MaMedicalEquipmentTable({
         dataSource={data}
         loading={loading}
         bordered
-        // ใช้ size small บนมือถือ
         size="small"
         pagination={{ pageSize: 10, size: "small" }}
         scroll={{ x: "max-content" }}

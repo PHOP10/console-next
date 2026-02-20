@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Calendar,
   Formats,
@@ -13,8 +13,10 @@ import moment from "moment";
 import "moment/locale/th";
 import MaCarDetail from "./maCarDetail";
 import { Tooltip } from "antd";
+import Holidays from "date-holidays";
 
 const localizer = momentLocalizer(moment);
+const hd = new Holidays("TH");
 
 interface CustomEvent extends RbcEvent {
   id: number;
@@ -76,6 +78,66 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
     setModalOpen(false);
   };
 
+  const processEvents = useMemo(() => {
+    const processedEvents: CustomEvent[] = [];
+
+    data.forEach((booking) => {
+      const start = moment(booking.dateStart);
+      const end = moment(booking.dateEnd);
+
+      let current = start.clone();
+
+      let chunkStart: moment.Moment | null = null;
+      let chunkEnd: moment.Moment | null = null;
+
+      const pushChunk = () => {
+        if (chunkStart && chunkEnd) {
+          processedEvents.push({
+            id: booking.id,
+            title: getUserName(booking.createdName),
+            start: chunkStart.toDate(),
+            end: chunkEnd.endOf("day").toDate(),
+            status: booking.status,
+            location: booking.destination,
+            masterCar: `ID: ${booking.carId}`,
+            passengers: booking.passengers,
+            budget: booking.budget,
+            originalRecord: booking,
+            allDay: true,
+          });
+        }
+        chunkStart = null;
+        chunkEnd = null;
+      };
+
+      while (current.isSameOrBefore(end, "day")) {
+        const dayOfWeek = current.day();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+        const holiday = hd.isHoliday(current.toDate());
+        const isPublicHoliday =
+          holiday &&
+          (holiday[0].type === "public" || holiday[0].type === "bank");
+        const isWorkingDay = !isWeekend && !isPublicHoliday;
+
+        if (isWorkingDay) {
+          if (!chunkStart) {
+            chunkStart = current.clone();
+          }
+
+          chunkEnd = current.clone();
+        } else {
+          pushChunk();
+        }
+
+        current.add(1, "day");
+      }
+
+      pushChunk();
+    });
+
+    return processedEvents;
+  }, [data, dataUser]);
+
   const formats: Formats = {
     monthHeaderFormat: (date: Date) => {
       const mDate = moment(date);
@@ -108,20 +170,8 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
         <Calendar<CustomEvent>
           localizer={localizer}
           formats={formats}
-          events={data.map(
-            (item): CustomEvent => ({
-              id: item.id,
-              title: getUserName(item.createdName),
-              start: new Date(item.dateStart),
-              end: new Date(item.dateEnd),
-              status: item.status,
-              location: item.destination,
-              masterCar: `ID: ${item.carId}`,
-              passengers: item.passengers,
-              budget: item.budget,
-              originalRecord: item,
-            }),
-          )}
+          popup={false}
+          events={processEvents}
           style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
           onSelectEvent={onSelectEvent}
           dayPropGetter={() => ({
@@ -158,7 +208,7 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
             date: "วันที่",
             time: "เวลา",
             event: "การจอง",
-           showMore: (total, remaining, events) => {
+            showMore: (total, remaining, events) => {
               const content = (
                 <div className="flex flex-col gap-1 p-2 min-w-[160px]">
                   {events.map((evt, idx) => {

@@ -261,7 +261,6 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
           ? formatThaiDate(lastLeave.dateEnd)
           : "....................",
 
-        // ตัวแปร leaveD เดิม ใช้แสดงจำนวนวันของ "ครั้งก่อน" (เช่น ๔ วัน)
         leaveD: lastLeave ? toThaiNumber(lastDuration) : ".....",
 
         // --- อื่นๆ ---
@@ -275,8 +274,6 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
           ? formatThaiDate(record.approvedDate)
           : "....................",
 
-        // สถิติ
-        // ✅ แก้ไข: สถิติในตารางเป็นเลขอารบิก (toArabicNumber)
         sickU: toArabicNumber(sickLeave.usedDays),
         sickC: toArabicNumber(sickLeave.currentDays),
         sickTt: toArabicNumber(sickLeave.totalDays),

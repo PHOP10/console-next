@@ -7,20 +7,26 @@ import DataDrugForm from "../components/drugForm";
 import DrugTypeTable from "../components/drugTypeTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { DrugType } from "../../common";
-import useSWR from "swr"; // 1. Import SWR
+import { DrugType, MasterDrugType } from "../../common"; // ✅ อย่าลืม Import MasterDrugType
+import useSWR from "swr";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
+
+  // ✅ ขยับ intraAuthService ออกมาประกาศตรงนี้ เพื่อให้ใช้ได้ทั้งใน fetcher และ useEffect
+  const intraAuthService = MaDrug(intraAuth);
+
   const [manualLoading, setManualLoading] = useState<boolean>(false);
   const [data, setData] = useState<DrugType[]>([]);
+
+  // ✅ เพิ่ม State สำหรับเก็บข้อมูล Master Drugs
+  const [masterDrugs, setMasterDrugs] = useState<MasterDrugType[]>([]);
+
   const fetcher = async () => {
-    const intraAuthService = MaDrug(intraAuth);
     const result = await intraAuthService.getDrugQuery();
     return Array.isArray(result) ? result : result?.data || [];
   };
 
-  // 5. เรียกใช้ SWR
   const {
     data: swrData,
     isLoading: isSwrLoading,
@@ -40,6 +46,22 @@ export default function Page() {
     }
   }, [swrData]);
 
+  // ✅ เพิ่ม useEffect สำหรับดึงข้อมูล Master Drugs
+  useEffect(() => {
+    const fetchMasterDrugs = async () => {
+      try {
+        const res: MasterDrugType[] =
+          await intraAuthService.getMasterDrugQuery();
+        if (Array.isArray(res)) {
+          setMasterDrugs(res);
+        }
+      } catch (error) {
+        console.error("Failed to load master drugs", error);
+      }
+    };
+    fetchMasterDrugs();
+  }, []); // ทำงานแค่ครั้งเดียวตอนโหลดหน้า
+
   // รวม Loading state
   const loading = isSwrLoading || manualLoading;
 
@@ -54,6 +76,7 @@ export default function Page() {
             loading={loading}
             data={data}
             setData={setData}
+            masterDrugs={masterDrugs} // ✅ ส่ง Prop ไปที่ Table
           />
         </Card>
       ),
@@ -67,6 +90,7 @@ export default function Page() {
             setLoading={setManualLoading}
             loading={loading}
             setData={setData}
+            masterDrugs={masterDrugs} // ✅ ส่ง Prop ไปที่ Form
           />
         </Card>
       ),

@@ -107,7 +107,6 @@ export default function MaDrugReceiveModal({
       message.error(
         `กรุณาระบุ "วันหมดอายุ" ให้ครบถ้วน (${incompleteItems.length} รายการ)`,
       );
-      // ไฮไลท์รายการที่ยังไม่ได้กรอก (ถ้าต้องการ UX เพิ่มเติม) อาจจะทำในอนาคต
       return;
     }
 
@@ -148,7 +147,6 @@ export default function MaDrugReceiveModal({
     {
       title: "รายการยา",
       dataIndex: "drugName",
-      // width: 250, // ปล่อยให้ยืดหยุ่นตามหน้าจอ
       render: (text: string, record: ReceiveItem) => (
         <div>
           <div className="font-medium text-slate-700 text-base">{text}</div>
@@ -167,7 +165,6 @@ export default function MaDrugReceiveModal({
       dataIndex: "expiryDate",
       width: 180,
       render: (val: dayjs.Dayjs | null, record: ReceiveItem, index: number) => {
-        // ตรวจสอบว่าจำเป็นต้องกรอกไหม (ถ้ายอดรับ > 0 และยังไม่มีค่าวันที่)
         const isRequiredAndEmpty = (record.receivedQty || 0) > 0 && !val;
 
         return (
@@ -245,17 +242,18 @@ export default function MaDrugReceiveModal({
       styles={{
         content: { borderRadius: "16px", padding: 0, overflow: "hidden" },
         header: { padding: "20px 24px", borderBottom: "1px solid #f0f0f0" },
-        body: { padding: "24px", height: "85vh", overflowY: "auto" },
+        // ✅ เปลี่ยนจาก height เป็น maxHeight เพื่อให้ขยายตามเนื้อหาข้างใน และ Scroll ได้ปกติ
+        body: { padding: "24px", maxHeight: "85vh", overflowY: "auto" },
       }}
     >
       <Form
         form={form}
         layout="vertical"
         onFinish={handleFinish}
-        className="h-full flex flex-col"
+        className="flex flex-col gap-6" // ✅ ลบ h-full และใช้ gap ช่วยระยะห่างแทน
       >
         {/* 1. ส่วนแสดงข้อมูลใบเบิก */}
-        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6 flex-shrink-0">
+        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
           <Row gutter={[16, 16]}>
             <Col xs={24} sm={8}>
               <div className="text-sm text-slate-500">เลขที่ใบเบิก</div>
@@ -279,8 +277,9 @@ export default function MaDrugReceiveModal({
         </div>
 
         {/* 2. ตารางรายการยา */}
-        <div className="mb-6 border border-slate-200 rounded-lg overflow-hidden flex-1 flex flex-col">
-          <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-100 flex justify-between items-center flex-shrink-0">
+        {/* ✅ นำคลาส overflow-hidden/flex-1 ที่บีบกล่องตารางออก */}
+        <div className="border border-slate-200 rounded-lg bg-white">
+          <div className="bg-blue-50/50 px-6 py-3 border-b border-blue-100 flex justify-between items-center rounded-t-lg">
             <span className="font-semibold text-blue-700 text-lg">
               รายการยาที่ขอเบิก
             </span>
@@ -288,17 +287,27 @@ export default function MaDrugReceiveModal({
               {items.length} รายการ
             </Tag>
           </div>
-          <div className="flex-1 overflow-hidden">
+          <div className="w-full">
             <Table
               dataSource={items}
               columns={columns}
               rowKey="id"
-              pagination={{
-                pageSize: 20,
-                showSizeChanger: false, // ซ่อนปุ่มเปลี่ยนจำนวนต่อหน้า (ถ้าต้องการ)
-              }}
               size="middle"
-              scroll={{ y: "50vh" }} // ✅ กำหนดความสูง Scroll ให้เหมาะสมกับจอใหญ่
+              scroll={{ x: "max-content", y: 450 }}
+              pagination={{
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showSizeChanger: true,
+                defaultPageSize: 20,
+                showTotal: (total, range) => (
+                  <span className="text-gray-500 text-xs sm:text-sm font-light">
+                    แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
+                    <span className="font-bold text-blue-600">{total}</span>{" "}
+                    รายการ
+                  </span>
+                ),
+                locale: { items_per_page: "/ หน้า" },
+                position: ["bottomRight"],
+              }}
               summary={() => (
                 <Table.Summary.Row className="bg-slate-50 font-bold text-lg">
                   <Table.Summary.Cell index={0} colSpan={4} align="right">
@@ -321,7 +330,7 @@ export default function MaDrugReceiveModal({
         </div>
 
         {/* 3. ปุ่มดำเนินการ */}
-        <div className="flex justify-end gap-4 pt-4 border-t border-slate-100 flex-shrink-0">
+        <div className="flex justify-end gap-4 pt-4 border-t border-slate-100">
           <Button onClick={onClose} className="h-12 px-8 rounded-xl text-lg">
             ยกเลิก
           </Button>

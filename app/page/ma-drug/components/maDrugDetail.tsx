@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Modal, Row, Col, Tag, Divider, Table, Grid } from "antd";
+import { Modal, Row, Col, Tag, Table, Grid } from "antd";
 import { MaDrugType } from "../../common";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
@@ -21,6 +21,7 @@ export default function MaDrugTableDetail({
   data,
 }: MaDrugTableDetailProps) {
   const screens = useBreakpoint();
+
   // --- Helper Functions ---
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "-";
@@ -84,7 +85,7 @@ export default function MaDrugTableDetail({
     {
       title: "ลำดับ",
       key: "index",
-      width: 50, // ลดความกว้าง
+      width: 50,
       align: "center",
       render: (_: any, __: any, index: number) => index + 1,
     },
@@ -92,7 +93,7 @@ export default function MaDrugTableDetail({
       title: "รหัสยา",
       dataIndex: ["drug", "workingCode"],
       key: "workingCode",
-      width: 80,
+      width: 90,
       render: (text) => (
         <span className="text-slate-500 font-mono text-xs sm:text-sm">
           {text}
@@ -104,18 +105,19 @@ export default function MaDrugTableDetail({
       dataIndex: ["drug", "name"],
       key: "drugName",
       render: (text) => (
-        <span className="font-medium text-slate-700 text-sm sm:text-base">
+        // ✅ เพิ่ม whitespace-normal และ break-words เพื่อให้ชื่อยายาวๆ ตัดขึ้นบรรทัดใหม่ได้
+        <div className="font-medium text-slate-700 text-sm sm:text-base whitespace-normal break-words min-w-[150px]">
           {text}
-        </span>
+        </div>
       ),
     },
     {
       title: "ขนาด",
       dataIndex: ["drug", "packagingSize"],
       key: "packagingSize",
-      width: 80,
+      width: 90,
       align: "center",
-      responsive: ["sm"], // ซ่อนบนมือถือ
+      responsive: ["sm"],
     },
     {
       title: "จำนวน",
@@ -127,10 +129,8 @@ export default function MaDrugTableDetail({
     },
     {
       title: "ราคา/หน่วย",
-      // ❌ ของเดิม: dataIndex: ["drug", "price"],  <-- ผิด: ดึงราคาปัจจุบัน
-      // ✅ แก้เป็น: dataIndex: "price",             <-- ถูก: ดึงราคาที่บันทึกไว้ในรายการ
       dataIndex: "price",
-      width: 90,
+      width: 100,
       align: "right",
       responsive: ["sm"],
       render: (val) =>
@@ -139,7 +139,7 @@ export default function MaDrugTableDetail({
     {
       title: "รวมเงิน",
       key: "subtotal",
-      width: 100,
+      width: 110,
       align: "right",
       render: (_, record) => {
         const total = (record.quantity || 0) * (record.price || 0);
@@ -205,7 +205,6 @@ export default function MaDrugTableDetail({
               </Col>
               <Col xs={12} sm={12} md={6}>
                 <Label>เบิกครั้งที่</Label>
-                {/* ⚠️ เปลี่ยน data.requestRound ให้ตรงกับชื่อ Field ที่ได้จาก API ของคุณ */}
                 <Value>{data.roundNumber || "-"}</Value>
               </Col>
               <Col xs={12} sm={12} md={6}>
@@ -226,8 +225,22 @@ export default function MaDrugTableDetail({
               columns={drugColumns}
               rowKey="id"
               size="small"
-              scroll={{ x: "max-content", y: 400 }}
-              pagination={{ pageSize: 10, size: "small" }}
+              // ✅ เปลี่ยน scroll x ให้เป็นตัวเลข เพื่อให้บน Desktop ไม่มีแถบเลื่อนซ้ายขวา แต่บนจอเล็ก(มือถือ)ยังเลื่อนได้ปกติ
+              scroll={{ x: 600, y: 400 }}
+              pagination={{
+                pageSizeOptions: ["10", "20", "50", "100"],
+                showSizeChanger: true,
+                defaultPageSize: 20,
+                showTotal: (total, range) => (
+                  <span className="text-gray-500 text-xs sm:text-sm font-light">
+                    แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
+                    <span className="font-bold text-blue-600">{total}</span>{" "}
+                    รายการ
+                  </span>
+                ),
+                locale: { items_per_page: "/ หน้า" },
+                position: ["bottomRight"],
+              }}
               summary={() => {
                 const labelColSpan = screens.md ? 4 : 3;
                 const priceColSpan = screens.md ? 2 : 1;
@@ -275,15 +288,6 @@ export default function MaDrugTableDetail({
             </div>
           )}
         </div>
-
-        {/* {data.status === "cancel" && data.cancelReason && (
-          <div className="bg-red-50 p-3 rounded border border-red-200 text-xs sm:text-sm text-red-800">
-            <strong>สาเหตุที่ยกเลิก:</strong> {data.cancelReason} <br />
-            <span className="text-xs text-red-600">
-              (โดย: {data.cancelName || "-"})
-            </span>
-          </div>
-        )} */}
 
         {/* Footer */}
         <div className="bg-slate-50 px-4 sm:px-6 py-3 border-t border-slate-200 flex justify-end shrink-0">

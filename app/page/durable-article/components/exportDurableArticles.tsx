@@ -1,17 +1,16 @@
 // lib/exportDurableArticle.ts
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import dayjs from "dayjs";
-import "dayjs/locale/th"; // Import locale ภาษาไทยสำหรับ dayjs
+import "dayjs/locale/th";
 
-// ตั้งค่า dayjs เป็นภาษาไทย
 dayjs.locale("th");
 
-// อัปเดต Interface ให้ตรงกับ Prisma Model ที่มีฟิลด์ครบถ้วน
 export interface DurableArticleType {
+  // ... (Interface เดิมของคุณ)
   id: number;
   code: string;
-  registrationNumber?: string | null; // เลขทะเบียน
+  registrationNumber?: string | null;
   acquiredDate: string | Date;
   description: string;
   unitPrice: number;
@@ -21,106 +20,148 @@ export interface DurableArticleType {
   yearlyDepreciation?: number | null;
   accumulatedDepreciation?: number | null;
   netValue?: number | null;
-
-  category?: string | null; // หมวดหมู่
-  documentId?: string | null; // เลขที่เอกสาร
-  responsibleAgency?: string | null; // หน่วยงาน
+  category?: string | null;
+  documentId?: string | null;
+  responsibleAgency?: string | null;
   note?: string | null;
-  createdName?: string | null; // ผู้บันทึก
+  location?: string | null;
+  createdName?: string | null;
   createdAt?: string | Date | null;
   updatedAt?: string | Date | null;
 }
 
-export function exportDurableArticles(data: DurableArticleType[]) {
-  // 1. เตรียมข้อมูล (Mapping)
-  // จัดเรียงลำดับคอลัมน์ใหม่ให้อ่านง่าย: รหัส -> รายละเอียด -> หน่วยงาน -> ราคา -> ค่าเสื่อม
-  const exportData = data.map((item, index) => {
-    const acquireDateObj = item.acquiredDate ? dayjs(item.acquiredDate) : null;
-
-    return {
-      ลำดับ: index + 1,
-      รหัสครุภัณฑ์: item.code,
-      เลขทะเบียน: item.registrationNumber || "-",
-      เลขที่เอกสาร: item.documentId || "-",
-      "รายการ/รายละเอียด": item.description,
-      หมวดหมู่: item.category || "-",
-      หน่วยงานที่รับผิดชอบ: item.responsibleAgency || "-",
-      วันที่ได้รับ: acquireDateObj ? acquireDateObj.format("DD/MM/YYYY") : "-",
-      วิธีการได้มา: item.acquisitionType,
-      "ราคาต่อหน่วย (บาท)": item.unitPrice, // ส่งเป็น number เพื่อให้ Excel คำนวณต่อได้
-      "อายุการใช้งาน (ปี)": item.usageLifespanYears,
-      "ค่าเสื่อม/เดือน (บาท)": item.monthlyDepreciation,
-      "ค่าเสื่อม/ปี (บาท)": item.yearlyDepreciation || 0,
-      "ค่าเสื่อมสะสม (บาท)": item.accumulatedDepreciation || 0,
-      "มูลค่าสุทธิ (บาท)": item.netValue || 0,
-      หมายเหตุ: item.note || "-",
-      ผู้บันทึก: item.createdName || "-",
-      วันที่บันทึก: item.createdAt
-        ? dayjs(item.createdAt).format("DD/MM/YYYY")
-        : "-",
-    };
+export async function exportDurableArticles(data: DurableArticleType[]) {
+  // 1. สร้าง Workbook และ Worksheet
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("ข้อมูลครุภัณฑ์", {
+    pageSetup: {
+      paperSize: 9, // 9 = A4
+      orientation: "landscape", // แนวนอน (ชัวร์ 100% กับ ExcelJS)
+      fitToPage: true, // บีบให้พอดีหน้า
+      fitToWidth: 1, // บีบความกว้างให้ลง 1 หน้า
+      fitToHeight: 0, // ความสูงปล่อยไหลตามข้อมูล
+      margins: {
+        left: 0.5,
+        right: 0.5,
+        top: 0.5,
+        bottom: 0.5,
+        header: 0.3,
+        footer: 0.3,
+      },
+    },
   });
 
-  // 2. สร้าง Worksheet
-  // ใช้ sheet_add_json โดยเริ่มที่บรรทัด A2 (เว้น A1 ไว้ใส่หัวเรื่อง)
-  const worksheet = XLSX.utils.json_to_sheet(exportData, {
-    origin: "A2",
-  } as any);
-
-  // 3. กำหนดความกว้างคอลัมน์ (Widths)
-  // wch คือหน่วยจำนวนตัวอักษรโดยประมาณ
-  worksheet["!cols"] = [
-    { wch: 5 }, // ลำดับ
-    { wch: 20 }, // รหัสครุภัณฑ์
-    { wch: 15 }, // เลขทะเบียน
-    { wch: 15 }, // เลขที่เอกสาร
-    { wch: 40 }, // รายละเอียด (กว้างหน่อย)
-    { wch: 18 }, // หมวดหมู่
-    { wch: 20 }, // หน่วยงาน
-    { wch: 11 }, // วันที่ได้รับ
-    { wch: 15 }, // วิธีการได้มา
-    { wch: 15 }, // ราคา
-    { wch: 12 }, // อายุใช้งาน
-    { wch: 15 }, // ค่าเสื่อมเดือน
-    { wch: 15 }, // ค่าเสื่อมปี
-    { wch: 15 }, // ค่าเสื่อมสะสม
-    { wch: 15 }, // มูลค่าสุทธิ
-    { wch: 20 }, // หมายเหตุ
-    { wch: 15 }, // ผู้บันทึก
-    { wch: 11 }, // วันที่บันทึก
+  // 2. กำหนดคอลัมน์และความกว้าง
+  worksheet.columns = [
+    { key: "index", width: 8 }, // ลำดับ
+    { key: "date", width: 14 }, // วันที่
+    { key: "code", width: 22 }, // รหัส
+    { key: "desc", width: 50 }, // รายการ
+    { key: "price", width: 15 }, // ราคา
+    { key: "type", width: 25 }, // วิธีได้มา
+    { key: "note", width: 25 }, // หมายเหตุ
   ];
 
-  // 4. ใส่หัวเรื่องใหญ่ (Main Title) ที่ A1
-  XLSX.utils.sheet_add_aoa(worksheet, [["รายงานข้อมูลครุภัณฑ์ทั้งหมด"]], {
-    origin: "A1",
-  });
+  // 3. เตรียม Style มาตรฐาน (TH Sarabun New 16)
+  const baseFont = { name: "TH Sarabun New", size: 16 };
+  const borderStyle: Partial<ExcelJS.Borders> = {
+    top: { style: "thin" },
+    left: { style: "thin" },
+    bottom: { style: "thin" },
+    right: { style: "thin" },
+  };
 
-  // Merge Cell หัวเรื่อง (A1 ถึง Column สุดท้าย)
-  const colCount = Object.keys(exportData[0] || {}).length;
-  worksheet["!merges"] = [{ s: { r: 0, c: 0 }, e: { r: 0, c: colCount - 1 } }];
+  // 4. ส่วนหัวเรื่องใหญ่ (Row 1)
+  worksheet.mergeCells("A1:G1");
+  const titleCell = worksheet.getCell("A1");
+  titleCell.value =
+    "จำนวนครุภัณฑ์ ทั้งหมดของ โรงพยาบาลส่งเสริมสุขภาพตำบลบ้านผาผึ้ง";
+  titleCell.font = { name: "TH Sarabun New", size: 16, bold: true };
+  titleCell.alignment = { horizontal: "center", vertical: "middle" };
 
-  // *หมายเหตุ: การใส่ Style (.s) ใน SheetJS รุ่น Community (ฟรี) จะไม่แสดงผลในไฟล์ Output
-  // แต่ถ้าคุณใช้รุ่น Pro หรือ wrapper เช่น xlsx-js-style โค้ดด้านล่างนี้จะทำงาน
-  if (worksheet["A1"]) {
-    worksheet["A1"].s = {
-      font: { name: "Sarabun", sz: 16, bold: true },
-      alignment: { horizontal: "center", vertical: "center" },
+  // 5. ส่วนหัวตาราง (Row 2)
+  const headerRow = worksheet.addRow([
+    "ลำดับ",
+    "วัน เดือน ปี",
+    "เลขที่หรือรหัส",
+    "ชื่อ ชนิด แบบ ขนาดและลักษณะ",
+    "ราคาต่อหน่วย",
+    "วิธีการได้มา",
+    "หมายเหตุ",
+  ]);
+
+  // จัด Style หัวตาราง
+  headerRow.eachCell((cell) => {
+    cell.font = { name: "TH Sarabun New", size: 16, bold: true };
+    cell.alignment = {
+      horizontal: "center",
+      vertical: "middle",
+      wrapText: true,
     };
-  }
-
-  // 5. สร้าง Workbook และ Export
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, "ข้อมูลครุภัณฑ์");
-
-  const excelBuffer = XLSX.write(workbook, {
-    bookType: "xlsx",
-    type: "array",
+    cell.border = borderStyle;
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFF0F0F0" }, // สีเทาอ่อน
+    };
   });
 
-  const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
+  // 6. ใส่ข้อมูล (Data Rows)
+  data.forEach((item, index) => {
+    let dateStr = "-";
+    if (item.acquiredDate) {
+      const d = dayjs(item.acquiredDate);
+      // แก้ไขตรงนี้ครับ: ใช้ format "D MMM" แล้วต่อด้วยปี พ.ศ.
+      // ผลลัพธ์: "1 ม.ค. 2569", "15 เม.ย. 2568"
+      dateStr = `${d.format("D MMM")} ${d.year() + 543}`;
+    }
 
-  // ตั้งชื่อไฟล์พร้อมวันที่ปัจจุบัน เช่น "ข้อมูลครุภัณฑ์_25-10-2023.xlsx"
-  const fileName = `ข้อมูลครุภัณฑ์_${dayjs().format("DD-MM-YYYY")}.xlsx`;
+    const row = worksheet.addRow([
+      index + 1, // ลำดับ
+      dateStr, // วันที่ (รูปแบบใหม่)
+      item.code, // รหัส
+      item.description, // รายการ
+      item.unitPrice, // ราคา
+      item.acquisitionType, // วิธีได้มา
+      item.note || "-", // หมายเหตุ
+    ]);
+
+    // จัด Style ข้อมูลแต่ละช่อง
+    row.eachCell((cell, colNumber) => {
+      cell.font = baseFont;
+      cell.border = borderStyle;
+      cell.alignment = {
+        vertical: "top", // ชิดบน
+        wrapText: true, // ตัดคำ
+        horizontal: "center", // ค่า Default กึ่งกลาง
+      };
+
+      // จัดซ้าย/ขวา เฉพาะคอลัมน์
+      if (colNumber === 4 || colNumber === 7) {
+        // รายการ (4) และ หมายเหตุ (7) -> ชิดซ้าย
+        cell.alignment.horizontal = "left";
+      } else if (colNumber === 5) {
+        // ราคา (5) -> ชิดขวา + ใส่ลูกน้ำ
+        cell.alignment.horizontal = "right";
+        cell.numFmt = "#,##0.00";
+      }
+    });
+  });
+
+  // 7. สร้าง Buffer และ Save ไฟล์
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  // สร้างวันที่ปัจจุบัน
+  const d = dayjs();
+
+  // จัดรูปแบบเป็น "18 ก.พ. 2569" (D MMM YYYY+543)
+  const dateStr = `${d.format("D MMM")} ${d.year() + 543}`;
+
+  // ชื่อไฟล์จะเป็น: "รายงานครุภัณฑ์_18 ก.พ. 2569.xlsx"
+  const fileName = `รายงานครุภัณฑ์_${dateStr}.xlsx`;
 
   saveAs(blob, fileName);
 }

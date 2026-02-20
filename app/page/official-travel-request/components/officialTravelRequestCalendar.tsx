@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react"; // ✅ เพิ่ม useMemo
 import {
   Calendar,
   Formats,
@@ -15,9 +15,11 @@ import "moment/locale/th";
 // 🔹 Import Component รายละเอียดที่ทำไว้
 import OfficialTravelRequestDetail from "./officialTravelRequestDetail";
 import { Tooltip } from "antd";
+import Holidays from "date-holidays"; // ✅ เพิ่ม import Holidays
 
 // Setup Localizer
 const localizer = momentLocalizer(moment);
+const hd = new Holidays("TH"); // ✅ ประกาศตัวแปรวันหยุด
 
 // --- Custom Interfaces ---
 interface CustomEvent extends RbcEvent {
@@ -78,6 +80,80 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
     }
   };
 
+  // ✅ เพิ่ม Logic การตัดวันหยุดและวันเสาร์อาทิตย์ (ตามแบบ MaCarCalendar)
+  const processEvents = useMemo(() => {
+    const processedEvents: CustomEvent[] = [];
+
+    data.forEach((item) => {
+      const start = moment(item.startDate);
+      const end = moment(item.endDate);
+
+      let current = start.clone();
+
+      let chunkStart: moment.Moment | null = null;
+      let chunkEnd: moment.Moment | null = null;
+
+      const pushChunk = () => {
+        if (chunkStart && chunkEnd) {
+          processedEvents.push({
+            id: item.id,
+            title: item.createdName || "ไม่ระบุชื่อ",
+            // ใช้เวลาเริ่มของ chunkStart และเวลาจบของ chunkEnd (สิ้นวัน)
+            // หากต้องการเวลาที่แม่นยำตาม record เดิม ให้ปรับ logic ตรง toDate()
+            start: chunkStart.toDate(),
+            end: chunkEnd.endOf("day").toDate(),
+            status: item.status,
+            location: `${item.location}`,
+            masterCar: item.MasterCar?.licensePlate || "",
+            allDay: false,
+            originalRecord: item,
+          });
+        }
+        chunkStart = null;
+        chunkEnd = null;
+      };
+
+      // วนลูปตั้งแต่วันเริ่ม จนถึงวันสิ้นสุด
+      while (current.isSameOrBefore(end, "day")) {
+        const dayOfWeek = current.day();
+        const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // 0=อาทิตย์, 6=เสาร์
+        const holiday = hd.isHoliday(current.toDate());
+        const isPublicHoliday =
+          holiday &&
+          (holiday[0].type === "public" || holiday[0].type === "bank");
+
+        // ถือว่าเป็นวันทำการ ถ้าไม่ใช่วันหยุดเสาร์อาทิตย์ และไม่ใช่วันหยุดนักขัตฤกษ์
+        const isWorkingDay = !isWeekend && !isPublicHoliday;
+
+        if (isWorkingDay) {
+          if (!chunkStart) {
+            chunkStart = current.clone();
+            // กรณีเป็นวันแรกของ chunk ให้คงเวลาเริ่มต้นเดิมไว้ (ถ้าต้องการ)
+            // แต่ถ้า chunk เกิดจากการข้ามวันหยุด เวลาเริ่มจะเป็น 00:00 โดยอัตโนมัติจากการ clone
+            if (current.isSame(start, "day")) {
+              chunkStart = start.clone();
+            }
+          }
+          chunkEnd = current.clone();
+          // กรณีเป็นวันสุดท้าย ให้ใช้วันเวลาสิ้นสุดตามจริง
+          if (current.isSame(end, "day")) {
+            chunkEnd = end.clone();
+          }
+        } else {
+          // เจอวันหยุด -> ตัดจบ chunk ก่อนหน้า (ถ้ามี)
+          pushChunk();
+        }
+
+        current.add(1, "day");
+      }
+
+      // จบลูปแล้ว อย่าลืม push chunk สุดท้าย
+      pushChunk();
+    });
+
+    return processedEvents;
+  }, [data]);
+
   const formats: Formats = {
     monthHeaderFormat: (date: Date) => {
       const mDate = moment(date);
@@ -110,19 +186,7 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         <Calendar<CustomEvent>
           localizer={localizer}
           formats={formats}
-          events={data.map(
-            (item): CustomEvent => ({
-              id: item.id,
-              title: item.createdName || "ไม่ระบุชื่อ",
-              start: new Date(item.startDate),
-              end: new Date(item.endDate),
-              status: item.status,
-              location: `${item.location}`,
-              masterCar: item.MasterCar?.licensePlate || "",
-              allDay: false,
-              originalRecord: item,
-            }),
-          )}
+          events={processEvents} // ✅ เปลี่ยนมาใช้ processEvents
           style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
           onSelectEvent={onSelectEvent}
           eventPropGetter={(event) => {
