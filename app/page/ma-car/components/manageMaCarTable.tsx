@@ -257,8 +257,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       align: "center",
       width: 150,
       responsive: ["xl"], // ซ่อนบนมือถือ
-      render: (masterCar) =>
-        masterCar ? `${masterCar.carName} (${masterCar.licensePlate})` : "-",
+      render: (masterCar) => (masterCar ? `${masterCar.licensePlate}` : "-"),
     },
     {
       title: "สถานะ",

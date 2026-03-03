@@ -151,9 +151,6 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 m-0">
                 รายละเอียดการจองรถ
               </h2>
-              <div className="text-slate-500 text-xs sm:text-sm mt-1">
-                ตรวจสอบข้อมูลรายละเอียดคำขอใช้รถและการคืนรถ
-              </div>
             </div>
             <div className="text-right">{getStatusTag(record.status)}</div>
           </div>

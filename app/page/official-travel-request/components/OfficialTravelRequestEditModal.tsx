@@ -481,7 +481,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                           >
                             {cars.map((car) => (
                               <Select.Option key={car.id} value={car.id}>
-                                {car.licensePlate} ({car.brand})
+                                {car.licensePlate}
                               </Select.Option>
                             ))}
                           </Select>

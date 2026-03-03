@@ -210,6 +210,8 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
       // --- ตัวแปรสำหรับ Template ---
       const checked = "☑";
       const unchecked = "☐";
+      const checkeds = "\u2611\uFE0E";
+      const uncheckeds = "\u2610\uFE0E";
       const currentLeaveType = record.masterLeave?.leaveType ?? "-";
 
       // ✅ คำนวณจำนวนวันลา "ปัจจุบัน" (ที่ถูกต้อง)
@@ -243,17 +245,17 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         ctLeaveDays: toThaiNumber(currentDuration),
 
         // Checkbox
-        cS: currentLeaveType === "ลาป่วย" ? checked : unchecked,
-        cP: currentLeaveType === "ลากิจส่วนตัว" ? checked : unchecked,
-        cM: currentLeaveType === "ลาคลอดบุตร" ? checked : unchecked,
+        cS: currentLeaveType === "ลาป่วย" ? checked : uncheckeds,
+        cP: currentLeaveType === "ลากิจส่วนตัว" ? checked : uncheckeds,
+        cM: currentLeaveType === "ลาคลอดบุตร" ? checked : uncheckeds,
         r1: currentLeaveType === "ลาป่วย" ? record.reason : "",
         r2: currentLeaveType === "ลากิจส่วนตัว" ? record.reason : "",
         r3: currentLeaveType === "ลาคลอดบุตร" ? record.reason : "",
 
         // --- ประวัติการลาครั้งก่อน (ใช้ leaveD สำหรับครั้งก่อน) ---
-        sS: lastLeaveTypeName === "ลาป่วย" ? checked : unchecked,
-        sP: lastLeaveTypeName === "ลากิจส่วนตัว" ? checked : unchecked,
-        sM: lastLeaveTypeName === "ลาคลอดบุตร" ? checked : unchecked,
+        sS: lastLeaveTypeName === "ลาป่วย" ? checked : uncheckeds,
+        sP: lastLeaveTypeName === "ลากิจส่วนตัว" ? checked : uncheckeds,
+        sM: lastLeaveTypeName === "ลาคลอดบุตร" ? checked : uncheckeds,
         dateStarts: lastLeave
           ? formatThaiDate(lastLeave.dateStart)
           : "....................",

@@ -34,13 +34,13 @@ export default function DispenseTableDetail({
     switch (status) {
       case "pending":
         return (
-          <Tag color="orange" className={baseStyle}>
+          <Tag color="blue" className={baseStyle}>
             รออนุมัติ
           </Tag>
         );
       case "approved":
         return (
-          <Tag color="blue" className={baseStyle}>
+          <Tag color="success" className={baseStyle}>
             อนุมัติแล้ว
           </Tag>
         );

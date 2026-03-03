@@ -136,9 +136,6 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 m-0">
                 รายละเอียดการลา
               </h2>
-              <div className="text-slate-500 text-xs sm:text-sm mt-1">
-                ข้อมูลการยื่นขออนุญาตลาหยุดงาน
-              </div>
             </div>
             <div className="text-right">{getStatusTag(record.status)}</div>
           </div>
@@ -168,7 +165,7 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
             <div className="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-100 mb-4 relative overflow-hidden">
               <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
               <h3 className="text-slate-800 font-semibold mb-3 sm:mb-4 text-sm sm:text-base pl-2">
-                ช่วงเวลาและผู้รับผิดชอบ
+                ช่วงเวลาลาและผู้รับผิดชอบงานแทน
               </h3>
 
               <Row gutter={[16, 16]}>

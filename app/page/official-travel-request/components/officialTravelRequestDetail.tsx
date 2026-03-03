@@ -24,6 +24,15 @@ const OfficialTravelRequestDetail: React.FC<
       "HH:mm",
     )} น.`;
   };
+
+  const formatDates = (dateString: string | null | undefined) => {
+    if (!dateString) return "-";
+    const d = dayjs(dateString).locale("th");
+    // dayjs ปีไทยต้องบวก 543 เอง หรือใช้ plugin (แต่เขียนสดแบบนี้ชัวร์สุดครับ)
+    return `${d.date()} ${d.format("MMMM")} ${d.year() + 543} 
+    `;
+  };
+
   // --- 2. Helper Function จัดการ Status Tag ---
   const getStatusTag = (status: string) => {
     const baseStyle =
@@ -82,10 +91,10 @@ const OfficialTravelRequestDetail: React.FC<
     const label = typeMap[type] || "-";
 
     if (type === "official" && officialCar) {
-      return `${label} ( ทะเบียน : ${officialCar.licensePlate} )`;
+      return `${label} (  ${officialCar.licensePlate} )`;
     }
     if (type === "private" && privateCar) {
-      return `${label} ( ทะเบียน : ${privateCar} )`;
+      return `${label} (  ${privateCar} )`;
     }
     if (type === "other" && otherDetail) {
       return `${label} ( ระบุ : ${otherDetail} )`;
@@ -272,7 +281,7 @@ const OfficialTravelRequestDetail: React.FC<
                         วันที่อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium">
-                        {formatDate(record.approvedDate)}
+                        {formatDates(record.approvedDate)}
                       </span>
                     </Col>
                   </>
@@ -291,7 +300,7 @@ const OfficialTravelRequestDetail: React.FC<
                         วันที่ยกเลิก
                       </span>
                       <span className="text-red-700 font-medium">
-                        {formatDate(record.cancelAt)}
+                        {formatDates(record.cancelAt)}
                       </span>
                     </Col>
                     {record.cancelReason && (
@@ -315,8 +324,8 @@ const OfficialTravelRequestDetail: React.FC<
               <Divider className="my-3 bg-slate-300" />
 
               <div className="flex justify-between text-xs text-slate-400">
-                <span>ยื่นคำขอ: {formatDate(record.createdAt)}</span>
-                <span>อัปเดต: {formatDate(record.updatedAt)}</span>
+                <span>ยื่นคำขอ: {formatDates(record.createdAt)}</span>
+                <span>อัปเดต: {formatDates(record.updatedAt)}</span>
               </div>
             </div>
           </div>

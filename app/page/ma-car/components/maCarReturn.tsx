@@ -186,11 +186,11 @@ const MaCarReturn: React.FC<MaCarReturnProps> = ({
                     </div>
                     <div className="font-medium text-gray-700">
                       {record.dateStart
-                        ? `${dayjs(record.dateStart).format("DD/MMMM/BBBB เวลา HH:mm")} น.`
+                        ? `${dayjs(record.dateStart).format("DD MMMM BBBB เวลา HH:mm")} น.`
                         : "-"}
-                      {" - "}
+                      {" ถึง "}
                       {record.dateEnd
-                        ? `${dayjs(record.dateEnd).format("DD/MMMM/BBBB เวลา HH:mm")} น.`
+                        ? `${dayjs(record.dateEnd).format("DD MMMM BBBB เวลา HH:mm")} น.`
                         : "-"}
                     </div>
                   </div>

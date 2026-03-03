@@ -239,7 +239,7 @@ export default function DispenseConfirmModal({
           {/* กล่องแจ้งเตือน FEFO */}
           <div className="px-6 pt-4 pb-2">
             <Alert
-              message="ระบบจะทำการตัดสต็อกอัตโนมัติแบบ FEFO (First Expired First Out)"
+              message="ระบบจะทำการตัดสต็อกอัตโนมัติ "
               description="กรุณาหยิบยาจากชั้นวางในล๊อตที่ ใกล้หมดอายุที่สุด จ่ายออกไปก่อน เพื่อให้ตรงกับการตัดสต็อกในระบบ"
               type="warning"
               showIcon

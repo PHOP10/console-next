@@ -184,9 +184,8 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
       key: "masterCar",
       align: "center",
       width: 150,
-      responsive: ["lg"], // ซ่อนบนมือถือ
-      render: (masterCar) =>
-        masterCar ? `${masterCar.carName} (${masterCar.licensePlate})` : "-",
+      responsive: ["lg"],
+      render: (masterCar) => (masterCar ? `${masterCar.licensePlate}` : "-"),
     },
     {
       title: "สถานะ",

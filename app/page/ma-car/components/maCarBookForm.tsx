@@ -343,7 +343,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                 >
                   {cars.map((car) => (
                     <Select.Option key={car.id} value={car.id}>
-                      {car.carName} ({car.licensePlate})
+                      {car.licensePlate}
                     </Select.Option>
                   ))}
                 </Select>
@@ -356,20 +356,17 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               <Form.Item
                 name="dateStart"
                 label="ตั้งแต่วันที่-เวลา"
-                dependencies={["carId"]} // ✅ เพิ่ม: ให้เช็คใหม่เมื่อเปลี่ยนรถ
+                dependencies={["carId"]}
                 rules={[
                   { required: true, message: "กรุณาเลือกวันเวลาเริ่ม" },
                   {
                     validator: (_, value) => {
                       if (!value) return Promise.resolve();
 
-                      // ดึงค่ารถที่เลือกปัจจุบัน
                       const carId = form.getFieldValue("carId");
 
-                      // ถ้ายังไม่เลือกรถ ให้ผ่านไปก่อน หรือจะบังคับให้เลือกก็ได้
                       if (!carId) return Promise.resolve();
 
-                      // ✅ Logic เช็คว่ารถว่างไหม (Real-time)
                       const isCarBusy = maCar.some((booking) => {
                         // ข้ามรายการที่ยกเลิก
                         if (booking.status === "cancel") return false;
