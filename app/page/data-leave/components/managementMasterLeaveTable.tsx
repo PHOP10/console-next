@@ -120,13 +120,21 @@ export default function ManagementMasterLeaveTable({
   };
 
   const columns: ColumnsType<MasterLeaveType> = [
+    // {
+    //   title: "ID",
+    //   dataIndex: "id",
+    //   key: "id",
+    //   align: "center",
+    //   width: 60,
+    //   responsive: ["sm"],
+    // },
     {
-      title: "ID",
-      dataIndex: "id",
-      key: "id",
+      title: "ลำดับ",
+      key: "index",
       align: "center",
       width: 60,
-      responsive: ["sm"], // ซ่อนบนมือถือเล็ก
+      responsive: ["sm"],
+      render: (text, record, index) => index + 1,
     },
     {
       title: "ประเภทลา",

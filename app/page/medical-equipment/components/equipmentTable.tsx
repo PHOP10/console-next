@@ -49,6 +49,8 @@ export default function EquipmentTable({
   const [editingItem, setEditingItem] = useState<MedicalEquipmentType | null>(
     null,
   );
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
 
   const handleCreate = async (values: any) => {
     const payload = {
@@ -111,8 +113,9 @@ export default function EquipmentTable({
       key: "index",
       align: "center",
       width: 60,
-      responsive: ["md"], // ซ่อนบนมือถือ
-      render: (_text, _record, index) => index + 1,
+      responsive: ["md"],
+      render: (_text, _record, index) =>
+        (currentPage - 1) * pageSize + index + 1,
     },
     {
       title: "ชื่อเครื่องมือ",
@@ -209,7 +212,7 @@ export default function EquipmentTable({
             <Tooltip title="ลบ">
               <DeleteOutlined
                 style={{
-                  fontSize: 18, // ปรับขนาดเป็น 18px ตามข้อ 3
+                  fontSize: 18,
                   color: "#ff4d4f",
                   cursor: "pointer",
                   transition: "color 0.2s",
@@ -259,7 +262,12 @@ export default function EquipmentTable({
           loading={loading}
           bordered
           size="small"
-          pagination={{ pageSize: 10, size: "small" }}
+          pagination={{
+            current: currentPage, // ผูกกับ State
+            pageSize: pageSize,
+            size: "small",
+            onChange: (page) => setCurrentPage(page),
+          }}
           scroll={{ x: "max-content" }}
         />
       </Card>

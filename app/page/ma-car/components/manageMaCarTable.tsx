@@ -360,7 +360,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
               open={openPopoverId === record.id}
               onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
             >
-              <Tooltip title={isPending ? "อนุมัติ" : "อนุมัติแล้ว"}>
+              <Tooltip title={"อนุมัติ"}>
                 <CheckCircleOutlined
                   style={{
                     fontSize: 18, // ขนาด 18px
@@ -375,9 +375,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Popover>
 
             {/* 2. ปุ่มส่งคืนแก้ไข */}
-            <Tooltip
-              title={isApprove ? "ส่งคืนให้ผู้ใช้แก้ไข" : "ส่งคืนไม่ได้"}
-            >
+            <Tooltip title={"ส่งคืนเพื่อแก้ไข"}>
               <Popconfirm
                 title="ยืนยันการส่งคืนเพื่อแก้ไข ?"
                 onConfirm={() => returnEdit(record)}
@@ -396,15 +394,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Tooltip>
 
             {/* 3. ปุ่มรับทราบการคืนรถ */}
-            <Tooltip
-              title={
-                record.status === "return"
-                  ? "ตรวจสอบสภาพรถและรับคืน"
-                  : record.status === "success"
-                    ? "รับรถคืนสำเร็จแล้ว"
-                    : "รอนำรถมาคืน"
-              }
-            >
+            <Tooltip title={"รับคืนรถ"}>
               <div
                 style={{
                   display: "inline-flex",
@@ -429,7 +419,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Tooltip>
 
             {/* 4. ปุ่มรายละเอียด */}
-            <Tooltip title="รายละเอียดทั้งหมด">
+            <Tooltip title="รายละเอียด">
               <FileSearchOutlined
                 style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }} // ขนาด 18px
                 onClick={() => handleShowDetail(record, dataUser)}

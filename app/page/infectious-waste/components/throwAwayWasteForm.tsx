@@ -99,7 +99,7 @@ export default function ThrowAwayWasteForm({ setLoading, fetchData }: Props) {
 
             {/* 3. Date Picker */}
             <Form.Item
-              label="วันที่ทิ้งขยะ"
+              label="วันที่ทิ้งขยะติดเชื้อ"
               name="discardedDate"
               rules={[{ required: true, message: "กรุณาเลือกวันที่" }]}
             >

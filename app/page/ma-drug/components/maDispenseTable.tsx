@@ -286,7 +286,7 @@ export default function MaDispenseTable({
                 </Space>
               }
             >
-              <Tooltip title={isPending ? "อนุมัติ" : "อนุมัติแล้ว"}>
+              <Tooltip title={"อนุมัติ"}>
                 <Button
                   type="text"
                   shape="circle"
@@ -313,7 +313,7 @@ export default function MaDispenseTable({
             </Popover>
 
             {/* 2. ดูรายละเอียด */}
-            <Tooltip title="ดูรายละเอียด">
+            <Tooltip title="รายละเอียด">
               <Button
                 type="text"
                 shape="circle"

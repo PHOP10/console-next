@@ -284,7 +284,7 @@ export default function OfficialTravelRequestBookForm({
                   rows={2}
                   className={textAreaStyle}
                   placeholder="กรอกวัตถุประสงค์"
-                  maxLength={200}
+                  maxLength={150}
                 />
               </Form.Item>
             </Col>
@@ -298,7 +298,7 @@ export default function OfficialTravelRequestBookForm({
                   rows={2}
                   className={textAreaStyle}
                   placeholder="กรอกสถานที่"
-                  maxLength={200}
+                  maxLength={180}
                 />
               </Form.Item>
             </Col>

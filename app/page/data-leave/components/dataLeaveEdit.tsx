@@ -216,7 +216,7 @@ export default function DataLeaveEdit({
           <Form.Item
             label="เหตุผล"
             name="reason"
-            // rules={[{ required: true, message: "กรุณากรอกเหตุผล" }]}
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลการลา" }]}
           >
             <Input.TextArea
               rows={2}

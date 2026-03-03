@@ -54,7 +54,6 @@ export default function MaMedicalEquipmentEditModal({
   const [loading, setLoading] = useState(false);
   const intraAuth = useAxiosAuth();
   const intraAuthService = maMedicalEquipmentServices(intraAuth);
-
   const [isSelectionModalOpen, setIsSelectionModalOpen] = useState(false);
   const [selectedTools, setSelectedTools] = useState<any[]>([]);
   const [tempSelectedKeys, setTempSelectedKeys] = useState<React.Key[]>([]);
@@ -236,7 +235,7 @@ export default function MaMedicalEquipmentEditModal({
       render: (text: string) => <span className="text-sm">{text}</span>,
     },
     {
-      title: "โควตา",
+      title: "คงเหลือ",
       key: "maxAssignable",
       align: "center" as const,
       width: 90,
@@ -249,6 +248,7 @@ export default function MaMedicalEquipmentEditModal({
     {
       title: "เบิก",
       key: "quantityToSend",
+      align: "center" as const,
       width: 110,
       render: (_: any, record: any) => (
         <InputNumber

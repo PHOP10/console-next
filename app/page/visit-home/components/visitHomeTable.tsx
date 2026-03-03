@@ -305,7 +305,7 @@ export default function VisitHomeTable({
 
       render: (_, record) => (
         <Space size="small">
-          <Tooltip title="ดูรายละเอียด">
+          <Tooltip title="รายละเอียด">
             <FileSearchOutlined
               style={{ fontSize: 18, color: "#1677ff", cursor: "pointer" }}
               onClick={() => openModal(record, "view")}
@@ -450,12 +450,10 @@ export default function VisitHomeTable({
           bordered
           size="middle"
           pagination={{
-         
-            pageSizeOptions: ["10", "20", "50", "100"], 
-            showSizeChanger: true, 
+            pageSizeOptions: ["10", "20", "50", "100"],
+            showSizeChanger: true,
             defaultPageSize: 10,
 
-          
             showTotal: (total, range) => (
               <span className="text-gray-500 text-xs sm:text-sm font-light">
                 แสดง {range[0]}-{range[1]} จากทั้งหมด{" "}
@@ -463,7 +461,7 @@ export default function VisitHomeTable({
               </span>
             ),
 
-            locale: { items_per_page: "/ หน้า" }, 
+            locale: { items_per_page: "/ หน้า" },
             position: ["bottomRight"],
             size: "default",
           }}

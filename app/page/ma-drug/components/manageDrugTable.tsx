@@ -301,7 +301,7 @@ export default function ManageDrugTable({
                 </Space>
               }
             >
-              <Tooltip title={isPending ? "อนุมัติ" : "อนุมัติแล้ว"}>
+              <Tooltip title={"อนุมัติ"}>
                 <Button
                   type="text"
                   shape="circle"
@@ -328,7 +328,7 @@ export default function ManageDrugTable({
             </Popover>
 
             {/* 2. ดูรายละเอียด */}
-            <Tooltip title="ดูรายละเอียด">
+            <Tooltip title="รายละเอียด">
               <Button
                 type="text"
                 shape="circle"

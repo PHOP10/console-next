@@ -143,7 +143,9 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         return;
       }
 
-      const response = await fetch("/dataLeaveTemplate.docx");
+      const response = await fetch(
+        `/dataLeaveTemplate.docx?v=${new Date().getTime()}`,
+      );
       if (!response.ok) throw new Error("ไม่สามารถโหลด template.docx");
       const arrayBuffer = await response.arrayBuffer();
 
@@ -301,10 +303,10 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
 
   return (
     <>
-      <Tooltip title="ดาวน์โหลดใบลา (Word)">
+      <Tooltip title="พิมพ์ (Word)">
         <FileWordOutlined
           style={{
-            fontSize: 18,
+            fontSize: 19,
             color: record.status === "approve" ? "#1677ff" : "#d9d9d9",
             cursor: record.status === "approve" ? "pointer" : "not-allowed",
             transition: "color 0.2s",

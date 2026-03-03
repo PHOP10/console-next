@@ -86,16 +86,10 @@ const ExportMedicalEquipmentWord: React.FC<ExportMedicalEquipmentWordProps> = ({
   };
 
   return (
-    <Tooltip
-      title={
-        record.status === "pending"
-          ? "ต้องรออนุมัติก่อนถึงจะพิมพ์ได้"
-          : "พิมพ์ใบส่งเครื่องมือ"
-      }
-    >
+    <Tooltip title={"พิมพ์ (Word)"}>
       <FileWordOutlined
         style={{
-          fontSize: 18,
+          fontSize: 19,
           // ถ้า "ไม่ใช่" pending ให้เป็นสีฟ้า (โหลดได้) / ถ้าเป็น pending ให้เป็นสีเทา
           color: record.status !== "pending" ? "#1677ff" : "#d9d9d9",
           // เปลี่ยนเคอร์เซอร์ให้สอดคล้องกับการกดได้/ไม่ได้

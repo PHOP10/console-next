@@ -190,6 +190,10 @@ const DataLeaveDetail: React.FC<DataLeaveDetailProps> = ({
                     </Value>
                   </div>
                 </Col>
+                <Col xs={24} sm={12}>
+                  <Label>ระหว่างลาติดต่อได้ที่ :</Label>
+                  <Value>{record.contactAddress || "-"}</Value>
+                </Col>
               </Row>
             </div>
 

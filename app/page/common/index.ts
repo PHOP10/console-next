@@ -352,6 +352,7 @@ export interface MaMedicalEquipmentType {
   approveBy?: string;
   approveAt?: string;
   items?: MaMedicalEquipmentItemType[];
+  createdName: string;
 }
 
 export interface MaMedicalEquipmentItemType {

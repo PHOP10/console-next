@@ -92,7 +92,7 @@ export default function ThrowAwayWasteTable({
       width: 90,
     },
     {
-      title: "วันที่",
+      title: "วันที่ทิ้งขยะติดเชื้อ",
       dataIndex: "discardedDate",
       key: "discardedDate",
       width: 150,
@@ -269,7 +269,7 @@ export default function ThrowAwayWasteTable({
 
                   <Form.Item
                     name="discardedDate"
-                    label="วันที่"
+                    label="วันที่ทิ้งขยะติดเชื้อ"
                     rules={[{ required: true, message: "โปรดเลือกวันที่" }]}
                   >
                     <DatePicker

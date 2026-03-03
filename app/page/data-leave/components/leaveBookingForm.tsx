@@ -138,7 +138,7 @@ export default function LeaveBookingForm({
           );
         })
         .reduce(
-          (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd), 
+          (sum, item) => sum + calculateDays(item.dateStart, item.dateEnd),
           0,
         );
 
@@ -348,7 +348,13 @@ export default function LeaveBookingForm({
                       </Select>
                     </Form.Item>
 
-                    <Form.Item label="เหตุผลการลา" name="reason">
+                    <Form.Item
+                      label="เหตุผลการลา"
+                      name="reason"
+                      rules={[
+                        { required: true, message: "กรุณากรอกเหตุผลการลา" },
+                      ]}
+                    >
                       <Input.TextArea
                         rows={2}
                         placeholder="กรอกเหตุผลการลา"

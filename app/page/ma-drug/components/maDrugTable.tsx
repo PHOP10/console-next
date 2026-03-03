@@ -67,7 +67,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
   const handleExport = (record: MaDrugType) => {
     try {
       message.loading("กำลังสร้างไฟล์ Excel...", 1);
-      exportMaDrugToExcel(record,intraAuth);
+      exportMaDrugToExcel(record, intraAuth);
     } catch (error) {
       console.error(error);
       message.error("เกิดข้อผิดพลาดในการสร้างไฟล์");
@@ -195,7 +195,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
 
         return (
           <Space size="small">
-            <Tooltip title={canReceive ? "ยืนยันรับยาเข้าคลัง" : "รออนุมัติ"}>
+            <Tooltip title={"รับยา"}>
               <Button
                 type="text"
                 shape="circle"
@@ -212,7 +212,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
               />
             </Tooltip>
             {/* 3. ดูรายละเอียด */}
-            <Tooltip title="ดูรายละเอียด">
+            <Tooltip title="รายละเอียด">
               <Button
                 type="text"
                 shape="circle"
@@ -226,7 +226,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
             </Tooltip>
 
             {/* 4. พิมพ์ใบเบิก */}
-            <Tooltip title="พิมพ์ใบเบิกยา">
+            <Tooltip title="พิมพ์ (Excel)">
               <Button
                 type="text"
                 shape="circle"
@@ -239,7 +239,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
               />
             </Tooltip>
             {/* 1. ปุ่มแก้ไข */}
-            <Tooltip title="แก้ไขข้อมูล">
+            <Tooltip title="แก้ไข">
               <Button
                 type="text"
                 shape="circle"
@@ -278,7 +278,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
         bordered
         size="small"
         pagination={{ pageSize: 10, size: "small" }}
-        scroll={{ x: "max-content" }} 
+        scroll={{ x: "max-content" }}
       />
 
       <MaDrugTableDetail

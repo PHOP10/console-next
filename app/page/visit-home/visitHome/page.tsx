@@ -8,15 +8,13 @@ import VisitHomeForm from "../components/visitHomeForm";
 import { MasterPatientType, VisitHomeType } from "../../common";
 import MasterPatientTable from "../components/masterPatientTable";
 import useSWR from "swr"; // 1. Import SWR
+import { useSession } from "next-auth/react";
 
 export default function VisitHomePage() {
   const intraAuth = useAxiosAuth();
-
-  // 2. แยก manualLoading สำหรับการกดปุ่มต่างๆ (เช่น บันทึก/แก้ไข)
   const [manualLoading, setManualLoading] = useState<boolean>(false);
-
-  // 3. คง useState ไว้สำหรับ dataMasterPatient เพราะต้องส่ง setter ให้ Component ลูก
   const [data, setData] = useState<VisitHomeType[]>([]);
+  const { data: session } = useSession();
   const [dataMasterPatient, setDataMasterPatient] = useState<
     MasterPatientType[]
   >([]);
@@ -32,7 +30,7 @@ export default function VisitHomePage() {
     ]);
 
     return {
-      visitHome: resVisitHome.data, // อิงตามโค้ดเดิมที่ใช้ res.data
+      visitHome: resVisitHome.data,
       masterPatient: resMasterPatient,
     };
   };
@@ -55,9 +53,7 @@ export default function VisitHomePage() {
     }
   }, [swrData]);
 
-  // รวม Loading
-  const loading = isSwrLoading || manualLoading;
-
+  // ✅ กำหนดแท็บที่ 1 (แสดงให้ทุกคนเห็น) เป็นค่าเริ่มต้น
   const items: TabsProps["items"] = [
     {
       key: "1",
@@ -80,7 +76,11 @@ export default function VisitHomePage() {
         </Card>
       ),
     },
-    {
+  ];
+
+  // ✅ ตรวจสอบ Role ว่าเป็น admin หรือ home ถึงจะเพิ่มแท็บที่ 2
+  if (session?.user?.role === "admin" || session?.user?.role === "home") {
+    items.push({
       key: "2",
       label: `ประเภทผู้ป่วย`,
       children: (
@@ -92,8 +92,8 @@ export default function VisitHomePage() {
           />
         </Card>
       ),
-    },
-  ];
+    });
+  }
 
   return (
     <Row gutter={[16, 16]}>

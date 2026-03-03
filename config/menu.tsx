@@ -216,7 +216,13 @@ export const MenuSider: IMenu[] = [
       {
         key: "visitHome",
         label: "การเยี่ยมบ้าน",
-        roles: [group.admin, group.home],
+        roles: [
+          group.admin,
+          group.user,
+          group.pharmacy,
+          group.asset,
+          group.home,
+        ],
       },
       {
         key: "dataVisitHome",

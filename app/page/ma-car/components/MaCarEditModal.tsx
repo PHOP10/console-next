@@ -27,6 +27,7 @@ import { MaCarType } from "../../common";
 import "dayjs/locale/th";
 import isBetween from "dayjs/plugin/isBetween";
 import { buddhistLocale } from "@/app/common";
+import { useSession } from "next-auth/react";
 
 dayjs.extend(isSameOrBefore);
 dayjs.extend(isSameOrAfter);
@@ -57,6 +58,7 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
   const intraAuth = useAxiosAuth();
   const intraAuthService = maCarService(intraAuth);
   const [form] = Form.useForm();
+  const { data: session } = useSession();
 
   useEffect(() => {
     if (record && open) {
@@ -309,32 +311,53 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
 
           {/* Section 5: ผู้โดยสาร */}
           <Row gutter={16}>
-            <Col xs={24} sm={6}>
-              <Form.Item
-                name="passengers"
-                label="จำนวนผู้โดยสาร"
-                rules={[{ required: true }]}
-              >
-                <InputNumber
-                  min={1}
-                  className={inputStyle}
-                  style={{ width: "100%" }}
-                />
-              </Form.Item>
-            </Col>
             <Col xs={24} sm={18}>
               <Form.Item
+                label="รายชื่อผู้โดยสาร"
                 name="passengerNames"
-                label="ชื่อผู้โดยสาร"
-                rules={[{ required: true }]}
+                rules={[{ required: true, message: "กรุณาเลือกผู้โดยสาร" }]}
               >
                 <Select
                   mode="multiple"
+                  placeholder="เลือกผู้โดยสาร"
+                  optionFilterProp="children"
                   className={selectStyle}
-                  options={dataUser.map((u) => ({
-                    label: `${u.firstName} ${u.lastName}`,
-                    value: u.userId,
-                  }))}
+                  maxTagCount="responsive"
+                  onChange={(values) => {
+                    form.setFieldValue("passengers", values.length);
+                  }}
+                  onDeselect={(val) => {
+                    if (val === session?.user?.userId) {
+                      const current = form.getFieldValue("passengerNames");
+                      setTimeout(() => {
+                        const restored = [...current, val];
+
+                        const unique = Array.from(new Set(restored));
+
+                        form.setFieldValue("passengerNames", unique);
+                        form.setFieldValue("passengers", unique.length);
+                        message.warning("ผู้ยื่นคำขอต้องร่วมเดินทางด้วยเสมอ");
+                      }, 0);
+                    }
+                  }}
+                >
+                  {dataUser.map((user) => (
+                    <Select.Option key={user.userId} value={user.userId}>
+                      {user.firstName} {user.lastName}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </Form.Item>
+            </Col>{" "}
+            <Col xs={24} sm={6}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
+                <InputNumber
+                  min={1}
+                  max={10}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`}
+                  readOnly
+                  controls={false}
                 />
               </Form.Item>
             </Col>

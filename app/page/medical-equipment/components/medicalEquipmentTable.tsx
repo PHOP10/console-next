@@ -42,16 +42,12 @@ export default function MedicalEquipmentTable({
   fetchData,
 }: Props) {
   const { data: session } = useSession();
-
-  // --- States ---
   const [editingItem, setEditingItem] = useState<MaMedicalEquipmentType | null>(
     null,
   );
   const [editModalVisible, setEditModalVisible] = useState(false);
-
   const [isReturnModalOpen, setIsReturnModalOpen] = useState(false);
   const [recordReturn, setRecordReturn] = useState<any>(null);
-
   const [openDetails, setOpenDetails] = useState(false);
   const [recordDetails, setRecordDetails] = useState<any>(null);
 
@@ -84,6 +80,8 @@ export default function MedicalEquipmentTable({
     setRecordDetails(record);
     setOpenDetails(true);
   };
+
+  console.log(session?.user.fullName);
 
   // --- Columns ---
   const columns: ColumnsType<MaMedicalEquipmentType> = [
@@ -259,7 +257,8 @@ export default function MedicalEquipmentTable({
           <ExportMedicalEquipmentWord record={record} allUsers={allUsers} />
 
           {(session?.user?.role === "admin" ||
-            session?.user?.role === "pharmacy") && (
+            session?.user?.role === "pharmacy" ||
+            session?.user?.fullName === record.createdBy) && (
             <Tooltip title="แก้ไข">
               <EditOutlined
                 style={{

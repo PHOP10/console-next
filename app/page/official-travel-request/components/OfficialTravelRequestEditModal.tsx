@@ -28,6 +28,7 @@ import th_TH from "antd/locale/th_TH";
 import "dayjs/locale/th";
 import isBetween from "dayjs/plugin/isBetween";
 import { buddhistLocale } from "@/app/common";
+import { useSession } from "next-auth/react";
 
 dayjs.locale("th");
 dayjs.extend(isBetween);
@@ -55,7 +56,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
   const intraAuth = useAxiosAuth();
   const service = officialTravelRequestService(intraAuth);
   const [submitting, setSubmitting] = useState(false);
-
+  const { data: session } = useSession();
   // Watch ค่าเหล่านี้เพื่อใช้ใน Validator (Real-time check)
   const selectedTravelType = Form.useWatch("travelType", form);
   const selectedCarId = Form.useWatch("carId", form);
@@ -260,7 +261,11 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                 name="missionDetail"
                 rules={[{ required: true, message: "กรุณากรอกข้อมูล" }]}
               >
-                <Input.TextArea rows={2} className={textAreaStyle} />
+                <Input.TextArea
+                  rows={2}
+                  className={textAreaStyle}
+                  maxLength={180}
+                />
               </Form.Item>
             </Col>
             <Col xs={24} sm={12}>
@@ -269,7 +274,11 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                 name="location"
                 rules={[{ required: true, message: "กรุณากรอกข้อมูล" }]}
               >
-                <Input.TextArea rows={2} className={textAreaStyle} />
+                <Input.TextArea
+                  rows={2}
+                  className={textAreaStyle}
+                  maxLength={150}
+                />
               </Form.Item>
             </Col>
           </Row>
@@ -526,40 +535,59 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
             </div>
           </div>
 
-          {/* Section 4: ผู้โดยสารและงบประมาณ */}
           <Row gutter={16}>
-            <Col xs={24} sm={6}>
-              <Form.Item
-                label="จำนวน"
-                name="passengers"
-                rules={[{ required: true }]}
-              >
-                <InputNumber
-                  min={1}
-                  max={10}
-                  style={{ width: "100%" }}
-                  className={inputStyle}
-                />
-              </Form.Item>
-            </Col>
             <Col xs={24} sm={18}>
-              <Form.Item label="รายชื่อผู้โดยสาร" name="passengerNames">
+              <Form.Item
+                label="รายชื่อผู้โดยสาร"
+                name="passengerNames"
+                rules={[{ required: true, message: "กรุณาเลือกผู้โดยสาร" }]}
+              >
                 <Select
                   mode="multiple"
+                  placeholder="เลือกผู้โดยสาร"
+                  optionFilterProp="children"
                   className={selectStyle}
                   maxTagCount="responsive"
-                  optionFilterProp="children"
+                  onChange={(values) => {
+                    form.setFieldValue("passengers", values.length);
+                  }}
+                  onDeselect={(val) => {
+                    if (val === session?.user?.userId) {
+                      const current = form.getFieldValue("passengerNames");
+
+                      setTimeout(() => {
+                        const restored = [...current, val];
+
+                        const unique = Array.from(new Set(restored));
+
+                        form.setFieldValue("passengerNames", unique);
+                        form.setFieldValue("passengers", unique.length);
+                        message.warning("ผู้ยื่นคำขอต้องร่วมเดินทางด้วยเสมอ");
+                      }, 0);
+                    }
+                  }}
                 >
-                  {dataUser.map((u) => (
-                    <Select.Option key={u.userId} value={u.userId}>
-                      {u.firstName} {u.lastName}
+                  {dataUser.map((user) => (
+                    <Select.Option key={user.userId} value={user.userId}>
+                      {user.firstName} {user.lastName}
                     </Select.Option>
                   ))}
                 </Select>
               </Form.Item>
             </Col>
+            <Col xs={24} sm={6}>
+              <Form.Item label="จำนวนผู้โดยสาร" name="passengers">
+                <InputNumber
+                  min={1}
+                  max={10}
+                  style={{ width: "100%" }}
+                  className={`${inputStyle} pt-1 bg-gray-50 text-gray-500`}
+                  readOnly
+                  controls={false}
+                />
+              </Form.Item>
+            </Col>
           </Row>
-
           <Row gutter={16}>
             <Col xs={24} sm={6}>
               <Form.Item

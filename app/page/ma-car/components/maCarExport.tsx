@@ -208,14 +208,14 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
 
       doc.render(data);
       const blob = doc.getZip().generate({ type: "blob" });
-      saveAs(blob, `การใช้รถ_${record.id}.docx`);
+      saveAs(blob, `ขอใช้รถยนต์ราชการ_${record.id}.docx`);
     } catch (error) {
       console.error("Export error:", error);
     }
   };
 
   return (
-    <Tooltip title="Export">
+    <Tooltip title="พิมพ์ (Word)">
       <FileWordOutlined
         style={{
           fontSize: 18,

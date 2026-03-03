@@ -243,7 +243,7 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
     <Tooltip
       title={
         record.status === "approve"
-          ? "พิมพ์ใบขอไปราชการ"
+          ? "พิมพ์ (Word)"
           : "รอการอนุมัติเพื่อพิมพ์เอกสาร"
       }
     >

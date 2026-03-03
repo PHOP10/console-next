@@ -154,9 +154,9 @@ export default function CreateMedicalEquipmentForm({
         receivedDate: null,
         note: values.note,
         createdBy: session?.user?.fullName,
+        createdName: session?.user?.fullName,
         createdById: session?.user?.userId,
         createdAt: new Date(),
-        // Map จาก state selectedTools แทน values ของ Form เดิม
         items: selectedTools.map((item) => ({
           medicalEquipmentId: item.id,
           quantity: item.quantityToSend,

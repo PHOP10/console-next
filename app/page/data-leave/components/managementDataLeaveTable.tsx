@@ -365,9 +365,7 @@ export default function ManagementDataLeaveTable({
               }
             }}
           >
-            <Tooltip
-              title={record.status === "pending" ? "อนุมัติ" : "อนุมัติแล้ว"}
-            >
+            <Tooltip title={"อนุมัติ"}>
               <CheckCircleOutlined
                 style={{
                   fontSize: 18, // ขนาด 18px
@@ -392,7 +390,7 @@ export default function ManagementDataLeaveTable({
             cancelText="ไม่"
             disabled={record.status !== "approve"}
           >
-            <Tooltip title="ส่งคืนแก้ไข">
+            <Tooltip title="ส่งคืนเพื่อแก้ไข">
               <RollbackOutlined
                 style={{
                   fontSize: 18, // ขนาด 18px

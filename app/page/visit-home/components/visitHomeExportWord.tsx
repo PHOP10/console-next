@@ -182,7 +182,7 @@ const VisitHomeExportWord: React.FC<VisitHomeExportWordProps> = ({
   };
 
   return (
-    <Tooltip title="พิมพ์ใบเยี่ยมบ้าน (Word)">
+    <Tooltip title="พิมพ์ (Word)">
       <FileWordOutlined
         style={{
           fontSize: 18,

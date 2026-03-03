@@ -412,9 +412,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
               </Space>
             }
           >
-            <Tooltip
-              title={record.status === "pending" ? "อนุมัติ" : "อนุมัติแล้ว"}
-            >
+            <Tooltip title={"อนุมัติ"}>
               <CheckCircleOutlined
                 style={{
                   fontSize: 18, // ขนาด 18px

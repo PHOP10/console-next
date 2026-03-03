@@ -63,7 +63,7 @@ export default function DispenseTable({
   const handleExport = (record: DispenseType) => {
     try {
       message.loading("กำลังสร้างไฟล์ Excel...", 1);
-      exportDispenseToExcel(record,intraAuth);
+      exportDispenseToExcel(record, intraAuth);
     } catch (error) {
       console.error(error);
       message.error("เกิดข้อผิดพลาดในการสร้างไฟล์");
@@ -173,9 +173,7 @@ export default function DispenseTable({
 
         return (
           <Space size="small">
-            <Tooltip
-              title={isConfirmable ? "ยืนยันรับยาเข้าคลัง" : "รออนุมัติ"}
-            >
+            <Tooltip title={"จ่ายยา"}>
               <Button
                 type="text"
                 shape="circle"
@@ -192,7 +190,7 @@ export default function DispenseTable({
               />
             </Tooltip>
 
-            <Tooltip title="ดูรายละเอียด">
+            <Tooltip title="รายละเอียด">
               <Button
                 type="text"
                 shape="circle"
@@ -204,7 +202,7 @@ export default function DispenseTable({
                 onClick={() => handleViewDetail(record)}
               />
             </Tooltip>
-            <Tooltip title="พิมพ์ใบจ่ายยา">
+            <Tooltip title="พิมพ์ (Excel)">
               <FileExcelOutlined
                 style={{
                   fontSize: 18,
