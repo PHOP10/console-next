@@ -43,11 +43,13 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
         id: record.id ?? "-",
         code: record.code ?? "-",
         attributes: record.attributes ?? "-",
+        acquisitionType: record.acquisitionType,
+        desc: record.description ?? "-",
         items: [
           {
             id: record.id ?? "-", // ลำดับ
             docId: record.documentId ?? "-", // ที่เอกสาร
-            desc: record.description ?? "-", // รายการ
+            desc: record.description ?? "-",
             code: record.code ?? "-", // หมายเลขและทะเบียน
             attributes: record.attributes ?? "-", // ลักษณะ/คุณสมบัติ
             unitPrice: record.unitPrice?.toLocaleString("th-TH") ?? "-",
@@ -56,7 +58,7 @@ const DurableArticleExportWord: React.FC<DurableArticleExportWordProps> = ({
             accumulatedDepreciation:
               record.accumulatedDepreciation?.toLocaleString("th-TH") ?? "-",
             netV: record.netValue?.toLocaleString("th-TH") ?? "-",
-            note: record.note ?? "-",
+            note: record.note ?? "",
             responsibleAgency: record.responsibleAgency ?? "-",
             category: record.category ?? "-", // ประเภท
             acDate: record.acquiredDate

@@ -409,7 +409,7 @@ export default function MaMedicalEquipmentTable({
             />
           </Tooltip>
 
-          {/* <Tooltip title="แก้ไข">
+          <Tooltip title="แก้ไข">
             <EditOutlined
               style={{
                 fontSize: 18,
@@ -420,7 +420,7 @@ export default function MaMedicalEquipmentTable({
                 if (record.status === "pending") handleEdit(record);
               }}
             />
-          </Tooltip> */}
+          </Tooltip>
 
           {/* Delete */}
           <Popconfirm

@@ -27,7 +27,7 @@ export const exportMaDrugToExcel = async (data: MaDrugType, intraAuth: any) => {
   // 2. Logic หาผู้ใช้และใส่คำนำหน้า
   let formattedRequesterName =
     data.requesterName || "........................................";
-  let requesterPosition = "............................."; 
+  let requesterPosition = ".............................";
 
   if (data.requesterName && users.length > 0) {
     const matchedUser = users.find(
@@ -234,18 +234,25 @@ export const exportMaDrugToExcel = async (data: MaDrugType, intraAuth: any) => {
 
   // 8. Data Items
   if (data.maDrugItems && data.maDrugItems.length > 0) {
-    const groupedItems: Record<string, any[]> = {};
+    // ✅ เปลี่ยนโครงสร้างเพื่อเก็บทั้งชื่อประเภทยาและ ID ประเภทยา
+    const groupedItems: Record<string, { typeId: number; items: any[] }> = {};
 
     data.maDrugItems.forEach((item: any) => {
       const typeName = item.drug?.drugType?.drugType || "อื่นๆ";
-      if (!groupedItems[typeName]) groupedItems[typeName] = [];
-      groupedItems[typeName].push(item);
+      // ✅ ดึง drugTypeId มาด้วย ถ้าไม่มีให้เป็น 9999 จะได้ไปอยู่ท้ายสุด
+      const typeId = item.drug?.drugType?.drugTypeId || 9999;
+
+      if (!groupedItems[typeName]) {
+        groupedItems[typeName] = { typeId: typeId, items: [] };
+      }
+      groupedItems[typeName].items.push(item);
     });
 
     let globalIndex = 1;
 
+    // ✅ นำ Key มาเรียงลำดับโดยอ้างอิงจาก typeId ที่เราเก็บไว้
     Object.keys(groupedItems)
-      .sort()
+      .sort((a, b) => groupedItems[a].typeId - groupedItems[b].typeId)
       .forEach((groupName) => {
         const groupRow = worksheet.addRow([groupName]);
         setBaseFont(groupRow, 15, true);
@@ -253,7 +260,7 @@ export const exportMaDrugToExcel = async (data: MaDrugType, intraAuth: any) => {
           vertical: "middle",
           horizontal: "center",
         };
-        worksheet.mergeCells(`A${groupRow.number}:I${groupRow.number}`); // Merge ถึง I
+        worksheet.mergeCells(`A${groupRow.number}:I${groupRow.number}`);
         groupRow.getCell(1).fill = {
           type: "pattern",
           pattern: "solid",
@@ -261,7 +268,8 @@ export const exportMaDrugToExcel = async (data: MaDrugType, intraAuth: any) => {
         };
         setBorder(groupRow.getCell(1));
 
-        groupedItems[groupName].forEach((item) => {
+        // ✅ เวลาลูปรายการยา ต้องเข้าถึง .items แทน
+        groupedItems[groupName].items.forEach((item) => {
           const row = worksheet.addRow([
             globalIndex++,
             item.drug?.workingCode || "-",
@@ -278,10 +286,8 @@ export const exportMaDrugToExcel = async (data: MaDrugType, intraAuth: any) => {
             setBaseFont(cell, 15);
             setBorder(cell);
             if (colNumber === 3 || colNumber === 9) {
-              // รายการ และ หมายเหตุ
               cell.alignment = { horizontal: "left", wrapText: true };
             } else if (colNumber === 5) {
-              // ราคา
               cell.alignment = { horizontal: "right" };
               cell.numFmt = "#,##0.00";
             } else {

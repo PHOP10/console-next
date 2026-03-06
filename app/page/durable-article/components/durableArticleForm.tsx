@@ -21,17 +21,20 @@ import th_TH from "antd/locale/th_TH";
 import { useSession } from "next-auth/react";
 import { buddhistLocale } from "@/app/common";
 import { useRouter } from "next/navigation";
+import { DurableArticleType } from "../../common";
 
 type Props = {
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   loading: boolean;
   fetchData: () => Promise<void>;
+  data: DurableArticleType[];
 };
 
 export default function DurableArticleForm({
   setLoading,
   loading,
   fetchData,
+  data,
 }: Props) {
   const [form] = Form.useForm();
   const intraAuth = useAxiosAuth();
@@ -111,7 +114,7 @@ export default function DurableArticleForm({
           >
             {/* --- Row 1: รหัส | เลขที่เอกสาร | ทะเบียน --- */}
             {/* แบ่งครึ่งบนมือถือ (xs=12) */}
-            <Col xs={12} md={8}>
+            {/* <Col xs={12} md={8}>
               <Form.Item
                 label="รหัส"
                 name="code"
@@ -136,8 +139,51 @@ export default function DurableArticleForm({
                   }}
                 />
               </Form.Item>
-            </Col>
+            </Col> */}
 
+            <Col xs={12} md={8}>
+              <Form.Item
+                label="รหัส"
+                name="code"
+                rules={[
+                  { required: true, message: "ระบุรหัส" },
+                  {
+                    pattern: /^[0-9/-]{13,17}$/,
+                    message: "กรอกเฉพาะ 0-9, /, -",
+                  },
+                  // --- เช็คค่าซ้ำจาก props `data` ---
+                  {
+                    validator: async (_, value) => {
+                      if (!value) return Promise.resolve(); // ถ้าว่างปล่อยผ่าน ให้ required ทำงานแทน
+
+                      // ตรวจสอบว่ามี item ไหนใน data ที่ code ตรงกับที่ผู้ใช้พิมพ์มาหรือไม่
+                      const isDuplicate = data.some(
+                        (item) => item.code === value,
+                      );
+
+                      if (isDuplicate) {
+                        return Promise.reject(new Error("รหัสซ้ำกับในระบบ"));
+                      }
+
+                      return Promise.resolve();
+                    },
+                  },
+                ]}
+                className="mb-1 sm:mb-6"
+              >
+                <Input
+                  placeholder="xxxx-xxx-xxxx"
+                  maxLength={17}
+                  className={inputStyle}
+                  onKeyPress={(e) => {
+                    const allowed = /[0-9/-]/;
+                    if (!allowed.test(e.key)) {
+                      e.preventDefault();
+                    }
+                  }}
+                />
+              </Form.Item>
+            </Col>
             <Col xs={12} md={8}>
               <Form.Item
                 label="เลขที่เอกสาร"

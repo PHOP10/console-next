@@ -102,6 +102,7 @@ export default function Page() {
           </div>
 
           <DurableArticleForm
+            data={data}
             setLoading={setManualLoading}
             loading={loading}
             fetchData={fetchData}

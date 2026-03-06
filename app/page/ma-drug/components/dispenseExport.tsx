@@ -225,15 +225,27 @@ export const exportDispenseToExcel = async (
   // 10. ข้อมูลยา (Loop Items)
   if (data.dispenseItems && data.dispenseItems.length > 0) {
     let index = 1;
-    const groupedItems: Record<string, any[]> = {};
+    // ✅ 1. เปลี่ยนโครงสร้างให้เก็บ drugTypeId ไว้สำหรับใช้เรียงลำดับ
+    const groupedItems: Record<string, { drugTypeId: number; items: any[] }> =
+      {};
+
     data.dispenseItems.forEach((item: any) => {
       const typeName = item.drug?.drugType?.drugType || "อื่นๆ";
-      if (!groupedItems[typeName]) groupedItems[typeName] = [];
-      groupedItems[typeName].push(item);
+
+      // ✅ 2. ดึง drugTypeId ที่เป็น Unique มาใช้ (ดึงจาก item.drug.drugTypeId ได้เลย)
+      // ถ้าหาไม่เจอให้ค่าเป็น 99999 เพื่อปัดไปอยู่กลุ่มสุดท้าย
+      const typeId =
+        item.drug?.drugTypeId || item.drug?.drugType?.drugTypeId || 99999;
+
+      if (!groupedItems[typeName]) {
+        groupedItems[typeName] = { drugTypeId: typeId, items: [] };
+      }
+      groupedItems[typeName].items.push(item);
     });
 
     Object.keys(groupedItems)
-      .sort()
+      // ✅ 3. สั่ง Sort โดยเปรียบเทียบจากตัวเลข drugTypeId
+      .sort((a, b) => groupedItems[a].drugTypeId - groupedItems[b].drugTypeId)
       .forEach((groupName) => {
         const groupRow = worksheet.addRow([groupName]);
         setBaseFont(groupRow, 15, true);
@@ -249,8 +261,8 @@ export const exportDispenseToExcel = async (
         };
         setBorder(groupRow.getCell(1));
 
-        groupedItems[groupName].forEach((item) => {
-          // ✅ อัปเดตข้อมูลใส่ 8 คอลัมน์
+        // ✅ 4. ลูปเอาข้อมูลยามาแสดงโดยชี้ไปที่ .items
+        groupedItems[groupName].items.forEach((item) => {
           const row = worksheet.addRow([
             index++,
             item.drug?.workingCode || "-",

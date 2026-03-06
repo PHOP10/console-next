@@ -179,17 +179,17 @@ const Navigation: React.FC<Prop> = ({
       </Header>
 
       <Drawer
-        title={
-          <div className="flex justify-center items-center">
-            <Image
-              width={100}
-              height={0}
-              src="/rpst.png"
-              alt="logo"
-              className="h-auto"
-            />
-          </div>
-        }
+        // title={
+        //   <div className="flex justify-center items-center">
+        //     <Image
+        //       width={100}
+        //       height={0}
+        //       src="/rpst.png"
+        //       alt="logo"
+        //       className="h-auto"
+        //     />
+        //   </div>
+        // }
         placement="left"
         onClose={() => setOpen(!open)}
         open={open}

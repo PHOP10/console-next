@@ -120,10 +120,10 @@ export async function exportDurableArticles(data: DurableArticleType[]) {
       index + 1, // ลำดับ
       dateStr, // วันที่ (รูปแบบใหม่)
       item.code, // รหัส
-      item.description, // รายการ
-      item.unitPrice, // ราคา
-      item.acquisitionType, // วิธีได้มา
-      item.note || "-", // หมายเหตุ
+      item.description,
+      item.unitPrice,
+      item.acquisitionType,
+      item.note || "",
     ]);
 
     // จัด Style ข้อมูลแต่ละช่อง

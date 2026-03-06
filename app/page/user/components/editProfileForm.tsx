@@ -140,7 +140,7 @@ export default function EditProfileForm({
               name="firstName"
               rules={[{ required: true, message: "กรุณาระบุชื่อจริง" }]}
             >
-              <Input placeholder="ชื่อจริง" className={inputStyle} />
+              <Input placeholder="ชื่อจริง" disabled className={inputStyle} />
             </Form.Item>
           </Col>
           <Col span={12}>
@@ -149,7 +149,7 @@ export default function EditProfileForm({
               name="lastName"
               rules={[{ required: true, message: "กรุณาระบุนามสกุล" }]}
             >
-              <Input placeholder="นามสกุล" className={inputStyle} />
+              <Input placeholder="นามสกุล" disabled className={inputStyle} />
             </Form.Item>
           </Col>
         </Row>

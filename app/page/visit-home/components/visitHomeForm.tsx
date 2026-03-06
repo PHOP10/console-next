@@ -58,6 +58,11 @@ export default function VisitHomeForm() {
     }
   };
 
+  const disabledPastDates = (current: dayjs.Dayjs) => {
+    // ไม่ให้เลือกวันที่น้อยกว่า "จุดเริ่มต้นของวันนี้" (เมื่อวานลงไป)
+    return current && current < dayjs().startOf("day");
+  };
+
   useEffect(() => {
     fetchMasterPatients();
   }, []);
@@ -528,30 +533,16 @@ export default function VisitHomeForm() {
                   { xs: 8, sm: 16 },
                   { xs: 4, sm: 12 },
                 ]}
-                align="bottom"
+                align="top" // ✅ 1. เปลี่ยนจาก bottom เป็น top เพื่อให้กล่อง input ยึดขอบบนให้ตรงกันเสมอ
               >
                 {/* วันที่เยี่ยมบ้าน | วันนัดถัดไป แบ่งครึ่ง */}
+
                 <Col xs={12} md={6}>
                   <Form.Item
                     name="visitDate"
                     label="วันเยี่ยม"
-                    rules={[{ required: true }]}
-                    className="mb-1"
-                  >
-                    <DatePicker
-                      locale={buddhistLocale}
-                      format="D MMM BB"
-                      className={`${inputStyle} w-full font-normal`}
-                      style={{ width: "100%" }}
-                      placeholder="วว/ดด/ปป"
-                    />
-                  </Form.Item>
-                </Col>
-                <Col xs={12} md={6}>
-                  <Form.Item
-                    name="nextAppointment"
-                    label="นัดถัดไป"
-                    className="mb-1"
+                    rules={[{ required: true, message: "กรุณาเลือกวันเยี่ยม" }]}
+                    // ✅ 2. ลบ className="mb-1" ออก
                   >
                     <DatePicker
                       locale={buddhistLocale}
@@ -563,8 +554,53 @@ export default function VisitHomeForm() {
                   </Form.Item>
                 </Col>
 
+                <Col xs={12} md={6}>
+                  <Form.Item
+                    noStyle
+                    shouldUpdate={(prevValues, currentValues) =>
+                      prevValues.visitDate !== currentValues.visitDate
+                    }
+                  >
+                    {({ getFieldValue }) => {
+                      // ดึงค่า วันเยี่ยม ปัจจุบันมาตรวจสอบ
+                      const visitDate = getFieldValue("visitDate");
+
+                      return (
+                        <Form.Item
+                          name="nextAppointment"
+                          label="นัดถัดไป"
+                          // ✅ ลบ className="mb-1" ออก
+                          rules={[
+                            { required: true, message: "กรุณาเลือกวันนัดถัดไป" },
+                          ]}
+                        >
+                          <DatePicker
+                            locale={buddhistLocale}
+                            format="D MMM BB"
+                            className={`${inputStyle} w-full font-normal`}
+                            style={{ width: "100%" }}
+                            placeholder="วว/ดด/ปป"
+                            disabled={!visitDate}
+                            disabledDate={(current) => {
+                              if (!visitDate) return false;
+                              return (
+                                current &&
+                                current < dayjs(visitDate).startOf("day")
+                              );
+                            }}
+                          />
+                        </Form.Item>
+                      );
+                    }}
+                  </Form.Item>
+                </Col>
+
                 <Col xs={24} md={12}>
-                  <Form.Item name="notes" label="หมายเหตุ" className="mb-1">
+                  <Form.Item
+                    name="notes"
+                    label="หมายเหตุ"
+                    // ✅ ลบ className="mb-1" ออก
+                  >
                     <Input
                       className={inputStyle}
                       placeholder="ระบุเพิ่มเติม..."

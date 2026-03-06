@@ -165,8 +165,6 @@ const VisitHomeExportWord: React.FC<VisitHomeExportWordProps> = ({
         recorder: record.createdName || "....................................",
       };
 
-      console.log("Export Data:", `${data.gds} ${data.recorder}`);
-
       doc.render(data);
 
       const blob = doc.getZip().generate({ type: "blob" });

@@ -326,6 +326,7 @@ export default function DurableArticleTable({
                   await intraAuthService.deleteDurableArticle(record.id);
                   message.success("ลบสำเร็จ");
                   setLoading(true);
+                  fetchData();
                 } catch (error) {
                   console.error(error);
                   message.error("ลบไม่สำเร็จ");
