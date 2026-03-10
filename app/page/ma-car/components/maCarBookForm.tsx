@@ -62,6 +62,15 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
       const { carId, dateStart, dateEnd, typeName } = values;
       const currentUserId = session?.user?.userId;
 
+      // ✅ 1. ย้ายการหาข้อมูลรถมาไว้ด้านบน เพื่อตรวจสอบก่อน
+      const selectedCar = cars.find((c) => c.id === carId);
+
+      // ✅ 2. เพิ่มเงื่อนไข: ตรวจสอบว่ารถพร้อมใช้งานหรือไม่
+
+      if (selectedCar && selectedCar.status === "unavailable") {
+        message.warning("ไม่สามารถจองรถได้: รถคันนี้ไม่พร้อมใช้งาน");
+        return;
+      }
       // ตรวจสอบการจองซ้ำ
       const isOverlaps =
         maCar &&
@@ -92,7 +101,6 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
         message.warning(`ไม่สามารถจองรถได้: ${conflictType}`);
         return;
       }
-      const selectedCar = cars.find((c) => c.id === carId);
 
       const payload = {
         ...values,
@@ -356,7 +364,7 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
               <Form.Item
                 name="dateStart"
                 label="ตั้งแต่วันที่-เวลา"
-                dependencies={["carId"]}
+                dependencies={["dateEnd", "carId"]} // ✅ ให้รีเช็คเมื่อเวลาสิ้นสุดหรือรถเปลี่ยน
                 rules={[
                   { required: true, message: "กรุณาเลือกวันเวลาเริ่ม" },
                   {
@@ -364,28 +372,57 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                       if (!value) return Promise.resolve();
 
                       const carId = form.getFieldValue("carId");
-
                       if (!carId) return Promise.resolve();
 
-                      const isCarBusy = maCar.some((booking) => {
-                        // ข้ามรายการที่ยกเลิก
+                      const dateEnd = form.getFieldValue("dateEnd");
+                      const currentStart = dayjs(value);
+                      const currentUserId = session?.user?.userId; // ✅ ดึง ID ผู้จอง
+
+                      let errorMsg = "";
+
+                      const isConflict = maCar.some((booking) => {
                         if (booking.status === "cancel") return false;
 
-                        // เช็คเฉพาะรถคันที่เราเลือก
-                        if (Number(booking.carId) !== Number(carId))
-                          return false;
+                        // ✅ เช็คทั้งกรณี "รถซ้ำคัน" และ "ตัวเองจองซ้อนเวลา"
+                        const isSameCar =
+                          Number(booking.carId) === Number(carId);
+                        const isSameUser =
+                          booking.createdById === currentUserId;
+
+                        if (!isSameCar && !isSameUser) return false;
 
                         const bStart = dayjs(booking.dateStart);
                         const bEnd = dayjs(booking.dateEnd);
 
-                        // เช็คว่าเวลาที่เลือก (value) ไปแทรกอยู่ในช่วงที่รถไม่ว่างไหม
-                        return value.isBetween(bStart, bEnd, null, "[]");
+                        if (dateEnd) {
+                          const currentEnd = dayjs(dateEnd);
+                          // ✅ สูตรเช็คชนกันครอบคลุมทุกกรณี (ทับหัว, ทับท้าย, คร่อมกลาง)
+                          if (
+                            currentStart.isBefore(bEnd) &&
+                            currentEnd.isAfter(bStart)
+                          ) {
+                            errorMsg = isSameCar
+                              ? "รถคันนี้มีการจองในช่วงเวลานี้แล้ว"
+                              : "คุณมีรายการจองรถในช่วงเวลานี้แล้ว";
+                            return true;
+                          }
+                        } else {
+                          // ถ้าเพิ่งเลือกแค่เริ่ม ให้เช็คว่าเวลาไปตกอยู่ตรงกลางการจองใครไหม
+                          if (
+                            currentStart.isSameOrAfter(bStart) &&
+                            currentStart.isBefore(bEnd)
+                          ) {
+                            errorMsg = isSameCar
+                              ? "รถคันนี้มีการจองในช่วงเวลานี้แล้ว"
+                              : "คุณมีรายการจองรถในช่วงเวลานี้แล้ว";
+                            return true;
+                          }
+                        }
+                        return false;
                       });
 
-                      if (isCarBusy) {
-                        return Promise.reject(
-                          new Error("รถคันนี้ไม่ว่างในช่วงเวลานี้"),
-                        );
+                      if (isConflict) {
+                        return Promise.reject(new Error(errorMsg));
                       }
 
                       return Promise.resolve();
@@ -412,9 +449,8 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
             <Col span={12}>
               <Form.Item
                 noStyle
-                shouldUpdate={
-                  (prev, cur) =>
-                    prev.dateStart !== cur.dateStart || prev.carId !== cur.carId // ✅ อัปเดตเมื่อเปลี่ยนรถด้วย
+                shouldUpdate={(prev, cur) =>
+                  prev.dateStart !== cur.dateStart || prev.carId !== cur.carId
                 }
               >
                 {({ getFieldValue }) => {
@@ -430,8 +466,12 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                           validator: (_, value) => {
                             if (!value || !dateStart) return Promise.resolve();
 
+                            const carId = getFieldValue("carId");
+                            if (!carId) return Promise.resolve();
+
                             const currentStart = dayjs(dateStart);
                             const currentEnd = dayjs(value);
+                            const currentUserId = session?.user?.userId;
 
                             // 1. เช็คเวลา Start < End
                             if (
@@ -445,28 +485,36 @@ const MaCarBookForm: React.FC<MaCarBookFormProps> = ({
                               );
                             }
 
-                            const carId = getFieldValue("carId");
-                            if (carId) {
-                              const isOverlap = maCar.some((booking) => {
-                                if (booking.status === "cancel") return false;
-                                if (Number(booking.carId) !== Number(carId))
-                                  return false;
+                            // 2. เช็คเวลาชนกันแบบ Real-time
+                            let errorMsg = "";
+                            const isConflict = maCar.some((booking) => {
+                              if (booking.status === "cancel") return false;
 
-                                const bStart = dayjs(booking.dateStart);
-                                const bEnd = dayjs(booking.dateEnd);
+                              const isSameCar =
+                                Number(booking.carId) === Number(carId);
+                              const isSameUser =
+                                booking.createdById === currentUserId;
 
-                                // สูตรเช็คชนกัน: (StartA < EndB) และ (EndA > StartB)
-                                return (
-                                  currentStart.isBefore(bEnd) &&
-                                  currentEnd.isAfter(bStart)
-                                );
-                              });
+                              if (!isSameCar && !isSameUser) return false;
 
-                              if (isOverlap) {
-                                return Promise.reject(
-                                  new Error("ช่วงเวลานี้มีการจองแล้ว"),
-                                );
+                              const bStart = dayjs(booking.dateStart);
+                              const bEnd = dayjs(booking.dateEnd);
+
+                              // ✅ เช็คชนกัน
+                              if (
+                                currentStart.isBefore(bEnd) &&
+                                currentEnd.isAfter(bStart)
+                              ) {
+                                errorMsg = isSameCar
+                                  ? "รถคันนี้มีการจองในช่วงเวลานี้แล้ว"
+                                  : "คุณมีรายการจองรถในช่วงเวลานี้แล้ว";
+                                return true;
                               }
+                              return false;
+                            });
+
+                            if (isConflict) {
+                              return Promise.reject(new Error(errorMsg));
                             }
 
                             return Promise.resolve();

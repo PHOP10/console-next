@@ -81,6 +81,7 @@ export default function Page() {
       children: (
         <Card>
           <DurableArticleForm
+            data={data}
             setLoading={setManualLoading}
             loading={loading}
             fetchData={fetchData}

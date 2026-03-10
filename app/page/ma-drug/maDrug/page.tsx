@@ -10,9 +10,8 @@ import DispenseForm from "../components/dispenseForm";
 import DispenseTable from "../components/dispenseTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-
-// Types
-import { DrugType, MaDrugType, DispenseType } from "../../common";
+import { userService } from "../../user/services/user.service";
+import { DrugType, MaDrugType, DispenseType, UserType } from "../../common";
 import { useSearchParams, useRouter } from "next/navigation";
 
 export default function Page() {
@@ -21,14 +20,15 @@ export default function Page() {
   const searchParams = useSearchParams();
   const activeTabKey = searchParams.get("tab") || "1";
   const router = useRouter();
+  const intraAuthUserService = userService(intraAuth);
+  const intraAuthService = MaDrug(intraAuth);
 
   const fetcher = async () => {
-    const intraAuthService = MaDrug(intraAuth);
-
-    const [drugsRes, maDrugsRes, dispenseRes] = await Promise.all([
+    const [drugsRes, maDrugsRes, dispenseRes, resUsers] = await Promise.all([
       intraAuthService.getDrugQuery?.(),
       intraAuthService.getMaDrugQuery(),
       intraAuthService.getDispenseQuery(),
+      intraAuthUserService.getUserQuery(),
     ]);
 
     return {
@@ -37,6 +37,7 @@ export default function Page() {
       dispenses: Array.isArray(dispenseRes)
         ? dispenseRes
         : dispenseRes?.data || [],
+      dataUser: resUsers,
     };
   };
 
@@ -61,10 +62,11 @@ export default function Page() {
   const drugs: DrugType[] = swrData?.drugs || [];
   const maDrugData: MaDrugType[] = swrData?.maDrugs || [];
   const dispenseData: DispenseType[] = swrData?.dispenses || [];
+  const dataUser: UserType[] = swrData?.dataUser || [];
 
   const fetchDrugs = async () => {
     setManualLoading(true);
-    await mutate(); // รีโหลดข้อมูลทั้งหมดใหม่
+    await mutate();
     setManualLoading(false);
   };
 
@@ -74,7 +76,11 @@ export default function Page() {
       label: "ข้อมูลการเบิกยา",
       children: (
         <Card bordered={false} className="shadow-sm">
-          <DrugDaisbursementTable data={maDrugData} fetchDrugs={fetchDrugs} />
+          <DrugDaisbursementTable
+            data={maDrugData}
+            fetchDrugs={fetchDrugs}
+            dataUser={dataUser}
+          />
         </Card>
       ),
     },
@@ -100,6 +106,7 @@ export default function Page() {
             data={dispenseData}
             refreshData={fetchDrugs}
             drugs={drugs}
+            dataUser={dataUser}
           />
         </Card>
       ),

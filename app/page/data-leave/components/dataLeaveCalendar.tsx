@@ -36,12 +36,6 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
 
   const hd = new Holidays("TH");
 
-  const getUserName = (idOrName?: string) => {
-    if (!idOrName) return "-";
-    const user = dataUser?.find((u) => u.userId === idOrName);
-    return user ? `${user.firstName} ${user.lastName}` : idOrName;
-  };
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "approve":
@@ -50,6 +44,8 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
         return "#ef4444";
       case "edit":
         return "#f59e0b";
+      case "resubmitted":
+        return "#2f54eb";
       case "pending":
         return "#3b82f6";
       case "success":
@@ -70,6 +66,11 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
   // ✅ 3. ฟังก์ชันสำหรับแตก Event ยาวๆ ให้เป็น Event รายวัน (ตัดวันหยุด)
   const processEvents = useMemo(() => {
     const processedEvents: CustomEvent[] = [];
+    const getUserName = (userId: string | undefined | null) => {
+      if (!userId) return "ไม่ระบุชื่อ";
+      const user = dataUser.find((u) => u.userId === userId);
+      return user ? `${user.firstName} ${user.lastName}` : "ไม่ระบุชื่อ";
+    };
 
     data.forEach((leave) => {
       const start = moment(leave.dateStart);
@@ -85,7 +86,7 @@ const DataLeaveCalendar: React.FC<Props> = ({ data, dataUser }) => {
         if (chunkStart && chunkEnd) {
           processedEvents.push({
             id: leave.id,
-            title: getUserName(leave.createdName),
+            title: getUserName(leave.createdById),
             start: chunkStart.toDate(),
 
             end: chunkEnd.endOf("day").toDate(),

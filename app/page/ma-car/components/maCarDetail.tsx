@@ -67,7 +67,7 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({
       case "cancel":
         return (
           <Tag color="red" className={baseStyle}>
-            ยกเลิก
+            ไม่อนุมัติ
           </Tag>
         );
       case "edit":
@@ -80,6 +80,12 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({
         return (
           <Tag color="default" className={baseStyle}>
             สำเร็จ
+          </Tag>
+        );
+      case "resubmitted":
+        return (
+          <Tag color="geekblue" className={baseStyle}>
+            รออนุมัติ (แก้ไขแล้ว)
           </Tag>
         );
       case "return":
@@ -151,6 +157,12 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({
               <h2 className="text-lg sm:text-xl font-bold text-slate-800 m-0">
                 รายละเอียดการจองรถ
               </h2>
+              {record.reasonReturn && (
+                <div className="mt-1.5 text-orange-500 text-xs sm:text-sm">
+                  <span className="font-bold">แก้ไข :</span>{" "}
+                  {record.reasonReturn}
+                </div>
+              )}
             </div>
             <div className="text-right">{getStatusTag(record.status)}</div>
           </div>
@@ -373,7 +385,7 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({
                   <>
                     <Col xs={24} sm={12}>
                       <span className="text-red-500 block text-xs">
-                        ผู้ยกเลิก
+                        ผู้ไม่อนุมัติ
                       </span>
                       <span className="text-red-700 font-medium">
                         {record.cancelName}
@@ -381,7 +393,7 @@ const MaCarDetail: React.FC<MaCarDetailProps> = ({
                     </Col>
                     <Col xs={24} sm={12}>
                       <span className="text-red-500 block text-xs">
-                        วันที่ยกเลิก
+                        วันที่ไม่อนุมัติ
                       </span>
                       <span className="text-red-700 font-medium">
                         {formatDateOnly(record.cancelAt)}

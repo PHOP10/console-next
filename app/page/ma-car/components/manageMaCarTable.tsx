@@ -74,6 +74,10 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   const [selectedAckRecord, setSelectedAckRecord] = useState<MaCarType | null>(
     null,
   );
+  const [modalReturnOpen, setModalReturnOpen] = useState(false);
+  const [selectedReturnRecord, setSelectedReturnRecord] =
+    useState<MaCarType | null>(null);
+  const [formReturn] = Form.useForm();
 
   const handleShowDetail = (record: any, dataUser: any) => {
     setSelectedRecord({ ...record, dataUser });
@@ -121,7 +125,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     if (!selectedCancelRecord) return;
     const reason = values.cancelReason?.trim();
     if (!reason) {
-      message.error("กรุณากรอกเหตุผลการยกเลิก");
+      message.error("กรุณากรอกเหตุผลการไม่อนุมัติ");
       return;
     }
     try {
@@ -132,7 +136,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         status: "cancel",
         cancelReason: values.cancelReason,
       });
-      message.success("ยกเลิกรายการแล้ว");
+      message.success("ไม่อนุมัติรายการแล้ว");
       setModalCancelOpen(false);
       formCancel.resetFields();
       fetchData();
@@ -142,14 +146,26 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
     }
   };
 
-  const returnEdit = async (record: any) => {
+  const handleConfirmReturn = async (values: { reasonReturn: string }) => {
+    if (!selectedReturnRecord) return;
+
+    const reason = values.reasonReturn?.trim();
+    if (!reason) {
+      message.error("กรุณากรอกเหตุผลการส่งคืนเพื่อแก้ไข");
+      return;
+    }
+
     try {
       await intraAuthService.updateMaCar({
-        id: record.id,
+        id: selectedReturnRecord.id,
         status: "edit",
+        reasonReturn: reason,
       });
+
       message.success("ส่งคืนเพื่อแก้ไขเรียบร้อย");
       fetchData();
+      setModalReturnOpen(false);
+      formReturn.resetFields();
     } catch (err) {
       console.error(err);
       message.error("เกิดข้อผิดพลาดในการส่งคืนเพื่อแก้ไข");
@@ -159,10 +175,15 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
   const columns: ColumnsType<MaCarType> = [
     {
       title: "ผู้ขอใช้รถ",
-      dataIndex: "createdName",
-      key: "createdName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
       width: 150,
+      render: (createdById: string) => {
+        const foundUser = dataUser.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "วัตถุประสงค์",
@@ -284,7 +305,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
           case "return":
             color = "purple";
@@ -293,6 +314,10 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
           case "success":
             color = "default";
             text = "เสร็จสิ้น";
+            break;
+          case "resubmitted":
+            color = "geekblue";
+            text = "รออนุมัติ (แก้ไขแล้ว)";
             break;
           default:
             text = status;
@@ -316,7 +341,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
           <Space size="small">
             {/* 1. ปุ่มอนุมัติ (Popover) */}
             <Popover
-              trigger={isPending ? "click" : []}
+              trigger="click"
               title={
                 <Space>
                   <ExclamationCircleOutlined style={{ color: "#faad14" }} />
@@ -339,10 +364,10 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
                       setSelectedCancelRecord(record);
                       setModalCancelOpen(true);
                       setOpenPopoverId(null);
-                      formCancel.resetFields();
+                      formCancel.resetFields(); // อิงตามโค้ดชุดแรกของคุณที่ใช้ formCancel
                     }}
                   >
-                    ยกเลิก
+                    ไม่อนุมัติ
                   </Button>
                   <Button
                     type="primary"
@@ -358,39 +383,66 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
                 </Space>
               }
               open={openPopoverId === record.id}
-              onOpenChange={(open) => setOpenPopoverId(open ? record.id : null)}
+              onOpenChange={(visible) => {
+                if (
+                  record.status === "pending" ||
+                  record.status === "resubmitted"
+                ) {
+                  setOpenPopoverId(visible ? record.id : null);
+                }
+              }}
             >
               <Tooltip title={"อนุมัติ"}>
                 <CheckCircleOutlined
                   style={{
-                    fontSize: 18, // ขนาด 18px
-                    color: isPending ? "#52c41a" : "#d9d9d9",
-                    cursor: isPending ? "pointer" : "not-allowed",
+                    fontSize: 18,
+
+                    color:
+                      record.status === "pending" ||
+                      record.status === "resubmitted"
+                        ? "#52c41a"
+                        : "#d9d9d9",
+
+                    cursor:
+                      record.status === "pending" ||
+                      record.status === "resubmitted"
+                        ? "pointer"
+                        : "not-allowed",
                   }}
                   onClick={(e) => {
-                    if (isPending) setOpenPopoverId(record.id);
+                    if (
+                      record.status !== "pending" &&
+                      record.status !== "resubmitted"
+                    ) {
+                      e.stopPropagation();
+                    } else {
+                      setOpenPopoverId(record.id);
+                    }
                   }}
                 />
               </Tooltip>
             </Popover>
-
             {/* 2. ปุ่มส่งคืนแก้ไข */}
-            <Tooltip title={"ส่งคืนเพื่อแก้ไข"}>
-              <Popconfirm
-                title="ยืนยันการส่งคืนเพื่อแก้ไข ?"
-                onConfirm={() => returnEdit(record)}
-                disabled={!isApprove}
-                okText="ยืนยัน"
-                cancelText="ยกเลิก"
-              >
-                <RollbackOutlined
-                  style={{
-                    fontSize: 18, // ขนาด 18px
-                    color: isApprove ? "orange" : "#d9d9d9",
-                    cursor: isApprove ? "pointer" : "not-allowed",
-                  }}
-                />
-              </Popconfirm>
+            <Tooltip
+              title={record.status === "approve" ? "ส่งคืนเพื่อแก้ไข" : ""}
+            >
+              <RollbackOutlined
+                style={{
+                  fontSize: 18,
+                  color: record.status === "approve" ? "#faad14" : "#d9d9d9",
+                  cursor:
+                    record.status === "approve" ? "pointer" : "not-allowed",
+                }}
+                onClick={() => {
+                  if (record.status === "approve") {
+                    setSelectedReturnRecord(record);
+                    setModalReturnOpen(true);
+                    formReturn.setFieldsValue({
+                      reasonReturn: record.reasonReturn || "",
+                    });
+                  }
+                }}
+              />
             </Tooltip>
 
             {/* 3. ปุ่มรับทราบการคืนรถ */}
@@ -445,7 +497,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
             </Tooltip> */}
 
             {/* 6. ปุ่มลบ */}
-            <Popconfirm
+            {/* <Popconfirm
               title="ยืนยันการลบ"
               description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
               onConfirm={async () => {
@@ -470,7 +522,7 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
                   }}
                 />
               </Tooltip>
-            </Popconfirm>
+            </Popconfirm> */}
           </Space>
         );
       },
@@ -505,11 +557,11 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
       />
 
       <Modal
-        title="ยืนยันการยกเลิกรายการ"
+        title="ยืนยันการไม่อนุมัติรายการ"
         open={modalCancelOpen}
         onOk={() => formCancel.submit()}
         onCancel={() => setModalCancelOpen(false)}
-        okText="ยืนยันการยกเลิก"
+        okText="ยืนยัน"
         cancelButtonProps={{ style: { display: "none" } }}
         okButtonProps={{ danger: true }}
         centered
@@ -521,11 +573,13 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
           onFinish={(values) => handleConfirmCancel(values)}
         >
           <Form.Item
-            label="เหตุผลการยกเลิก"
+            label="เหตุผลการไม่อนุมัติ"
             name="cancelReason"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+            rules={[
+              { required: true, message: "กรุณากรอกเหตุผลการไม่อนุมัติ" },
+            ]}
           >
-            <Input.TextArea placeholder="กรอกเหตุผลที่ยกเลิก..." rows={4} />
+            <Input.TextArea placeholder="กรอกเหตุผลที่ไม่อนุมัติ..." rows={4} />
           </Form.Item>
         </Form>
       </Modal>
@@ -548,6 +602,38 @@ const ManageMaCarTable: React.FC<MaCarTableProps> = ({
         fetchData={fetchData}
         mode="admin_ack"
       />
+
+      <Modal
+        title="ส่งคืนเพื่อแก้ไข"
+        open={modalReturnOpen}
+        onOk={() => formReturn.submit()}
+        onCancel={() => setModalReturnOpen(false)}
+        okText="ยืนยันการส่งคืน"
+        cancelText="ยกเลิก"
+        centered
+        okButtonProps={{
+          type: "primary",
+          style: { backgroundColor: "#faad14" },
+        }}
+        style={{ maxWidth: "95%" }}
+      >
+        <Form
+          form={formReturn}
+          layout="vertical"
+          onFinish={handleConfirmReturn}
+        >
+          <Form.Item
+            name="reasonReturn"
+            label="เหตุผลการส่งคืน"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลที่ต้องแก้ไข" }]}
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="กรอกเหตุผลที่ต้องการให้ผู้ใช้แก้ไขข้อมูล..."
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </>
   );
 };

@@ -118,6 +118,10 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
         return fullName === record.createdName;
       });
 
+      const creatorFullName = creator
+        ? `${creator.firstName} ${creator.lastName}`
+        : record.createdName || "-";
+
       const genderPrefix = creator
         ? creator.gender === "male"
           ? "นาย"
@@ -156,7 +160,7 @@ const OfficialTravelExportWord: React.FC<OfficialTravelExportWordProps> = ({
         wm: now.format("MMMM"), // เดือน (ชื่อเต็มภาษาไทย)
         wb: toThaiNumber(now.year() + 543), // ปี พ.ศ. (เลขไทย)
         // --- ผู้ขอ / ผู้สร้าง ---
-        createdName: record.createdName ?? "-",
+        createdName: creatorFullName,
         gd: genderPrefix,
         userPosition: userPosition,
 

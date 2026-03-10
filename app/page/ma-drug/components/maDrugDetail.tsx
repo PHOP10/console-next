@@ -53,7 +53,7 @@ export default function MaDrugTableDetail({
       case "cancel":
         return (
           <Tag color="red" className={baseStyle}>
-            ยกเลิก
+            ไม่อนุมัติ
           </Tag>
         );
       default:

@@ -51,6 +51,7 @@ export interface OfficialTravelRequestType {
   privateCarId?: number;
   otherTravelType?: string;
   travelType: string[];
+  reasonReturn: string;
 }
 
 export interface MaCarType {
@@ -82,6 +83,7 @@ export interface MaCarType {
   returnByName: string;
   startMileage?: number;
   returnMileage?: number;
+  reasonReturn: string;
 }
 
 export interface MasterCarType {
@@ -126,6 +128,7 @@ export interface DataLeaveType {
   contactPhone?: string;
   backupUserId?: string;
   backupUserName?: string;
+  reasonReturn: string;
 }
 
 export interface MasterLeaveType {

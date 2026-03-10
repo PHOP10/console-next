@@ -28,7 +28,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { MaDrugType } from "../../common";
+import { MaDrugType, UserType } from "../../common";
 import { exportMaDrugToExcel } from "./maDrugExport";
 import { useSession } from "next-auth/react";
 import MaDrugTableDetail from "./maDrugDetail";
@@ -44,12 +44,14 @@ interface ManageDrugTableProps {
   data: MaDrugType[];
   fetchData: () => void;
   setData: React.Dispatch<React.SetStateAction<MaDrugType[]>>;
+  dataUser: UserType[];
 }
 
 export default function ManageDrugTable({
   data,
   fetchData,
   setData,
+  dataUser,
 }: ManageDrugTableProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
@@ -125,12 +127,12 @@ export default function ManageDrugTable({
       };
 
       await intraAuthService.updateMaDrug(payload);
-      message.success("ยกเลิกรายการเรียบร้อยแล้ว");
+      message.success("ไม่อนุมัติรายการเรียบร้อยแล้ว");
       setIsCancelModalOpen(false);
       fetchData();
     } catch (error) {
       console.error(error);
-      message.error("เกิดข้อผิดพลาดในการยกเลิก");
+      message.error("เกิดข้อผิดพลาดในการไม่อนุมัติ");
     } finally {
       setCancelLoading(false);
     }
@@ -161,13 +163,26 @@ export default function ManageDrugTable({
         );
       },
     },
+    // {
+    //   title: "ผู้ขอเบิก",
+    //   dataIndex: "requesterName",
+    //   key: "requesterName",
+    //   align: "center",
+    //   width: 100,
+    //   responsive: ["md"],
+    // },
     {
       title: "ผู้ขอเบิก",
-      dataIndex: "requesterName",
-      key: "requesterName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
       width: 100,
       responsive: ["md"],
+      render: (createdById: string) => {
+        const foundUser = dataUser.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "วันที่ขอเบิก",
@@ -239,7 +254,7 @@ export default function ManageDrugTable({
           case "canceled":
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
           default:
             text = status;
@@ -285,7 +300,7 @@ export default function ManageDrugTable({
                     size="small"
                     onClick={() => openCancelModal(record.id)}
                   >
-                    ยกเลิก
+                    ไม่อนุมัติ
                   </Button>
                   <Button
                     type="primary"
@@ -427,10 +442,10 @@ export default function ManageDrugTable({
       />
 
       <Modal
-        title={<div>ยืนยันการยกเลิกรายการ</div>}
+        title={<div>ยืนยันการไม่อนุมัติรายการ</div>}
         open={isCancelModalOpen}
         onOk={() => formCancel.submit()}
-        okText="ยืนยันการยกเลิก"
+        okText="ยืนยัน"
         onCancel={() => setIsCancelModalOpen(false)}
         cancelButtonProps={{ style: { display: "none" } }}
         okButtonProps={{ danger: true, loading: cancelLoading }}
@@ -440,10 +455,12 @@ export default function ManageDrugTable({
         <Form form={formCancel} layout="vertical" onFinish={handleCancelSubmit}>
           <Form.Item
             name="cancelReason"
-            label="เหตุผลการยกเลิก"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+            label="เหตุผลการไม่อนุมัติ"
+            rules={[
+              { required: true, message: "กรุณากรอกเหตุผลการไม่อนุมัติ" },
+            ]}
           >
-            <Input.TextArea rows={4} placeholder="กรอกเหตุผลที่ยกเลิก..." />
+            <Input.TextArea rows={4} placeholder="กรอกเหตุผลที่ไม่อนุมัติ..." />
           </Form.Item>
         </Form>
       </Modal>

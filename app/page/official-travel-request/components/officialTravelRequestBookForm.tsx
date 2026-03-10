@@ -70,6 +70,16 @@ export default function OfficialTravelRequestBookForm({
       const currentStart = dayjs(startDate);
       const currentEnd = dayjs(endDate);
 
+      // ✅ 1. ย้ายการหาข้อมูลรถมาไว้ด้านบน เพื่อตรวจสอบก่อน
+      const selectedCar = cars.find((c) => c.id === carId);
+
+      // ✅ 2. เพิ่มเงื่อนไข: ตรวจสอบว่ารถพร้อมใช้งานหรือไม่
+
+      if (selectedCar && selectedCar.status === "unavailable") {
+        message.warning("ไม่สามารถจองรถได้: รถคันนี้ไม่พร้อมใช้งาน");
+        return;
+      }
+      
       const isCarOverlaps =
         dataOTR &&
         dataOTR.some((booking) => {
@@ -312,7 +322,7 @@ export default function OfficialTravelRequestBookForm({
                 <Form.Item
                   label="ตั้งแต่วันที่-เวลา"
                   name="startDate"
-                  dependencies={["carId", "travelType"]} // รีรัน validator เมื่อ 2 ค่านี้เปลี่ยน
+                  dependencies={["carId", "travelType", "endDate"]} // เพิ่ม endDate เพื่อให้รีรันเวลาแก้วันจบ
                   rules={[
                     {
                       required: true,
@@ -322,40 +332,62 @@ export default function OfficialTravelRequestBookForm({
                       validator: (_, value) => {
                         if (!value) return Promise.resolve();
 
-                        // ดึงค่าสดๆ จาก Form เพื่อความชัวร์
+                        // ดึงค่าสดๆ จาก Form
+                        const currentStart = dayjs(value);
+                        const endValue = form.getFieldValue("endDate");
+                        const currentEnd = endValue ? dayjs(endValue) : null;
                         const currentTravelType =
                           form.getFieldValue("travelType");
                         const currentCarId = form.getFieldValue("carId");
 
                         // 1. เช็ค User Overlap (คนเดิมห้ามจองซ้อน)
-                        const isUserBusy = oTRUser.some((booking) => {
+                        const isUserBusy = (oTRUser || []).some((booking) => {
                           if (booking.status === "cancel") return false;
                           const bStart = dayjs(booking.startDate);
                           const bEnd = dayjs(booking.endDate);
-                          return value.isBetween(bStart, bEnd, null, "[]");
+
+                          if (currentEnd) {
+                            // ถ้ากรอกวันจบแล้ว ให้เช็คการทับซ้อนเต็มรูปแบบ
+                            return (
+                              currentStart.isBefore(bEnd) &&
+                              currentEnd.isAfter(bStart)
+                            );
+                          } else {
+                            // ถ้ายังไม่กรอกวันจบ เช็คแค่วันเริ่มตกไปอยู่ในช่วงที่จองไว้แล้วหรือไม่
+                            return (
+                              currentStart.isBefore(bEnd) &&
+                              currentStart.isSameOrAfter(bStart)
+                            );
+                          }
                         });
 
                         if (isUserBusy) {
                           return Promise.reject(
-                            new Error("คุณมีรายการจองอื่นในช่วงเวลานี้"),
+                            new Error("คุณมีคำขอไปราชการอื่นในช่วงเวลานี้แล้ว"),
                           );
                         }
 
-                        // Logic: เช็คว่ารถว่างไหม (เฉพาะรถราชการ)
+                        // 2. Logic: เช็คว่ารถว่างไหม (เฉพาะรถราชการ)
                         if (currentTravelType === "official" && currentCarId) {
-                          // ✅ ป้องกัน dataOTR เป็น undefined ด้วย || []
                           const isCarBusy = (dataOTR || []).some((booking) => {
                             if (booking.status === "cancel") return false;
-
-                            // ข้ามถ้ารถคนละคัน
                             if (Number(booking.carId) !== Number(currentCarId))
                               return false;
 
                             const bStart = dayjs(booking.startDate);
                             const bEnd = dayjs(booking.endDate);
 
-                            // เช็คว่าจุดเริ่มต้นของเรา ไปแทรกอยู่ในช่วงเวลาของคนอื่นไหม
-                            return value.isBetween(bStart, bEnd, null, "[]");
+                            if (currentEnd) {
+                              return (
+                                currentStart.isBefore(bEnd) &&
+                                currentEnd.isAfter(bStart)
+                              );
+                            } else {
+                              return (
+                                currentStart.isBefore(bEnd) &&
+                                currentStart.isSameOrAfter(bStart)
+                              );
+                            }
                           });
 
                           if (isCarBusy) {
@@ -379,7 +411,6 @@ export default function OfficialTravelRequestBookForm({
                     placeholder="เลือกวันและเวลาเริ่ม"
                     onChange={() => form.setFieldValue("endDate", null)} // เคลียร์วันจบเมื่อเปลี่ยนวันเริ่ม
                     disabledDate={(current) => {
-                      // ห้ามเลือกวันย้อนหลัง (แต่วันปัจจุบันเลือกได้ เพื่อระบุเวลา)
                       return current && current < dayjs().startOf("day");
                     }}
                   />
@@ -428,24 +459,44 @@ export default function OfficialTravelRequestBookForm({
                                 );
                               }
 
-                              // 2. เช็ครถว่าง (Overlap Check)
+                              // 2. เช็ค User Overlap (เพิ่มใหม่! ป้องกันการขยายเวลาไปชนการจองอื่นของตัวเอง)
+                              const isUserBusy = (oTRUser || []).some(
+                                (booking) => {
+                                  if (booking.status === "cancel") return false;
+                                  const bStart = dayjs(booking.startDate);
+                                  const bEnd = dayjs(booking.endDate);
+                                  // สูตร Overlap
+                                  return (
+                                    currentStart.isBefore(bEnd) &&
+                                    currentEnd.isAfter(bStart)
+                                  );
+                                },
+                              );
+
+                              if (isUserBusy) {
+                                return Promise.reject(
+                                  new Error(
+                                    "คุณมีคำขอไปราชการอื่นในช่วงเวลานี้แล้ว",
+                                  ),
+                                );
+                              }
+
+                              // 3. เช็ครถว่าง (Overlap Check)
                               const travelType = getFieldValue("travelType");
                               const carId = getFieldValue("carId");
 
                               if (travelType === "official" && carId) {
-                                // ✅ ป้องกัน dataOTR เป็น undefined
                                 const isCarOverlap = (dataOTR || []).some(
                                   (booking) => {
                                     if (booking.status === "cancel")
                                       return false;
-
                                     if (Number(booking.carId) !== Number(carId))
                                       return false;
 
                                     const bStart = dayjs(booking.startDate);
                                     const bEnd = dayjs(booking.endDate);
 
-                                    // สูตร Overlap: (StartA < EndB) && (EndA > StartB)
+                                    // สูตร Overlap
                                     return (
                                       currentStart.isBefore(bEnd) &&
                                       currentEnd.isAfter(bStart)
@@ -476,14 +527,12 @@ export default function OfficialTravelRequestBookForm({
                           }
                           disabled={!dateStart}
                           disabledDate={(current) => {
-                            // ห้ามเลือกวันก่อนวันเริ่ม
                             if (
                               dateStart &&
                               current < dayjs(dateStart).startOf("day")
                             ) {
                               return true;
                             }
-                            // ห้ามเลือกวันย้อนหลัง
                             return current && current < dayjs().startOf("day");
                           }}
                         />

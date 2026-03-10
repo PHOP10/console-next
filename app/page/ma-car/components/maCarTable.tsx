@@ -23,6 +23,7 @@ import MaCarReturn from "./maCarReturn";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import buddhistEra from "dayjs/plugin/buddhistEra";
+import MaCarPdf from "./maCarPdf";
 
 // Setup dayjs
 dayjs.extend(buddhistEra);
@@ -87,10 +88,15 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
   const columns: ColumnsType<MaCarType> = [
     {
       title: "ผู้ขอใช้รถ",
-      dataIndex: "createdName",
-      key: "createdName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
       width: 150,
+      render: (createdById: string) => {
+        const foundUser = dataUser.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "วัตถุประสงค์",
@@ -212,7 +218,7 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
             break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
           case "return":
             color = "purple";
@@ -221,6 +227,10 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
           case "success":
             color = "default";
             text = "เสร็จสิ้น";
+            break;
+          case "resubmitted":
+            color = "geekblue";
+            text = "รออนุมัติ (แก้ไขแล้ว)";
             break;
           default:
             text = status;
@@ -277,7 +287,11 @@ const MaCarTable: React.FC<MaCarTableProps> = ({
               onClick={() => handleShowDetail(record, dataUser)}
             />
           </Tooltip>
+
           <MaCarExportWord record={record} />
+
+          <MaCarPdf record={record} />
+
           <Tooltip title="แก้ไข">
             <EditOutlined
               style={{

@@ -21,6 +21,7 @@ import CustomTable from "../../common/CustomTable";
 import dayjs from "dayjs";
 import "dayjs/locale/th";
 import buddhistEra from "dayjs/plugin/buddhistEra";
+import OfficialTravelPdf from "./officialTravelPdf";
 
 // Setup dayjs
 dayjs.extend(buddhistEra);
@@ -72,6 +73,18 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
   };
 
   const columns: ColumnsType<OfficialTravelRequestType> = [
+    {
+      title: "ผู้ยื่นคำขอ",
+      dataIndex: "createdById",
+      key: "createdById",
+      align: "center",
+      width: 130,
+      render: (createdById: string) => {
+        const foundUser = dataUser.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
+    },
     {
       title: "เลขที่เอกสาร",
       dataIndex: "documentNo",
@@ -193,7 +206,11 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
             break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
+            break;
+          case "resubmitted":
+            color = "geekblue";
+            text = "รออนุมัติ (แก้ไขแล้ว)";
             break;
           default:
             text = status;
@@ -237,6 +254,7 @@ const OfficialTravelRequestTable: React.FC<Props> = ({
             />
           </Tooltip>
           <OfficialTravelExportWord record={record} />
+          <OfficialTravelPdf record={record} />
 
           <Tooltip title="แก้ไข">
             <EditOutlined

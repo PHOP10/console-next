@@ -28,7 +28,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { DispenseType, DrugType } from "../../common";
+import { DispenseType, DrugType, UserType } from "../../common";
 import CustomTable from "../../common/CustomTable";
 import DispenseTableDetail from "./dispenseTableDetail";
 import { useSession } from "next-auth/react";
@@ -44,12 +44,14 @@ interface MaDispenseTableProps {
   data: DispenseType[];
   fetchData: () => void;
   drugs: DrugType[];
+  dataUser: UserType[];
 }
 
 export default function MaDispenseTable({
   data,
   fetchData,
   drugs,
+  dataUser,
 }: MaDispenseTableProps) {
   const intraAuth = useAxiosAuth();
   const dispenseService = MaDrug(intraAuth);
@@ -99,12 +101,12 @@ export default function MaDispenseTable({
 
       await dispenseService.updateDispense(payload);
 
-      message.success("ยกเลิกรายการเรียบร้อยแล้ว");
+      message.success("ไม่อนุมัติรายการเรียบร้อยแล้ว");
       setIsCancelModalOpen(false);
       fetchData();
     } catch (error) {
       console.error(error);
-      message.error("เกิดข้อผิดพลาดในการยกเลิก");
+      message.error("เกิดข้อผิดพลาดในการไม่อนุมัติ");
     } finally {
       setCancelLoading(false);
     }
@@ -140,16 +142,29 @@ export default function MaDispenseTable({
   };
 
   const columns: ColumnsType<DispenseType> = [
+    // {
+    //   title: "ผู้จ่ายยา",
+    //   dataIndex: "dispenserName",
+    //   key: "dispenserName",
+    //   align: "center",
+    //   width: 150,
+    //   responsive: ["md"], // ซ่อนบนมือถือ
+    //   render: (text) => (
+    //     <span className="font-medium text-slate-700">{text || "-"}</span>
+    //   ),
+    // },
     {
       title: "ผู้จ่ายยา",
-      dataIndex: "dispenserName",
-      key: "dispenserName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
-      width: 150,
-      responsive: ["md"], // ซ่อนบนมือถือ
-      render: (text) => (
-        <span className="font-medium text-slate-700">{text || "-"}</span>
-      ),
+      width: 100,
+      responsive: ["md"],
+      render: (createdById: string) => {
+        const foundUser = dataUser.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "วันที่จ่าย",
@@ -223,7 +238,7 @@ export default function MaDispenseTable({
             break;
           case "canceled":
             color = "error";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
           default:
             text = status;
@@ -270,7 +285,7 @@ export default function MaDispenseTable({
                     size="small"
                     onClick={() => openCancelModal(record.id)}
                   >
-                    ยกเลิก
+                    ไม่อนุมัติ
                   </Button>
                   <Button
                     type="primary"
@@ -413,13 +428,15 @@ export default function MaDispenseTable({
 
       <Modal
         title={
-          <div className="flex items-center gap-2">ยืนยันการยกเลิกรายการ</div>
+          <div className="flex items-center gap-2">
+            ยืนยันการไม่อนุมัติรายการ
+          </div>
         }
         open={isCancelModalOpen}
         // ✅ แก้ไข: เมื่อกดปุ่ม OK ให้สั่ง submit ฟอร์ม
         onOk={() => formCancel.submit()}
         onCancel={() => setIsCancelModalOpen(false)}
-        okText="ยืนยันการยกเลิก"
+        okText="ยืนยัน"
         cancelButtonProps={{ style: { display: "none" } }} // ซ่อนปุ่ม Cancel ตามเดิม
         okButtonProps={{ danger: true, loading: cancelLoading }}
         centered
@@ -429,12 +446,14 @@ export default function MaDispenseTable({
         <Form form={formCancel} layout="vertical" onFinish={handleCancelSubmit}>
           <Form.Item
             name="cancelReason"
-            label="เหตุผลการยกเลิก"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+            label="เหตุผลการไม่อนุมัติ"
+            rules={[
+              { required: true, message: "กรุณากรอกเหตุผลการไม่อนุมัติ" },
+            ]}
           >
             <Input.TextArea
               rows={4}
-              placeholder="กรอกเหตุผลที่ต้องการยกเลิก..."
+              placeholder="กรอกเหตุผลที่ต้องการไม่อนุมัติ..."
             />
           </Form.Item>
         </Form>

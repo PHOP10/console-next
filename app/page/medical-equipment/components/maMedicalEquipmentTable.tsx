@@ -95,14 +95,14 @@ export default function MaMedicalEquipmentTable({
         createdAt: new Date().toISOString(),
       });
 
-      message.success("ยกเลิกรายการแล้ว");
+      message.success("ไม่อนุมัติรายการแล้ว");
       setIsModalOpen(false);
       setSelectedRecord(null);
       fetchData;
       setLoading(true);
     } catch (error) {
       console.error("เกิดข้อผิดพลาด:", error);
-      message.error("ไม่สามารถยกเลิกรายการได้");
+      message.error("ไม่สามารถไม่อนุมัติรายการได้");
     }
   };
 
@@ -141,7 +141,7 @@ export default function MaMedicalEquipmentTable({
           : record.status === "approve"
             ? "อนุมัติ"
             : record.status === "cancel"
-              ? "ยกเลิก"
+              ? "ไม่อนุมัติ"
               : record.status === "return"
                 ? "รับคืนแล้ว"
                 : "",
@@ -283,7 +283,7 @@ export default function MaMedicalEquipmentTable({
             break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
           case "return":
             color = "default";
@@ -358,7 +358,7 @@ export default function MaMedicalEquipmentTable({
                     form.resetFields();
                   }}
                 >
-                  ยกเลิก
+                  ไม่อนุมัติ
                 </Button>{" "}
                 <Button
                   type="primary"
@@ -487,16 +487,16 @@ export default function MaMedicalEquipmentTable({
         dataEQ={dataEQ}
       />
 
-      {/* Modal ยกเลิก */}
+      {/* Modal ไม่อนุมัติ */}
       <Modal
-        title="ยืนยันการยกเลิกรายการ"
+        title="ยืนยันการไม่อนุมัติรายการ"
         open={isModalOpen && !recordReturn}
         onOk={() => form.submit()}
         onCancel={() => {
           setIsModalOpen(false);
           setSelectedRecord(null);
         }}
-        okText="ยืนยันการยกเลิก"
+        okText="ยืนยัน"
         cancelButtonProps={{ style: { display: "none" } }}
         centered
         okButtonProps={{ danger: true }}
@@ -505,10 +505,12 @@ export default function MaMedicalEquipmentTable({
         <Form form={form} layout="vertical" onFinish={handleCancel}>
           <Form.Item
             name="cancelReason"
-            label="เหตุผลการยกเลิก"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+            label="เหตุผลการไม่อนุมัติ"
+            rules={[
+              { required: true, message: "กรุณากรอกเหตุผลการไม่อนุมัติ" },
+            ]}
           >
-            <Input.TextArea rows={3} placeholder="กรอกเหตุผลการยกเลิก" />
+            <Input.TextArea rows={3} placeholder="กรอกเหตุผลการไม่อนุมัติ" />
           </Form.Item>
         </Form>
       </Modal>

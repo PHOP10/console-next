@@ -69,6 +69,10 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
   const [modalCancelOpen, setModalCancelOpen] = useState(false);
   const [selectedCancelRecord, setSelectedCancelRecord] =
     useState<OfficialTravelRequestType | null>(null);
+  const [modalReturnOpen, setModalReturnOpen] = useState(false);
+  const [selectedReturnRecord, setSelectedReturnRecord] =
+    useState<OfficialTravelRequestType | null>(null);
+  const [formReturn] = Form.useForm();
 
   // โหลดรายการรถจาก master car
   const fetchCars = async () => {
@@ -106,12 +110,6 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
     }
   };
 
-  const handleEdit = (record: any) => {
-    if (record.status !== "pending") return;
-    setEditRecord(record);
-    setEditModalOpen(true);
-  };
-
   const handleCloseEdit = () => {
     setEditModalOpen(false);
     setEditRecord(null);
@@ -135,14 +133,26 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
     }
   };
 
-  const returnEdit = async (record: any) => {
+  const handleConfirmReturn = async (values: { reasonReturn: string }) => {
+    if (!selectedReturnRecord) return;
+
+    const reason = values.reasonReturn?.trim();
+    if (!reason) {
+      message.error("กรุณากรอกเหตุผลการส่งคืนเพื่อแก้ไข");
+      return;
+    }
+
     try {
       await intraAuthService.updateOfficialTravelRequest({
-        id: record.id,
+        id: selectedReturnRecord.id,
         status: "edit",
+        reasonReturn: reason,
       });
+
       message.success("ส่งคืนเพื่อแก้ไขเรียบร้อย");
       fetchData();
+      setModalReturnOpen(false);
+      formReturn.resetFields();
     } catch (err) {
       console.error(err);
       message.error("เกิดข้อผิดพลาดในการส่งคืนเพื่อแก้ไข");
@@ -170,7 +180,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
     if (!selectedCancelRecord) return;
     const reason = values.cancelReason?.trim();
     if (!reason) {
-      message.error("กรุณากรอกเหตุผลการยกเลิก");
+      message.error("กรุณากรอกเหตุผลการไม่อนุมัติ");
       return;
     }
     try {
@@ -181,7 +191,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
         status: "cancel",
         cancelReason: values.cancelReason,
       });
-      message.success("ยกเลิกรายการแล้ว");
+      message.success("ไม่อนุมัติรายการแล้ว");
       setModalCancelOpen(false);
       formCancel.resetFields();
       fetchData();
@@ -194,10 +204,15 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
   const columns: ColumnsType<OfficialTravelRequestType> = [
     {
       title: "ผู้ยื่นคำขอ",
-      dataIndex: "createdName",
-      key: "createdName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
-      width: 150,
+      width: 130,
+      render: (createdById: string) => {
+        const foundUser = dataUser.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "เลขที่เอกสาร",
@@ -232,7 +247,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "location",
       key: "location",
       align: "center",
-      width: 150,
+      width: 170,
       responsive: ["lg"], // ซ่อนบนมือถือ
       render: (text: string) => {
         const maxLength = 25;
@@ -321,7 +336,11 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
+            break;
+          case "resubmitted":
+            color = "geekblue";
+            text = "รออนุมัติ (แก้ไขแล้ว)";
             break;
           default:
             text = status;
@@ -336,7 +355,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       dataIndex: "note",
       key: "note",
       align: "center",
-      width: 150,
+      width: 100,
       ellipsis: true,
       responsive: ["xl"], // ซ่อนบนมือถือและจอเล็ก
       render: (text: string) => {
@@ -362,7 +381,11 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             trigger="click"
             open={openPopoverId === record.id}
             onOpenChange={(newOpen) => {
-              if (newOpen && record.status === "pending") {
+              // ✅ 1. เพิ่มเงื่อนไขให้เปิดได้ทั้ง pending และ resubmitted
+              if (
+                newOpen &&
+                ["pending", "resubmitted"].includes(record.status)
+              ) {
                 setOpenPopoverId(record.id);
               } else {
                 setOpenPopoverId(null);
@@ -392,7 +415,8 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                     formCancel.resetFields();
                   }}
                 >
-                  ยกเลิก
+                  {/* ✅ 2. เปลี่ยนคำจาก ยกเลิก เป็น ไม่อนุมัติ */}
+                  ไม่อนุมัติ
                 </Button>
 
                 <Button
@@ -415,15 +439,22 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             <Tooltip title={"อนุมัติ"}>
               <CheckCircleOutlined
                 style={{
-                  fontSize: 18, // ขนาด 18px
-                  color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
-                  cursor:
-                    record.status === "pending" ? "pointer" : "not-allowed",
-                  opacity: record.status === "pending" ? 1 : 0.5,
+                  fontSize: 18,
+                  // ✅ 3. ปรับเงื่อนไขสี, เคอร์เซอร์ และความทึบ
+                  color: ["pending", "resubmitted"].includes(record.status)
+                    ? "#52c41a"
+                    : "#d9d9d9",
+                  cursor: ["pending", "resubmitted"].includes(record.status)
+                    ? "pointer"
+                    : "not-allowed",
+                  opacity: ["pending", "resubmitted"].includes(record.status)
+                    ? 1
+                    : 0.5,
                   transition: "color 0.2s",
                 }}
                 onClick={(e) => {
-                  if (record.status !== "pending") {
+                  // ✅ 4. ดัก onClick หากสถานะไม่ใช่ 2 ตัวนี้ไม่ให้กด
+                  if (!["pending", "resubmitted"].includes(record.status)) {
                     e.stopPropagation();
                     return;
                   }
@@ -432,25 +463,28 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
               />
             </Tooltip>
           </Popover>
-          <Popconfirm
-            title="ยืนยันการส่งคืนเพื่อแก้ไข ?"
-            okText="ยืนยัน"
-            cancelText="ยกเลิก"
-            onConfirm={() => returnEdit(record)}
-            disabled={record.status !== "approve"}
+
+          {/* 2. ปุ่มส่งคืนแก้ไข */}
+          <Tooltip
+            title={record.status === "approve" ? "ส่งคืนเพื่อแก้ไข" : ""}
           >
-            <Tooltip title="ส่งคืนเพื่อแก้ไข">
-              <RollbackOutlined
-                style={{
-                  fontSize: 18, // ขนาด 18px
-                  color: record.status === "approve" ? "orange" : "#d9d9d9",
-                  cursor:
-                    record.status === "approve" ? "pointer" : "not-allowed",
-                  transition: "color 0.2s",
-                }}
-              />
-            </Tooltip>
-          </Popconfirm>
+            <RollbackOutlined
+              style={{
+                fontSize: 18,
+                color: record.status === "approve" ? "#faad14" : "#d9d9d9",
+                cursor: record.status === "approve" ? "pointer" : "not-allowed",
+              }}
+              onClick={() => {
+                if (record.status === "approve") {
+                  setSelectedReturnRecord(record);
+                  setModalReturnOpen(true);
+                  formReturn.setFieldsValue({
+                    reasonReturn: record.reasonReturn || "",
+                  });
+                }
+              }}
+            />
+          </Tooltip>
 
           <Tooltip title="รายละเอียด">
             <FileSearchOutlined
@@ -475,7 +509,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
             />
           </Tooltip> */}
 
-          <Popconfirm
+          {/* <Popconfirm
             title="ยืนยันการลบ"
             description="ยืนยันการลบข้อมูลรายการนี้หรือไม่?"
             onConfirm={async () => {
@@ -501,7 +535,7 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
                 }}
               />
             </Tooltip>
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       ),
     },
@@ -606,11 +640,11 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
       />
 
       <Modal
-        title="ยืนยันการยกเลิกรายการ"
+        title="ยืนยันการไม่อนุมัติรายการ"
         open={modalCancelOpen}
         onOk={() => formCancel.submit()}
         onCancel={() => setModalCancelOpen(false)}
-        okText="ยืนยันการยกเลิก"
+        okText="ยืนยัน"
         cancelButtonProps={{ style: { display: "none" } }}
         centered
         okButtonProps={{ danger: true }}
@@ -622,11 +656,48 @@ const ManageOfficialTravelRequestTable: React.FC<Props> = ({
           onFinish={(values) => handleConfirmCancel(values)}
         >
           <Form.Item
-            label="เหตุผลการยกเลิก"
+            label="เหตุผลการไม่อนุมัติ"
             name="cancelReason"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+            rules={[
+              { required: true, message: "กรุณากรอกเหตุผลการไม่อนุมัติ" },
+            ]}
           >
-            <Input.TextArea placeholder="กรุณากรอกเหตุผลการยกเลิก" rows={4} />
+            <Input.TextArea
+              placeholder="กรุณากรอกเหตุผลการไม่อนุมัติ"
+              rows={4}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="ส่งคืนเพื่อแก้ไข"
+        open={modalReturnOpen}
+        onOk={() => formReturn.submit()}
+        onCancel={() => setModalReturnOpen(false)}
+        okText="ยืนยันการส่งคืน"
+        cancelText="ยกเลิก"
+        centered
+        okButtonProps={{
+          type: "primary",
+          style: { backgroundColor: "#faad14" },
+        }}
+        style={{ maxWidth: "95%" }}
+      >
+        <Form
+          form={formReturn}
+          layout="vertical"
+          onFinish={handleConfirmReturn}
+        >
+          <Form.Item
+            name="reasonReturn"
+            label="เหตุผลการส่งคืน"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลที่ต้องแก้ไข" }]}
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="กรอกเหตุผลที่ต้องการให้ผู้ใช้แก้ไขข้อมูล..."
+            />
           </Form.Item>
         </Form>
       </Modal>

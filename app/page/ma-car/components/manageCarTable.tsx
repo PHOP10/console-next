@@ -80,7 +80,7 @@ export default function ManageCarPage({
 
       const payload = {
         ...values,
-        status: values.status || "available",
+        status: values.status,
         mileage: values.mileage ? Number(values.mileage) : 0,
       };
 
@@ -225,14 +225,14 @@ export default function ManageCarPage({
             <Popconfirm
               title="ยืนยันการลบ"
               description="คุณแน่ใจหรือไม่ว่าต้องการลบรถคันนี้?"
-              okText="ใช่"
+              okText="ลบ"
               cancelText="ไม่"
               onConfirm={() => handleDelete(record.id)}
               okButtonProps={{ danger: true }}
             >
               <DeleteOutlined
                 style={{
-                  fontSize: 18, // ปรับขนาดไอคอนเป็น 18px
+                  fontSize: 18,
                   color: "#ff4d4f",
                   cursor: "pointer",
                 }}

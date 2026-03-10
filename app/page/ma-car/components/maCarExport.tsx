@@ -100,7 +100,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
             };
           })
         : [];
-      console.log(record.masterCar);
+
       // 1. ค้นหา User ที่มีชื่อและนามสกุลตรงกับ record.createdName
       const creator = userData.find((u) => {
         const fullName = `${u.firstName} ${u.lastName}`;
@@ -116,7 +116,9 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
               ? "นางสาว"
               : (creator.gender ?? "-")
         : "-";
-
+      const creatorFullName = creator
+        ? `${creator.firstName} ${creator.lastName}`
+        : record.createdName || "-";
       // const checked = "☑"; // \u2611
       // const unchecked = "☐"; // \u2610
       const checkeds = "(/)"; // กรณีเลือก
@@ -130,12 +132,12 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
         nd: record.typeName?.includes("แผนด่วน") ? checkeds : uncheckeds,
         id: toThaiNumber(record.id ?? "-"),
         requesterName: record.requesterName ?? "-",
-        createdName: record.createdName ?? "-",
+        createdName: creatorFullName ?? "-",
         purpose: record.purpose ?? "-",
         destination: record.destination ?? "-",
         passengers: toThaiNumber(record.passengers ?? "-"),
         gd: genderPrefix,
-        passengerss: passengerList, // สำหรับนำไปใช้ใน Loop (ถ้ามี)
+        passengerss: passengerList,
         budget: record.budget
           ? toThaiNumber(
               record.budget.toLocaleString("th-TH", {
@@ -201,7 +203,7 @@ const MaCarExportWord: React.FC<MaCarExportWordProps> = ({ record }) => {
           : "..........",
         namedriver:
           record.driver === "no"
-            ? (record.createdName ?? "-")
+            ? (creatorFullName ?? "-")
             : ".......................",
         gds: record.driver === "no" ? (genderPrefix ?? "-") : "",
       };

@@ -74,11 +74,10 @@ export default function ManagementDataLeaveTable({
   const [openPopoverId, setOpenPopoverId] = useState<number | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formEdit] = Form.useForm();
-
-  const openEditModal = (record: DataLeaveType) => {
-    setCurrentRecord(record);
-    setIsEditOpen(true);
-  };
+  const [modalReturnOpen, setModalReturnOpen] = useState(false);
+  const [selectedReturnRecord, setSelectedReturnRecord] =
+    useState<DataLeaveType | null>(null);
+  const [formReturn] = Form.useForm();
 
   const handleUpdate = (updated: any) => {
     setDataLeave((prev) =>
@@ -99,14 +98,26 @@ export default function ManagementDataLeaveTable({
     }
   };
 
-  const returnEdit = async (record: DataLeaveType) => {
+  const handleConfirmReturn = async (values: { reasonReturn: string }) => {
+    if (!selectedReturnRecord) return;
+
+    const reason = values.reasonReturn?.trim();
+    if (!reason) {
+      message.error("กรุณากรอกเหตุผลการส่งคืนเพื่อแก้ไข");
+      return;
+    }
+
     try {
       await intraAuthService.updateDataLeave({
-        id: record.id,
+        id: selectedReturnRecord.id,
         status: "edit",
+        reasonReturn: reason,
       });
+
       message.success("ส่งคืนเพื่อแก้ไขเรียบร้อย");
       fetchData();
+      setModalReturnOpen(false);
+      formReturn.resetFields();
     } catch (err) {
       console.error(err);
       message.error("เกิดข้อผิดพลาดในการส่งคืนเพื่อแก้ไข");
@@ -135,7 +146,7 @@ export default function ManagementDataLeaveTable({
     if (!selectedCancelRecord) return;
     const reason = values.cancelReason?.trim();
     if (!reason) {
-      message.error("กรุณากรอกเหตุผลการยกเลิก");
+      message.error("กรุณากรอกเหตุผลการไม่อนุมัติ");
       return;
     }
 
@@ -154,7 +165,7 @@ export default function ManagementDataLeaveTable({
         ),
       );
 
-      message.success("ยกเลิกเรียบร้อย");
+      message.success("ไม่อนุมัติเรียบร้อยแล้ว");
       setModalCancelOpen(false);
       form.resetFields();
     } catch (err) {
@@ -176,10 +187,15 @@ export default function ManagementDataLeaveTable({
   const columns: ColumnsType<DataLeaveType> = [
     {
       title: "ชื่อผู้ลา",
-      dataIndex: "createdName",
-      key: "createdName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
       width: 150,
+      render: (createdById: string) => {
+        const foundUser = user.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "เหตุผลการลา",
@@ -273,7 +289,11 @@ export default function ManagementDataLeaveTable({
             break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
+            break;
+          case "resubmitted":
+            color = "geekblue";
+            text = "รออนุมัติ (แก้ไขแล้ว)";
             break;
           default:
             text = status;
@@ -315,7 +335,6 @@ export default function ManagementDataLeaveTable({
       render: (_, record) => (
         <Space size="small">
           {/* Approve Popover */}
-
           <Popover
             content={
               <Space
@@ -336,7 +355,7 @@ export default function ManagementDataLeaveTable({
                     form.resetFields();
                   }}
                 >
-                  ยกเลิก
+                  ไม่อนุมัติ {/* ✅ เปลี่ยนจาก ยกเลิก เป็น ไม่อนุมัติ */}
                 </Button>
                 <Button
                   type="primary"
@@ -360,7 +379,11 @@ export default function ManagementDataLeaveTable({
             trigger="click"
             open={openPopoverId === record.id}
             onOpenChange={(visible) => {
-              if (record.status === "pending") {
+              // ✅ เพิ่มการรองรับสถานะ resubmitted ให้สามารถเปิด Popover ได้
+              if (
+                record.status === "pending" ||
+                record.status === "resubmitted"
+              ) {
                 setOpenPopoverId(visible ? record.id : null);
               }
             }}
@@ -368,13 +391,26 @@ export default function ManagementDataLeaveTable({
             <Tooltip title={"อนุมัติ"}>
               <CheckCircleOutlined
                 style={{
-                  fontSize: 18, // ขนาด 18px
-                  color: record.status === "pending" ? "#52c41a" : "#d9d9d9",
+                  fontSize: 18,
+                  // ✅ เปลี่ยนสีไอคอนให้เป็นสีเขียวถ้าเป็น pending หรือ resubmitted
+                  color:
+                    record.status === "pending" ||
+                    record.status === "resubmitted"
+                      ? "#52c41a"
+                      : "#d9d9d9",
+                  // ✅ เปลี่ยน cursor ให้กดได้ถ้าเป็น pending หรือ resubmitted
                   cursor:
-                    record.status === "pending" ? "pointer" : "not-allowed",
+                    record.status === "pending" ||
+                    record.status === "resubmitted"
+                      ? "pointer"
+                      : "not-allowed",
                 }}
                 onClick={(e) => {
-                  if (record.status !== "pending") {
+                  // ✅ ป้องกันการคลิกถ้าไม่ใช่ pending หรือ resubmitted
+                  if (
+                    record.status !== "pending" &&
+                    record.status !== "resubmitted"
+                  ) {
                     e.stopPropagation();
                   }
                 }}
@@ -382,25 +418,26 @@ export default function ManagementDataLeaveTable({
             </Tooltip>
           </Popover>
 
-          {/* Return Edit */}
-          <Popconfirm
-            title="ยืนยันการส่งคืนเพื่อแก้ไข ?"
-            onConfirm={() => returnEdit(record)}
-            okText="ใช่"
-            cancelText="ไม่"
-            disabled={record.status !== "approve"}
+          <Tooltip
+            title={record.status === "approve" ? "ส่งคืนเพื่อแก้ไข" : ""}
           >
-            <Tooltip title="ส่งคืนเพื่อแก้ไข">
-              <RollbackOutlined
-                style={{
-                  fontSize: 18, // ขนาด 18px
-                  color: record.status === "approve" ? "#faad14" : "#d9d9d9",
-                  cursor:
-                    record.status === "approve" ? "pointer" : "not-allowed",
-                }}
-              />
-            </Tooltip>
-          </Popconfirm>
+            <RollbackOutlined
+              style={{
+                fontSize: 18,
+                color: record.status === "approve" ? "#faad14" : "#d9d9d9",
+                cursor: record.status === "approve" ? "pointer" : "not-allowed",
+              }}
+              onClick={() => {
+                if (record.status === "approve") {
+                  setSelectedReturnRecord(record);
+                  setModalReturnOpen(true);
+                  formReturn.setFieldsValue({
+                    reasonReturn: record.reasonReturn || "",
+                  });
+                }
+              }}
+            />
+          </Tooltip>
 
           {/* Detail */}
           <Tooltip title="รายละเอียด">
@@ -413,7 +450,7 @@ export default function ManagementDataLeaveTable({
           {/* Edit */}
 
           {/* Delete */}
-          <Popconfirm
+          {/* <Popconfirm
             title="ยืนยันการลบ?"
             onConfirm={() => handleDelete(record)}
             okText="ลบ"
@@ -429,7 +466,7 @@ export default function ManagementDataLeaveTable({
                 }}
               />
             </Tooltip>
-          </Popconfirm>
+          </Popconfirm> */}
         </Space>
       ),
     },
@@ -475,11 +512,11 @@ export default function ManagementDataLeaveTable({
       />
 
       <Modal
-        title="ยืนยันการยกเลิกรายการ"
+        title="ยืนยันการไม่อนุมัติรายการ"
         open={modalCancelOpen}
         onOk={() => form.submit()}
         onCancel={() => setModalCancelOpen(false)}
-        okText="ยืนยันการยกเลิก"
+        okText="ยืนยัน"
         cancelButtonProps={{ style: { display: "none" } }}
         centered
         okButtonProps={{ danger: true }}
@@ -488,10 +525,44 @@ export default function ManagementDataLeaveTable({
         <Form form={form} layout="vertical" onFinish={handleConfirmCancel}>
           <Form.Item
             name="cancelReason"
-            label="เหตุผลการยกเลิก"
-            rules={[{ required: true, message: "กรุณากรอกเหตุผลการยกเลิก" }]}
+            label="เหตุผลการไม่อนุมัติ"
+            rules={[
+              { required: true, message: "กรุณากรอกเหตุผลการไม่อนุมัติ" },
+            ]}
           >
-            <Input.TextArea rows={3} placeholder="กรอกเหตุผลที่ยกเลิก..." />
+            <Input.TextArea rows={3} placeholder="กรอกเหตุผลที่ไม่อนุมัติ..." />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="ส่งคืนเพื่อแก้ไข"
+        open={modalReturnOpen}
+        onOk={() => formReturn.submit()}
+        onCancel={() => setModalReturnOpen(false)}
+        okText="ยืนยันการส่งคืน"
+        cancelText="ยกเลิก"
+        centered
+        okButtonProps={{
+          type: "primary",
+          style: { backgroundColor: "#faad14" },
+        }}
+        style={{ maxWidth: "95%" }}
+      >
+        <Form
+          form={formReturn}
+          layout="vertical"
+          onFinish={handleConfirmReturn}
+        >
+          <Form.Item
+            name="reasonReturn"
+            label="เหตุผลการส่งคืน"
+            rules={[{ required: true, message: "กรุณากรอกเหตุผลที่ต้องแก้ไข" }]}
+          >
+            <Input.TextArea
+              rows={3}
+              placeholder="กรอกเหตุผลที่ต้องการให้ผู้ใช้แก้ไขข้อมูล..."
+            />
           </Form.Item>
         </Form>
       </Modal>

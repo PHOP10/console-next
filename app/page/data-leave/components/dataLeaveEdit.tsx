@@ -78,7 +78,7 @@ export default function DataLeaveEdit({
         dateEnd: values.dateEnd.endOf("day").toISOString(),
         reason: values.reason,
         details: values.details,
-        status: record.status === "edit" ? "pending" : record.status,
+        status: record.status === "edit" ? "resubmitted" : record.status,
         writeAt: values.writeAt,
         backupUserId: values.backupUserId,
         contactAddress: values.contactAddress,

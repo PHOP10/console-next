@@ -9,6 +9,7 @@ import DataLeaveDetail from "./dataLeaveDetail";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { DataLeaveService } from "../services/dataLeave.service";
 import DataLeaveWord from "./dataLeaveWord";
+import DataLeavePdf from "./dataLeavePdf";
 import {
   EditOutlined,
   FileSearchOutlined,
@@ -77,10 +78,15 @@ export default function DataLeaveTable({
   const columns: ColumnsType<DataLeaveType> = [
     {
       title: "ชื่อผู้ลา",
-      dataIndex: "createdName",
-      key: "createdName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
       width: 150,
+      render: (createdById: string) => {
+        const foundUser = user.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "เหตุผลการลา",
@@ -173,9 +179,13 @@ export default function DataLeaveTable({
             color = "default";
             text = "เสร็จสิ้น";
             break;
+          case "resubmitted":
+            color = "geekblue";
+            text = "รออนุมัติ (แก้ไขแล้ว)";
+            break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
 
           default:
@@ -222,6 +232,9 @@ export default function DataLeaveTable({
 
           <div style={{ transform: "scale(0.9)" }}>
             <DataLeaveWord record={record} />
+          </div>
+          <div style={{ transform: "scale(0.9)" }}>
+            <DataLeavePdf record={record} />
           </div>
 
           <Tooltip title="แก้ไข">

@@ -181,7 +181,7 @@ export default function MedicalEquipmentTable({
             break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
           case "return":
             color = "default";

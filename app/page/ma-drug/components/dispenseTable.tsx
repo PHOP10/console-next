@@ -10,7 +10,7 @@ import {
 } from "@ant-design/icons";
 import type { ColumnsType } from "antd/es/table";
 import CustomTable from "../../common/CustomTable";
-import { DispenseType, DrugType } from "../../common";
+import { DispenseType, DrugType, UserType } from "../../common";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
 import DispenseTableDetail from "./dispenseTableDetail";
@@ -27,12 +27,14 @@ interface DispenseTableProps {
   data: DispenseType[];
   refreshData: () => void;
   drugs: DrugType[];
+  dataUser: UserType[];
 }
 
 export default function DispenseTable({
   data,
   refreshData,
   drugs,
+  dataUser,
 }: DispenseTableProps) {
   const [loading, setLoading] = useState(false);
   const intraAuth = useAxiosAuth();
@@ -71,16 +73,28 @@ export default function DispenseTable({
   };
 
   const columns: ColumnsType<DispenseType> = [
+    // {
+    //   title: "ผู้จ่ายยา",
+    //   dataIndex: "dispenserName",
+    //   key: "dispenserName",
+    //   align: "center",
+    //   width: 150,
+    //   responsive: ["md"], // ซ่อนบนมือถือ
+    //   render: (text) => (
+    //     <span className="font-medium text-slate-700">{text || "-"}</span>
+    //   ),
+    // },
     {
       title: "ผู้จ่ายยา",
-      dataIndex: "dispenserName",
-      key: "dispenserName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
       width: 150,
-      responsive: ["md"], // ซ่อนบนมือถือ
-      render: (text) => (
-        <span className="font-medium text-slate-700">{text || "-"}</span>
-      ),
+      render: (createdById: string) => {
+        const foundUser = dataUser.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "วันที่จ่ายยา",
@@ -153,7 +167,7 @@ export default function DispenseTable({
             break;
           case "canceled":
             color = "error";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
           default:
             text = status;

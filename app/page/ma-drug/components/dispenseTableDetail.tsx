@@ -53,7 +53,7 @@ export default function DispenseTableDetail({
       case "canceled":
         return (
           <Tag color="red" className={baseStyle}>
-            ยกเลิก
+            ไม่อนุมัติ
           </Tag>
         );
       default:

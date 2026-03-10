@@ -75,6 +75,8 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         return "#f97316";
       case "success":
         return "#6b7280";
+      case "resubmitted":
+        return "#2f54eb";
       default:
         return "#fafafa";
     }
@@ -83,6 +85,11 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
   // ✅ เพิ่ม Logic การตัดวันหยุดและวันเสาร์อาทิตย์ (ตามแบบ MaCarCalendar)
   const processEvents = useMemo(() => {
     const processedEvents: CustomEvent[] = [];
+    const getUserName = (userId: string | undefined | null) => {
+      if (!userId) return "ไม่ระบุชื่อ";
+      const user = dataUser.find((u) => u.userId === userId);
+      return user ? `${user.firstName} ${user.lastName}` : "ไม่ระบุชื่อ";
+    };
 
     data.forEach((item) => {
       const start = moment(item.startDate);
@@ -97,9 +104,7 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         if (chunkStart && chunkEnd) {
           processedEvents.push({
             id: item.id,
-            title: item.createdName || "ไม่ระบุชื่อ",
-            // ใช้เวลาเริ่มของ chunkStart และเวลาจบของ chunkEnd (สิ้นวัน)
-            // หากต้องการเวลาที่แม่นยำตาม record เดิม ให้ปรับ logic ตรง toDate()
+            title: getUserName(item.createdById),
             start: chunkStart.toDate(),
             end: chunkEnd.endOf("day").toDate(),
             status: item.status,
@@ -128,8 +133,7 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         if (isWorkingDay) {
           if (!chunkStart) {
             chunkStart = current.clone();
-            // กรณีเป็นวันแรกของ chunk ให้คงเวลาเริ่มต้นเดิมไว้ (ถ้าต้องการ)
-            // แต่ถ้า chunk เกิดจากการข้ามวันหยุด เวลาเริ่มจะเป็น 00:00 โดยอัตโนมัติจากการ clone
+
             if (current.isSame(start, "day")) {
               chunkStart = start.clone();
             }
@@ -186,7 +190,7 @@ const OfficialTravelRequestCalendar: React.FC<Props> = ({ data, dataUser }) => {
         <Calendar<CustomEvent>
           localizer={localizer}
           formats={formats}
-          events={processEvents} // ✅ เปลี่ยนมาใช้ processEvents
+          events={processEvents}
           style={{ height: 600, fontFamily: "Prompt, sans-serif" }}
           onSelectEvent={onSelectEvent}
           eventPropGetter={(event) => {

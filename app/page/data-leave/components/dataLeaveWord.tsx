@@ -161,6 +161,9 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
         if (record.createdById) return u.userId === record.createdById;
         return `${u.firstName} ${u.lastName}` === record.createdName;
       });
+      const creatorFullName = creator
+        ? `${creator.firstName} ${creator.lastName}`
+        : record.createdName || "-";
 
       const backupUser =
         record.backupUserId && userData.length
@@ -236,7 +239,7 @@ const DataLeaveWord: React.FC<DataLeaveWordProps> = ({ record }) => {
 
         leaveType: currentLeaveType,
         gd: genderPrefix,
-        createdBy: record.createdName || "-",
+        createdBy: creatorFullName,
         userPosition: userPosition,
 
         // --- การลาครั้งนี้ ---

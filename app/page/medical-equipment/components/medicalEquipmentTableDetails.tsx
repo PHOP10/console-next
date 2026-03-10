@@ -59,7 +59,7 @@ export default function MedicalEquipmentTableDetails({
       case "cancel":
         return (
           <Tag color="red" className={baseStyle}>
-            ยกเลิก
+            ไม่อนุมัติ
           </Tag>
         );
       default:
@@ -273,12 +273,12 @@ export default function MedicalEquipmentTableDetails({
                   </>
                 )}
 
-                {/* กรณียกเลิก */}
+                {/* กรณีไม่อนุมัติ */}
                 {(record.nameReason || record.cancelReason) && (
                   <>
                     <Col xs={12} sm={12}>
                       <span className="text-red-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
-                        ผู้ยกเลิก
+                        ผู้ไม่อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium block">
                         {record.nameReason || "-"}
@@ -286,7 +286,7 @@ export default function MedicalEquipmentTableDetails({
                     </Col>
                     <Col xs={12} sm={12}>
                       <span className="text-red-500 block text-[10px] sm:text-xs uppercase tracking-wider mb-1 font-semibold">
-                        วันที่ยกเลิก
+                        วันที่ไม่อนุมัติ
                       </span>
                       <span className="text-slate-700 font-medium block">
                         {formatDate(record.createdAt)}
@@ -295,7 +295,7 @@ export default function MedicalEquipmentTableDetails({
                     {record.cancelReason && (
                       <Col span={24} className="mt-1">
                         <div className="bg-red-50 p-2 rounded border border-red-100 text-red-700 text-xs">
-                          เหตุผลยกเลิกก: {record.cancelReason}
+                          เหตุผลไม่อนุมัติ: {record.cancelReason}
                         </div>
                       </Col>
                     )}

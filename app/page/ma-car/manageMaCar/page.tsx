@@ -97,6 +97,7 @@ export default function ManageMaCarPage() {
           <ManageCarTable
             dataCar={dataCar}
             loading={loading}
+            
             setLoading={setManualLoading} // ส่ง setManualLoading ไปใช้แทน
           />
         </Card>

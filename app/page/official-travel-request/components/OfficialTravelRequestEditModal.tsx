@@ -124,7 +124,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
         startDate: values.startDate?.toISOString() || null,
         endDate: values.endDate?.toISOString() || null,
         travelType: values.travelType ? [values.travelType] : [],
-        status: "pending",
+        status: record?.status === "edit" ? "resubmitted" : record?.status,
         carId: values.travelType === "official" ? values.carId : null,
         privateCarId:
           values.travelType === "private" ? values.privateCarId : null,
@@ -519,6 +519,7 @@ const OfficialTravelRequestEditModal: React.FC<Props> = ({
                           <Input
                             placeholder="เช่น รถไฟ"
                             className={inputStyle}
+                            maxLength={20}
                           />
                         </Form.Item>
                       )}

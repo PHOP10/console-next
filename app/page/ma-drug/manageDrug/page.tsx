@@ -8,7 +8,8 @@ import MaDrugDaisbursementTable from "../components/manageDrugTable";
 import MaDispenseTable from "../components/maDispenseTable";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { MaDrugType, DispenseType, DrugType } from "../../common";
+import { MaDrugType, DispenseType, DrugType, UserType } from "../../common";
+import { userService } from "../../user/services/user.service";
 
 export default function Page() {
   const intraAuth = useAxiosAuth();
@@ -17,16 +18,16 @@ export default function Page() {
   const [drugs, setDrugsData] = useState<DrugType[]>([]);
   const [requestData, setRequestData] = useState<MaDrugType[]>([]);
   const [dispenseData, setDispenseData] = useState<DispenseType[]>([]);
-
+  const intraAuthUserService = userService(intraAuth);
+  const maDrugService = MaDrug(intraAuth);
   // 4. สร้าง Fetcher Function
   const fetcher = async () => {
-    const maDrugService = MaDrug(intraAuth);
-
     // ดึงข้อมูลพร้อมกัน
-    const [drugsRes, requestsRes, dispensesRes] = await Promise.all([
+    const [drugsRes, requestsRes, dispensesRes, resUsers] = await Promise.all([
       maDrugService.getDrugQuery?.(),
       maDrugService.getMaDrugQuery(),
       maDrugService.getDispenseQuery(),
+      intraAuthUserService.getUserQuery(),
     ]);
 
     return {
@@ -37,6 +38,7 @@ export default function Page() {
       dispenses: Array.isArray(dispensesRes)
         ? dispensesRes
         : dispensesRes?.data || [],
+      dataUser: resUsers,
     };
   };
 
@@ -52,7 +54,7 @@ export default function Page() {
       message.error("ไม่สามารถดึงข้อมูลได้");
     },
   });
-
+  const dataUser: UserType[] = swrData?.dataUser || [];
   // 6. Sync ข้อมูลเข้า State
   useEffect(() => {
     if (swrData) {
@@ -78,6 +80,7 @@ export default function Page() {
             data={requestData}
             fetchData={fetchData}
             setData={setRequestData}
+            dataUser={dataUser}
           />
         </Card>
       ),
@@ -87,7 +90,12 @@ export default function Page() {
       label: "จัดการข้อมูลการจ่ายยา",
       children: (
         <Card>
-          <MaDispenseTable data={dispenseData} fetchData={fetchData} drugs={drugs} />
+          <MaDispenseTable
+            data={dispenseData}
+            fetchData={fetchData}
+            drugs={drugs}
+            dataUser={dataUser}
+          />
         </Card>
       ),
     },

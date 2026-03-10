@@ -77,31 +77,41 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
   const handleSubmit = async (values: any) => {
     try {
       const { carId, dateStart, dateEnd } = values;
+      const currentUserId = session?.user?.userId;
 
+      // ✅ อัปเดตการเช็คก่อนบันทึกให้ครอบคลุมแบบเดียวกับหน้า Form
       const isOverlap = data?.some((booking) => {
+        // ข้ามตัวที่ถูกยกเลิก และข้าม "ใบจองปัจจุบันที่กำลังแก้ไข"
         if (booking.id === record?.id || booking.status === "cancel")
           return false;
 
-        const isSameCar = booking.carId === carId;
-        const isTimeOverlap =
-          dayjs(dateStart).isBefore(dayjs(booking.dateEnd)) &&
-          dayjs(dateEnd).isAfter(dayjs(booking.dateStart));
+        const isSameCar = Number(booking.carId) === Number(carId);
+        const isSameUser = booking.createdById === currentUserId;
 
-        return isSameCar && isTimeOverlap;
+        if (!isSameCar && !isSameUser) return false;
+
+        const bStart = dayjs(booking.dateStart);
+        const bEnd = dayjs(booking.dateEnd);
+        const currentStart = dayjs(dateStart);
+        const currentEnd = dayjs(dateEnd);
+
+        // สูตรเช็คชนกัน
+        return currentStart.isBefore(bEnd) && currentEnd.isAfter(bStart);
       });
 
       if (isOverlap) {
         return message.warning(
-          "ไม่สามารถแก้ไขได้: รถคันนี้ถูกจองในช่วงเวลานี้แล้ว",
+          "ไม่สามารถแก้ไขได้: มีการจองรถในช่วงเวลานี้ซ้ำซ้อน",
         );
       }
+
       const selectedCar = cars.find((c) => c.id === carId);
       const payload = {
         ...values,
         id: record?.id,
         dateStart: dayjs(dateStart).toISOString(),
         dateEnd: dayjs(dateEnd).toISOString(),
-        status: record.status === "edit" ? "pending" : record.status,
+        status: record.status === "edit" ? "resubmitted" : record.status,
         startMileage:
           carId !== record?.carId
             ? selectedCar?.mileage || 0
@@ -140,7 +150,6 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
       footer={null}
       width={800}
       centered
-      // Responsive Modal
       style={{ maxWidth: "100%", top: 20, paddingBottom: 0 }}
       styles={{ content: { borderRadius: "16px", padding: "16px sm:24px" } }}
     >
@@ -159,7 +168,6 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
             ]}
           >
             <Checkbox.Group className={`${optionGroupStyle} w-full`}>
-              {/* ปรับให้เป็น 2 คอลัมน์บนมือถือ */}
               <Row gutter={[8, 8]}>
                 <Col xs={12} sm={6}>
                   <Checkbox value="ในจังหวัด">ในจังหวัด</Checkbox>
@@ -273,14 +281,81 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
             </Col>
           </Row>
 
-          {/* Section 4: วันเวลาเดินทาง */}
+          {/* ✅ Section 4: วันเวลาเดินทาง (แก้ไข Logic เช็คเวลาให้เหมือนหน้าสร้าง) */}
           <div className="bg-blue-50/30 p-3 sm:p-4 rounded-xl border border-blue-100 mb-4">
             <Row gutter={16}>
               <Col xs={24} sm={12}>
                 <Form.Item
                   name="dateStart"
                   label="ตั้งแต่วันที่-เวลา"
-                  rules={[{ required: true }]}
+                  dependencies={["dateEnd", "carId"]}
+                  rules={[
+                    { required: true, message: "กรุณาเลือกวันเวลาเริ่ม" },
+                    {
+                      validator: (_, value) => {
+                        if (!value) return Promise.resolve();
+
+                        const carId = form.getFieldValue("carId");
+                        if (!carId) return Promise.resolve();
+
+                        const dateEnd = form.getFieldValue("dateEnd");
+                        const currentStart = dayjs(value);
+                        const currentUserId = session?.user?.userId;
+
+                        let errorMsg = "";
+
+                        // ✅ ใช้ data ในการเช็ค (ข้อมูลการจองทั้งหมดที่ดึงมา)
+                        const isConflict = data?.some((booking) => {
+                          // 🚨 สำคัญมาก: ข้าม record ปัจจุบันที่กำลังแก้ไข และที่ยกเลิกไปแล้ว
+                          if (
+                            booking.id === record?.id ||
+                            booking.status === "cancel"
+                          )
+                            return false;
+
+                          const isSameCar =
+                            Number(booking.carId) === Number(carId);
+                          const isSameUser =
+                            booking.createdById === currentUserId;
+
+                          if (!isSameCar && !isSameUser) return false;
+
+                          const bStart = dayjs(booking.dateStart);
+                          const bEnd = dayjs(booking.dateEnd);
+
+                          if (dateEnd) {
+                            const currentEnd = dayjs(dateEnd);
+                            if (
+                              currentStart.isBefore(bEnd) &&
+                              currentEnd.isAfter(bStart)
+                            ) {
+                              errorMsg = isSameCar
+                                ? "รถคันนี้มีการจองในช่วงเวลานี้แล้ว"
+                                : "คุณมีรายการจองรถในช่วงเวลานี้แล้ว";
+                              return true;
+                            }
+                          } else {
+                            if (
+                              currentStart.isSameOrAfter(bStart) &&
+                              currentStart.isBefore(bEnd)
+                            ) {
+                              errorMsg = isSameCar
+                                ? "รถคันนี้มีการจองในช่วงเวลานี้แล้ว"
+                                : "คุณมีรายการจองรถในช่วงเวลานี้แล้ว";
+                              return true;
+                            }
+                          }
+                          return false;
+                        });
+
+                        if (isConflict) {
+                          return Promise.reject(new Error(errorMsg));
+                        }
+                        return Promise.resolve();
+                      },
+                    },
+                  ]}
+                  style={{ marginBottom: 0 }}
                 >
                   <DatePicker
                     locale={buddhistLocale}
@@ -288,22 +363,114 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                     format="DD MMMM YYYY เวลา HH:mm น."
                     className={`${inputStyle} pt-1 w-full`}
                     onChange={() => form.setFieldValue("dateEnd", null)}
+                    disabledDate={(current) =>
+                      current && current < dayjs().startOf("day")
+                    }
                   />
                 </Form.Item>
               </Col>
+
               <Col xs={24} sm={12}>
                 <Form.Item
-                  name="dateEnd"
-                  label="ถึงวันที่-เวลา"
-                  rules={[{ required: true }]}
+                  noStyle
+                  shouldUpdate={(prev, cur) =>
+                    prev.dateStart !== cur.dateStart || prev.carId !== cur.carId
+                  }
                 >
-                  <DatePicker
-                    locale={buddhistLocale}
-                    showTime={{ format: "HH:mm" }}
-                    format="DD MMMM YYYY เวลา HH:mm น."
-                    className={`${inputStyle} pt-1 w-full`}
-                    disabled={!form.getFieldValue("dateStart")}
-                  />
+                  {({ getFieldValue }) => {
+                    const dateStart = getFieldValue("dateStart");
+                    return (
+                      <Form.Item
+                        name="dateEnd"
+                        label="ถึงวันที่-เวลา"
+                        dependencies={["dateStart", "carId"]}
+                        rules={[
+                          {
+                            required: true,
+                            message: "กรุณาเลือกวันเวลาสิ้นสุด",
+                          },
+                          {
+                            validator: (_, value) => {
+                              if (!value || !dateStart)
+                                return Promise.resolve();
+
+                              const carId = getFieldValue("carId");
+                              if (!carId) return Promise.resolve();
+
+                              const currentStart = dayjs(dateStart);
+                              const currentEnd = dayjs(value);
+                              const currentUserId = session?.user?.userId;
+
+                              if (
+                                currentEnd.isBefore(currentStart) ||
+                                currentEnd.isSame(currentStart)
+                              ) {
+                                return Promise.reject(
+                                  new Error(
+                                    "เวลาสิ้นสุดต้องอยู่หลังจากเวลาเริ่มต้น",
+                                  ),
+                                );
+                              }
+
+                              let errorMsg = "";
+                              const isConflict = data?.some((booking) => {
+                                // 🚨 สำคัญมาก: ข้าม record ปัจจุบันที่กำลังแก้ไข
+                                if (
+                                  booking.id === record?.id ||
+                                  booking.status === "cancel"
+                                )
+                                  return false;
+
+                                const isSameCar =
+                                  Number(booking.carId) === Number(carId);
+                                const isSameUser =
+                                  booking.createdById === currentUserId;
+
+                                if (!isSameCar && !isSameUser) return false;
+
+                                const bStart = dayjs(booking.dateStart);
+                                const bEnd = dayjs(booking.dateEnd);
+
+                                if (
+                                  currentStart.isBefore(bEnd) &&
+                                  currentEnd.isAfter(bStart)
+                                ) {
+                                  errorMsg = isSameCar
+                                    ? "รถคันนี้มีการจองในช่วงเวลานี้แล้ว"
+                                    : "คุณมีรายการจองรถในช่วงเวลานี้แล้ว";
+                                  return true;
+                                }
+                                return false;
+                              });
+
+                              if (isConflict) {
+                                return Promise.reject(new Error(errorMsg));
+                              }
+                              return Promise.resolve();
+                            },
+                          },
+                        ]}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <DatePicker
+                          locale={buddhistLocale}
+                          showTime={{ format: "HH:mm" }}
+                          format="DD MMMM YYYY เวลา HH:mm น."
+                          className={`${inputStyle} pt-1 w-full`}
+                          disabled={!dateStart}
+                          disabledDate={(current) => {
+                            if (
+                              dateStart &&
+                              current < dayjs(dateStart).startOf("day")
+                            ) {
+                              return true;
+                            }
+                            return current && current < dayjs().startOf("day");
+                          }}
+                        />
+                      </Form.Item>
+                    );
+                  }}
                 </Form.Item>
               </Col>
             </Row>
@@ -331,7 +498,6 @@ const MaCarEditModal: React.FC<MaCarEditModalProps> = ({
                       const current = form.getFieldValue("passengerNames");
                       setTimeout(() => {
                         const restored = [...current, val];
-
                         const unique = Array.from(new Set(restored));
 
                         form.setFieldValue("passengerNames", unique);

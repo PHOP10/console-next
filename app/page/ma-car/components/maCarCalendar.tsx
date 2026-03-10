@@ -41,12 +41,6 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
 
-  const getUserName = (idOrName: string) => {
-    if (!idOrName) return "-";
-    const user = dataUser.find((u) => u.userId === idOrName);
-    return user ? `${user.firstName} ${user.lastName}` : idOrName;
-  };
-
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "pending":
@@ -61,6 +55,8 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
         return "#a855f7";
       case "success":
         return "#6b7280";
+      case "resubmitted":
+        return "#2f54eb";
       default:
         return "#3b82f6";
     }
@@ -80,6 +76,11 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
 
   const processEvents = useMemo(() => {
     const processedEvents: CustomEvent[] = [];
+    const getUserName = (userId: string | undefined | null) => {
+      if (!userId) return "ไม่ระบุชื่อ";
+      const user = dataUser.find((u) => u.userId === userId);
+      return user ? `${user.firstName} ${user.lastName}` : "ไม่ระบุชื่อ";
+    };
 
     data.forEach((booking) => {
       const start = moment(booking.dateStart);
@@ -94,7 +95,7 @@ const MaCarCalendar: React.FC<Props> = ({ data, cars, dataUser }) => {
         if (chunkStart && chunkEnd) {
           processedEvents.push({
             id: booking.id,
-            title: getUserName(booking.createdName),
+            title: getUserName(booking.createdById),
             start: chunkStart.toDate(),
             end: chunkEnd.endOf("day").toDate(),
             status: booking.status,

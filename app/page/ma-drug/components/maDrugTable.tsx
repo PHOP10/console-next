@@ -20,7 +20,7 @@ import {
 import type { ColumnsType } from "antd/es/table";
 import useAxiosAuth from "@/app/lib/axios/hooks/userAxiosAuth";
 import { MaDrug } from "../services/maDrug.service";
-import { MaDrugType } from "../../common";
+import { MaDrugType, UserType } from "../../common";
 import { exportMaDrugToExcel } from "./maDrugExport";
 import MaDrugTableDetail from "./maDrugDetail";
 import MaDrugEdit from "./maDrugEdit";
@@ -37,9 +37,14 @@ dayjs.locale("th");
 interface MaDrugFormProps {
   data: MaDrugType[];
   fetchDrugs: () => void;
+  dataUser: UserType[];
 }
 
-export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
+export default function MaDrugTable({
+  data,
+  fetchDrugs,
+  dataUser,
+}: MaDrugFormProps) {
   const intraAuth = useAxiosAuth();
   const intraAuthService = MaDrug(intraAuth);
 
@@ -99,13 +104,26 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
         );
       },
     },
+    // {
+    //   title: "ผู้ขอเบิก",
+    //   dataIndex: "requesterName",
+    //   key: "requesterName",
+    //   align: "center",
+    //   width: 100,
+    //   responsive: ["md"],
+    // },
     {
       title: "ผู้ขอเบิก",
-      dataIndex: "requesterName",
-      key: "requesterName",
+      dataIndex: "createdById",
+      key: "createdById",
       align: "center",
-      width: 100,
+      width: 130,
       responsive: ["md"],
+      render: (createdById: string) => {
+        const foundUser = dataUser.find((u) => u.userId === createdById);
+
+        return foundUser ? `${foundUser.firstName} ${foundUser.lastName}` : "-";
+      },
     },
     {
       title: "วันที่ขอเบิก",
@@ -176,7 +194,7 @@ export default function MaDrugTable({ data, fetchDrugs }: MaDrugFormProps) {
             break;
           case "cancel":
             color = "red";
-            text = "ยกเลิก";
+            text = "ไม่อนุมัติ";
             break;
           default:
             text = status;

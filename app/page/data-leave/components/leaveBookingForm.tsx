@@ -123,7 +123,15 @@ export default function LeaveBookingForm({
   const tableData = useMemo(() => {
     const fiscalYear = getCurrentFiscalYear();
 
+    // ✅ 1. กำหนดโควต้าวันลาตาม ID
+    const limits: Record<number, number> = {
+      1: 60, // ลาป่วย
+      2: 45, // ลากิจ
+      3: 90, // ลาคลอด
+    };
+
     return masterLeaves.map((leave) => {
+      // ลามาแล้ว
       const usedDays = leaveByUserId
         .filter((item) => {
           if (item.typeId !== leave.id || item.status !== "approve") {
@@ -142,12 +150,18 @@ export default function LeaveBookingForm({
           0,
         );
 
+      // ลาครั้งนี้
       const currentDays =
         selectedTypeId === leave.id && selectedDateStart && selectedDateEnd
-          ? calculateDays(selectedDateStart, selectedDateEnd) // Use updated logic
+          ? calculateDays(selectedDateStart, selectedDateEnd)
           : 0;
 
+      // รวมการลา
       const totalDays = usedDays + currentDays;
+
+      // ✅ 2. คำนวณวันลาคงเหลือ (โควต้า - ลารวม)
+      const limit = limits[leave.id] || 0; // ดึงโควต้าตาม ID
+      const remainingDays = limit - totalDays;
 
       return {
         key: leave.id,
@@ -155,6 +169,8 @@ export default function LeaveBookingForm({
         usedDays,
         currentDays,
         totalDays,
+        remainingDays, // ส่งค่าคงเหลือออกไป
+        limit, // ส่งโควต้าสูงสุดไปด้วย เผื่อไว้ตรวจสอบ
       };
     });
   }, [
@@ -167,6 +183,24 @@ export default function LeaveBookingForm({
 
   const columns = [
     { title: "ประเภทการลา", dataIndex: "leaveType", key: "leaveType" },
+    {
+      title: "คงเหลือ (วัน)",
+      dataIndex: "remainingDays", // ✅ 3. ผูกค่าคงเหลือที่คำนวณมา
+      key: "remainingDays",
+      align: "center" as const,
+      render: (val: number) => {
+        // ถ้าน้อยกว่า 0 ให้ตัวแดง (ลาเกินโควต้า)
+        return (
+          <span
+            className={
+              val < 0 ? "text-red-500 font-bold" : "text-green-600 font-bold"
+            }
+          >
+            {val}
+          </span>
+        );
+      },
+    },
     {
       title: "ลามาแล้ว (วัน)",
       dataIndex: "usedDays",
@@ -387,7 +421,6 @@ export default function LeaveBookingForm({
                             disabledDate={(current) => {
                               if (!current) return false;
 
-                              if (current < dayjs().startOf("day")) return true;
                               return leaveByUserId.some((leave) => {
                                 const start = dayjs(leave.dateStart).startOf(
                                   "day",
@@ -435,7 +468,6 @@ export default function LeaveBookingForm({
                               ) {
                                 return true;
                               }
-                              if (current < dayjs().startOf("day")) return true;
 
                               return leaveByUserId.some((leave) => {
                                 const start = dayjs(leave.dateStart).startOf(
